@@ -710,7 +710,7 @@ for (my $i=0;$i<@servers;$i++) {
             if (C4::Context->preference('TagsEnabled') and
                 C4::Context->preference('TagsShowOnList')) {
                 if ( my $bibnum = $res->{biblionumber} ) {
-                    $res->{itemsissued} = CountItemsIssued( $bibnum );
+                    $res->{itemsissued} = CountItemsIssued( { biblionumber => $bibnum } );
                     $res->{'TagLoop'} = get_tags({
                         biblionumber => $bibnum,
                         approved => 1,

@@ -2529,9 +2529,20 @@ sub _adjust_pubyear {
 =cut
 
 sub CountItemsIssued {
-    my ($biblionumber) = @_;
+    my ($params) = @_;
+    my $biblionumber = $params->{'biblionumber'};
+    my $count_on_order = $params->{'count_on_order'};
+
+    my $sql = 'SELECT COUNT(*) AS issuedCount FROM items LEFT JOIN issues ON items.itemnumber = issues.itemnumber WHERE items.biblionumber = ?';
+
+    if ( $count_on_order ) {
+        $sql .= ' AND ( issues.itemnumber IS NOT NULL OR items.notforloan < 0 )';
+    } else {
+        $sql .= ' AND issues.itemnumber IS NOT NULL';
+    }
+
     my $dbh            = C4::Context->dbh;
-    my $sth            = $dbh->prepare('SELECT COUNT(*) as issuedCount FROM items, issues WHERE items.itemnumber = issues.itemnumber AND items.biblionumber = ?');
+    my $sth            = $dbh->prepare( $sql );
     $sth->execute($biblionumber);
     my $row = $sth->fetchrow_hashref();
     return $row->{'issuedCount'};

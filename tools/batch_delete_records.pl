@@ -96,7 +96,7 @@ if ( $op eq 'form' ) {
             my $record = &GetMarcBiblio({ biblionumber => $record_id });
             $biblio->{itemnumbers} = [Koha::Items->search({ biblionumber => $record_id })->get_column('itemnumber')];
             $biblio->{holds_count} = $holds_count;
-            $biblio->{issues_count} = C4::Biblio::CountItemsIssued( $record_id );
+            $biblio->{issues_count} = C4::Biblio::CountItemsIssued({ biblionumber => $record_id, count_on_order => 1 });
             push @records, $biblio;
         } else {
             # Retrieve authority information
@@ -145,7 +145,7 @@ if ( $op eq 'form' ) {
             my $biblio = Koha::Biblios->find( $biblionumber );
 
             # TODO Replace with $biblio->get_issues->count
-            if ( C4::Biblio::CountItemsIssued( $biblionumber ) ) {
+            if ( C4::Biblio::CountItemsIssued({ biblionumber => $biblionumber, count_on_order => 1 }) ) {
                 push @messages, {
                     type => 'warning',
                     code => 'item_issued',

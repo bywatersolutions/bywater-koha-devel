@@ -182,7 +182,7 @@ while ( my $item = $items->next ) {
       unless $allow_onshelf_holds;
 }
 
-if( $allow_onshelf_holds || CountItemsIssued($biblionumber) || $biblio->has_items_waiting_or_intransit ) {
+if( $allow_onshelf_holds || CountItemsIssued({ biblionumber => $biblionumber, count_on_order => 1 }) || $biblio->has_items_waiting_or_intransit ) {
     $template->param( ReservableItems => 1 );
 }
 
