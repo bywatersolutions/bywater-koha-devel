@@ -2927,7 +2927,23 @@ sub AddRenewal {
 
     # Update the renewal count on the item, and tell zebra to reindex
     $renews = $biblio->{'renewals'} + 1;
-    ModItem({ renewals => $renews, onloan => $datedue->strftime('%Y-%m-%d %H:%M')}, $biblio->{'biblionumber'}, $itemnumber);
+
+    # If item was lost, it has now been found, reverse any list item charges if neccessary.
+    if ( $item->{'itemlost'} ) {
+        if ( C4::Context->preference('RefundLostItemFeeOnReturn') ) {
+            _FixAccountForLostAndReturned( $item->{'itemnumber'}, undef, $item->{'barcode'} );
+        }
+    }
+
+    ModItem(
+        {
+            renewals => $renews,
+            onloan => $datedue->strftime('%Y-%m-%d %H:%M'),
+            itemlost => 0,
+        },
+        $biblio->{'biblionumber'},
+        $itemnumber
+    );
 
     # Charge a new rental fee, if applicable?
     my ( $charge, $type ) = GetIssuingCharges( $itemnumber, $borrowernumber );
