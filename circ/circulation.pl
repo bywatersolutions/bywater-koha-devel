@@ -24,9 +24,13 @@
 
 use strict;
 use warnings;
+
 use CGI qw ( -utf8 );
 use DateTime;
 use DateTime::Duration;
+use MARC::Record;
+use CGI::Session;
+
 use C4::Output;
 use C4::Print;
 use C4::Auth qw/:DEFAULT get_session haspermission/;
@@ -36,23 +40,21 @@ use C4::Utils::DataTables::Members;
 use C4::Members;
 use C4::Biblio;
 use C4::Search;
-use MARC::Record;
 use C4::Reserves;
-use Koha::Holds;
 use C4::Context;
-use CGI::Session;
 use C4::Members::Attributes qw(GetBorrowerAttributes);
 use Koha::AuthorisedValues;
-use Koha::Patron;
 use Koha::Patron::Debarments qw(GetDebarments);
 use Koha::DateUtils;
 use Koha::Database;
 use Koha::BiblioFrameworks;
+use Koha::Patrons;
 use Koha::Patron::Messages;
 use Koha::Patron::Images;
 use Koha::SearchEngine;
 use Koha::SearchEngine::Search;
 use Koha::Patron::Modifications;
+use Koha::Holds;
 
 use Date::Calc qw(
   Today
@@ -647,6 +649,7 @@ my $patron_image = Koha::Patron::Images->find($borrower->{borrowernumber});
 $template->param( picture => 1 ) if $patron_image;
 
 my $has_modifications = Koha::Patron::Modifications->search( { borrowernumber => $borrowernumber } )->count;
+
 $template->param(
     debt_confirmed            => $debt_confirmed,
     SpecifyDueDate            => $duedatespec_allow,
@@ -656,6 +659,7 @@ $template->param(
     has_modifications         => $has_modifications,
     override_high_holds       => $override_high_holds,
     nopermission              => scalar $query->param('nopermission'),
+    borrower                  => Koha::Patrons->find( $borrowernumber ),
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;

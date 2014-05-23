@@ -58,4 +58,9 @@ sub Version {
     };
 }
 
+sub UserEnv {
+    my ( $self, $key ) = @_;
+    my $userenv = C4::Context->userenv;
+    return $userenv ? $userenv->{$key} : undef;
+}
 1;

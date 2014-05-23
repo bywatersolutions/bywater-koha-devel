@@ -35,6 +35,7 @@ use Koha::Patron::HouseboundRole;
 use Koha::Patron::Images;
 use Koha::Patrons;
 use Koha::Virtualshelves;
+use Koha::Club::Enrollments;
 
 use base qw(Koha::Object);
 
@@ -582,6 +583,67 @@ sub holds {
     my ($self) = @_;
     my $holds_rs = $self->_result->reserves->search( {}, { order_by => 'reservedate' } );
     return Koha::Holds->_new_from_dbic($holds_rs);
+}
+
+=head3 FirstValidEmailAddress
+
+=cut
+
+sub FirstValidEmailAddress {
+    my ($self) = @_;
+
+    return $self->email() || $self->emailpro() || $self->b_email() || q{};
+}
+
+=head3 GetClubEnrollments
+
+=cut
+
+sub GetClubEnrollments {
+    my ($self) = @_;
+
+    return Koha::Club::Enrollments->search( { borrowernumber => $self->borrowernumber(), date_canceled => undef } );
+}
+
+=head3 GetClubEnrollmentsCount
+
+=cut
+
+sub GetClubEnrollmentsCount {
+    my ($self) = @_;
+
+    my $e = $self->GetClubEnrollments();
+
+    return $e->count();
+}
+
+=head3 GetEnrollableClubs
+
+=cut
+
+sub GetEnrollableClubs {
+    my ( $self, $is_enrollable_from_opac ) = @_;
+
+    my $params;
+    $params->{is_enrollable_from_opac} = $is_enrollable_from_opac
+      if $is_enrollable_from_opac;
+    $params->{is_email_required} = 0 unless $self->FirstValidEmailAddress();
+
+    $params->{borrower} = $self;
+
+    return Koha::Clubs->GetEnrollable($params);
+}
+
+=head3 GetEnrollableClubsCount
+
+=cut
+
+sub GetEnrollableClubsCount {
+    my ( $self, $is_enrollable_from_opac ) = @_;
+
+    my $e = $self->GetEnrollableClubs($is_enrollable_from_opac);
+
+    return $e->count();
 }
 
 =head3 type

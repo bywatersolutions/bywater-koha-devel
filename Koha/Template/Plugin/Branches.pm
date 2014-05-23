@@ -27,6 +27,13 @@ use C4::Koha;
 use C4::Context;
 use Koha::Libraries;
 
+sub GetBranches {
+    my ($self) = @_;
+
+    my $dbh = C4::Context->dbh;
+    return $dbh->selectall_arrayref( "SELECT * FROM branches", { Slice => {} } );
+}
+
 sub GetName {
     my ( $self, $branchcode ) = @_;
 
