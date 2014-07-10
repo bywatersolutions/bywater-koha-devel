@@ -980,6 +980,7 @@ sub getIndexes {
         'Abstract',
         'acqdate',
         'allrecords',
+        'Alt-language',
         'an',
         'Any',
         'at',
@@ -993,9 +994,11 @@ sub getIndexes {
         'aut',
         'Author',
         'Author-in-order ',
+        'Author-name-personal',
         'Author-personal-bibliography',
         'Authority-Number',
         'authtype',
+        'Awards',
         'bc',
         'Bib-level',
         'biblionumber',
@@ -1029,6 +1032,7 @@ sub getIndexes {
         'Country-publication',
         'ctype',
         'curriculum',
+        'Date-conference',
         'date-entered-on-file',
         'Date-of-acquisition',
         'Date-of-publication',
@@ -1038,6 +1042,15 @@ sub getIndexes {
         'diss',
         'dtlm',
         'EAN',
+
+        # BWS Custom for Guggenheim
+        'Electronic-Copy-Availability',
+        'eca',
+
+        # BWS Custom 585
+        'exhibition',
+        'Exhibitions-Note',
+
         'extent',
         'fic',
         'fiction',
@@ -1052,6 +1065,7 @@ sub getIndexes {
         'Host-item',
         'id-other',
         'ident',
+        'Identifier-other',
         'Identifier-standard',
         'Illustration-code',
         'Index-term-genre',
@@ -1070,6 +1084,8 @@ sub getIndexes {
         'language-original',
         'lc-card',
         'LC-card-number',
+        'LC-card-number-active',
+        'LC-card-number-canceled',
         'lcn',
         'lex',
         'lexile-number',
@@ -1116,6 +1132,7 @@ sub getIndexes {
         'Record-control-number',
         'rcn',
         'Record-type',
+        'Reference',
         'rtype',
         'se',
         'See',
@@ -1150,6 +1167,7 @@ sub getIndexes {
         'yr',
 
         # items indexes
+        'Accession-number',
         'acqsource',
         'barcode',
         'bc',
