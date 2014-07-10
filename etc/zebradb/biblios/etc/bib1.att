@@ -201,6 +201,7 @@ att 1207    Instruments-total-number
 att 1208    Instruments-distint-number
 att 1209    Identifier-URN
 att 1210    Sears-Subject-Heading
+#att 1211    OCLC-Number
 att 1211    Other-control-number
 att 1212    Composition
 att 1213    Intellectual-level
@@ -216,6 +217,7 @@ att 1222    Subject-function
 att 1223    Edition
 att 1224    GPO-Item-Number
 att 1225    Provider
+att 9021    Awards
 
 # Koha Local-Use Biblio Indexes
 att 9001    Control-number
@@ -377,3 +379,11 @@ att 9653    Index-term-uncontrolled
 att 9655    Index-term-genre
 att 9906    ln-audio
 att 9907    ln-subtitle
+
+# ByWater specific
+att 9950    Exhibitions-Note
+att 9024    Alt-language
+att 6071    Electronic-Copy-Availability
+att 9026    Accession-number
+att 9022    LC-card-number-active
+att 9023    LC-card-number-canceled
