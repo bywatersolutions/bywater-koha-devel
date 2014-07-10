@@ -410,15 +410,6 @@ definition file (probably something like {biblio,authority}-koha-indexdefs.xml) 
         </z:index>
       </xslo:if>
     </xslo:for-each>
-  </xslo:template>
-  <xslo:template mode="index_subfields" match="marc:datafield[@tag='264']">
-    <xslo:for-each select="marc:subfield">
-      <xslo:if test="contains('a', @code)">
-        <z:index name="pl:w pl:p">
-          <xslo:value-of select="."/>
-        </z:index>
-      </xslo:if>
-    </xslo:for-each>
     <xslo:for-each select="marc:subfield">
       <xslo:if test="contains('b', @code)">
         <z:index name="Publisher:w Publisher:p">
@@ -1471,6 +1462,15 @@ definition file (probably something like {biblio,authority}-koha-indexdefs.xml) 
     <xslo:for-each select="marc:subfield">
       <xslo:if test="contains('9', @code)">
         <z:index name="Koha-Auth-Number:w">
+          <xslo:value-of select="."/>
+        </z:index>
+      </xslo:if>
+    </xslo:for-each>
+  </xslo:template>
+  <xslo:template mode="index_subfields" match="marc:datafield[@tag='856']">
+    <xslo:for-each select="marc:subfield">
+      <xslo:if test="contains('z', @code)">
+        <z:index name="Electronic-Copy-Availability:w Electronic-Copy-Availability:p">
           <xslo:value-of select="."/>
         </z:index>
       </xslo:if>

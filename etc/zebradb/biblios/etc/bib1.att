@@ -370,4 +370,8 @@ att 9906    ln-audio
 att 9907    ln-subtitle
 
 # ByWater specific
-att 9950 Exhibitions-Note
+att 9950    Exhibitions-Note
+att 9021    Awards
+att 9024    Alt-language
+att 6071    Electronic-Copy-Availability
+att 9026    Accession-number

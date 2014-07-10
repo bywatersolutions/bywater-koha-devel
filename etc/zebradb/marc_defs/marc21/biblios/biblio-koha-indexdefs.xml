@@ -1321,7 +1321,8 @@
 
   <!-- BWS CUSTOM for Guggenheim -->
   <index_subfields xmlns="http://www.koha-community.org/schemas/index-defs" tag="856" subfields="z">
-    <target_index>Electronic-Copy-Availability</target_index>
+    <target_index>Electronic-Copy-Availability:w</target_index>
+    <target_index>Electronic-Copy-Availability:p</target_index>
   </index_subfields>
 
   <!-- Alternate-graphic-representation -->
