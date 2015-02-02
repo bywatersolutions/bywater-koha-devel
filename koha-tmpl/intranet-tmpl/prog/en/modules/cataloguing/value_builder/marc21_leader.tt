@@ -236,6 +236,16 @@
 				[% ELSE %]
 					<option value="8">8- Prepublication level</option>
 				[% END %]
+                                [% IF ( f17I ) %]
+                                        <option value="I" selected="selected">I- Full-level input by OCLC participants</option>
+                                [% ELSE %]
+                                        <option value="I">I- Full-level input by OCLC participants</option>
+                                [% END %]
+                                [% IF ( f17K ) %]
+                                        <option value="K" selected="selected">K- Less-than-full input by OCLC participants</option>
+                                [% ELSE %]
+                                        <option value="K">K- Less-than-full input by OCLC participants</option>
+                                [% END %]
 				[% IF ( f17u ) %]
 					<option value="u" selected="selected">u - Unknown</option>
 				[% ELSE %]
