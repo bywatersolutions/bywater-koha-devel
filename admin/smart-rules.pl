@@ -170,11 +170,14 @@ elsif ($op eq 'add') {
 
 }
 elsif ($op eq "set-branch-defaults") {
-    my $categorycode  = $input->param('categorycode');
-    my $maxissueqty   = $input->param('maxissueqty');
-    my $maxonsiteissueqty = $input->param('maxonsiteissueqty');
-    my $holdallowed   = $input->param('holdallowed');
-    my $returnbranch  = $input->param('returnbranch');
+    my $categorycode       = $input->param('categorycode');
+    my $maxissueqty        = $input->param('maxissueqty');
+    my $maxonsiteissueqty  = $input->param('maxonsiteissueqty');
+    my $holdallowed        = $input->param('holdallowed');
+    my $returnbranch       = $input->param('returnbranch');
+    my $renew_lost_allowed = $input->param('renew_lost_allowed');
+    my $renew_lost_found   = $input->param('renew_lost_found');
+
     $maxissueqty =~ s/\s//g;
     $maxissueqty = undef if $maxissueqty !~ /^\d+/;
     $maxonsiteissueqty =~ s/\s//g;
@@ -186,17 +189,17 @@ elsif ($op eq "set-branch-defaults") {
         my $sth_search = $dbh->prepare("SELECT count(*) AS total
                                         FROM default_circ_rules");
         my $sth_insert = $dbh->prepare("INSERT INTO default_circ_rules
-                                        (maxissueqty, maxonsiteissueqty, holdallowed, returnbranch)
-                                        VALUES (?, ?, ?, ?)");
+                                        (maxissueqty, maxonsiteissueqty, holdallowed, returnbranch, renew_lost_allowed, renew_lost_found)
+                                        VALUES (?, ?, ?, ?, ?, ?)");
         my $sth_update = $dbh->prepare("UPDATE default_circ_rules
-                                        SET maxissueqty = ?, maxonsiteissueqty = ?, holdallowed = ?, returnbranch = ?");
+                                        SET maxissueqty = ?, maxonsiteissueqty = ?, holdallowed = ?, returnbranch = ?, renew_lost_allowed = ?, renew_lost_found = ?");
 
         $sth_search->execute();
         my $res = $sth_search->fetchrow_hashref();
         if ($res->{total}) {
-            $sth_update->execute($maxissueqty, $maxonsiteissueqty, $holdallowed, $returnbranch);
+            $sth_update->execute( $maxissueqty, $maxonsiteissueqty, $holdallowed, $returnbranch, $renew_lost_allowed, $renew_lost_found );
         } else {
-            $sth_insert->execute($maxissueqty, $maxonsiteissueqty, $holdallowed, $returnbranch);
+            $sth_insert->execute( $maxissueqty, $maxonsiteissueqty, $holdallowed, $returnbranch, $renew_lost_allowed, $renew_lost_found );
         }
     } else {
         my $sth_search = $dbh->prepare("SELECT count(*) AS total
@@ -548,12 +551,15 @@ if ($branch eq "*") {
 my $defaults = $sth_defaults->fetchrow_hashref;
 
 if ($defaults) {
-    $template->param(default_holdallowed_none => 1) if($defaults->{holdallowed} == 0);
-    $template->param(default_holdallowed_same => 1) if($defaults->{holdallowed} == 1);
-    $template->param(default_holdallowed_any => 1) if($defaults->{holdallowed} == 2);
-    $template->param(default_maxissueqty => $defaults->{maxissueqty});
-    $template->param(default_maxonsiteissueqty => $defaults->{maxonsiteissueqty});
-    $template->param(default_returnbranch => $defaults->{returnbranch});
+    $template->param( default_holdallowed_none => 1 ) if ( $defaults->{holdallowed} == 0 );
+    $template->param( default_holdallowed_same => 1 ) if ( $defaults->{holdallowed} == 1 );
+    $template->param( default_holdallowed_any  => 1 ) if ( $defaults->{holdallowed} == 2 );
+
+    $template->param( default_maxissueqty        => $defaults->{maxissueqty} );
+    $template->param( default_maxonsiteissueqty  => $defaults->{maxonsiteissueqty} );
+    $template->param( default_returnbranch       => $defaults->{returnbranch} );
+    $template->param( default_renew_lost_allowed => $defaults->{renew_lost_allowed} );
+    $template->param( default_renew_lost_found   => $defaults->{renew_lost_found} );
 }
 
 $template->param(default_rules => ($defaults ? 1 : 0));

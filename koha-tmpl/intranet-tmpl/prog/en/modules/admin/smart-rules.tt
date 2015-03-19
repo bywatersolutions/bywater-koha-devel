@@ -347,7 +347,7 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
         </form>
     </div>
     <div id="defaults-for-this-library" class="container">
-    <h3>Default checkout, hold and return policy[% IF ( humanbranch ) %] for [% humanbranch %][% END %]</h3>
+    <h3>Default checkout, hold, renewal and return policy[% IF ( humanbranch ) %] for [% humanbranch %][% END %]</h3>
         <p>You can set a default maximum number of checkouts, hold policy and return policy that will be used if none is defined below for a particular item type or category.</p>
         <form method="post" action="/cgi-bin/koha/admin/smart-rules.pl">
             <input type="hidden" name="op" value="set-branch-defaults" />
@@ -359,6 +359,8 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
                     <th>Total current on-site checkouts allowed</th>
                     <th>Hold policy</th>
                     <th>Return policy</th>
+                    <th>Renew lost?</th>
+                    <th>Renewal marks lost found</tH>
                     <th>&nbsp;</th>
                     <th>&nbsp;</th>
                 </tr>
@@ -413,6 +415,44 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
                             <option value="noreturn">
                             [% END %]
                                 Item floats
+                            </option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="renew_lost_allowed">
+                            [% IF ( default_renew_lost_allowed == '1' ) %]
+                            <option value="1" selected="selected">
+                            [% ELSE %]
+                            <option value="1">
+                            [% END %]
+                                Allow renewal
+                            </option>
+
+                            [% IF ( default_renew_lost_allowed == '0' ) %]
+                            <option value="0" selected="selected">
+                            [% ELSE %]
+                            <option value="0">
+                            [% END %]
+                                Disallow renewal
+                            </option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="renew_lost_found">
+                            [% IF ( default_renew_lost_found == '1' ) %]
+                            <option value="1" selected="selected">
+                            [% ELSE %]
+                            <option value="1">
+                            [% END %]
+                                marks item found
+                            </option>
+
+                            [% IF ( default_renew_lost_found == '0' ) %]
+                            <option value="0" selected="selected">
+                            [% ELSE %]
+                            <option value="0">
+                            [% END %]
+                                makes no change
                             </option>
                         </select>
                     </td>

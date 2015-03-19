@@ -11390,6 +11390,24 @@ if ( CheckVersion($DBversion) ) {
     SetVersion ($DBversion);
 }
 
+$DBversion = "XXX";
+if ( CheckVersion($DBversion) ) {
+    $dbh->do(q|
+        ALTER TABLE default_circ_rules
+            ADD renew_lost_allowed BOOLEAN NOT NULL DEFAULT  '1',
+            ADD renew_lost_found   BOOLEAN NOT NULL DEFAULT  '0'
+    |);
+
+    $dbh->do(q|
+        ALTER TABLE default_branch_circ_rules
+            ADD renew_lost_allowed BOOLEAN NOT NULL DEFAULT  '1',
+            ADD renew_lost_found   BOOLEAN NOT NULL DEFAULT  '0'
+    |);
+
+    print "Upgrade to $DBversion done (Bug 9805 - Lost items are un-lost if returned, but not if renewed.)\n";
+    SetVersion($DBversion);
+}
+
 # DEVELOPER PROCESS, search for anything to execute in the db_update directory
 # SEE bug 13068
 # if there is anything in the atomicupdate, read and execute it.

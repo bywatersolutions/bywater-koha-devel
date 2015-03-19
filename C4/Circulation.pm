@@ -2847,6 +2847,13 @@ sub CanBookBeRenewed {
         return ( 0, "auto_too_soon" );
     }
 
+    if ( $item->{itemlost} ) {
+        my $schema = Koha::Database->new()->schema();
+        my $rule = $schema->resultset('DefaultBranchCircRule')->single( { branchcode => $branchcode } );
+        $rule ||= $schema->resultset('DefaultCircRule')->single();
+        return ( 0, "item_lost" ) unless $rule->{renew_lost_allowed};
+    }
+
     return ( 1, undef );
 }
 
@@ -2928,10 +2935,19 @@ sub AddRenewal {
     # Update the renewal count on the item, and tell zebra to reindex
     $renews = $biblio->{'renewals'} + 1;
 
+    my $schema = Koha::Database->new()->schema();
+    my $rule = $schema->resultset('DefaultBranchCircRule')->single( { branchcode => _GetCircControlBranch( $item, $borrower ) } );
+    $rule ||= $schema->resultset('DefaultCircRule')->single();
+
     # If item was lost, it has now been found, reverse any list item charges if neccessary.
-    if ( $item->{'itemlost'} ) {
-        if ( C4::Context->preference('RefundLostItemFeeOnReturn') ) {
-            _FixAccountForLostAndReturned( $item->{'itemnumber'}, undef, $item->{'barcode'} );
+    my $itemlost = 0;
+    if ( $item->{itemlost} ) {
+        $itemlost = 1;
+        if ( $rule->renew_lost_found ) {
+            $itemlost = 0;
+            if ( C4::Context->preference('RefundLostItemFeeOnReturn') ) {
+                _FixAccountForLostAndReturned( $item->{itemnumber}, undef, $item->{barcode} );
+            }
         }
     }
 
@@ -2939,7 +2955,7 @@ sub AddRenewal {
         {
             renewals => $renews,
             onloan => $datedue->strftime('%Y-%m-%d %H:%M'),
-            itemlost => 0,
+            itemlost => $itemlost,
         },
         $biblio->{'biblionumber'},
         $itemnumber

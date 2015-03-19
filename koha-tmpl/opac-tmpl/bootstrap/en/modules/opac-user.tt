@@ -248,6 +248,8 @@
                                                         <span class="renewals">([% ISSUE.renewsleft %] of [% ISSUE.renewsallowed %] renewals remaining)</span>
                                                     [% ELSIF ( ISSUE.on_reserve ) %]
                                                         <span class="renewals">(On hold)</span>
+                                                    [% ELSIF ( ISSUE.item_lost ) %]
+                                                        <span class="renewals">(Item is lost)</span>
                                                     [% END %]
                                                     </td>
                                                 [% END %]
