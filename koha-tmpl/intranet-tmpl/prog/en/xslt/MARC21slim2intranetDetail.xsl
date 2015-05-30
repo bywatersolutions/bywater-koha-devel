@@ -667,8 +667,21 @@
             </span>
         </xsl:if>
 
+        <!-- #27117 Added 790 field if $3 -->
+        <xsl:if test="marc:datafield[@tag=790][marc:subfield[@code=3]]">
+            <span class="results_summary other_name"><span class="label">Personal Name, Other: </span>
+                <xsl:for-each select="marc:datafield[@tag=790][marc:subfield[@code=3]]">
+                    <xsl:for-each select="marc:subfield[not(@code=3)]">
+                        <xsl:value-of select="."/>
+                    </xsl:for-each>
+                    <xsl:text> </xsl:text>
+                    <xsl:value-of select="marc:subfield[@code=3]"/>
+                    <xsl:choose><xsl:when test="position()=last()"></xsl:when><xsl:otherwise><xsl:text>; </xsl:text></xsl:otherwise></xsl:choose>
+                </xsl:for-each>
+            </span>
+        </xsl:if>
 
-        <xsl:if test="marc:datafield[substring(@tag, 1, 1) = '6' and not(@tag=655)]">
+        <xsl:if test="marc:datafield[substring(@tag, 1, 1) = '6']">
             <span class="results_summary subjects"><span class="label">Subject(s): </span>
             <xsl:for-each select="marc:datafield[substring(@tag, 1, 1) = '6'][not(@tag=655)]">
             <a>
