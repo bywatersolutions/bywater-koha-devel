@@ -28,3 +28,5 @@ ALTER TABLE  `article_requests` ADD FOREIGN KEY (  `biblionumber` ) REFERENCES  
 ALTER TABLE  `article_requests` ADD FOREIGN KEY (  `itemnumber` ) REFERENCES  `koha_kohaqa`.`items` (
         `itemnumber`
         ) ON DELETE SET NULL ON UPDATE CASCADE ;
+
+ALTER TABLE  `issuingrules` ADD  `article_requests` ENUM(  'no',  'yes',  'bib_only',  'item_only' ) NOT NULL DEFAULT  'no';

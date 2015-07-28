@@ -127,6 +127,7 @@ elsif ($op eq 'add') {
     my $hardduedatecompare = $input->param('hardduedatecompare');
     my $rentaldiscount = $input->param('rentaldiscount');
     my $opacitemholds = $input->param('opacitemholds') || 0;
+    my $article_requests = $input->param('article_requests') || 'no';
     my $overduefinescap = $input->param('overduefinescap') || undef;
     $debug and warn "Adding $br, $bor, $itemtype, $fine, $maxissueqty";
 
@@ -155,6 +156,7 @@ elsif ($op eq 'add') {
         rentaldiscount     => $rentaldiscount,
         onshelfholds       => $onshelfholds,
         opacitemholds      => $opacitemholds,
+        article_requests   => $article_requests,
         overduefinescap    => $overduefinescap,
     };
 

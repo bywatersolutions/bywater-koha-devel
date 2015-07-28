@@ -158,6 +158,7 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
                 <th>Holds allowed (count)</th>
                 <th>On shelf holds allowed</th>
                 <th>Item level holds</th>
+                <th>Article requests</th>
                 <th>Rental discount (%)</th>
                 <th colspan="2">&nbsp;</th>
             </tr>
@@ -222,6 +223,17 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
 							<td>[% rule.reservesallowed %]</td>
                                                         <td>[% IF rule.onshelfholds %]Yes[% ELSE %]No[% END %]</td>
                                                         <td>[% IF rule.opacitemholds == 'F'%]Force[% ELSIF rule.opacitemholds == 'Y'%]Allow[% ELSE %]Don't allow[% END %]</td>
+                                                        <td>
+                                                            [% IF rule.article_requests == 'no' %]
+                                                                No
+                                                            [% ELSIF rule.article_requests == 'yes' %]
+                                                                Yes
+                                                            [% ELSIF rule.article_requests == 'bib_only' %]
+                                                                Record only
+                                                            [% ELSIF rule.article_requests == 'item_only' %]
+                                                                Item only
+                                                            [% END %]
+                                                        </td>
 							<td>[% rule.rentaldiscount %]</td>
                             <td><a href="#" class="editrule">Edit</a></td>
 							<td>
@@ -292,6 +304,14 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
                             <option value="F">Force</option>
                         </select>
                     </td>
+                    <td>
+                        <select id="article_requests" name="article_requests">
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                            <option value="bib_only">Record only</option>
+                            <option value="item_only">Item only</option>
+                        </select>
+                    </td>
                     <td><input type="text" name="rentaldiscount" id="rentaldiscount" size="2" /></td>
                     <td colspan="2">
                         <input type="hidden" name="branch" value="[% current_branch %]"/>
@@ -320,6 +340,7 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
                       <th>Holds allowed (count)</th>
                       <th>On shelf holds allowed</th>
                       <th>Item level holds</th>
+                      <th>Article requests</th>
                       <th>Rental discount (%)</th>
                       <th colspan="2">&nbsp;</th>
                     </tr>
