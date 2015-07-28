@@ -22,6 +22,10 @@ use Modern::Perl;
 use Carp;
 
 use Koha::Database;
+use Koha::Borrowers;
+use Koha::Biblios;
+use Koha::Items;
+use Koha::ArticleRequest::Status;
 
 use base qw(Koha::Object);
 
@@ -34,6 +38,83 @@ Koha::ArticleRequest - Koha Article Request Object class
 =head2 Class Methods
 
 =cut
+
+=head3 process
+
+=cut
+
+sub process {
+    my ( $self ) = @_;
+
+    $self->status( Koha::ArticleRequest::Status::Processing );
+    return $self->store();
+}
+
+=head3 complete
+
+=cut
+
+sub complete {
+    my ( $self ) = @_;
+
+    $self->status( Koha::ArticleRequest::Status::Completed );
+    return $self->store();
+}
+
+=head3 cancel
+
+=cut
+
+sub cancel {
+    my ( $self, $notes ) = @_;
+
+    $self->status( Koha::ArticleRequest::Status::Canceled );
+    $self->notes( $notes ) if $notes;
+    return $self->store();
+}
+
+
+=head3 biblio
+
+Returns the Koha::Biblio object for this article request
+
+=cut
+
+sub biblio {
+    my ( $self ) = @_;
+
+    $self->{_biblio} ||= Koha::Biblios->find( $self->biblionumber() );
+
+    return $self->{_biblio};
+}
+
+=head3 item
+
+Returns the Koha::Item object for this article request
+
+=cut
+
+sub item {
+    my ( $self ) = @_;
+
+    $self->{_item} ||= Koha::Items->find( $self->itemnumber() );
+
+    return $self->{_item};
+}
+
+=head3 borrower
+
+Returns the Koha::Borrower object for this article request
+
+=cut
+
+sub borrower {
+    my ( $self ) = @_;
+
+    $self->{_borrower} ||= Koha::Borrowers->find( $self->borrowernumber() );
+
+    return $self->{_borrower};
+}
 
 =head3 type
 

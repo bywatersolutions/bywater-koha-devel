@@ -23,7 +23,8 @@ use Carp;
 
 use Koha::Database;
 
-use Koha::Borrower;
+use Koha::ArticleRequest;
+use Koha::ArticleRequest::Status;
 
 use base qw(Koha::Objects);
 
@@ -37,12 +38,44 @@ Koha::ArticleRequests - Koha ArticleRequests Object class
 
 =cut
 
+=head3 open
+
+=cut
+
+sub open {
+    return Koha::ArticleRequests->search( { status => Koha::ArticleRequest::Status::Open } );
+}
+
+=head3 processing
+
+=cut
+
+sub processing {
+    return Koha::ArticleRequests->search( { status => Koha::ArticleRequest::Status::Processing } );
+}
+
+=head3 completed
+
+=cut
+
+sub completed {
+    return Koha::ArticleRequests->search( { status => Koha::ArticleRequest::Status::Completed } );
+}
+
+=head3 canceled
+
+=cut
+
+sub canceled {
+    return Koha::ArticleRequests->search( { status => Koha::ArticleRequest::Status::Completed } );
+}
+
 =head3 type
 
 =cut
 
 sub type {
-    return 'ArticleRequests';
+    return 'ArticleRequest';
 }
 
 sub object_class {

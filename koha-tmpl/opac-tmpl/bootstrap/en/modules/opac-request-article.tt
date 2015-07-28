@@ -1,0 +1,157 @@
+[% INCLUDE 'doc-head-open.inc' %]
+<title>[% IF ( LibraryNameTitle ) %][% LibraryNameTitle %][% ELSE %]Koha online[% END %] catalog &rsaquo; Request article</title>
+[% INCLUDE 'doc-head-close.inc' %]
+[% BLOCK cssinclude %][% END %]
+</head>
+
+[% INCLUDE 'bodytag.inc' bodyid='opac-holds' %]
+[% INCLUDE 'masthead.inc' %]
+
+<div class="main">
+    <ul class="breadcrumb">
+        <li><a href="/cgi-bin/koha/opac-main.pl">Home</a> <span class="divider">&rsaquo;</span></li>
+        <li><a href="#">Request article</a></li>
+    </ul>
+
+    <div class="container">
+        [% IF biblio.can_article_request( patron ) %]
+            <h3>Place article request for [% biblio.title %]</h3>
+
+            <form id="place-article-request" method="post" action="/cgi-bin/koha/opac-request-article-do.pl">
+                <input type="hidden" name="biblionumber" id="biblionumber" value="[% biblio.biblionumber %]" />
+
+                <fieldset class="rows">
+                    <ul>
+                        <li>
+                            <label for="title">Title:</label>
+                            <input type="text" name="title" id="title" size="50"/>
+                        </li>
+
+                        <li>
+                            <label for="author">Author:</label>
+                            <input type="text" name="author" id="author" size="50"/>
+                        </li>
+
+                        <li>
+                            <label for="volume">Volume:</label>
+                            <input type="text" name="volume" id="volume" size="50"/>
+                        </li>
+
+                        <li>
+                            <label for="issue">Issue:</label>
+                            <input type="text" name="issue" id="issue" size="50"/>
+                        </li>
+
+                        <li>
+                            <label for="date">Date:</label>
+                            <input type="text" name="date" id="date" size="50"/>
+                        </li>
+
+                        <li>
+                            <label for="pages">Pages:</label>
+                            <input type="text" name="pages" id="pages" size="50"/>
+                        </li>
+
+                        <li>
+                            <label for="chapters">Chapters:</label>
+                            <input type="text" name="chapters" id="chapters" size="50"/>
+                        </li>
+                    </ul>
+                </fieldset>
+
+                [% SET article_request_type = biblio.article_request_type( patron ) %]
+                [% IF article_request_type != 'bib_only' %]
+                    <table class="copiesrow table table-bordered table-striped">
+                        <caption>Select a specific item:</caption>
+                        <thead>
+                            <tr>
+                                <th>&nbsp;</th>
+                                <th>Item type</th>
+                                <th>Barcode</th>
+                                <th>Home library</th>
+                                <th>Call number</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            [% FOREACH item IN biblio.items %]
+                                [% IF item.can_article_request( patron ) %]
+                                    <tr>
+                                        <td>
+                                            [% IF article_request_type == 'item_only' && !checked %]
+                                                [% SET checked = 1 %]
+                                                <input type="radio" name="itemnumber" value="[% item.itemnumber %]" checked="checked" />
+                                            [% ELSE %]
+                                                <input type="radio" name="itemnumber" value="[% item.itemnumber %]" />
+                                            [% END %]
+                                        </td>
+                                        <td>
+                                            [% item.itype %]
+                                        </td>
+                                        <td>
+                                            [% item.barcode %]
+                                        </td>
+                                        <td>
+                                            [% item.homebranch %]
+                                        </td>
+                                        <td>
+                                            [% item.itemcallnumber %]
+                                        </td>
+                                    </tr>
+                                [% END %]
+                            [% END %]
+
+                            [% IF article_request_type != 'item_only' %]
+                                <tr>
+                                    <td>
+                                        <input type="radio" name="itemnumber" value="" checked="checked"/>
+                                    </td>
+                                    <td colspan="4">
+                                        Any item
+                                    </td>
+                                </tr>
+                            [% END %]
+                        </tbody>
+                    </table>
+                [% END %]
+
+                <input type="submit" class="btn" value="Place request" />
+            </form>
+        [% ELSE %]
+            No article requests can be made for this record.
+        [% END %]
+
+    </div> <!-- / .container -->
+</div> <!-- / .main -->
+
+[% INCLUDE 'opac-bottom.inc' %]
+
+[% BLOCK jsinclude %]
+<script type="text/javascript">
+// <![CDATA[
+    $('#place-article-request').on('submit', function( event ){
+        if ( ! $("input:radio[name='itemnumber']").is(":checked") ) {
+            event.preventDefault();
+            alert( _("Please select a specific item for this article request.") );
+            return 0;
+        }
+
+        if (
+               $('#title').val()
+            || $('#author').val()
+            || $('#volume').val()
+            || $('#issue').val()
+            || $('#date').val()
+            || $('#pages').val()
+            || $('#chapters').val()
+        ) {
+            return 1;
+        } else {
+            event.preventDefault();
+            alert( _("Please fill out at least one field to place article request.") );
+            return 0;
+        }
+    });
+// ]]>
+</script>
+[% END %]

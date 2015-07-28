@@ -36,6 +36,7 @@ use C4::Letters;
 use C4::Branch; # GetBranches
 use Koha::DateUtils;
 use Koha::Borrower::Debarments qw(IsDebarred);
+use Koha::Borrowers;
 
 use constant ATTRIBUTE_SHOW_BARCODE => 'SHOW_BCODE';
 
@@ -394,6 +395,7 @@ $template->param(
     SuspendHoldsOpac => C4::Context->preference('SuspendHoldsOpac'),
     AutoResumeSuspendedHolds => C4::Context->preference('AutoResumeSuspendedHolds'),
     OpacHoldNotes => C4::Context->preference('OpacHoldNotes'),
+    borrower => Koha::Borrowers->find($borrowernumber),
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;

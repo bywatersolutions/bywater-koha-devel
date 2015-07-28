@@ -10,6 +10,8 @@ CREATE TABLE  `koha_kohaqa`.`article_requests` (
         `date` TEXT NULL DEFAULT NULL ,
         `pages` TEXT NULL DEFAULT NULL ,
         `chapters` TEXT NULL DEFAULT NULL ,
+        `status` enum('OPEN','PROCESSING','COMPLETED','CANCELED') NOT NULL DEFAULT 'OPEN',
+        `notes` text,
         `created_on` TIMESTAMP NOT NULL ,
         `updated_on` TIMESTAMP NULL DEFAULT NULL ,
         INDEX (  `borrowernumber` ),

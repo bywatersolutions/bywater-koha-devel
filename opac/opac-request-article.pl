@@ -1,7 +1,7 @@
-package Koha::Template::Plugin::Biblio;
+#!/usr/bin/perl
 
 # Copyright ByWater Solutions 2015
-
+#
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it
@@ -19,28 +19,35 @@ package Koha::Template::Plugin::Biblio;
 
 use Modern::Perl;
 
-use Template::Plugin;
-use base qw( Template::Plugin );
+use CGI qw ( -utf8 );
 
-use Koha::Holds;
+use C4::Auth;
+use C4::Output;
+
 use Koha::Biblios;
 use Koha::Borrowers;
 
-sub HoldsCount {
-    my ( $self, $biblionumber ) = @_;
+my $cgi = new CGI;
 
-    my $holds = Koha::Holds->search( { biblionumber => $biblionumber } );
+my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
+    {
+        template_name   => "opac-request-article.tt",
+        query           => $cgi,
+        type            => "opac",
+        authnotrequired => 0,
+        debug           => 1,
+    }
+);
 
-    return $holds->count();
-}
+my $biblionumber = $cgi->param('biblionumber');
 
-sub CanArticleRequest {
-    my ( $self, $biblionumber, $borrowernumber ) = @_;
+my $biblio = Koha::Biblios->find($biblionumber);
+my $patron = Koha::Borrowers->find($borrowernumber);
 
-    my $biblio = Koha::Biblios->find( $biblionumber );
-    my $borrower = Koha::Borrowers->find( $borrowernumber );
+$template->param(
+    biblio => $biblio,
+    patron => $patron,
+);
 
-    return $biblio ? $biblio->can_article_request( $borrower ) : 0;
-}
+output_html_with_http_headers $cgi, $cookie, $template->output;
 
-1;

@@ -82,6 +82,18 @@ __PACKAGE__->table("article_requests");
   data_type: 'text'
   is_nullable: 1
 
+=head2 status
+
+  data_type: 'enum'
+  default_value: 'OPEN'
+  extra: {list => ["OPEN","PROCESSING","COMPLETED","CANCELED"]}
+  is_nullable: 0
+
+=head2 notes
+
+  data_type: 'text'
+  is_nullable: 1
+
 =head2 created_on
 
   data_type: 'timestamp'
@@ -119,6 +131,15 @@ __PACKAGE__->add_columns(
   "pages",
   { data_type => "text", is_nullable => 1 },
   "chapters",
+  { data_type => "text", is_nullable => 1 },
+  "status",
+  {
+    data_type => "enum",
+    default_value => "OPEN",
+    extra => { list => ["OPEN", "PROCESSING", "COMPLETED", "CANCELED"] },
+    is_nullable => 0,
+  },
+  "notes",
   { data_type => "text", is_nullable => 1 },
   "created_on",
   {
@@ -200,8 +221,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07040 @ 2015-07-28 10:40:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Gcq0lkNV972sKkcueQq19w
+# Created by DBIx::Class::Schema::Loader v0.07040 @ 2015-09-02 13:10:22
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KfP2PsyQthZxHfzWAOxGIg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

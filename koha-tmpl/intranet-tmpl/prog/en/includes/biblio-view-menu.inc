@@ -26,6 +26,7 @@
     [% IF ( holdsview ) %]<li class="active">[% ELSE %]<li>[% END %]<a href="/cgi-bin/koha/reserve/request.pl?biblionumber=[% biblio_object_id %]">Holds ([% Biblio.HoldsCount( biblio_object_id ) %])</a></li>
     [% END %]
     [% IF ( EasyAnalyticalRecords ) %][% IF ( analyze ) %]<li class="active">[% ELSE %]<li>[% END %]<a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio_object_id %]&amp;analyze=1">Analytics</a></li>[% END %]
+    [% IF ( article_requests_view ) %]<li class="active">[% ELSE %]<li>[% END %]<a href="/cgi-bin/koha/circ/request-article.pl?biblionumber=[% IF ( object ) %][% object %][% ELSE %][% biblionumber %][% END %]">Article requests</a></li>
 
     [% IF ( subscriptionsnumber ) %]<li><a href="/cgi-bin/koha/serials/serials-search.pl?searched=1&amp;biblionumber=[% biblio_object_id %]">Subscription(s)</a></li>[% END %]
 </ul>
