@@ -693,6 +693,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 article_requests
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ArticleRequest>
+
+=cut
+
+__PACKAGE__->has_many(
+  "article_requests",
+  "Koha::Schema::Result::ArticleRequest",
+  { "foreign.borrowernumber" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 borrower_attributes
 
 Type: has_many
@@ -1154,8 +1169,8 @@ Composing rels: L</aqorder_users> -> ordernumber
 __PACKAGE__->many_to_many("ordernumbers", "aqorder_users", "ordernumber");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-04-27 16:08:40
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Z50zYBD3Hqlv5/EnoLnyZw
+# Created by DBIx::Class::Schema::Loader v0.07040 @ 2015-07-28 10:45:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fTWNasg8AQbvK8aCbP8XoQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
