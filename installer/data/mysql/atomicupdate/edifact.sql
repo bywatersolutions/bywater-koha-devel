@@ -60,15 +60,16 @@ ALTER TABLE aqorders ADD COLUMN suppliers_reference_number varchar(35);
 ALTER TABLE aqorders ADD COLUMN suppliers_reference_qualifier varchar(3);
 
 -- hold the EAN/SAN used in ordering
-CREATE TABLE IF NOT EXISTS edifact_ean (
-  branchcode VARCHAR(10) NOT NULL REFERENCES branches (branchcode),
-  ean varchar(15) NOT NULL,
-  id_code_qualifier VARCHAR(3) NOT NULL DEFAULT '14',
-  CONSTRAINT efk_branchcode FOREIGN KEY ( branchcode ) REFERENCES branches ( branchcode )
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS `edifact_ean` (
+  `branchcode` varchar(10) NOT NULL,
+  `ean` varchar(15) NOT NULL,
+  `id_code_qualifier` varchar(3) NOT NULL DEFAULT '14',
+  KEY `branchcode` (`branchcode`),
+  CONSTRAINT `edifact_ean_ibfk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Syspref budget to hold shipping costs
-INSERT INTO systempreferences (variable, explanation, type) VALUES('EDIInvoicesShippingBudget','The budget code used to allocate shipping charges to when processing EDI Invoice messages',  'free')");
+INSERT INTO systempreferences (variable, explanation, type) VALUES ('EDIInvoicesShippingBudget','The budget code used to allocate shipping charges to when processing EDI Invoice messages',  'free');
 
 -- Add a permission for managing EDI
 INSERT INTO permissions (module_bit, code, description) values (11, 'edi_manage', 'Manage EDIFACT transmissions');
