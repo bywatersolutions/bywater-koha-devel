@@ -24,7 +24,7 @@ use Data::Dumper;
 use Koha::Database;
 
 BEGIN {
-    use_ok('Koha::Biblio');
+    use_ok('Koha::BiblioUtils');
 }
 
 my $database = Koha::Database->new();
@@ -33,7 +33,7 @@ $schema->txn_begin;
 
 # Make a MARC::Record
 
-# Make a Koha::Biblio from it
+# Make a Koha::BiblioUtils from it
 
 # Verify that the fields saved correctly
 
