@@ -1,27 +1,31 @@
 -- Holds details for vendors supplying goods by EDI
-CREATE TABLE IF NOT EXISTS vendor_edi_accounts (
-  id int(11) NOT NULL auto_increment,
-  description text NOT NULL,
-  host varchar(40),
-  username varchar(40),
-  password varchar(40),
-  last_activity date,
-  vendor_id int(11) references aqbooksellers( id ),
-  download_directory text,
-  upload_directory text,
-  san varchar(20),
-  id_code_qualifier varchar(3) default '14',
-  transport varchar(6) default 'FTP',
-  quotes_enabled tinyint(1) not null default 0,
-  invoices_enabled tinyint(1) not null default 0,
-  orders_enabled tinyint(1) not null default 0,
-  shipment_budget integer(11) references aqbudgets( budget_id ),
-  PRIMARY KEY  (id),
-  KEY vendorid (vendor_id),
-  KEY shipmentbudget (shipment_budget),
-  CONSTRAINT vfk_vendor_id FOREIGN KEY ( vendor_id ) REFERENCES aqbooksellers ( id ),
-  CONSTRAINT vfk_shipment_budget FOREIGN KEY ( shipment_budget ) REFERENCES aqbudgets ( budget_id )
+CREATE TABLE IF NOT EXISTS `vendor_edi_accounts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `description` text NOT NULL,
+  `host` varchar(40) DEFAULT NULL,
+  `username` varchar(40) DEFAULT NULL,
+  `password` varchar(40) DEFAULT NULL,
+  `last_activity` date DEFAULT NULL,
+  `vendor_id` int(11) DEFAULT NULL,
+  `download_directory` text,
+  `upload_directory` text,
+  `san` varchar(20) DEFAULT NULL,
+  `id_code_qualifier` varchar(3) DEFAULT '14',
+  `transport` varchar(6) DEFAULT 'FTP',
+  `quotes_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `invoices_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `orders_enabled` tinyint(1) NOT NULL DEFAULT '0',
+  `shipment_budget` int(11) DEFAULT NULL,
+  `order_file_suffix` varchar(3) NOT NULL DEFAULT 'CEP',
+  `quote_file_suffix` varchar(3) NOT NULL DEFAULT 'CEQ',
+  `invoice_file_suffix` varchar(3) NOT NULL DEFAULT 'CEI',
+  PRIMARY KEY (`id`),
+  KEY `vendorid` (`vendor_id`),
+  KEY `shipmentbudget` (`shipment_budget`),
+  CONSTRAINT `vfk_shipment_budget` FOREIGN KEY (`shipment_budget`) REFERENCES `aqbudgets` (`budget_id`),
+  CONSTRAINT `vfk_vendor_id` FOREIGN KEY (`vendor_id`) REFERENCES `aqbooksellers` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 -- Hold the actual edifact messages with links to associated baskets
 CREATE TABLE IF NOT EXISTS edifact_messages (

@@ -94,7 +94,7 @@ sub file_download {
     my $self = shift;
     my @downloaded_files;
 
-    my $file_ext = _get_file_ext( $self->{message_type} );
+    my $file_ext = $self->_get_file_ext( $self->{message_type} );
 
     my $dir = $self->{account}->download_directory;   # makes code more readable
          # C = ready to retrieve E = Edifact
@@ -129,7 +129,7 @@ sub file_download {
 sub sftp_download {
     my $self = shift;
 
-    my $file_ext = _get_file_ext( $self->{message_type} );
+    my $file_ext = $self->_get_file_ext( $self->{message_type} );
 
     # C = ready to retrieve E = Edifact
     my $msg_hash = $self->message_hash();
@@ -193,7 +193,7 @@ sub ingest {
 sub ftp_download {
     my $self = shift;
 
-    my $file_ext = _get_file_ext( $self->{message_type} );
+    my $file_ext = $self->_get_file_ext( $self->{message_type} );
 
     # C = ready to retrieve E = Edifact
 
@@ -352,21 +352,24 @@ sub _abort_download {
 }
 
 sub _get_file_ext {
-    my $type = shift;
+    my ( $self, $type ) = @_;
 
-    # Extension format
+    # Extension format for Europe
     # 1st char Status C = Ready For pickup A = Completed E = Extracted
     # 2nd Char Standard E = Edifact
     # 3rd Char Type of message
+    # Examples: CEP, CEI, CEQ
+
     my %file_types = (
-        QUOTE   => 'CEQ',
-        INVOICE => 'CEI',
-        ALL     => 'CE.',
+        QUOTE   => $self->{account}->order_file_suffix(),
+        INVOICE => $self->{account}->quote_file_suffix(),
     );
+
     if ( exists $file_types{$type} ) {
         return $file_types{$type};
     }
-    return 'XXXX';    # non matching type
+
+    return q{};    # non matching type
 }
 
 sub message_hash {
