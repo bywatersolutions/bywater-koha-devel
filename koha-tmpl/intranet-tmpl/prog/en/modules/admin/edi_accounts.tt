@@ -221,8 +221,8 @@
        <th>Password</th>
        <th>Download Directory</th>
        <th>Upload Directory</th>
-       <th>id_code_type</th>
-       <th>id_code</th>
+       <th>Qualifier</th>
+       <th>SAN</th>
        <th>Quotes</th>
        <th>Orders</th>
        <th>Invoices</th>
