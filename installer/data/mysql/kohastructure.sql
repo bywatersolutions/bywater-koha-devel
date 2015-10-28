@@ -3590,6 +3590,7 @@ CREATE TABLE discharges (
 
 DROP TABLE IF EXISTS edifact_ean;
 CREATE TABLE IF NOT EXISTS edifact_ean (
+  id INT( 11 ) NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST,
   branchcode varchar(10) not null references branches (branchcode),
   ean varchar(15) NOT NULL,
   id_code_qualifier varchar(3) NOT NULL default '14',

@@ -65,6 +65,7 @@ ALTER TABLE aqorders ADD COLUMN suppliers_reference_qualifier varchar(3);
 
 -- hold the EAN/SAN used in ordering
 CREATE TABLE IF NOT EXISTS `edifact_ean` (
+  `id` INT( 11 ) NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST,
   `branchcode` varchar(10) NOT NULL,
   `ean` varchar(15) NOT NULL,
   `id_code_qualifier` varchar(3) NOT NULL DEFAULT '14',
