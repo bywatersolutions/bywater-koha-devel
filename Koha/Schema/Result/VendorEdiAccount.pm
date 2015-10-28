@@ -118,6 +118,27 @@ __PACKAGE__->table("vendor_edi_accounts");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 order_file_suffix
+
+  data_type: 'varchar'
+  default_value: 'CEP'
+  is_nullable: 0
+  size: 3
+
+=head2 quote_file_suffix
+
+  data_type: 'varchar'
+  default_value: 'CEQ'
+  is_nullable: 0
+  size: 3
+
+=head2 invoice_file_suffix
+
+  data_type: 'varchar'
+  default_value: 'CEI'
+  is_nullable: 0
+  size: 3
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -153,6 +174,12 @@ __PACKAGE__->add_columns(
   { data_type => "tinyint", default_value => 0, is_nullable => 0 },
   "shipment_budget",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
+  "order_file_suffix",
+  { data_type => "varchar", default_value => "CEP", is_nullable => 0, size => 3 },
+  "quote_file_suffix",
+  { data_type => "varchar", default_value => "CEQ", is_nullable => 0, size => 3 },
+  "invoice_file_suffix",
+  { data_type => "varchar", default_value => "CEI", is_nullable => 0, size => 3 },
 );
 
 =head1 PRIMARY KEY
@@ -225,8 +252,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-10-02 17:14:15
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6Yp5lyH2ld4lrmaM0OeYcw
+# Created by DBIx::Class::Schema::Loader v0.07040 @ 2015-10-28 06:56:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fOsgH+XGi5K4ToScDxI7Cw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
