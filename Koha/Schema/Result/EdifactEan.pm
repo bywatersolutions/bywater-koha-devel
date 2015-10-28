@@ -23,6 +23,12 @@ __PACKAGE__->table("edifact_ean");
 
 =head1 ACCESSORS
 
+=head2 id
+
+  data_type: 'integer'
+  is_auto_increment: 1
+  is_nullable: 0
+
 =head2 branchcode
 
   data_type: 'varchar'
@@ -46,6 +52,8 @@ __PACKAGE__->table("edifact_ean");
 =cut
 
 __PACKAGE__->add_columns(
+  "id",
+  { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
   "branchcode",
   { data_type => "varchar", is_foreign_key => 1, is_nullable => 0, size => 10 },
   "ean",
@@ -53,6 +61,18 @@ __PACKAGE__->add_columns(
   "id_code_qualifier",
   { data_type => "varchar", default_value => 14, is_nullable => 0, size => 3 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</id>
+
+=back
+
+=cut
+
+__PACKAGE__->set_primary_key("id");
 
 =head1 RELATIONS
 
@@ -72,8 +92,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-09-02 11:37:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:s5Z9txnCIqGyvOj02EOtdQ
+# Created by DBIx::Class::Schema::Loader v0.07040 @ 2015-10-28 06:43:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jckYOQqFiTyEaMvbo5Qk/Q
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
