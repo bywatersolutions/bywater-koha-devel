@@ -84,7 +84,8 @@ sub filename {
         return;
     }
     my $filename = 'ordr' . $self->{basket}->basketno;
-    $filename .= '.CEP';
+    my $suffix = $self->{recipient}->order_file_suffix();
+    $filename .= ".$suffix" if $suffix;
     return $filename;
 }
 

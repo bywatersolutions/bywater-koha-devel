@@ -34,7 +34,7 @@ use Koha::EDI qw( process_quote process_invoice);
 use Koha::Edifact::Transport;
 use Fcntl qw( :DEFAULT :flock :seek );
 
-my $logdir = C4::Context->logdir;
+my $logdir = C4::Context->config("logdir");
 
 # logging set to trace as this may be what you
 # want on implementation
@@ -70,6 +70,7 @@ for my $acct (@edi_accts) {
 
         #update vendor last activity
     }
+
     if ( $acct->orders_enabled ) {
 
         # select pending messages

@@ -121,22 +121,34 @@ __PACKAGE__->table("vendor_edi_accounts");
 =head2 order_file_suffix
 
   data_type: 'varchar'
+<<<<<<< HEAD
   default_value: 'CEP'
   is_nullable: 0
+=======
+  is_nullable: 1
+>>>>>>> 0a334ba5cd3af50abac4b2f24eef7e9551c3f750
   size: 3
 
 =head2 quote_file_suffix
 
   data_type: 'varchar'
+<<<<<<< HEAD
   default_value: 'CEQ'
   is_nullable: 0
+=======
+  is_nullable: 1
+>>>>>>> 0a334ba5cd3af50abac4b2f24eef7e9551c3f750
   size: 3
 
 =head2 invoice_file_suffix
 
   data_type: 'varchar'
+<<<<<<< HEAD
   default_value: 'CEI'
   is_nullable: 0
+=======
+  is_nullable: 1
+>>>>>>> 0a334ba5cd3af50abac4b2f24eef7e9551c3f750
   size: 3
 
 =cut
