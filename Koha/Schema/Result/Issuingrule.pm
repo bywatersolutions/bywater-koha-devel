@@ -191,6 +191,13 @@ __PACKAGE__->table("issuingrules");
   is_nullable: 0
   size: 1
 
+=head2 article_requests
+
+  data_type: 'enum'
+  default_value: 'no'
+  extra: {list => ["no","yes","bib_only","item_only"]}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -257,6 +264,13 @@ __PACKAGE__->add_columns(
   { data_type => "tinyint", default_value => 0, is_nullable => 0 },
   "opacitemholds",
   { data_type => "char", default_value => "N", is_nullable => 0, size => 1 },
+  "article_requests",
+  {
+    data_type => "enum",
+    default_value => "no",
+    extra => { list => ["no", "yes", "bib_only", "item_only"] },
+    is_nullable => 0,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -276,9 +290,9 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("branchcode", "categorycode", "itemtype");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2015-12-31 15:26:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:K/8SKpDjba5CM4+WPZtWPw
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2016-01-12 11:42:27
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:VYqAUkhiWek+5K4PW9xk5g
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

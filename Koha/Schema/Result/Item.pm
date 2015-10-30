@@ -433,6 +433,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 article_requests
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ArticleRequest>
+
+=cut
+
+__PACKAGE__->has_many(
+  "article_requests",
+  "Koha::Schema::Result::ArticleRequest",
+  { "foreign.itemnumber" => "self.itemnumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 biblioitemnumber
 
 Type: belongs_to
@@ -639,8 +654,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2016-03-31 17:10:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:f3uSqG4SRK96xnD8HnhcFA
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2016-01-12 11:43:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:S0bRZ6WQHKohQc1Ze7Euww
 
 __PACKAGE__->belongs_to( biblioitem => "Koha::Schema::Result::Biblioitem", "biblioitemnumber" );
 
@@ -665,4 +680,5 @@ sub effective_itemtype {
     }
 }
 
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
