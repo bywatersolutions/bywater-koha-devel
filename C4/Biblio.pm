@@ -3197,6 +3197,27 @@ sub _koha_delete_biblio_metadata {
 
 =head1 UNEXPORTED FUNCTIONS
 
+=head2 Update005Time
+
+  &Update005Time( $record );
+
+Updates the 005 timestamp of the given record to the current time.
+
+=cut
+
+sub UpdateMarcTimestamp {
+    my ( $record ) = @_;
+
+    my $encoding = C4::Context->preference("marcflavour");
+
+    if ( $encoding =~ /MARC21|UNIMARC/ ) {
+        my @a = (localtime) [5,4,3,2,1,0]; $a[0]+=1900; $a[1]++;
+        # YY MM DD HH MM SS (update year and month)
+        my $f005 = $record->field('005');
+        $f005->update( sprintf( "%4d%02d%02d%02d%02d%04.1f",@a ) ) if $f005;
+    }
+}
+
 =head2 ModBiblioMarc
 
   &ModBiblioMarc($newrec,$biblionumber,$frameworkcode);
@@ -3249,12 +3270,7 @@ sub ModBiblioMarc {
     }
 
     #enhancement 5374: update transaction date (005) for marc21/unimarc
-    if($encoding =~ /MARC21|UNIMARC/) {
-      my @a= (localtime) [5,4,3,2,1,0]; $a[0]+=1900; $a[1]++;
-        # YY MM DD HH MM SS (update year and month)
-      my $f005= $record->field('005');
-      $f005->update(sprintf("%4d%02d%02d%02d%02d%04.1f",@a)) if $f005;
-    }
+    UpdateMarcTimestamp( $record );
 
     my $metadata = {
         biblionumber => $biblionumber,

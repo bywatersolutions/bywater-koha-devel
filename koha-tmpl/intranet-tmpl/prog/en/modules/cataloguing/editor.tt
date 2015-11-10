@@ -46,6 +46,7 @@
             <ul id="prefs-menu" class="dropdown-menu">
                 <li><a id="switch-editor" href="#">Switch to basic editor</a></li>
                 <li><a id="set-field-widgets" href="#"></a></li>
+                <li><a id="open-batches" href="#">Import batches...</a></li>
                 <li class="divider"></li>
                 <li><a class="set-fontSize" style="font-size: .92em" href="#">Small text</a></li>
                 <li><a class="set-fontSize" style="font-size: 1em" href="#">Normal text</a></li>
@@ -89,6 +90,13 @@
         <li><label for="search-by-title">Title:</label></li>
         <li><input class="search-box" data-qualifier="title" id="search-by-title" placeholder="(Ctrl-Alt-T)" /></li>
         <li><a href="#" id="show-advanced-search" title="Show advanced search (Ctrl-Alt-S)">Advanced &raquo;</a></li>
+    </fieldset>
+</form>
+
+<h3>Save to:</h3>
+<form id="save-targets">
+    <fieldset class="brief">
+    <ol></ol>
     </fieldset>
 </form>
 
@@ -249,6 +257,27 @@
 </div>
 </div>
 </div>
+</div>
+
+<div id="batches-ui" class="ui-modal modal hide fade" tabindex="-1" role="dialog" aria-labelledby="batches-title" aria-hidden="true">
+
+<div class="modal-header">
+    <button type="button" class="closebtn" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="batches-title">Import batch settings</h3>
+</div>
+
+<div class="modal-body row-fluid">
+    <div class="span9">
+        <div id="toolbar" class="btn-toolbar">
+            <button class="btn btn-small" type="submit" id="create-batch"><i class="icon-plus"></i> <span>Create new batch...</span></button>
+            <button class="btn btn-small" type="submit" id="manage-batches"><i class="icon-list"></i> <span>Manage import batches...</span></button>
+        </div>
+        <ul id="batches-list"></ul>
+    </div>
+    <div class="span3">
+    </div>
+</div>
+
 </div>
 
 <div id="shortcuts-contents" style="display: none">
