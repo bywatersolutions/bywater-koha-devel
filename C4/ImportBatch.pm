@@ -27,6 +27,8 @@ use C4::Items;
 use C4::Charset;
 use C4::AuthoritiesMarc;
 use C4::MarcModificationTemplates;
+use DateTime;
+use DateTime::Format::Strptime;
 use Koha::Plugins::Handler;
 use Koha::Logger;
 
@@ -1608,10 +1610,12 @@ sub _create_import_record {
 sub _update_import_record_marc {
     my ($import_record_id, $marc_record, $marc_type) = @_;
 
+    my $upload_timestamp = _get_import_record_timestamp($marc_record);
+
     my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("UPDATE import_records SET marc = ?, marcxml = ?
+    my $sth = $dbh->prepare("UPDATE import_records SET marc = ?, marcxml = ?, upload_timestamp = ?
                              WHERE  import_record_id = ?");
-    $sth->execute($marc_record->as_usmarc(), $marc_record->as_xml($marc_type), $import_record_id);
+    $sth->execute($marc_record->as_usmarc(), $marc_record->as_xml($marc_type), $upload_timestamp, $import_record_id);
     $sth->finish();
 }
 
@@ -1632,12 +1636,16 @@ sub _add_auth_fields {
 sub _add_biblio_fields {
     my ($import_record_id, $marc_record) = @_;
 
+    my $controlnumber;
+    if ($marc_record->field('001')) {
+        $controlnumber = $marc_record->field('001')->data();
+    }
     my ($title, $author, $isbn, $issn) = _parse_biblio_fields($marc_record);
     my $dbh = C4::Context->dbh;
-    # FIXME no controlnumber, originalsource
+    # FIXME no originalsource
     $isbn = C4::Koha::GetNormalizedISBN($isbn);
-    my $sth = $dbh->prepare("INSERT INTO import_biblios (import_record_id, title, author, isbn, issn) VALUES (?, ?, ?, ?, ?)");
-    $sth->execute($import_record_id, $title, $author, $isbn, $issn);
+    my $sth = $dbh->prepare("INSERT INTO import_biblios (import_record_id, title, author, isbn, issn, control_number) VALUES (?, ?, ?, ?, ?, ?)");
+    $sth->execute($import_record_id, $title, $author, $isbn, $issn, $controlnumber);
     $sth->finish();
                 
 }
