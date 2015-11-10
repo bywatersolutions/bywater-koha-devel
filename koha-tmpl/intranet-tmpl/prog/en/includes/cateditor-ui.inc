@@ -1180,6 +1180,7 @@ require( [ 'koha-backend', 'search', 'macros', 'marc-editor', 'marc-record', 'pr
 
             if ( !result.errors.length ) {
                 $('#macro-ui').modal('hide');
+                editor.focus();
                 return false;
             }
 
