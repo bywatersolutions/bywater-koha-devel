@@ -37,6 +37,7 @@
             <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" id="save-dropdown">
+                <li><a id="save-with-override" href="#">Save overriding warnings</a></li>
             </ul>
         </div>
         <button class="btn btn-default btn-sm" id="import-records" title="Import an ISO2709 or MARCXML record"><i class="fa fa-download"></i> <span>Import record...</span></button>
