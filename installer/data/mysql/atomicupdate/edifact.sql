@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS `vendor_edi_accounts` (
   `upload_directory` text,
   `san` varchar(20) DEFAULT NULL,
   `id_code_qualifier` varchar(3) DEFAULT '14',
+  `buyer_san` varchar(20) DEFAULT NULL,
+  `buyer_id_code_qualifier` varchar(3) DEFAULT '91',
   `transport` varchar(6) DEFAULT 'FTP',
   `quotes_enabled` tinyint(1) NOT NULL DEFAULT '0',
   `invoices_enabled` tinyint(1) NOT NULL DEFAULT '0',

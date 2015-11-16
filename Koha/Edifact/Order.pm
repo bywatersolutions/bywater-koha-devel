@@ -269,6 +269,16 @@ sub order_msg_header {
         $self->{sender}->ean,
         $self->{sender}->id_code_qualifier
       );
+
+    if ( $self->{recipient}->buyer_san ) {
+        push @header,
+          name_and_address(
+            'BUYER',
+            $self->{recipient}->buyer_san,
+            $self->{recipient}->buyer_id_code_qualifier
+          );
+    }
+
     push @header,
       name_and_address(
         'SUPPLIER',
