@@ -52,8 +52,8 @@
 <form action="/cgi-bin/koha/admin/edi_ean_accounts.pl" name="Eanform" method="post">
   <input type="hidden" name="op" value="save" />
   [% IF ean %]
-  <input type="hidden" name="oldbranchcode" value="[% branchcode %]" />
-  <input type="hidden" name="oldean" value="[% ean %]" />
+  <input type="hidden" name="oldbranchcode" value="[% ean.branchcode.branchcode %]" />
+  <input type="hidden" name="oldean" value="[% ean.ean %]" />
   [% END %]
   <fieldset class="rows">
   <legend>

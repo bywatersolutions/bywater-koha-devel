@@ -87,6 +87,19 @@ __PACKAGE__->table("vendor_edi_accounts");
   is_nullable: 1
   size: 3
 
+=head2 buyer_san
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 20
+
+=head2 buyer_id_code_qualifier
+
+  data_type: 'varchar'
+  default_value: 91
+  is_nullable: 1
+  size: 3
+
 =head2 transport
 
   data_type: 'varchar'
@@ -164,6 +177,10 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 20 },
   "id_code_qualifier",
   { data_type => "varchar", default_value => 14, is_nullable => 1, size => 3 },
+  "buyer_san",
+  { data_type => "varchar", is_nullable => 1, size => 20 },
+  "buyer_id_code_qualifier",
+  { data_type => "varchar", default_value => 91, is_nullable => 1, size => 3 },
   "transport",
   { data_type => "varchar", default_value => "FTP", is_nullable => 1, size => 6 },
   "quotes_enabled",
@@ -252,8 +269,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07040 @ 2015-10-28 07:15:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7Qp2F62yZO1SruXakH2O5w
+# Created by DBIx::Class::Schema::Loader v0.07043 @ 2015-11-16 07:48:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ubcKj1xlaUXmLh4jPNhLfw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
