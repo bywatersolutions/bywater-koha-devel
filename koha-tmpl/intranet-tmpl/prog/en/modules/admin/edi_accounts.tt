@@ -142,6 +142,26 @@
      <input type="text" name="san" id="san" size="20" maxlength="90" value="[% account.san %]" />
   </li>
   <li>
+     <label for="id_code_qualifier">Buyer qualifier:</label>
+     <select name="buyer_id_code_qualifier" id="buyer_id_code_qualifier">
+     [% FOREACH qualifier IN code_qualifiers %]
+        [% IF qualifier.code == account.buyer_id_code_qualifier %]
+           <option value="[% qualifier.code %]" selected="selected">
+               [% qualifier.description %]
+           </option>
+        [% ELSE %]
+           <option value="[% qualifier.code %]">
+              [% qualifier.description %]
+           </option>
+        [% END %]
+     [% END %]
+   </select>
+  </li>
+  <li>
+     <label for="san">Buyer SAN: </label>
+     <input type="text" name="buyer_san" id="buyer_san" size="20" maxlength="90" value="[% account.buyer_san %]" />
+  </li>
+  <li>
      <label for="quotes_enabled">Quotes enabled: </label>
      [% IF account.quotes_enabled %]
        <input type="checkbox" name="quotes_enabled" id="quotes_enabled" value="[% account.quotes_enabled %]" checked />
@@ -235,6 +255,8 @@
        <th>Upload Directory</th>
        <th>Qualifier</th>
        <th>SAN</th>
+       <th>Buyer Qualifier</th>
+       <th>Buyer SAN</th>
        <th>Quotes</th>
        <th>Orders</th>
        <th>Invoices</th>
@@ -256,6 +278,8 @@
       <td>[% account.upload_directory %]</td>
       <td>[% account.id_code_qualifier %]</td>
       <td>[% account.san %]</td>
+      <td>[% account.buyer_id_code_qualifier %]</td>
+      <td>[% account.buyer_san %]</td>
       [% IF account.quotes_enabled %]
          <td>Y</td>
       [% ELSE %]

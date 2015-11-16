@@ -127,19 +127,20 @@ sub addsubmit {
 }
 
 sub editsubmit {
-    $schema->resultset('EdifactEan')->search(
+    my $ean = $schema->resultset('EdifactEan')->single(
         {
             branchcode => $input->param('oldbranchcode'),
             ean        => $input->param('oldean'),
         }
-      )->update_all(
+      );
+
+    $ean->update(
         {
             branchcode        => $input->param('branchcode'),
             ean               => $input->param('ean'),
             id_code_qualifier => $input->param('id_code_qualifier'),
         }
       );
-    return;
 }
 
 sub show_ean {
