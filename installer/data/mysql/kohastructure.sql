@@ -3145,11 +3145,16 @@ CREATE TABLE IF NOT EXISTS vendor_edi_accounts (
   upload_directory text,
   san varchar(20),
   id_code_qualifier varchar(3) default '14',
+  buyer_san varchar(20) DEFAULT NULL,
+  buyer_id_code_qualifier varchar(3) DEFAULT '91',
   transport varchar(6) default 'FTP',
   quotes_enabled tinyint(1) not null default 0,
   invoices_enabled tinyint(1) not null default 0,
   orders_enabled tinyint(1) not null default 0,
   shipment_budget integer(11) references aqbudgets( budget_id ),
+  order_file_suffix varchar(3) NOT NULL DEFAULT 'CEP',
+  quote_file_suffix varchar(3) NOT NULL DEFAULT 'CEQ',
+  invoice_file_suffix varchar(3) NOT NULL DEFAULT 'CEI',
   PRIMARY KEY  (id),
   KEY vendorid (vendor_id),
   KEY shipmentbudget (shipment_budget),
@@ -3588,7 +3593,7 @@ CREATE TABLE discharges (
 
 DROP TABLE IF EXISTS edifact_ean;
 CREATE TABLE IF NOT EXISTS edifact_ean (
-  id INT( 11 ) NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST,
+  id INT( 11 ) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   branchcode varchar(10) not null references branches (branchcode),
   ean varchar(15) NOT NULL,
   id_code_qualifier varchar(3) NOT NULL default '14',
