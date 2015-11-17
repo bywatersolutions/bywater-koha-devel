@@ -50,20 +50,32 @@ CREATE TABLE IF NOT EXISTS edifact_messages (
   CONSTRAINT emfk_basketno FOREIGN KEY ( basketno ) REFERENCES aqbasket ( basketno )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- invoices link back to the edifact message it was generated from
-ALTER TABLE aqinvoices ADD COLUMN message_id INT(11) REFERENCES edifact_messages( id );
+DELIMITER $$
+DROP PROCEDURE IF EXISTS Alter_Table $$
+CREATE PROCEDURE Alter_Table()
+BEGIN
+    DECLARE _count INT;
+    SET _count = ( SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'aqinvoices' AND column_name = 'message_id' ) ;
+    IF _count = 0 THEN
+        -- invoices link back to the edifact message it was generated from
+        ALTER TABLE aqinvoices ADD COLUMN message_id INT(11) REFERENCES edifact_messages( id );
+        -- clean up link on deletes
+        ALTER TABLE aqinvoices ADD CONSTRAINT edifact_msg_fk FOREIGN KEY ( message_id ) REFERENCES edifact_messages ( id ) ON DELETE SET NULL;
 
--- clean up link on deletes
-ALTER TABLE aqinvoices ADD CONSTRAINT edifact_msg_fk FOREIGN KEY ( message_id ) REFERENCES edifact_messages ( id ) ON DELETE SET NULL;
+        -- Hold the supplier ids from quotes for ordering
+        -- although this is an EAN-13 article number the standard says 35 characters ???
+        ALTER TABLE aqorders ADD COLUMN line_item_id varchar(35);
 
--- Hold the supplier ids from quotes for ordering
--- although this is an EAN-13 article number the standard says 35 characters ???
-ALTER TABLE aqorders ADD COLUMN line_item_id varchar(35);
+        -- The suppliers unique reference usually a quotation line number ('QLI')
+        -- Otherwise Suppliers unique orderline reference ('SLI')
+        ALTER TABLE aqorders ADD COLUMN suppliers_reference_number varchar(35);
+        ALTER TABLE aqorders ADD COLUMN suppliers_reference_qualifier varchar(3);
+    END IF;
+END $$
+CALL Alter_Table $$
+DELIMITER ;
 
--- The suppliers unique reference usually a quotation line number ('QLI')
--- Otherwise Suppliers unique orderline reference ('SLI')
-ALTER TABLE aqorders ADD COLUMN suppliers_reference_number varchar(35);
-ALTER TABLE aqorders ADD COLUMN suppliers_reference_qualifier varchar(3);
+
 
 -- hold the EAN/SAN used in ordering
 CREATE TABLE IF NOT EXISTS `edifact_ean` (
@@ -76,9 +88,9 @@ CREATE TABLE IF NOT EXISTS `edifact_ean` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Syspref budget to hold shipping costs
-INSERT INTO systempreferences (variable, explanation, type) VALUES ('EDIInvoicesShippingBudget','The budget code used to allocate shipping charges to when processing EDI Invoice messages',  'free');
+INSERT IGNORE INTO systempreferences (variable, explanation, type) VALUES ('EDIInvoicesShippingBudget','The budget code used to allocate shipping charges to when processing EDI Invoice messages',  'free');
 
 -- Add a permission for managing EDI
-INSERT INTO permissions (module_bit, code, description) values (11, 'edi_manage', 'Manage EDIFACT transmissions');
+INSERT IGNORE INTO permissions (module_bit, code, description) values (11, 'edi_manage', 'Manage EDIFACT transmissions');
 
 
