@@ -81,27 +81,38 @@ else {
     if ( $op eq 'save' ) {
 
         # validate & display
-        my $id     = $input->param('id');
-        my $fields = {
-            description             => $input->param('description')             || undef,
-            host                    => $input->param('host')                    || undef,
-            username                => $input->param('username')                || undef,
-            password                => $input->param('password')                || undef,
-            vendor_id               => $input->param('vendor_id')               || undef,
-            upload_directory        => $input->param('upload_directory')        || undef,
-            download_directory      => $input->param('download_directory')      || undef,
-            id_code_qualifier       => $input->param('id_code_qualifier')       || undef,
-            san                     => $input->param('san')                     || undef,
-            buyer_id_code_qualifier => $input->param('buyer_id_code_qualifier') || undef,
-            buyer_san               => $input->param('buyer_san')               || undef,
-            transport               => $input->param('transport')               || undef,
-            quote_file_suffix       => $input->param('quote_file_suffix')       || undef,
-            order_file_suffix       => $input->param('order_file_suffix')       || undef,
-            invoice_file_suffix     => $input->param('invoice_file_suffix')     || undef,
-            quotes_enabled          => defined $input->param('quotes_enabled'),
-            invoices_enabled        => defined $input->param('invoices_enabled'),
-            orders_enabled          => defined $input->param('orders_enabled'),
-        };
+        my $id  = $input->param('id');
+
+        my $fields;
+        foreach my $f (
+            qw(
+                description
+                host
+                username
+                password
+                vendor_id
+                upload_directory
+                download_directory
+                id_code_qualifier
+                san
+                buyer_id_code_qualifier
+                buyer_id_code_qualifier
+                buyer_san
+                transport
+                quote_file_suffix
+                order_file_suffix
+                invoice_file_suffix
+            )
+          )
+        {
+            my $value = $input->param($f);
+            $fields->{$f} = $value if $value;
+        }
+
+        foreach my $f (qw( quotes_enabled invoices_enabled orders_enabled )) {
+            my $value = $input->param($f);
+            $fields->{$f} = defined $value ? 1 : 0;
+        }
 
         if ($id) {
             $schema->resultset('VendorEdiAccount')->search(
