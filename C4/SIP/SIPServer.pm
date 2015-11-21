@@ -6,6 +6,7 @@ use warnings;
 use FindBin qw($Bin);
 use lib "$Bin";
 use Sys::Syslog qw(syslog);
+use Koha::Logger;
 use Net::Server::PreFork;
 use IO::Socket::INET;
 use Socket qw(:DEFAULT :crlf);
@@ -87,6 +88,7 @@ sub process_request {
     my $service;
     my ($sockaddr, $port, $proto);
     my $transport;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     $self->{config} = $config;
 
@@ -116,7 +118,7 @@ sub process_request {
     $transport = $transports{$self->{service}->{transport}};
 
     if (!defined($transport)) {
-                $logger->warn("Unknown transport '$service->{transport}', dropping");
+        $logger->warn("Unknown transport '$service->{transport}', dropping");
 		syslog("LOG_WARNING", "Unknown transport '%s', dropping", $service->{transport});
 		return;
     } else {
@@ -132,6 +134,7 @@ sub raw_transport {
     my $self = shift;
     my ($input);
     my $service = $self->{service};
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     my $logger = Koha::Logger->get({ interface => 'sip' });
 
@@ -164,32 +167,39 @@ sub raw_transport {
 }
 
 sub get_clean_string {
-	my $string = shift;
-        my $logger = Koha::Logger->get({ interface => 'sip' });
-	if (defined $string) {
-		$logger->debug("get_clean_string  pre-clean(length " . length($string) . "): $string");
-		syslog("LOG_DEBUG", "get_clean_string  pre-clean(length %s): %s", length($string), $string);
-		chomp($string);
-		$string =~ s/^[^A-z0-9]+//;
-		$string =~ s/[^A-z0-9]+$//;
-		$logger->debug("get_clean_string post-clean(length " . length($string) . "): $string" );
-		syslog("LOG_DEBUG", "get_clean_string post-clean(length %s): %s", length($string), $string);
-	} else {
-                $logger->info( "get_clean_string called on undefined" );
-		syslog("LOG_INFO", "get_clean_string called on undefined");
-	}
-	return $string;
+    my $string = shift;
+    my $logger = Koha::Logger->get( { interface => 'sip' } );
+    if ( defined $string ) {
+        $logger->debug( "get_clean_string  pre-clean(length " . length($string) . "): $string" );
+        syslog( "LOG_DEBUG", "get_clean_string  pre-clean(length %s): %s", length($string), $string );
+
+        chomp($string);
+        $string =~ s/^[^A-z0-9]+//;
+        $string =~ s/[^A-z0-9]+$//;
+
+        $logger->debug( "get_clean_string post-clean(length " . length($string) . "): $string)" );
+        syslog( "LOG_DEBUG", "get_clean_string post-clean(length %s): %s", length($string), $string );
+    }
+    else {
+        $logger->info("get_clean_string called on undefined");
+        syslog( "LOG_INFO", "get_clean_string called on undefined" );
+    }
+    return $string;
 }
 
 sub get_clean_input {
-	local $/ = "\012";
-	my $in = <STDIN>;
-	$in = get_clean_string($in);
-	while (my $extra = <STDIN>){
-                Koha::Logger->get({ interface => 'sip' })->error( "get_clean_input got extra lines: $extra" );
-		syslog("LOG_ERR", "get_clean_input got extra lines: %s", $extra);
-	}
-	return $in;
+    local $/ = "\012";
+    my $in = <STDIN>;
+    $in = get_clean_string($in);
+
+    my $logger = Koha::Logger->get( { interface => 'sip' } );
+
+    while ( my $extra = <STDIN> ) {
+        $logger->error("get_clean_input got extra lines: $extra");
+        syslog( "LOG_ERR", "get_clean_input got extra lines: %s", $extra );
+    }
+
+    return $in;
 }
 
 sub telnet_transport {
@@ -221,12 +231,12 @@ sub telnet_transport {
 		$pwd = <STDIN>;
 		alarm 0;
 
-		$logger->debug("telnet_transport 1: uid length " . length($uid) . "pwd length " . length($pwd));
-		syslog("LOG_DEBUG", "telnet_transport 1: uid length %s, pwd length %s", length($uid), length($pwd));
-		$uid = get_clean_string ($uid);
-		$pwd = get_clean_string ($pwd);
-		$logger->debug("telnet_transport 2: uid length " . length($uid) . ", pwd length " . length($pwd) );
-		syslog("LOG_DEBUG", "telnet_transport 2: uid length %s, pwd length %s", length($uid), length($pwd));
+        $logger->debug( "telnet_transport 1: uid length " . length($uid) . ", pwd length " . length($pwd) );
+        syslog( "LOG_DEBUG", "telnet_transport 1: uid length %s, pwd length %s", length($uid), length($pwd) );
+        $uid = get_clean_string($uid);
+        $pwd = get_clean_string($pwd);
+        $logger->debug( "telnet_transport 2: uid length " . length($uid) . ", pwd length " . length($pwd) );
+        syslog( "LOG_DEBUG", "telnet_transport 2: uid length %s, pwd length %s", length($uid), length($pwd) );
 
 	    if (exists ($config->{accounts}->{$uid})
 		&& ($pwd eq $config->{accounts}->{$uid}->{password})) {
@@ -235,28 +245,31 @@ sub telnet_transport {
                 last;
             }
 	    }
+        $logger->warn("Invalid login attempt: ' . ($uid||'')  . '");
 		syslog("LOG_WARNING", "Invalid login attempt: '%s'", ($uid||''));
 		print("Invalid login$CRLF");
 	}
     }; # End of eval
 
     if ($@) {
-                $logger->error( "telnet_transport: Login timed out" );
-		syslog("LOG_ERR", "telnet_transport: Login timed out");
-		die "Telnet Login Timed out";
-    } elsif (!defined($account)) {
-                $logger->error( "telnet_transport: Login Failed" );
-		syslog("LOG_ERR", "telnet_transport: Login Failed");
-		die "Login Failure";
-    } else {
-		print "Login OK.  Initiating SIP$CRLF";
+        $logger->error("telnet_transport: Login timed out");
+        syslog( "LOG_ERR", "telnet_transport: Login timed out" );
+        die "Telnet Login Timed out";
+    }
+    elsif ( !defined($account) ) {
+        $logger->error("telnet_transport: Login Failed");
+        syslog( "LOG_ERR", "telnet_transport: Login Failed" );
+        die "Login Failure";
+    }
+    else {
+        print "Login OK.  Initiating SIP$CRLF";
     }
 
     $self->{account} = $account;
     $logger->debug("telnet_transport: uname/inst: '$account->{id}/$account->{institution}'");
     syslog("LOG_DEBUG", "telnet_transport: uname/inst: '%s/%s'", $account->{id}, $account->{institution});
     $self->sip_protocol_loop();
-    $logger->info( "telnet_transport: shutting down" );
+    $logger->info("telnet_transport: shutting down");
     syslog("LOG_INFO", "telnet_transport: shutting down");
 }
 
@@ -271,6 +284,7 @@ sub sip_protocol_loop {
 	my $config  = $self->{config};
     my $timeout = $self->{service}->{timeout} || $config->{timeout} || 30;
 	my $input;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     # The spec says the first message will be:
 	# 	SIP v1: SC_STATUS
@@ -300,23 +314,23 @@ sub sip_protocol_loop {
 		$input =~ s/[^A-z0-9]+$//s;	# Same on the end, should get DOSsy ^M line-endings too.
 		while (chomp($input)) {warn "Extra line ending on input";}
 		unless ($input) {
-                $logger->error( "sip_protocol_loop: empty input skipped" );
+            $logger->error("sip_protocol_loop: empty input skipped");
             syslog("LOG_ERR", "sip_protocol_loop: empty input skipped");
             print("96$CR");
             next;
 		}
 		# end cheap input hacks
 		my $status = handle($input, $self, $expect);
-		if (!$status) {
-                $logger->error( "sip_protocol_loop: failed to handle " . substr($input,0,2) );
-			syslog("LOG_ERR", "sip_protocol_loop: failed to handle %s",substr($input,0,2));
-		}
+        if ( !$status ) {
+            $logger->error( "sip_protocol_loop: failed to handle " . substr( $input, 0, 2 ) );
+            syslog( "LOG_ERR", "sip_protocol_loop: failed to handle %s", substr( $input, 0, 2 ) );
+        }
 		next if $status eq REQUEST_ACS_RESEND;
-		if ($expect && ($status ne $expect)) {
-			# We received a non-"RESEND" that wasn't what we were expecting.
-                    $logger->error( "sip_protocol_loop: expected $expect, received $input, exiting" );
-		    syslog("LOG_ERR", "sip_protocol_loop: expected %s, received %s, exiting", $expect, $input);
-		}
+        if ( $expect && ( $status ne $expect ) ) {
+            # We received a non-"RESEND" that wasn't what we were expecting.
+            $logger->error("sip_protocol_loop: expected $expect, received $input, exiting");
+            syslog( "LOG_ERR", "sip_protocol_loop: expected %s, received %s, exiting", $expect, $input );
+        }
 		# We successfully received and processed what we were expecting
 		$expect = '';
     alarm 0;

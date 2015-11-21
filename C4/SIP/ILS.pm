@@ -7,6 +7,7 @@ package C4::SIP::ILS;
 use warnings;
 use strict;
 use Sys::Syslog qw(syslog);
+use Koha::Logger;
 use Data::Dumper;
 
 use C4::SIP::ILS::Item;
@@ -81,7 +82,9 @@ sub supports {
 
 sub check_inst_id {
     my ($self, $id, $whence) = @_;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
     if ($id ne $self->{institution}->{id}) {
+        $logger->warn("$whence: received institution '$id', expected '$self->{institution}->{id}'");
         syslog("LOG_WARNING", "%s: received institution '%s', expected '%s'", $whence, $id, $self->{institution}->{id});
         # Just an FYI check, we don't expect the user to change location from that in SIPconfig.xml
     }
@@ -128,6 +131,7 @@ sub offline_ok {
 sub checkout {
     my ($self, $patron_id, $item_id, $sc_renew, $fee_ack) = @_;
     my ($patron, $item, $circ);
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     $circ = C4::SIP::ILS::Transaction::Checkout->new();
     # BEGIN TRANSACTION
@@ -166,6 +170,7 @@ sub checkout {
 				$patron_id, join(', ', @{$patron->{items}}));
 		}
 		else {
+            $logger->error("ILS::Checkout Issue failed");
 			syslog("LOG_ERR", "ILS::Checkout Issue failed");
 		}
     }
@@ -399,6 +404,7 @@ sub renew {
 	$item_props, $fee_ack) = @_;
     my ($patron, $item);
     my $trans;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     $trans = C4::SIP::ILS::Transaction::Renew->new();
     $trans->patron($patron = C4::SIP::ILS::Patron->new( $patron_id ));
@@ -425,9 +431,11 @@ sub renew {
 		my $count = scalar @{$patron->{items}};
 		foreach my $i (@{$patron->{items}}) {
             unless (defined $i->{barcode}) {    # FIXME: using data instead of objects may violate the abstraction layer
+                $logger->error("No barcode for item " . $j+1 . " of $count: $item_id");
                 syslog("LOG_ERR", "No barcode for item %s of %s: $item_id", $j+1, $count);
                 next;
             }
+            $logger->debug("checking item " . $j+1 . "  of $count: $item_id vs. $i->{barcode}");
             syslog("LOG_DEBUG", "checking item %s of %s: $item_id vs. %s", ++$j, $count, $i->{barcode});
             if ($i->{barcode} eq $item_id) {
 				# We have it checked out
@@ -457,13 +465,16 @@ sub renew_all {
     my ($self, $patron_id, $patron_pwd, $fee_ack) = @_;
     my ($patron, $item_id);
     my $trans;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     $trans = C4::SIP::ILS::Transaction::RenewAll->new();
 
     $trans->patron($patron = C4::SIP::ILS::Patron->new( $patron_id ));
     if (defined $patron) {
+        $logger->debug("ILS::renew_all: patron '$patron->name': renew_ok: $patron->renew_ok");
         syslog("LOG_DEBUG", "ILS::renew_all: patron '%s': renew_ok: %s", $patron->name, $patron->renew_ok);
     } else {
+        $logger->debug("ILS::renew_all: Invalid patron id: '$patron_id'");
         syslog("LOG_DEBUG", "ILS::renew_all: Invalid patron id: '%s'", $patron_id);
     }
 

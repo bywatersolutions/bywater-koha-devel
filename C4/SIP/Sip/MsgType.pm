@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use Exporter;
 use Sys::Syslog qw(syslog);
+use Koha::Logger;
 
 use C4::SIP::Sip qw(:all);
 use C4::SIP::Sip::Constants qw(:all);
@@ -279,6 +280,7 @@ sub new {
     my ($class, $msg, $seqno) = @_;
     my $self = {};
     my $msgtag = substr($msg, 0, 2);
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     if ($msgtag eq LOGIN) {
 	# If the client is using the 2.00-style "Login" message
@@ -287,14 +289,18 @@ sub new {
 	# it's using the 2.00 login process, so it must support 2.00.
 		$protocol_version = 2;
     }
+    $logger->debug( "Sip::MsgType::new('$class', '" . substr($msg, 0, 10)
+                    . "...', '$msgtag'): seq.no '$seqno', protocol $protocol_version" );
     syslog("LOG_DEBUG", "Sip::MsgType::new('%s', '%s...', '%s'): seq.no '%s', protocol %s",
 		$class, substr($msg, 0, 10), $msgtag, $seqno, $protocol_version);
 	# warn "SIP PROTOCOL: $protocol_version";	
     if (!exists($handlers{$msgtag})) {
+        $logger->warn("new Sip::MsgType: Skipping message of unknown type '$msgtag' in '$msg'");
 		syslog("LOG_WARNING", "new Sip::MsgType: Skipping message of unknown type '%s' in '%s'",
 	       $msgtag, $msg);
         return;
     } elsif (!exists($handlers{$msgtag}->{protocol}->{$protocol_version})) {
+        $logger->warn("new Sip::MsgType: Skipping message '$msgtag' unsupported by protocol rev. '$protocol_version'");
 		syslog("LOG_WARNING", "new Sip::MsgType: Skipping message '%s' unsupported by protocol rev. '%d'",
 	       $msgtag, $protocol_version);
         return;
@@ -312,6 +318,7 @@ sub _initialize {
 	my ($self, $msg, $control_block) = @_;
 	my ($fs, $fn, $fe);
 	my $proto = $control_block->{protocol}->{$protocol_version};
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
 	$self->{name}    = $control_block->{name};
 	$self->{handler} = $control_block->{handler};
@@ -328,6 +335,7 @@ sub _initialize {
 		$self->{fields}->{$field} = undef;
 	}
 
+    $logger->debug("Sip::MsgType::_initialize('$self->{name}', '$msg', '$proto->{template}', '$proto->{template_len}', ...)");
     syslog("LOG_DEBUG", "Sip::MsgType::_initialize('%s', '%s', '%s', '%s', ...)",
 		$self->{name}, $msg, $proto->{template}, $proto->{template_len});
 
@@ -339,6 +347,7 @@ sub _initialize {
 		$fn = substr($field, 0, 2);
 
 	if (!exists($self->{fields}->{$fn})) {
+        $logger->warn("Unsupported field '$fn' in $self->{name}, message '$msg'");
 		syslog("LOG_WARNING", "Unsupported field '%s' in %s message '%s'",
 			$fn, $self->{name}, $msg);
 	} elsif (defined($self->{fields}->{$fn})) {
@@ -356,6 +365,7 @@ sub handle {
     my ($msg, $server, $req) = @_;
     my $config = $server->{config};
     my $self;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     #
     # What's the field delimiter for variable length fields?
@@ -378,6 +388,7 @@ sub handle {
 		$error_detection = 1;
 
 	if (!verify_cksum($msg)) {
+        $logger->warn("Checksum failed on message '$msg'");
 	    syslog("LOG_WARNING", "Checksum failed on message '%s'", $msg);
 	    # REQUEST_SC_RESEND with error detection
 	    $last_response = REQUEST_SC_RESEND_CKSUM;
@@ -391,6 +402,7 @@ sub handle {
     } elsif ($error_detection) {
 	# We received a non-ED message when ED is supposed to be active.
 	# Warn about this problem, then process the message anyway.
+        $logger->warn("Received message without error detection: '$msg'");
 		syslog("LOG_WARNING",
 	       "Received message without error detection: '%s'", $msg);
 		$error_detection = 0;
@@ -404,6 +416,7 @@ sub handle {
 		return substr($msg, 0, 2);
 	}
 	unless ($self->{handler}) {
+        $logger->warn("No handler defined for '$msg'");
 		syslog("LOG_WARNING", "No handler defined for '%s'", $msg);
         $last_response = REQUEST_SC_RESEND;
         print("$last_response\r");
@@ -504,6 +517,7 @@ sub handle_checkout {
     my ($patron_id, $item_id, $status);
     my ($item, $patron);
     my $resp;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     ($sc_renewal_policy, $no_block, $trans_date, $nb_due_date) =
 	@{$self->{fixed_fields}};
@@ -518,6 +532,7 @@ sub handle_checkout {
 
         # Off-line transactions need to be recorded, but there's
         # not a lot we can do about it
+        $logger->warn("received no-block checkout from terminal '$account->{id}'");
         syslog( "LOG_WARNING", "received no-block checkout from terminal '%s'", $account->{id} );
 
         $status = $ils->checkout_no_block( $patron_id, $item_id, $sc_renewal_policy, $trans_date, $nb_due_date );
@@ -626,6 +641,7 @@ sub handle_checkin {
     my $resp = CHECKIN_RESP;
     my ($no_block, $trans_date, $return_date) = @{$self->{fixed_fields}};
 	my $fields = $self->{fields};
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
 	$current_loc = $fields->{(FID_CURRENT_LOCN)};
 	$inst_id     = $fields->{(FID_INST_ID)};
@@ -640,6 +656,7 @@ sub handle_checkin {
 
     if ($no_block eq 'Y') {
         # Off-line transactions, ick.
+        $logger->warn("received no-block checkin from terminal '$account->{id}'");
         syslog("LOG_WARNING", "received no-block checkin from terminal '%s'", $account->{id});
         $status = $ils->checkin_no_block($item_id, $trans_date, $return_date, $item_props, $cancel);
     } else {
@@ -753,27 +770,32 @@ sub handle_sc_status {
 	($server) or warn "handle_sc_status error: no \$server argument received.";
 	my ($status, $print_width, $sc_protocol_version) = @{$self->{fixed_fields}};
 	my ($new_proto);
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
 	if ($sc_protocol_version =~ /^1\./) {
 		$new_proto = 1;
 	} elsif ($sc_protocol_version =~ /^2\./) {
 		$new_proto = 2;
 	} else {
+        $logger->warn("Unrecognized protocol revision '$sc_protocol_version', falling back to '1'");
 		syslog("LOG_WARNING", "Unrecognized protocol revision '%s', falling back to '1'", $sc_protocol_version);
 		$new_proto = 1;
 	}
 
 	if ($new_proto != $protocol_version) {
+        $logger->info("Setting protocol level to $new_proto");
 		syslog("LOG_INFO", "Setting protocol level to $new_proto");
 		$protocol_version = $new_proto;
 	}
 
     if ($status == SC_STATUS_PAPER) {
-	syslog("LOG_WARNING", "Self-Check unit '%s@%s' out of paper",
-	       $self->{account}->{id}, $self->{account}->{institution});
+        $logger->warn("Self-Check unit '$self->{account}->{id}@$self->{account}->{institution}' out of paper");
+        syslog("LOG_WARNING", "Self-Check unit '%s@%s' out of paper",
+               $self->{account}->{id}, $self->{account}->{institution});
     } elsif ($status == SC_STATUS_SHUTDOWN) {
-	syslog("LOG_WARNING", "Self-Check unit '%s@%s' shutting down",
-	       $self->{account}->{id}, $self->{account}->{institution});
+        $logger->warn("Self-Check unit '$self->{account}->{id}@$self->{account}->{institution}' shutting down");
+        syslog("LOG_WARNING", "Self-Check unit '%s@%s' shutting down",
+               $self->{account}->{id}, $self->{account}->{institution});
     }
 
     $self->{account}->{print_width} = $print_width;
@@ -809,10 +831,13 @@ sub login_core  {
 	my $uid = shift;
 	my $pwd = shift;
     my $status = 1;		# Assume it all works
+    my $logger = Koha::Logger->get({ interface => 'sip' });
     if (!exists($server->{config}->{accounts}->{$uid})) {
+        $logger->warn("MsgType::login_core: Unknown login '$uid'");
 		syslog("LOG_WARNING", "MsgType::login_core: Unknown login '$uid'");
 		$status = 0;
     } elsif ($server->{config}->{accounts}->{$uid}->{password} ne $pwd) {
+        $logger->warn("MsgType::login_core: Invalid password for login '$uid'");
 		syslog("LOG_WARNING", "MsgType::login_core: Invalid password for login '$uid'");
 		$status = 0;
     } else {
@@ -826,15 +851,18 @@ sub login_core  {
 
         my $auth_status = api_auth($uid,$pwd,$inst);
 		if (!$auth_status or $auth_status !~ /^ok$/i) {
+            $logger->warn("api_auth failed for SIP terminal '$uid' of '$inst': " . ($auth_status||'unknown') );
 			syslog("LOG_WARNING", "api_auth failed for SIP terminal '%s' of '%s': %s",
 						$uid, $inst, ($auth_status||'unknown'));
 			$status = 0;
 		} else {
+            $logger->info("Successful login/auth for '$server->{account}->{id}' of '$inst'");
 			syslog("LOG_INFO", "Successful login/auth for '%s' of '%s'", $server->{account}->{id}, $inst);
 			#
 			# initialize connection to ILS
 			#
 			my $module = $server->{config}->{institutions}->{$inst}->{implementation};
+            $logger->debug("login_core: " . Dumper($module) );
 			syslog("LOG_DEBUG", 'login_core: ' . Dumper($module));
             # Suspect this is always ILS but so we don't break any eccentic install (for now)
             if ($module eq 'ILS') {
@@ -842,6 +870,7 @@ sub login_core  {
             }
 			$module->use;
 			if ($@) {
+                $logger->error("$server->{service}: Loading ILS implementation '$module' for institution '$inst' failed");
 				syslog("LOG_ERR", "%s: Loading ILS implementation '%s' for institution '%s' failed",
 						$server->{service}, $module, $inst);
 				die("Failed to load ILS implementation '$module' for $inst");
@@ -850,6 +879,7 @@ sub login_core  {
 			# like   ILS->new(), I think.
 			$server->{ils} = $module->new($server->{institution}, $server->{account});
 			if (!$server->{ils}) {
+                $logger->error("$server->{service}: ILS connection to '$inst' failed");
 			    syslog("LOG_ERR", "%s: ILS connection to '%s' failed", $server->{service}, $inst);
 			    die("Unable to connect to ILS '$inst'");
 			}
@@ -865,6 +895,7 @@ sub handle_login {
     my $inst;
     my $fields;
     my $status = 1;		# Assume it all works
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     $fields = $self->{fields};
     ($uid_algorithm, $pwd_algorithm) = @{$self->{fixed_fields}};
@@ -873,6 +904,7 @@ sub handle_login {
     $pwd = $fields->{(FID_LOGIN_PWD)}; # Terminal PWD, not patron PWD.
 
     if ($uid_algorithm || $pwd_algorithm) {
+        $logger->error("LOGIN: Unsupported non-zero encryption method(s): uid = $uid_algorithm, pwd = $pwd_algorithm");
 		syslog("LOG_ERR", "LOGIN: Unsupported non-zero encryption method(s): uid = $uid_algorithm, pwd = $pwd_algorithm");
 		$status = 0;
     }
@@ -893,6 +925,7 @@ sub summary_info {
     my ($ils, $patron, $summary, $start, $end) = @_;
     my $resp = '';
     my $summary_type;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
     #
     # Map from offsets in the "summary" field of the Patron Information
     # message to the corresponding field and handler
@@ -910,6 +943,7 @@ sub summary_info {
         return '';  # No detailed information required
     }
 
+    $logger->debug("Summary_info: index == '$summary_type', field '$summary_map[$summary_type]->{fid}'");
     syslog("LOG_DEBUG", "Summary_info: index == '%d', field '%s'",
         $summary_type, $summary_map[$summary_type]->{fid});
 
@@ -917,6 +951,7 @@ sub summary_info {
     my $fid  = $summary_map[$summary_type]->{fid};
     my $itemlist = &$func($patron, $start, $end);
 
+    $logger->debug("summary_info: list = (" . join(", ", @{$itemlist}) . ")");
     syslog("LOG_DEBUG", "summary_info: list = (%s)", join(", ", @{$itemlist}));
     foreach my $i (@{$itemlist}) {
         $resp .= add_field($fid, $i->{barcode});
@@ -1168,6 +1203,7 @@ sub handle_item_status_update {
     my $status;
     my $item;
     my $resp = ITEM_STATUS_UPDATE_RESP;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     ($trans_date) = @{$self->{fixed_fields}};
 
@@ -1177,6 +1213,7 @@ sub handle_item_status_update {
     $item_props = $fields->{(FID_ITEM_PROPS)};
 
 	if (!defined($item_id)) {
+        $logger->warn("handle_item_status: received message without Item ID field");
 		syslog("LOG_WARNING",
 			"handle_item_status: received message without Item ID field");
     } else {
@@ -1216,11 +1253,13 @@ sub handle_patron_enable {
     my ($trans_date, $patron_id, $terminal_pwd, $patron_pwd);
     my ($status, $patron);
     my $resp = PATRON_ENABLE_RESP;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     ($trans_date) = @{$self->{fixed_fields}};
     $patron_id = $fields->{(FID_PATRON_ID)};
     $patron_pwd = $fields->{(FID_PATRON_PWD)};
 
+    $logger->debug("handle_patron_enable: patron_id: '$patron_id', patron_pwd: '$patron_pwd'");
     syslog("LOG_DEBUG", "handle_patron_enable: patron_id: '%s', patron_pwd: '%s'",
 	   $patron_id, $patron_pwd);
 
@@ -1269,6 +1308,7 @@ sub handle_hold {
     my $fields = $self->{fields};
     my $status;
     my $resp = HOLD_RESP;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     ($hold_mode, $trans_date) = @{$self->{fixed_fields}};
 
@@ -1292,10 +1332,11 @@ sub handle_hold {
 	$status = $ils->alter_hold($patron_id, $patron_pwd, $item_id, $title_id,
 						$expiry_date, $pickup_locn, $hold_type, $fee_ack);
     } else {
-	syslog("LOG_WARNING", "handle_hold: Unrecognized hold mode '%s' from terminal '%s'",
-	       $hold_mode, $server->{account}->{id});
-	$status = $ils->Transaction::Hold;		# new?
-	$status->screen_msg("System error. Please contact library staff.");
+        $logger->warn("handle_hold: Unrecognized hold mode '$hold_modes' from terminal '$server->{account}->{id}'");
+        syslog("LOG_WARNING", "handle_hold: Unrecognized hold mode '%s' from terminal '%s'",
+               $hold_mode, $server->{account}->{id});
+        $status = $ils->Transaction::Hold;		# new?
+        $status->screen_msg("System error. Please contact library staff.");
     }
 
     $resp .= $status->ok;
@@ -1335,6 +1376,7 @@ sub handle_renew {
     my $status;
     my ($patron, $item);
     my $resp = RENEW_RESP;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     ($third_party, $no_block, $trans_date, $nb_due_date) =
 	@{$self->{fixed_fields}};
@@ -1342,9 +1384,10 @@ sub handle_renew {
     $ils->check_inst_id($fields->{(FID_INST_ID)}, "handle_renew");
 
     if ($no_block eq 'Y') {
-	syslog("LOG_WARNING",
-            "handle_renew: received 'no block' renewal from terminal '%s'",
-	       $server->{account}->{id});
+        $logger->warn("handle_renew: received 'no block' renewal from terminal '$server->{account}->{id}'");
+        syslog("LOG_WARNING",
+                "handle_renew: received 'no block' renewal from terminal '%s'",
+               $server->{account}->{id});
     }
 
     $patron_id  = $fields->{(FID_PATRON_ID)};
@@ -1425,6 +1468,7 @@ sub handle_renew_all {
     my $resp = RENEW_ALL_RESP;
     my $status;
     my (@renewed, @unrenewed);
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     $ils->check_inst_id($fields->{(FID_INST_ID)}, "handle_renew_all");
 
@@ -1500,6 +1544,7 @@ sub send_acs_status {
     my $ils     = $server->{ils}     or die "send_acs_status error: no 'ils' in \$server object:\n" . Dumper($server);
     my ($online_status, $checkin_ok, $checkout_ok, $ACS_renewal_policy);
     my ($status_update_ok, $offline_ok, $timeout, $retries);
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     $online_status = 'Y';
     $checkout_ok = sipbool($ils->checkout_ok);
@@ -1511,15 +1556,17 @@ sub send_acs_status {
     $retries = sprintf("%03d", $policy->{retries});
 
     if (length($timeout) != 3) {
-	syslog("LOG_ERR", "handle_acs_status: timeout field wrong size: '%s'",
-	       $timeout);
-	$timeout = '000';
+        $logger->error("handle_acs_status: timeout field wrong size: '$timeout'");
+        syslog("LOG_ERR", "handle_acs_status: timeout field wrong size: '%s'",
+               $timeout);
+        $timeout = '000';
     }
 
     if (length($retries) != 3) {
-	syslog("LOG_ERR", "handle_acs_status: retries field wrong size: '%s'",
-	       $retries);
-	$retries = '000';
+        $logger->error("handle_acs_status: retries field wrong size: '$retries'");
+        syslog("LOG_ERR", "handle_acs_status: retries field wrong size: '%s'",
+               $retries);
+        $retries = '000';
     }
 
     $msg .= "$online_status$checkin_ok$checkout_ok$ACS_renewal_policy";
@@ -1531,10 +1578,11 @@ sub send_acs_status {
     } elsif ($protocol_version == 2) {
 	$msg .= '2.00';
     } else {
-	syslog("LOG_ERR",
-	       'Bad setting for $protocol_version, "%s" in send_acs_status',
-	       $protocol_version);
-	$msg .= '1.00';
+        $logger->error("Bad setting for \$protocol_version, '$protocol_version' in send_acs_status");
+        syslog("LOG_ERR",
+               'Bad setting for $protocol_version, "%s" in send_acs_status',
+               $protocol_version);
+        $msg .= '1.00';
     }
 
     # Institution ID
@@ -1552,6 +1600,7 @@ sub send_acs_status {
 	    }
 	}
 	if (length($supported_msgs) < 16) {
+        $logger->error("send_acs_status: supported messages '$supported_msgs' too short");
 	    syslog("LOG_ERR", 'send_acs_status: supported messages "%s" too short', $supported_msgs);
 	}
 	$msg .= add_field(FID_SUPPORTED_MSGS, $supported_msgs);
@@ -1561,9 +1610,10 @@ sub send_acs_status {
 
     if (defined($account->{print_width}) && defined($print_line)
 	&& $account->{print_width} < length($print_line)) {
-	syslog("LOG_WARNING", "send_acs_status: print line '%s' too long.  Truncating",
-	       $print_line);
-	$print_line = substr($print_line, 0, $account->{print_width});
+        $logger->warn("send_acs_status: print line '$print_line' too long.  Truncating");
+        syslog("LOG_WARNING", "send_acs_status: print line '%s' too long.  Truncating",
+               $print_line);
+        $print_line = substr($print_line, 0, $account->{print_width});
     }
 
     $msg .= maybe_add(FID_PRINT_LINE, $print_line);
@@ -1581,7 +1631,9 @@ sub send_acs_status {
 sub patron_status_string {
     my $patron = shift;
     my $patron_status;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 
+    $logger->debug("patron_status_string: $patron->id charge_ok: $patron->charge_ok");
     syslog("LOG_DEBUG", "patron_status_string: %s charge_ok: %s", $patron->id, $patron->charge_ok);
     $patron_status = sprintf(
         '%s%s%s%s%s%s%s%s%s%s%s%s%s%s',
