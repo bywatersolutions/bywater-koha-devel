@@ -9,6 +9,7 @@ use strict;
 
 use POSIX qw(strftime);
 use Sys::Syslog qw(syslog);
+use Koha::Logger;
 use Data::Dumper;
 use CGI qw ( -utf8 );
 
@@ -48,6 +49,8 @@ sub new {
 
 sub do_checkout {
 	my $self = shift;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
+    $logger->debug("ILS::Transaction::Checkout performing checkout...");
 	syslog('LOG_DEBUG', "ILS::Transaction::Checkout performing checkout...");
 	my $pending        = $self->{item}->pending_queue;
 	my $shelf          = $self->{item}->hold_shelf;
@@ -99,6 +102,7 @@ sub do_checkout {
             } else {
                 $self->screen_msg($needsconfirmation->{$confirmation});
                 $noerror = 0;
+                $logger->debug("Blocking checkout Reason:$confirmation");
                 syslog('LOG_DEBUG', "Blocking checkout Reason:$confirmation");
             }
         }

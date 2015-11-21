@@ -13,6 +13,7 @@ use Exporter;
 use Carp;
 
 use Sys::Syslog qw(syslog);
+use Koha::Logger;
 use Data::Dumper;
 
 use C4::Debug;
@@ -32,9 +33,12 @@ sub new {
     my ($class, $patron_id) = @_;
     my $type = ref($class) || $class;
     my $self;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
+
     $kp = GetMember(cardnumber=>$patron_id) || GetMember(userid=>$patron_id);
     $debug and warn "new Patron (GetMember): " . Dumper($kp);
     unless (defined $kp) {
+        $logger->debug("new ILS::Patron($patron_id): no such patron");
         syslog("LOG_DEBUG", "new ILS::Patron(%s): no such patron", $patron_id);
         return;
     }
@@ -122,6 +126,7 @@ sub new {
     $ilspatron{items} = GetPendingIssues($kp->{borrowernumber});
     $self = \%ilspatron;
     $debug and warn Dumper($self);
+    $logger->debug("new ILS::Patron($patron_id): found patron '$self->{id}'");
     syslog("LOG_DEBUG", "new ILS::Patron(%s): found patron '%s'", $patron_id,$self->{id});
     bless $self, $type;
     return $self;
@@ -319,9 +324,12 @@ sub block {
 
 sub enable {
     my $self = shift;
+    my $logger = Koha::Logger->get({ interface => 'sip' });
     foreach my $field ('charge_ok', 'renew_ok', 'recall_ok', 'hold_ok', 'inet') {
         $self->{$field} = 1;
     }
+    $logger->debug("Patron($self->{id})->enable: charge: $self->{charge_ok}, "
+                   . "renew:$self->{renew_ok}, recall:$self->{recall_ok}, hold:$self->{hold_ok}");
     syslog("LOG_DEBUG", "Patron(%s)->enable: charge: %s, renew:%s, recall:%s, hold:%s",
        $self->{id}, $self->{charge_ok}, $self->{renew_ok},
        $self->{recall_ok}, $self->{hold_ok});

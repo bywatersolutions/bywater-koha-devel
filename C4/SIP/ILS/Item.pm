@@ -10,6 +10,7 @@ use strict;
 use warnings;
 
 use Sys::Syslog qw(syslog);
+use Koha::Logger;
 use Carp;
 
 use C4::SIP::ILS::Transaction;
@@ -78,7 +79,9 @@ sub new {
 	my $self;
     my $itemnumber = GetItemnumberFromBarcode($item_id);
 	my $item = GetBiblioFromItemNumber($itemnumber);    # actually biblio.*, biblioitems.* AND items.*  (overkill)
+    my $logger = Koha::Logger->get({ interface => 'sip' });
 	if (! $item) {
+        $logger->debug("new ILS::Item('$item_id'): not found");
 		syslog("LOG_DEBUG", "new ILS::Item('%s'): not found", $item_id);
 		warn "new ILS::Item($item_id) : No item '$item_id'.";
         return;
@@ -107,6 +110,7 @@ sub new {
 	$self = $item;
 	bless $self, $type;
 
+    $logger->debug("new ILS::Item('$item_id'): found with title '$self->{title}'");
     syslog("LOG_DEBUG", "new ILS::Item('%s'): found with title '%s'",
 	   $item_id, $self->{title});
 
@@ -169,7 +173,9 @@ sub hold_patron_name {
     my $self = shift;
     my $borrowernumber = (@_ ? shift: $self->hold_patron_id()) or return;
     my $holder = GetMember(borrowernumber=>$borrowernumber);
+    my $logger = Koha::Logger->get({ interface => 'sip' });
     unless ($holder) {
+        $logger->error("While checking hold, GetMember failed for borrowernumber '$borrowernumber'");
         syslog("LOG_ERR", "While checking hold, GetMember failed for borrowernumber '$borrowernumber'");
         return;
     }
