@@ -58,6 +58,7 @@ my $record_type                = $input->param('record_type');
 my $encoding                   = $input->param('encoding') || 'UTF-8';
 my $format                     = $input->param('format') || 'ISO2709';
 my $marc_modification_template = $input->param('marc_modification_template_id');
+my $existing_batch_id          = $input->param('existing_batch_id');
 
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
@@ -145,7 +146,8 @@ if ($completedJobID) {
         $marc_modification_template,
         $comments,       '',
         $parse_items,    0,
-        50, staging_progress_callback( $job, $dbh )
+        50, staging_progress_callback( $job, $dbh ),
+        $existing_batch_id
       );
 
     my $num_with_matches = 0;
@@ -217,6 +219,13 @@ if ($completedJobID) {
             method => 'to_marc',
         });
         $template->param( plugins => \@plugins );
+    }
+
+    if ($existing_batch_id) {
+        $template->param(
+            existing_batch_id => $existing_batch_id,
+            existing_batch => GetImportBatch($existing_batch_id),
+        );
     }
 }
 
