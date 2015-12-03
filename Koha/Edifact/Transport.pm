@@ -264,7 +264,7 @@ sub ftp_upload {
             }
             else {
                 # error in transfer
-
+                croak("Unable to put file!");
             }
         }
     }
