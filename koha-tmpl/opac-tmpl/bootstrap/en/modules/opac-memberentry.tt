@@ -60,6 +60,8 @@
                                 [% IF field == "email" %]<li>Contact information: <a href="#borrower_email">primary email address</a></li>[% END %]
                                 [% IF field == "emailpro" %]<li>Contact information: <a href="#borrower_emailpro">secondary email address</a></li>[% END %]
                                 [% IF field == "B_email" %]<li>Alternate address information: <a href="#borrower_B_email">email address</a></li>[% END %]
+                                [% IF field == "password_match" %]<li>Passwords do not match! <a href="#borrower_password">password</a></li>[% END %]
+                                [% IF field == "password_valid" %]<li>Password does not meet minium requirements! <a href="#borrower_password">password</a></li>[% END %]
                             [% END %]
                         </ul>
                         Please correct the errors and resubmit.
@@ -753,6 +755,13 @@
                 [% UNLESS action == 'edit' %]
                     <fieldset class="rows" id="memberentry_captcha">
                         <ol>
+
+                    [% UNLESS hidden.defined('password') %]
+                    <li><label for="borrower_password" class="required">Password</label>
+                    <input type="text" name="borrower_password" id="password" /></li>
+                    <li><label for="borrower_password2" class="required">Confirm password</label>
+                    <input type="text" name="borrower_password2" id="password2" /></li>
+                    [% END %]
                             <li>
                                 <label for="captcha" class="required">Verification:</label>
 
