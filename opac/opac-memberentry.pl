@@ -66,6 +66,7 @@ $template->param(
     action            => $action,
     hidden            => $hidden,
     mandatory         => $mandatory,
+    minpassw          => C4::Context->preference('minPasswordLength'),
     member_titles     => GetTitles() || undef,
     branches          => GetBranchesLoop(),
     OPACPatronDetails => C4::Context->preference('OPACPatronDetails'),
@@ -112,7 +113,7 @@ if ( $action eq 'create' ) {
             $template->param( 'email' => $borrower{'email'} );
 
             my $verification_token = md5_hex( \%borrower );
-            if(0){$borrower{'password'} = random_string("..........");}
+            $borrower{'password'} = random_string("..........");
             Koha::Borrower::Modifications->new(
                 verification_token => $verification_token )
               ->AddModifications(\%borrower);
@@ -319,8 +320,8 @@ sub CheckForInvalidFields {
     if ( $borrower->{'password'} ne $borrower->{'password2'} ){
         push(@invalidFields, "password_match");
     }
-    if ( $borrower->{'password'}  && $minpw && $borrower->{'password'} ne '****' && (length($borrower->{'password'}) < $minpw) ) {
-       push(@invalidFields, "short_password");
+    if ( $borrower->{'password'}  && $minpw && (length($borrower->{'password'}) < $minpw) ) {
+       push(@invalidFields, "password_invalid");
     }
 
     return \@invalidFields;
