@@ -346,6 +346,17 @@ sub order_line {
                                          # or else all have same details
 
     my $id_string = $orderline->line_item_id;
+    $id_string ||= $biblioitem->ean;
+    $id_string ||= $biblioitem->issn;
+    foreach my $isbn ( split( q{\|}, $biblioitem->isbn ) ) {
+        $isbn = Business::ISBN->new($isbn);
+        next unless $isbn;
+        next unless $isbn->is_valid();
+        my $isbn13 = $isbn->as_isbn13();
+        $isbn = $isbn13->as_string([]);
+        $id_string ||= $isbn;
+        $id_string = $isbn unless $isbn =~ /^978/; #Prefer true ISBN-13 over converted ISBN-13
+    }
 
     # LIN line-number in msg :: if we had a 13 digit ean we could add
     $self->add_seg( lin_segment( $linenumber, $id_string ) );
