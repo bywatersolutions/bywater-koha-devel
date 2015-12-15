@@ -345,23 +345,68 @@ sub order_line {
     my $biblioitem = $biblioitems[0];    # makes the assumption there is 1 only
                                          # or else all have same details
 
-    my $id_string = $orderline->line_item_id;
-    $id_string ||= $biblioitem->ean;
-    $id_string ||= $biblioitem->issn;
-    foreach my $isbn ( split( q{\|}, $biblioitem->isbn ) ) {
-        $isbn = Business::ISBN->new($isbn);
-        next unless $isbn;
-        next unless $isbn->is_valid();
-        my $isbn13 = $isbn->as_isbn13();
-        $isbn = $isbn13->as_string([]);
-        $id_string ||= $isbn;
-        $id_string = $isbn unless $isbn =~ /^978/; #Prefer true ISBN-13 over converted ISBN-13
+    # LIN line-number in msg :: if we had a 13 digit ean we could add
+    my ( $id_string, $id_code );
+
+    if ( $orderline->line_item_id ) {
+        $id_string = $orderline->line_item_id;
+        $id_code = 'EN'; 
+    } elsif ( $biblioitem->ean && $self->{recipient}->lin_use_ean ) {
+        $id_string = $biblioitem->ean;
+        $id_code = 'EN';
+    } elsif ( $biblioitem->issn && $self->{recipient}->lin_use_issn ) {
+        $id_string = $biblioitem->issn;
+        $id_code = 'IS';
+    } elsif ( $biblioitem->isbn && $self->{recipient}->lin_use_isbn ) {
+        foreach my $isbn ( split( q{\|}, $biblioitem->isbn ) ) {
+            $isbn = Business::ISBN->new($isbn);
+            next unless $isbn;
+            next unless $isbn->is_valid();
+            my $isbn13 = $isbn->as_isbn13();
+            $id_string ||= $isbn13->as_string([]);
+            $id_string = $isbn13->as_string([]) if $isbn->type() eq 'ISBN13'; #Prefer true ISBN-13 over converted ISBN-13
+
+            $id_code = 'EN'
+        }
     }
 
-    # LIN line-number in msg :: if we had a 13 digit ean we could add
-    $self->add_seg( lin_segment( $linenumber, $id_string ) );
+    $self->add_seg( lin_segment( $linenumber, $id_string, $id_code ) );
+
 
     # PIA isbn or other id
+    my $product_id_function_code = $id_string ? '1' : '5'; # If we have an id in LIN, these are just additional identifiers
+
+    if ( $biblioitem->ean && $self->{recipient}->pia_use_ean && $biblioitem->ean ne $id_string ) {
+        $id_string = $biblioitem->ean;
+        $id_code = 'EN';
+        $self->add_seg( additional_product_id( $id_string, $id_code, $product_id_function_code ) );
+        $product_id_function_code = '1'; # Any further PIAs are just additional
+    } 
+
+    if ( $biblioitem->issn && $self->{recipient}->pia_use_issn && $biblioitem->issn ne $id_string ) {
+        $id_string = $biblioitem->issn;
+        $id_code = 'IS';
+        $self->add_seg( additional_product_id( $id_string, $id_code, $product_id_function_code ) );
+        $product_id_function_code = '1'; # Any further PIAs are just additional
+    } 
+
+    if ( $biblioitem->isbn ) {
+        foreach my $isbn ( split( q{\|}, $biblioitem->isbn ) ) {
+            $isbn = Business::ISBN->new($isbn);
+            next unless $isbn;
+            next unless $isbn->is_valid();
+
+            if ( $self->{recipient}->pia_use_isbn10 && $isbn->type() eq 'ISBN10' && $isbn->as_string([]) ne $id_string ) {
+                $self->add_seg( additional_product_id( $isbn->as_string([]), 'IB', $product_id_function_code ) );
+                $product_id_function_code = '1'; # Any further PIAs are just additional
+            }
+            if ( $self->{recipient}->pia_use_isbn13 && $isbn->type() eq 'ISBN13' && $isbn->as_string([]) ne $id_string ) {
+                $self->add_seg( additional_product_id( $isbn->as_string([]), 'EN', $product_id_function_code ) );
+                $product_id_function_code = '1'; # Any further PIAs are just additional
+            }
+        }
+    }
+
     my @identifiers;
     foreach my $id ( $biblioitem->ean, $biblioitem->issn, $biblioitem->isbn ) {
         if ( $id && $id ne $id_string ) {
@@ -584,10 +629,12 @@ sub add_seg {
 }
 
 sub lin_segment {
-    my ( $line_number, $item_number_id ) = @_;
+    my ( $line_number, $item_number_id, $item_number_type_coded ) = @_;
+
+    $item_number_type_coded ||= 'EN';
 
     if ($item_number_id) {
-        $item_number_id = "++${item_number_id}:EN";
+        $item_number_id = "++${item_number_id}:$item_number_type_coded";
     }
     else {
         $item_number_id = q||;
@@ -597,24 +644,14 @@ sub lin_segment {
 }
 
 sub additional_product_id {
-    my $isbn_field = shift;
-    my ( $product_id, $product_code );
-    if ( $isbn_field =~ m/(\d{13})/ ) {
-        $product_id   = $1;
-        $product_code = 'EN';
-    }
-    elsif ( $isbn_field =~ m/(\d{9})[Xx\d]/ ) {
-        $product_id   = $1;
-        $product_code = 'IB';
-    }
+    my ( $item_number_id, $item_number_type_coded, $product_id_function_code ) = @_;
 
-    # TBD we could have a manufacturers no issn etc
-    if ( !$product_id ) {
-        return;
-    }
+    $product_id_function_code ||= '5';
+
+    return unless $item_number_id && $item_number_type_coded;
 
     # function id set to 5 states this is the main product id
-    return "PIA+5+$product_id:$product_code$seg_terminator";
+    return "PIA+$product_id_function_code+$item_number_id:$item_number_type_coded$seg_terminator";
 }
 
 sub message_date_segment {

@@ -12,6 +12,11 @@
 [% END %]
 </title>
 [% INCLUDE 'doc-head-close.inc' %]
+<script type="text/javascript">
+    $(function() {
+        $("#advanced-options").toggle();
+    });
+</script>
 </head>
 <body id="admin_edi_acct" class="admin">
 [% INCLUDE 'header.inc' %]
@@ -142,26 +147,6 @@
      <input type="text" name="san" id="san" size="20" maxlength="90" value="[% account.san %]" />
   </li>
   <li>
-     <label for="id_code_qualifier">Buyer qualifier:</label>
-     <select name="buyer_id_code_qualifier" id="buyer_id_code_qualifier">
-     [% FOREACH qualifier IN code_qualifiers %]
-        [% IF qualifier.code == account.buyer_id_code_qualifier %]
-           <option value="[% qualifier.code %]" selected="selected">
-               [% qualifier.description %]
-           </option>
-        [% ELSE %]
-           <option value="[% qualifier.code %]">
-              [% qualifier.description %]
-           </option>
-        [% END %]
-     [% END %]
-   </select>
-  </li>
-  <li>
-     <label for="san">Buyer SAN: </label>
-     <input type="text" name="buyer_san" id="buyer_san" size="20" maxlength="90" value="[% account.buyer_san %]" />
-  </li>
-  <li>
      <label for="quotes_enabled">Quotes enabled: </label>
      [% IF account.quotes_enabled %]
        <input type="checkbox" name="quotes_enabled" id="quotes_enabled" value="[% account.quotes_enabled %]" checked />
@@ -185,19 +170,128 @@
        <input type="checkbox" name="invoices_enabled" id="invoices_enabled" value="[% account.invoices_enabled %]" />
      [% END %]
   </li>
-  <li>
-     <label for="order_file_suffix">Order file suffix: </label>
-     <input type="text" name="order_file_suffix" id="order_file_suffix" size="3" maxlength="3" value="[% account.order_file_suffix %]" />
-  </li>
-  <li>
-     <label for="quote_file_suffix">Quote file suffix: </label>
-     <input type="text" name="quote_file_suffix" id="quote_file_suffix" size="3" maxlength="3" value="[% account.quote_file_suffix %]" />
-  </li>
-  <li>
-     <label for="invoice_file_suffix">Invoice file suffix: </label>
-     <input type="text" name="invoice_file_suffix" id="invoice_file_suffix" size="3" maxlength="3" value="[% account.invoice_file_suffix %]" />
-  </li>
   </ol>
+  </fieldset>
+
+  <a href="#" id="advanced-options-toggle" onclick='$("#advanced-options").toggle(); return false;'>Advanced options</a>
+  <fieldset id="advanced-options" class="rows">
+    <legend>Advanced options</legend>
+
+    <fieldset class="rows">
+      <legend>Buyer SAN</legend>
+      <ol>
+        <li>
+           <label for="id_code_qualifier">Buyer qualifier:</label>
+           <select name="buyer_id_code_qualifier" id="buyer_id_code_qualifier">
+              [% FOREACH qualifier IN code_qualifiers %]
+                 [% IF qualifier.code == account.buyer_id_code_qualifier %]
+                    <option value="[% qualifier.code %]" selected="selected">
+                        [% qualifier.description %]
+                    </option>
+                 [% ELSE %]
+                    <option value="[% qualifier.code %]">
+                       [% qualifier.description %]
+                    </option>
+                 [% END %]
+              [% END %]
+           </select>
+        </li>
+        <li>
+           <label for="san">Buyer SAN: </label>
+           <input type="text" name="buyer_san" id="buyer_san" size="20" maxlength="90" value="[% account.buyer_san %]" />
+        </li>
+        Entering a SAN here will generate an additional NAD+BY segment for the order file with the SAN and qualifier supplied.
+      </ol>
+    </fieldset>
+
+    <fieldset class="rows">
+      <legend>File suffixes</legend>
+      <ol>
+        <li>
+          <label for="order_file_suffix">Order file suffix: </label>
+          <input type="text" name="order_file_suffix" id="order_file_suffix" size="3" maxlength="3" value="[% account.order_file_suffix %]" />
+        </li>
+        <li>
+          <label for="quote_file_suffix">Quote file suffix: </label>
+          <input type="text" name="quote_file_suffix" id="quote_file_suffix" size="3" maxlength="3" value="[% account.quote_file_suffix %]" />
+        </li>
+        <li>
+          <label for="invoice_file_suffix">Invoice file suffix: </label>
+          <input type="text" name="invoice_file_suffix" id="invoice_file_suffix" size="3" maxlength="3" value="[% account.invoice_file_suffix %]" />
+        </li>
+      </ol>
+    </fieldset>
+
+    <fieldset class="rows">
+      <legend>LIN values</legend>
+      <ol>
+        <li>
+           <label for="lin_use_ean">EAN: </label>
+           [% IF account.lin_use_ean %]
+             <input type="checkbox" name="lin_use_ean" id="lin_use_ean" value="[% account.lin_use_ean %]" checked="checked" />
+           [% ELSE %]
+             <input type="checkbox" name="lin_use_ean" id="lin_use_ean" value="[% account.lin_use_ean %]" />
+           [% END %]
+        </li>
+        <li>
+           <label for="lin_use_issn">ISSN: </label>
+           [% IF account.lin_use_issn %]
+             <input type="checkbox" name="lin_use_issn" id="lin_use_issn" value="[% account.lin_use_issn %]" checked="checked" />
+           [% ELSE %]
+             <input type="checkbox" name="lin_use_issn" id="lin_use_issn" value="[% account.lin_use_issn %]" />
+           [% END %]
+        </li>
+        <li>
+           <label for="lin_use_issn">ISBN: </label>
+           [% IF account.lin_use_isbn %]
+             <input type="checkbox" name="lin_use_isbn" id="lin_use_isbn" value="[% account.lin_use_isbn %]" checked="checked" />
+           [% ELSE %]
+             <input type="checkbox" name="lin_use_isbn" id="lin_use_isbn" value="[% account.lin_use_isbn %]" />
+           [% END %]
+        </li>
+      </ol>
+      LIN field will be populated using the first valid identifier found for the order line, from top to bottom.
+    </fieldset>
+
+    <fieldset class="rows">
+      <legend>PIA values</legend>
+      <ol>
+        <li>
+           <label for="pia_use_ean">EAN: </label>
+           [% IF account.pia_use_ean %]
+             <input type="checkbox" name="pia_use_ean" id="pia_use_ean" value="[% account.pia_use_ean %]" checked="checked" />
+           [% ELSE %]
+             <input type="checkbox" name="pia_use_ean" id="pia_use_ean" value="[% account.pia_use_ean %]" />
+           [% END %]
+        </li>
+        <li>
+           <label for="pia_use_issn">ISSN: </label>
+           [% IF account.pia_use_issn %]
+             <input type="checkbox" name="pia_use_issn" id="pia_use_issn" value="[% account.pia_use_issn %]" checked="checked" />
+           [% ELSE %]
+             <input type="checkbox" name="pia_use_issn" id="pia_use_issn" value="[% account.pia_use_issn %]" />
+           [% END %]
+        </li>
+        <li>
+           <label for="pia_use_issn">ISBN-10: </label>
+           [% IF account.pia_use_isbn10 %]
+             <input type="checkbox" name="pia_use_isbn10" id="pia_use_isbn10" value="[% account.pia_use_isbn10 %]" checked="checked" />
+           [% ELSE %]
+             <input type="checkbox" name="pia_use_isbn10" id="pia_use_isbn10" value="[% account.pia_use_isbn10 %]" />
+           [% END %]
+        </li>
+        <li>
+           <label for="pia_use_issn">ISBN-13: </label>
+           [% IF account.pia_use_isbn13 %]
+             <input type="checkbox" name="pia_use_isbn13" id="pia_use_isbn13" value="[% account.pia_use_isbn13 %]" checked="checked" />
+           [% ELSE %]
+             <input type="checkbox" name="pia_use_isbn13" id="pia_use_isbn13" value="[% account.pia_use_isbn13 %]" />
+           [% END %]
+        </li>
+        PIA fields will be generated for each identifier selected if that identifier exists for the given order line.
+      </ol>
+    </fieldset>
+
   </fieldset>
 
   <fieldset class="action">

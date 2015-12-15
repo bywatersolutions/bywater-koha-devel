@@ -109,7 +109,20 @@ else {
             $fields->{$f} = $value if $value;
         }
 
-        foreach my $f (qw( quotes_enabled invoices_enabled orders_enabled )) {
+        foreach my $f (
+            qw(
+                quotes_enabled
+                invoices_enabled
+                orders_enabled
+                lin_use_ean
+                lin_use_issn
+                lin_use_isbn
+                pia_use_ean
+                pia_use_issn
+                pia_use_isbn10
+                pia_use_isbn13
+            )
+        ) {
             my $value = $input->param($f);
             $fields->{$f} = defined $value ? 1 : 0;
         }

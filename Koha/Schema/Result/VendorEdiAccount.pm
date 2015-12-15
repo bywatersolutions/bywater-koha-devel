@@ -87,19 +87,6 @@ __PACKAGE__->table("vendor_edi_accounts");
   is_nullable: 1
   size: 3
 
-=head2 buyer_san
-
-  data_type: 'varchar'
-  is_nullable: 1
-  size: 20
-
-=head2 buyer_id_code_qualifier
-
-  data_type: 'varchar'
-  default_value: 91
-  is_nullable: 1
-  size: 3
-
 =head2 transport
 
   data_type: 'varchar'
@@ -152,6 +139,61 @@ __PACKAGE__->table("vendor_edi_accounts");
   is_nullable: 0
   size: 3
 
+=head2 buyer_san
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 20
+
+=head2 buyer_id_code_qualifier
+
+  data_type: 'varchar'
+  default_value: 91
+  is_nullable: 1
+  size: 3
+
+=head2 lin_use_ean
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 0
+
+=head2 lin_use_issn
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 0
+
+=head2 lin_use_isbn
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 0
+
+=head2 pia_use_ean
+
+  data_type: 'tinyint'
+  default_value: 1
+  is_nullable: 0
+
+=head2 pia_use_issn
+
+  data_type: 'tinyint'
+  default_value: 1
+  is_nullable: 0
+
+=head2 pia_use_isbn10
+
+  data_type: 'tinyint'
+  default_value: 1
+  is_nullable: 0
+
+=head2 pia_use_isbn13
+
+  data_type: 'tinyint'
+  default_value: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -177,10 +219,6 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 20 },
   "id_code_qualifier",
   { data_type => "varchar", default_value => 14, is_nullable => 1, size => 3 },
-  "buyer_san",
-  { data_type => "varchar", is_nullable => 1, size => 20 },
-  "buyer_id_code_qualifier",
-  { data_type => "varchar", default_value => 91, is_nullable => 1, size => 3 },
   "transport",
   { data_type => "varchar", default_value => "FTP", is_nullable => 1, size => 6 },
   "quotes_enabled",
@@ -197,6 +235,24 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", default_value => "CEQ", is_nullable => 0, size => 3 },
   "invoice_file_suffix",
   { data_type => "varchar", default_value => "CEI", is_nullable => 0, size => 3 },
+  "buyer_san",
+  { data_type => "varchar", is_nullable => 1, size => 20 },
+  "buyer_id_code_qualifier",
+  { data_type => "varchar", default_value => 91, is_nullable => 1, size => 3 },
+  "lin_use_ean",
+  { data_type => "tinyint", default_value => 0, is_nullable => 0 },
+  "lin_use_issn",
+  { data_type => "tinyint", default_value => 0, is_nullable => 0 },
+  "lin_use_isbn",
+  { data_type => "tinyint", default_value => 0, is_nullable => 0 },
+  "pia_use_ean",
+  { data_type => "tinyint", default_value => 1, is_nullable => 0 },
+  "pia_use_issn",
+  { data_type => "tinyint", default_value => 1, is_nullable => 0 },
+  "pia_use_isbn10",
+  { data_type => "tinyint", default_value => 1, is_nullable => 0 },
+  "pia_use_isbn13",
+  { data_type => "tinyint", default_value => 1, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -269,8 +325,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07043 @ 2015-11-16 07:48:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ubcKj1xlaUXmLh4jPNhLfw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-12-15 07:21:53
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qcPwXVjbPRUao7Xg0mwFDg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

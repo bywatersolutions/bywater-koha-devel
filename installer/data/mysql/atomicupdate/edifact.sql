@@ -21,6 +21,13 @@ CREATE TABLE IF NOT EXISTS `vendor_edi_accounts` (
   `order_file_suffix` varchar(3) NOT NULL DEFAULT 'CEP',
   `quote_file_suffix` varchar(3) NOT NULL DEFAULT 'CEQ',
   `invoice_file_suffix` varchar(3) NOT NULL DEFAULT 'CEI',
+  `lin_use_ean` tinyint(1) NOT NULL DEFAULT '0',
+  `lin_use_issn` tinyint(1) NOT NULL DEFAULT '0',
+  `lin_use_isbn` tinyint(1) NOT NULL DEFAULT '0',
+  `pia_use_ean` tinyint(1) NOT NULL DEFAULT '1',
+  `pia_use_issn` tinyint(1) NOT NULL DEFAULT '1',
+  `pia_use_isbn10` tinyint(1) NOT NULL DEFAULT '1',
+  `pia_use_isbn13` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `vendorid` (`vendor_id`),
   KEY `shipmentbudget` (`shipment_budget`),
@@ -50,6 +57,26 @@ CREATE TABLE IF NOT EXISTS edifact_messages (
   CONSTRAINT emfk_basketno FOREIGN KEY ( basketno ) REFERENCES aqbasket ( basketno )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Upgrade the vendor_edi_accounts table if the lin and pia columns don't exist
+DELIMITER $$
+DROP PROCEDURE IF EXISTS Alter_Table $$
+CREATE PROCEDURE Alter_Table()
+BEGIN
+    DECLARE _count INT;
+    SET _count = ( SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'vendor_edi_accounts' AND column_name = 'lin_use_ean' ) ;
+    IF _count = 0 THEN
+        ALTER TABLE vendor_edi_accounts ADD COLUMN `lin_use_ean` tinyint(1) NOT NULL DEFAULT '0';
+        ALTER TABLE vendor_edi_accounts ADD COLUMN `lin_use_issn` tinyint(1) NOT NULL DEFAULT '0';
+        ALTER TABLE vendor_edi_accounts ADD COLUMN `lin_use_isbn` tinyint(1) NOT NULL DEFAULT '0';
+        ALTER TABLE vendor_edi_accounts ADD COLUMN `pia_use_ean` tinyint(1) NOT NULL DEFAULT '1';
+        ALTER TABLE vendor_edi_accounts ADD COLUMN `pia_use_issn` tinyint(1) NOT NULL DEFAULT '1';
+        ALTER TABLE vendor_edi_accounts ADD COLUMN `pia_use_isbn10` tinyint(1) NOT NULL DEFAULT '1';
+        ALTER TABLE vendor_edi_accounts ADD COLUMN `pia_use_isbn13` tinyint(1) NOT NULL DEFAULT '1';
+    END IF;
+END $$
+CALL Alter_Table $$
+DELIMITER ;
+
 DELIMITER $$
 DROP PROCEDURE IF EXISTS Alter_Table $$
 CREATE PROCEDURE Alter_Table()
@@ -74,7 +101,6 @@ BEGIN
 END $$
 CALL Alter_Table $$
 DELIMITER ;
-
 
 
 -- hold the EAN/SAN used in ordering
