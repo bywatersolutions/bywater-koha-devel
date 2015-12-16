@@ -152,12 +152,12 @@ sub raw_transport {
     }
 
     $self->{logger} = Koha::Logger->get( { interface => 'sip', category => $self->{account}->{id} } ); # Add id to namespace
-    $self->{logger}->debug("raw_transport: uname/inst: '$self->{account}->{id}/$self->{account}->{institution}'");
+    $self->{logger}->debug("$self->{account}->{id}: raw_transport: uname/inst: '$self->{account}->{id}/$self->{account}->{institution}'");
     syslog("LOG_DEBUG", "raw_transport: uname/inst: '%s/%s'", $self->{account}->{id}, $self->{account}->{institution});
 
     $self->sip_protocol_loop();
 
-    $self->{logger}->info("raw_transport: shutting down");
+    $self->{logger}->info("$self->{account}->{id}: raw_transport: shutting down");
     syslog("LOG_INFO", "raw_transport: shutting down");
 }
 
@@ -260,10 +260,10 @@ sub telnet_transport {
 
     $self->{account} = $account;
     $self->{logger} = Koha::Logger->get( { interface => 'sip', category => $self->{account}->{id} } ); # Add id to namespace
-    $self->{logger}->debug("telnet_transport: uname/inst: '$account->{id}/$account->{institution}'");
+    $self->{logger}->debug("$self->{account}->{id}: telnet_transport: uname/inst: '$account->{id}/$account->{institution}'");
     syslog("LOG_DEBUG", "telnet_transport: uname/inst: '%s/%s'", $account->{id}, $account->{institution});
     $self->sip_protocol_loop();
-    $self->{logger}->info("telnet_transport: shutting down");
+    $self->{logger}->info("$self->{account}->{id}: telnet_transport: shutting down");
     syslog("LOG_INFO", "telnet_transport: shutting down");
 }
 
@@ -306,7 +306,7 @@ sub sip_protocol_loop {
 		$input =~ s/[^A-z0-9]+$//s;	# Same on the end, should get DOSsy ^M line-endings too.
 		while (chomp($input)) {warn "Extra line ending on input";}
 		unless ($input) {
-            $self->{logger}->error("sip_protocol_loop: empty input skipped");
+            $self->{logger}->error("$self->{account}->{id}: sip_protocol_loop: empty input skipped");
             syslog("LOG_ERR", "sip_protocol_loop: empty input skipped");
             print("96$CR");
             next;
@@ -314,13 +314,13 @@ sub sip_protocol_loop {
 		# end cheap input hacks
 		my $status = handle($input, $self, $expect);
         if ( !$status ) {
-            $self->{logger}->error( "sip_protocol_loop: failed to handle " . substr( $input, 0, 2 ) );
+            $self->{logger}->error( "$self->{account}->{id}: sip_protocol_loop: failed to handle " . substr( $input, 0, 2 ) );
             syslog( "LOG_ERR", "sip_protocol_loop: failed to handle %s", substr( $input, 0, 2 ) );
         }
 		next if $status eq REQUEST_ACS_RESEND;
         if ( $expect && ( $status ne $expect ) ) {
             # We received a non-"RESEND" that wasn't what we were expecting.
-            $self->{logger}->error("sip_protocol_loop: expected $expect, received $input, exiting");
+            $self->{logger}->error("$self->{account}->{id}: sip_protocol_loop: expected $expect, received $input, exiting");
             syslog( "LOG_ERR", "sip_protocol_loop: expected %s, received %s, exiting", $expect, $input );
         }
 		# We successfully received and processed what we were expecting
