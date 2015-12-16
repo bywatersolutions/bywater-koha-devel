@@ -88,11 +88,10 @@ sub process_request {
     my $service;
     my ($sockaddr, $port, $proto);
     my $transport;
-    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     $self->{config} = $config;
 
-    my $logger = Koha::Logger->get({ interface => 'sip' });
+    $self->{logger} = Koha::Logger->get({ interface => 'sip' });
 
     my $sockname = getsockname(STDIN);
 
@@ -110,7 +109,7 @@ sub process_request {
     $self->{service} = $config->find_service($sockaddr, $port, $proto);
 
     if (!defined($self->{service})) {
-                $logger->error("process_request: Unknown recognized server connection: $sockaddr:$port/$proto");
+                $self->{logger}->error("process_request: Unknown recognized server connection: $sockaddr:$port/$proto");
 		syslog("LOG_ERR", "process_request: Unknown recognized server connection: %s:%s/%s", $sockaddr, $port, $proto);
 		die "process_request: Bad server connection";
     }
@@ -118,7 +117,7 @@ sub process_request {
     $transport = $transports{$self->{service}->{transport}};
 
     if (!defined($transport)) {
-        $logger->warn("Unknown transport '$service->{transport}', dropping");
+        $self->{logger}->warn("Unknown transport '$service->{transport}', dropping");
 		syslog("LOG_WARNING", "Unknown transport '%s', dropping", $service->{transport});
 		return;
     } else {
@@ -134,20 +133,17 @@ sub raw_transport {
     my $self = shift;
     my ($input);
     my $service = $self->{service};
-    my $logger = Koha::Logger->get({ interface => 'sip' });
-
-    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     while (!$self->{account}) {
     local $SIG{ALRM} = sub { die "raw_transport Timed Out!\n"; };
 
-    $logger->debug("raw_transport: timeout is $service->{timeout}");
+    $self->{logger}->debug("raw_transport: timeout is $service->{timeout}");
     syslog("LOG_DEBUG", "raw_transport: timeout is %d", $service->{timeout});
 
     $input = read_SIP_packet(*STDIN);
     if (!$input) {
         # EOF on the socket
-        $logger->info("raw_transport: shutting down: EOF during login");
+        $self->{logger}->info("raw_transport: shutting down: EOF during login");
         syslog("LOG_INFO", "raw_transport: shutting down: EOF during login");
         return;
     }
@@ -155,47 +151,44 @@ sub raw_transport {
     last if C4::SIP::Sip::MsgType::handle($input, $self, LOGIN);
     }
 
-    $logger->debug("raw_transport: uname/inst: '$self->{account}->{id}/$self->{account}->{institution}'");
-    syslog("LOG_DEBUG", "raw_transport: uname/inst: '%s/%s'",
-	   $self->{account}->{id},
-	   $self->{account}->{institution});
+    $self->{logger} = Koha::Logger->get( { interface => 'sip', category => $self->{account}->{id} } ); # Add id to namespace
+    $self->{logger}->debug("raw_transport: uname/inst: '$self->{account}->{id}/$self->{account}->{institution}'");
+    syslog("LOG_DEBUG", "raw_transport: uname/inst: '%s/%s'", $self->{account}->{id}, $self->{account}->{institution});
 
     $self->sip_protocol_loop();
 
-    $logger->info("raw_transport: shutting down");
+    $self->{logger}->info("raw_transport: shutting down");
     syslog("LOG_INFO", "raw_transport: shutting down");
 }
 
 sub get_clean_string {
+    my $self = shift;
     my $string = shift;
-    my $logger = Koha::Logger->get( { interface => 'sip' } );
     if ( defined $string ) {
-        $logger->debug( "get_clean_string  pre-clean(length " . length($string) . "): $string" );
+        $self->{logger}->debug( "get_clean_string  pre-clean(length " . length($string) . "): $string" );
         syslog( "LOG_DEBUG", "get_clean_string  pre-clean(length %s): %s", length($string), $string );
 
         chomp($string);
         $string =~ s/^[^A-z0-9]+//;
         $string =~ s/[^A-z0-9]+$//;
 
-        $logger->debug( "get_clean_string post-clean(length " . length($string) . "): $string)" );
+        $self->{logger}->debug( "get_clean_string post-clean(length " . length($string) . "): $string)" );
         syslog( "LOG_DEBUG", "get_clean_string post-clean(length %s): %s", length($string), $string );
     }
     else {
-        $logger->info("get_clean_string called on undefined");
+        $self->{logger}->info("get_clean_string called on undefined");
         syslog( "LOG_INFO", "get_clean_string called on undefined" );
     }
     return $string;
 }
 
+# looks like this sub is no longer used
 sub get_clean_input {
     local $/ = "\012";
     my $in = <STDIN>;
     $in = get_clean_string($in);
 
-    my $logger = Koha::Logger->get( { interface => 'sip' } );
-
     while ( my $extra = <STDIN> ) {
-        $logger->error("get_clean_input got extra lines: $extra");
         syslog( "LOG_ERR", "get_clean_input got extra lines: %s", $extra );
     }
 
@@ -210,8 +203,8 @@ sub telnet_transport {
     my $input;
     my $config  = $self->{config};
     my $timeout = $self->{service}->{timeout} || $config->{timeout} || 30;
-    my $logger = Koha::Logger->get({ interface => 'sip' });
-    $logger->debug("telnet_transport: timeout is $timeout");
+
+    $self->{logger}->debug("telnet_transport: timeout is $timeout");
     syslog("LOG_DEBUG", "telnet_transport: timeout is %s", $timeout);
 
     eval {
@@ -231,11 +224,11 @@ sub telnet_transport {
 		$pwd = <STDIN>;
 		alarm 0;
 
-        $logger->debug( "telnet_transport 1: uid length " . length($uid) . ", pwd length " . length($pwd) );
+        $self->{logger}->debug( "telnet_transport 1: uid length " . length($uid) . ", pwd length " . length($pwd) );
         syslog( "LOG_DEBUG", "telnet_transport 1: uid length %s, pwd length %s", length($uid), length($pwd) );
-        $uid = get_clean_string($uid);
-        $pwd = get_clean_string($pwd);
-        $logger->debug( "telnet_transport 2: uid length " . length($uid) . ", pwd length " . length($pwd) );
+        $uid = $self->get_clean_string($uid);
+        $pwd = $self->get_clean_string($pwd);
+        $self->{logger}->debug( "telnet_transport 2: uid length " . length($uid) . ", pwd length " . length($pwd) );
         syslog( "LOG_DEBUG", "telnet_transport 2: uid length %s, pwd length %s", length($uid), length($pwd) );
 
 	    if (exists ($config->{accounts}->{$uid})
@@ -245,19 +238,19 @@ sub telnet_transport {
                 last;
             }
 	    }
-        $logger->warn("Invalid login attempt: ' . ($uid||'')  . '");
+        $self->{logger}->warn("Invalid login attempt: ' . ($uid||'')  . '");
 		syslog("LOG_WARNING", "Invalid login attempt: '%s'", ($uid||''));
 		print("Invalid login$CRLF");
 	}
     }; # End of eval
 
     if ($@) {
-        $logger->error("telnet_transport: Login timed out");
+        $self->{logger}->error("telnet_transport: Login timed out");
         syslog( "LOG_ERR", "telnet_transport: Login timed out" );
         die "Telnet Login Timed out";
     }
     elsif ( !defined($account) ) {
-        $logger->error("telnet_transport: Login Failed");
+        $self->{logger}->error("telnet_transport: Login Failed");
         syslog( "LOG_ERR", "telnet_transport: Login Failed" );
         die "Login Failure";
     }
@@ -266,10 +259,11 @@ sub telnet_transport {
     }
 
     $self->{account} = $account;
-    $logger->debug("telnet_transport: uname/inst: '$account->{id}/$account->{institution}'");
+    $self->{logger} = Koha::Logger->get( { interface => 'sip', category => $self->{account}->{id} } ); # Add id to namespace
+    $self->{logger}->debug("telnet_transport: uname/inst: '$account->{id}/$account->{institution}'");
     syslog("LOG_DEBUG", "telnet_transport: uname/inst: '%s/%s'", $account->{id}, $account->{institution});
     $self->sip_protocol_loop();
-    $logger->info("telnet_transport: shutting down");
+    $self->{logger}->info("telnet_transport: shutting down");
     syslog("LOG_INFO", "telnet_transport: shutting down");
 }
 
@@ -284,7 +278,6 @@ sub sip_protocol_loop {
 	my $config  = $self->{config};
     my $timeout = $self->{service}->{timeout} || $config->{timeout} || 30;
 	my $input;
-    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     # The spec says the first message will be:
 	# 	SIP v1: SC_STATUS
@@ -302,7 +295,6 @@ sub sip_protocol_loop {
 	#my $expect = SC_STATUS;
     local $SIG{ALRM} = sub { die "SIP Timed Out!\n"; };
     my $expect = '';
-    my $logger = Koha::Logger->get({ interface => 'sip' });
     while (1) {
         alarm $timeout;
         $input = read_SIP_packet(*STDIN);
@@ -314,7 +306,7 @@ sub sip_protocol_loop {
 		$input =~ s/[^A-z0-9]+$//s;	# Same on the end, should get DOSsy ^M line-endings too.
 		while (chomp($input)) {warn "Extra line ending on input";}
 		unless ($input) {
-            $logger->error("sip_protocol_loop: empty input skipped");
+            $self->{logger}->error("sip_protocol_loop: empty input skipped");
             syslog("LOG_ERR", "sip_protocol_loop: empty input skipped");
             print("96$CR");
             next;
@@ -322,13 +314,13 @@ sub sip_protocol_loop {
 		# end cheap input hacks
 		my $status = handle($input, $self, $expect);
         if ( !$status ) {
-            $logger->error( "sip_protocol_loop: failed to handle " . substr( $input, 0, 2 ) );
+            $self->{logger}->error( "sip_protocol_loop: failed to handle " . substr( $input, 0, 2 ) );
             syslog( "LOG_ERR", "sip_protocol_loop: failed to handle %s", substr( $input, 0, 2 ) );
         }
 		next if $status eq REQUEST_ACS_RESEND;
         if ( $expect && ( $status ne $expect ) ) {
             # We received a non-"RESEND" that wasn't what we were expecting.
-            $logger->error("sip_protocol_loop: expected $expect, received $input, exiting");
+            $self->{logger}->error("sip_protocol_loop: expected $expect, received $input, exiting");
             syslog( "LOG_ERR", "sip_protocol_loop: expected %s, received %s, exiting", $expect, $input );
         }
 		# We successfully received and processed what we were expecting

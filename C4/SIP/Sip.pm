@@ -168,8 +168,8 @@ sub boolspace {
 sub read_SIP_packet {
     my $record;
     my $logger = Koha::Logger->get({ interface => 'sip' });
-    my $fh
-    unless ( $f = shift ) {
+    my $fh;
+    unless ( $fh = shift ) {
         $logger->error("read_SIP_packet: no filehandle argument!");
         syslog("LOG_ERR", "read_SIP_packet: no filehandle argument!");
     }
