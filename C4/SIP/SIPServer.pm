@@ -109,7 +109,7 @@ sub process_request {
     $self->{service} = $config->find_service($sockaddr, $port, $proto);
 
     if (!defined($self->{service})) {
-                $self->{logger}->error("process_request: Unknown recognized server connection: $sockaddr:$port/$proto");
+                $self->{logger}->error("$self->{server}->{peeraddr}: process_request: Unknown recognized server connection: $sockaddr:$port/$proto");
 		syslog("LOG_ERR", "process_request: Unknown recognized server connection: %s:%s/%s", $sockaddr, $port, $proto);
 		die "process_request: Bad server connection";
     }
@@ -117,7 +117,7 @@ sub process_request {
     $transport = $transports{$self->{service}->{transport}};
 
     if (!defined($transport)) {
-        $self->{logger}->warn("Unknown transport '$service->{transport}', dropping");
+        $self->{logger}->warn("$self->{server}->{peeraddr}: Unknown transport '$service->{transport}', dropping");
 		syslog("LOG_WARNING", "Unknown transport '%s', dropping", $service->{transport});
 		return;
     } else {
@@ -137,13 +137,13 @@ sub raw_transport {
     while (!$self->{account}) {
     local $SIG{ALRM} = sub { die "raw_transport Timed Out!\n"; };
 
-    $self->{logger}->debug("raw_transport: timeout is $service->{timeout}");
+    $self->{logger}->debug("$self->{server}->{peeraddr}: raw_transport: timeout is $service->{timeout}");
     syslog("LOG_DEBUG", "raw_transport: timeout is %d", $service->{timeout});
 
     $input = read_SIP_packet(*STDIN);
     if (!$input) {
         # EOF on the socket
-        $self->{logger}->info("raw_transport: shutting down: EOF during login");
+        $self->{logger}->info("$self->{server}->{peeraddr}: raw_transport: shutting down: EOF during login");
         syslog("LOG_INFO", "raw_transport: shutting down: EOF during login");
         return;
     }
@@ -152,12 +152,12 @@ sub raw_transport {
     }
 
     $self->{logger} = Koha::Logger->get( { interface => 'sip', category => $self->{account}->{id} } ); # Add id to namespace
-    $self->{logger}->debug("$self->{account}->{id}: raw_transport: uname/inst: '$self->{account}->{id}/$self->{account}->{institution}'");
+    $self->{logger}->debug("$self->{server}->{peeraddr}:$self->{account}->{id}: raw_transport: uname/inst: '$self->{account}->{id}/$self->{account}->{institution}'");
     syslog("LOG_DEBUG", "raw_transport: uname/inst: '%s/%s'", $self->{account}->{id}, $self->{account}->{institution});
 
     $self->sip_protocol_loop();
 
-    $self->{logger}->info("$self->{account}->{id}: raw_transport: shutting down");
+    $self->{logger}->info("$self->{server}->{peeraddr}:$self->{account}->{id}: raw_transport: shutting down");
     syslog("LOG_INFO", "raw_transport: shutting down");
 }
 
@@ -165,18 +165,18 @@ sub get_clean_string {
     my $self = shift;
     my $string = shift;
     if ( defined $string ) {
-        $self->{logger}->debug( "get_clean_string  pre-clean(length " . length($string) . "): $string" );
+        $self->{logger}->debug( "$self->{server}->{peeraddr}: get_clean_string  pre-clean(length " . length($string) . "): $string" );
         syslog( "LOG_DEBUG", "get_clean_string  pre-clean(length %s): %s", length($string), $string );
 
         chomp($string);
         $string =~ s/^[^A-z0-9]+//;
         $string =~ s/[^A-z0-9]+$//;
 
-        $self->{logger}->debug( "get_clean_string post-clean(length " . length($string) . "): $string)" );
+        $self->{logger}->debug( "$self->{server}->{peeraddr}: get_clean_string post-clean(length " . length($string) . "): $string)" );
         syslog( "LOG_DEBUG", "get_clean_string post-clean(length %s): %s", length($string), $string );
     }
     else {
-        $self->{logger}->info("get_clean_string called on undefined");
+        $self->{logger}->info("$self->{server}->{peeraddr}: get_clean_string called on undefined");
         syslog( "LOG_INFO", "get_clean_string called on undefined" );
     }
     return $string;
@@ -204,7 +204,7 @@ sub telnet_transport {
     my $config  = $self->{config};
     my $timeout = $self->{service}->{timeout} || $config->{timeout} || 30;
 
-    $self->{logger}->debug("telnet_transport: timeout is $timeout");
+    $self->{logger}->debug("$self->{server}->{peeraddr}: telnet_transport: timeout is $timeout");
     syslog("LOG_DEBUG", "telnet_transport: timeout is %s", $timeout);
 
     eval {
@@ -224,11 +224,11 @@ sub telnet_transport {
 		$pwd = <STDIN>;
 		alarm 0;
 
-        $self->{logger}->debug( "telnet_transport 1: uid length " . length($uid) . ", pwd length " . length($pwd) );
+        $self->{logger}->debug( "$self->{server}->{peeraddr}: telnet_transport 1: uid length " . length($uid) . ", pwd length " . length($pwd) );
         syslog( "LOG_DEBUG", "telnet_transport 1: uid length %s, pwd length %s", length($uid), length($pwd) );
         $uid = $self->get_clean_string($uid);
         $pwd = $self->get_clean_string($pwd);
-        $self->{logger}->debug( "telnet_transport 2: uid length " . length($uid) . ", pwd length " . length($pwd) );
+        $self->{logger}->debug( "$self->{server}->{peeraddr}: telnet_transport 2: uid length " . length($uid) . ", pwd length " . length($pwd) );
         syslog( "LOG_DEBUG", "telnet_transport 2: uid length %s, pwd length %s", length($uid), length($pwd) );
 
 	    if (exists ($config->{accounts}->{$uid})
@@ -238,19 +238,19 @@ sub telnet_transport {
                 last;
             }
 	    }
-        $self->{logger}->warn("Invalid login attempt: ' . ($uid||'')  . '");
+        $self->{logger}->warn("$self->{server}->{peeraddr}: Invalid login attempt: ' . ($uid||'')  . '");
 		syslog("LOG_WARNING", "Invalid login attempt: '%s'", ($uid||''));
 		print("Invalid login$CRLF");
 	}
     }; # End of eval
 
     if ($@) {
-        $self->{logger}->error("telnet_transport: Login timed out");
+        $self->{logger}->error("$self->{server}->{peeraddr}: telnet_transport: Login timed out");
         syslog( "LOG_ERR", "telnet_transport: Login timed out" );
         die "Telnet Login Timed out";
     }
     elsif ( !defined($account) ) {
-        $self->{logger}->error("telnet_transport: Login Failed");
+        $self->{logger}->error("$self->{server}->{peeraddr}: telnet_transport: Login Failed");
         syslog( "LOG_ERR", "telnet_transport: Login Failed" );
         die "Login Failure";
     }
@@ -260,10 +260,10 @@ sub telnet_transport {
 
     $self->{account} = $account;
     $self->{logger} = Koha::Logger->get( { interface => 'sip', category => $self->{account}->{id} } ); # Add id to namespace
-    $self->{logger}->debug("$self->{account}->{id}: telnet_transport: uname/inst: '$account->{id}/$account->{institution}'");
+    $self->{logger}->debug("$self->{server}->{peeraddr}:$self->{account}->{id}: telnet_transport: uname/inst: '$account->{id}/$account->{institution}'");
     syslog("LOG_DEBUG", "telnet_transport: uname/inst: '%s/%s'", $account->{id}, $account->{institution});
     $self->sip_protocol_loop();
-    $self->{logger}->info("$self->{account}->{id}: telnet_transport: shutting down");
+    $self->{logger}->info("$self->{server}->{peeraddr}:$self->{account}->{id}: telnet_transport: shutting down");
     syslog("LOG_INFO", "telnet_transport: shutting down");
 }
 
@@ -306,7 +306,7 @@ sub sip_protocol_loop {
 		$input =~ s/[^A-z0-9]+$//s;	# Same on the end, should get DOSsy ^M line-endings too.
 		while (chomp($input)) {warn "Extra line ending on input";}
 		unless ($input) {
-            $self->{logger}->error("$self->{account}->{id}: sip_protocol_loop: empty input skipped");
+            $self->{logger}->error("$self->{server}->{peeraddr}:$self->{account}->{id}: sip_protocol_loop: empty input skipped");
             syslog("LOG_ERR", "sip_protocol_loop: empty input skipped");
             print("96$CR");
             next;
@@ -314,13 +314,13 @@ sub sip_protocol_loop {
 		# end cheap input hacks
 		my $status = handle($input, $self, $expect);
         if ( !$status ) {
-            $self->{logger}->error( "$self->{account}->{id}: sip_protocol_loop: failed to handle " . substr( $input, 0, 2 ) );
+            $self->{logger}->error( "$self->{server}->{peeraddr}:$self->{account}->{id}: sip_protocol_loop: failed to handle " . substr( $input, 0, 2 ) );
             syslog( "LOG_ERR", "sip_protocol_loop: failed to handle %s", substr( $input, 0, 2 ) );
         }
 		next if $status eq REQUEST_ACS_RESEND;
         if ( $expect && ( $status ne $expect ) ) {
             # We received a non-"RESEND" that wasn't what we were expecting.
-            $self->{logger}->error("$self->{account}->{id}: sip_protocol_loop: expected $expect, received $input, exiting");
+            $self->{logger}->error("$self->{server}->{peeraddr}:$self->{account}->{id}: sip_protocol_loop: expected $expect, received $input, exiting");
             syslog( "LOG_ERR", "sip_protocol_loop: expected %s, received %s, exiting", $expect, $input );
         }
 		# We successfully received and processed what we were expecting
