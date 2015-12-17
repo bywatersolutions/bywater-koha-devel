@@ -74,14 +74,13 @@ sub priority_sort {
 }
 
 sub new {
-	my ($class, $item_id) = @_;
+	my ($class, $item_id, $server) = @_;
 	my $type = ref($class) || $class;
 	my $self;
     my $itemnumber = GetItemnumberFromBarcode($item_id);
 	my $item = GetBiblioFromItemNumber($itemnumber);    # actually biblio.*, biblioitems.* AND items.*  (overkill)
-    my $logger = Koha::Logger->get({ interface => 'sip' });
 	if (! $item) {
-        $logger->debug("new ILS::Item('$item_id'): not found");
+        $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: new ILS::Item('$item_id'): not found");
 		syslog("LOG_DEBUG", "new ILS::Item('%s'): not found", $item_id);
 		warn "new ILS::Item($item_id) : No item '$item_id'.";
         return;
@@ -108,9 +107,10 @@ sub new {
 	$item->{hold_shelf}    = [( grep {   defined $_->{found}  and $_->{found} eq 'W' } @{$item->{hold_queue}} )];
 	$item->{pending_queue} = [( grep {(! defined $_->{found}) or  $_->{found} ne 'W' } @{$item->{hold_queue}} )];
 	$self = $item;
+  $self->{server} = $server;
 	bless $self, $type;
 
-    $logger->debug("new ILS::Item('$item_id'): found with title '$self->{title}'");
+    $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: new ILS::Item('$item_id'): found with title '$self->{title}'");
     syslog("LOG_DEBUG", "new ILS::Item('%s'): found with title '%s'",
 	   $item_id, $self->{title});
 
@@ -173,9 +173,8 @@ sub hold_patron_name {
     my $self = shift;
     my $borrowernumber = (@_ ? shift: $self->hold_patron_id()) or return;
     my $holder = GetMember(borrowernumber=>$borrowernumber);
-    my $logger = Koha::Logger->get({ interface => 'sip' });
     unless ($holder) {
-        $logger->error("While checking hold, GetMember failed for borrowernumber '$borrowernumber'");
+        $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: While checking hold, GetMember failed for borrowernumber '$borrowernumber'");
         syslog("LOG_ERR", "While checking hold, GetMember failed for borrowernumber '$borrowernumber'");
         return;
     }

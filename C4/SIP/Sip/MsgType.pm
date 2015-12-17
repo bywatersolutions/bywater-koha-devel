@@ -873,7 +873,8 @@ sub login_core  {
 			}
 
 			# like   ILS->new(), I think.
-			$server->{ils} = $module->new($server->{institution}, $server->{account});
+
+			$server->{ils} = $module->new($server->{institution}, $server->{account}, $server);
 			if (!$server->{ils}) {
                 $server->{logger}->error("$server->{server}->{peeraddr}:$server->{account}->{id}: $server->{service}: ILS connection to '$inst' failed");
 			    syslog("LOG_ERR", "%s: ILS connection to '%s' failed", $server->{service}, $inst);
