@@ -48,6 +48,9 @@ our $field_delimiter = '|'; # Protocol Default
 
 our $last_response = '';
 
+# We need to have the server to do logging
+our $server = undef;
+
 sub timestamp {
     my $time = $_[0] || time();
     if ( ref $time eq 'DateTime') {
@@ -66,10 +69,9 @@ sub timestamp {
 sub add_field {
     my ($field_id, $value) = @_;
     my ($i, $ent);
-    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     if (!defined($value)) {
-        $logger->debug("add_field: Undefined value being added to '$field_id'");
+        $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: add_field: Undefined value being added to '$field_id'");
         syslog("LOG_DEBUG", "add_field: Undefined value being added to '%s'",
                $field_id);
 		$value = '';
@@ -116,7 +118,6 @@ sub maybe_add {
 #
 sub add_count {
     my ($label, $count) = @_;
-    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     # If the field is unsupported, it will be undef, return blanks
     # as per the spec.
@@ -126,7 +127,7 @@ sub add_count {
 
     $count = sprintf("%04d", $count);
     if (length($count) != 4) {
-        $logger->warn("handle_patron_info: $label wrong size: '$count'");
+        $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: handle_patron_info: $label wrong size: '$count'");
 		syslog("LOG_WARNING", "handle_patron_info: %s wrong size: '%s'",
 	       $label, $count);
 		$count = ' ' x 4;
@@ -167,10 +168,9 @@ sub boolspace {
 #
 sub read_SIP_packet {
     my $record;
-    my $logger = Koha::Logger->get({ interface => 'sip' });
     my $fh;
     unless ( $fh = shift ) {
-        $logger->error("read_SIP_packet: no filehandle argument!");
+        $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet: no filehandle argument!");
         syslog("LOG_ERR", "read_SIP_packet: no filehandle argument!");
     }
     my $len1 = 999;
@@ -183,7 +183,7 @@ sub read_SIP_packet {
             if ( defined($record) ) {
                 while ( chomp($record) ) { 1; }
                 $len1 = length($record);
-                $logger->debug("read_SIP_packet, INPUT MSG: '$record'");
+                $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet, INPUT MSG: '$record'");
                 syslog( "LOG_DEBUG", "read_SIP_packet, INPUT MSG: '$record'" );
                 $record =~ s/^\s*[^A-z0-9]+//s; # Every line must start with a "real" character.  Not whitespace, control chars, etc. 
                 $record =~ s/[^A-z0-9]+$//s;    # Same for the end.  Note this catches the problem some clients have sending empty fields at the end, like |||
@@ -198,17 +198,18 @@ sub read_SIP_packet {
     if ($record) {
         my $len2 = length($record);
         if ( $record ) {
-            $logger->info("read_SIP_packet, INPUT MSG: '$record'");
+            $server->{logger}->info("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet, INPUT MSG: '$record'");
             syslog("LOG_INFO", "read_SIP_packet, INPUT MSG: '$record'");
         }
         if ($len1 != $len2) {
-            $logger->debug("read_SIP_packet, trimmed " . $len1-$len2 . " character(s) (after chomps).");
+            $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet, trimmed " . $len1-$len2 . " character(s) (after chomps).");
             syslog("LOG_DEBUG", "read_SIP_packet, trimmed %s character(s) (after chomps).", $len1-$len2);
         }
     } else {
-        $logger->warn("read_SIP_packet input "
-                      . (defined($record) ? "empty ($record)" : 'undefined')
-                      . ", end of input." );
+        $server->{logger}->debug( "$server->{server}->{peeraddr}:$server->{account}->{id}: "
+              . "read_SIP_packet input "
+              . ( defined($record) ? "empty ($record)" : 'undefined' )
+              . ", end of input." );
         syslog("LOG_WARNING", "read_SIP_packet input %s, end of input.", (defined($record) ? "empty ($record)" : 'undefined'));
     }
     #
@@ -225,7 +226,7 @@ sub read_SIP_packet {
     # This is now handled by the vigorous cleansing above.
     # syslog("LOG_INFO", encode_utf8("INPUT MSG: '$record'")) if $record;
     if ( $record ) {
-        $logger->info( "INPUT MSG: '$record'" );
+        $server->{logger}->debug( "$server->{server}->{peeraddr}:$server->{account}->{id}: INPUT MSG: '$record'" );
         syslog("LOG_INFO", "INPUT MSG: '$record'");
     }
     return $record;
@@ -244,7 +245,6 @@ sub read_SIP_packet {
 
 sub write_msg {
     my ($self, $msg, $file, $terminator, $encoding) = @_;
-    my $logger = Koha::Logger->get({ interface => 'sip' });
 
     $terminator ||= q{};
     $terminator = ( $terminator eq 'CR' ) ? $CR : $CRLF;
@@ -270,7 +270,7 @@ sub write_msg {
     } else {
         STDOUT->autoflush(1);
         print $msg, $terminator;
-        $logger->info("OUTPUT MSG: '$msg'");
+        $server->{logger}->info( "$server->{server}->{peeraddr}:$server->{account}->{id}: OUTPUT MSG: '$msg'");
         syslog("LOG_INFO", "OUTPUT MSG: '$msg'");
     }
 

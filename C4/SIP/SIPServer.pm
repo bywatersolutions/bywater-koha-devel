@@ -140,6 +140,7 @@ sub raw_transport {
     $self->{logger}->debug("$self->{server}->{peeraddr}: raw_transport: timeout is $service->{timeout}");
     syslog("LOG_DEBUG", "raw_transport: timeout is %d", $service->{timeout});
 
+    $C4::SIP::Sip::server = $self;
     $input = read_SIP_packet(*STDIN);
     if (!$input) {
         # EOF on the socket
@@ -297,6 +298,7 @@ sub sip_protocol_loop {
     my $expect = '';
     while (1) {
         alarm $timeout;
+        $C4::SIP::Sip::server = $self;
         $input = read_SIP_packet(*STDIN);
         unless ($input) {
             return;		# EOF
