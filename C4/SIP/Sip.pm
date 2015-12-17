@@ -8,7 +8,6 @@ use strict;
 use warnings;
 use Exporter;
 use Encode;
-use Koha::Logger;
 use POSIX qw(strftime);
 use Socket qw(:crlf);
 use IO::Handle;

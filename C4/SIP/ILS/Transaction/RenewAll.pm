@@ -6,8 +6,6 @@ package C4::SIP::ILS::Transaction::RenewAll;
 use strict;
 use warnings;
 
-use Koha::Logger;
-
 use C4::SIP::ILS::Item;
 
 use C4::Members qw( GetMember );

@@ -12,7 +12,6 @@ use warnings;
 use Exporter;
 use Carp;
 
-use Koha::Logger;
 use Data::Dumper;
 
 use C4::Debug;

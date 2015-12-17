@@ -8,7 +8,6 @@ use warnings;
 use strict;
 
 use POSIX qw(strftime);
-use Koha::Logger;
 use Data::Dumper;
 use CGI qw ( -utf8 );
 

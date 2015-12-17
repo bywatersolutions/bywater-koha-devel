@@ -6,7 +6,6 @@ package C4::SIP::ILS;
 
 use warnings;
 use strict;
-use Koha::Logger;
 use Data::Dumper;
 
 use C4::SIP::ILS::Item;

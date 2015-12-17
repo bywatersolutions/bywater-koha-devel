@@ -9,7 +9,6 @@ package C4::SIP::ILS::Item;
 use strict;
 use warnings;
 
-use Koha::Logger;
 use Carp;
 
 use C4::SIP::ILS::Transaction;
