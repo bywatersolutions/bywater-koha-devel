@@ -472,7 +472,7 @@ sub renew_all {
     my ($patron, $item_id);
     my $trans;
 
-    $trans = C4::SIP::ILS::Transaction::RenewAll->new();
+    $trans = C4::SIP::ILS::Transaction::RenewAll->new( $self->{server} );
 
     $trans->patron( $patron = C4::SIP::ILS::Patron->new( $patron_id, $self->{server} ) );
     if (defined $patron) {

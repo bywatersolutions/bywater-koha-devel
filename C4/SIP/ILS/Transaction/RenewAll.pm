@@ -22,6 +22,7 @@ my %fields = (
 
 sub new {
     my $class = shift;
+    my $server = shift;
     my $self  = $class->SUPER::new();
 
     foreach my $element ( keys %fields ) {
@@ -29,6 +30,8 @@ sub new {
     }
 
     @{$self}{ keys %fields } = values %fields;
+
+    $self->{server} = $server;
     return bless $self, $class;
 }
 
@@ -37,14 +40,13 @@ sub do_renew_all {
     my $patron   = $self->{patron};                           # SIP's  patron
     my $borrower = GetMember( cardnumber => $patron->id );    # Koha's patron
     my $all_ok   = 1;
-    my $logger = Koha::Logger->get({ interface => 'sip' });
     $self->{renewed}   = [];
     $self->{unrenewed} = [];
     foreach my $itemx ( @{ $patron->{items} } ) {
         my $item_id = $itemx->{barcode};
         my $item    = C4::SIP::ILS::Item->new($item_id);
         if ( !defined($item) ) {
-            $logger->warn("renew_all: Invalid item id '$item_id' associated with patron '$patron->id'");
+            $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: renew_all: Invalid item id '$item_id' associated with patron '$patron->id'");
             syslog(
                 'LOG_WARNING',
                 q|renew_all: Invalid item id '%s' associated with patron '%s'|,
