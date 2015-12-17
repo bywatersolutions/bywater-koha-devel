@@ -91,6 +91,7 @@ sub process_request {
     $self->{config} = $config;
 
     $self->{logger} = Koha::Logger->get({ interface => 'sip' });
+    $self->{account} = undef; # Clear out the account from the last request, it may be different
 
     my $sockname = getsockname(STDIN);
 
