@@ -176,7 +176,7 @@ sub read_SIP_packet {
             if ( defined($record) ) {
                 while ( chomp($record) ) { 1; }
                 $len1 = length($record);
-                $server->{logger}->debug("$server->{server}->{peeraddr}: read_SIP_packet, INPUT MSG: '$record'");
+                $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet, INPUT MSG: '$record'");
                 $record =~ s/^\s*[^A-z0-9]+//s; # Every line must start with a "real" character.  Not whitespace, control chars, etc. 
                 $record =~ s/[^A-z0-9]+$//s;    # Same for the end.  Note this catches the problem some clients have sending empty fields at the end, like |||
                 $record =~ s/\015?\012//g;      # Extra line breaks must die
@@ -190,13 +190,13 @@ sub read_SIP_packet {
     if ($record) {
         my $len2 = length($record);
         if ( $record ) {
-            $server->{logger}->info("$server->{server}->{peeraddr}: read_SIP_packet, INPUT MSG: '$record'");
+            $server->{logger}->info("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet, INPUT MSG: '$record'");
         }
         if ($len1 != $len2) {
-            $server->{logger}->debug("$server->{server}->{peeraddr}: read_SIP_packet, trimmed " . $len1-$len2 . " character(s) (after chomps).");
+            $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet, trimmed " . $len1-$len2 . " character(s) (after chomps).");
         }
     } else {
-        $server->{logger}->debug( "$server->{server}->{peeraddr}: "
+        $server->{logger}->debug( "$server->{server}->{peeraddr}:$server->{account}->{id}: "
               . "read_SIP_packet input "
               . ( defined($record) ? "empty ($record)" : 'undefined' )
               . ", end of input." );
@@ -214,7 +214,7 @@ sub read_SIP_packet {
     #  
     # This is now handled by the vigorous cleansing above.
     if ( $record ) {
-        $server->{logger}->debug( "$server->{server}->{peeraddr}: INPUT MSG: '$record'" );
+        $server->{logger}->debug( "$server->{server}->{peeraddr}:$server->{account}->{id}: INPUT MSG: '$record'" );
     }
     return $record;
 }

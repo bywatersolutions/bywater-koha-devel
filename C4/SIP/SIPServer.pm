@@ -89,7 +89,6 @@ sub process_request {
     my $transport;
 
     $self->{config} = $config;
-    $self->{account} = undef; # Clear out the account from the last request, it may be different
 
     $self->{logger} = Koha::Logger->get({ interface => 'sip' });
 
