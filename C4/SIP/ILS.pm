@@ -6,7 +6,6 @@ package C4::SIP::ILS;
 
 use warnings;
 use strict;
-use Sys::Syslog qw(syslog);
 use Koha::Logger;
 use Data::Dumper;
 
@@ -49,7 +48,6 @@ sub new {
     my $self = {};
     $debug and warn "new ILS: INSTITUTION: " . Dumper($institution);
     $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: new ILS $institution->{id}");
-    syslog("LOG_DEBUG", "new ILS '%s'", $institution->{id});
     $self->{institution} = $institution;
     $self->{server} = $server;
     return bless $self, $type;
@@ -86,7 +84,6 @@ sub check_inst_id {
     my ($self, $id, $whence) = @_;
     if ($id ne $self->{institution}->{id}) {
         $self->{server}->{logger}->warn("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: $whence: received institution '$id', expected '$self->{institution}->{id}'");
-        syslog("LOG_WARNING", "%s: received institution '%s', expected '%s'", $whence, $id, $self->{institution}->{id});
         # Just an FYI check, we don't expect the user to change location from that in SIPconfig.xml
     }
 }
@@ -167,12 +164,9 @@ sub checkout {
 			$circ->desensitize(!$item->magnetic_media);
 
       $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: ILS::Checkout: patron $patron_id has checked out " . join(', ', @{$patron->{items}}) );
-			syslog("LOG_DEBUG", "ILS::Checkout: patron %s has checked out %s",
-				$patron_id, join(', ', @{$patron->{items}}));
 		}
 		else {
         $self->{server}->{logger}->error("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: ILS::Checkout Issue failed");
-			syslog("LOG_ERR", "ILS::Checkout Issue failed");
 		}
     }
     # END TRANSACTION
@@ -202,12 +196,10 @@ sub checkin {
     # or it was not checked out but the checked_in_ok flag was set
     $circ->ok( ( $checked_in_ok && $item ) || ( $item && $item->{patron} ) );
     $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: C4::SIP::ILS::checkin - using checked_in_ok") if $checked_in_ok;
-    syslog("LOG_DEBUG", "C4::SIP::ILS::checkin - using checked_in_ok") if $checked_in_ok;
 
     if ( !defined( $item->{patron} ) ) {
         $circ->screen_msg("Item not checked out") unless $checked_in_ok;
         $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: C4::SIP::ILS::checkin - item not checked out");
-        syslog("LOG_DEBUG", "C4::SIP::ILS::checkin - item not checked out");
     }
     else {
         if ( $circ->ok ) {
@@ -435,14 +427,12 @@ sub renew {
 		foreach my $i (@{$patron->{items}}) {
             unless (defined $i->{barcode}) {    # FIXME: using data instead of objects may violate the abstraction layer
                 $self->{server}->{logger}->error("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: No barcode for item " . $j+1 . " of $count: $item_id");
-                syslog("LOG_ERR", "No barcode for item %s of %s: $item_id", $j+1, $count);
                 next;
             }
             $self->{server}->{logger}->debug( "$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: "
                   . "checking item "
                   . $j + 1
                   . " of $count: $item_id vs. $i->{barcode} " );
-            syslog("LOG_DEBUG", "checking item %s of %s: $item_id vs. %s", ++$j, $count, $i->{barcode});
             if ($i->{barcode} eq $item_id) {
 				# We have it checked out
                 $item = C4::SIP::ILS::Item->new( $item_id, $self->{server} );
@@ -477,10 +467,8 @@ sub renew_all {
     $trans->patron( $patron = C4::SIP::ILS::Patron->new( $patron_id, $self->{server} ) );
     if (defined $patron) {
         $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: ILS::renew_all: patron '$patron->name': renew_ok: $patron->renew_ok");
-        syslog("LOG_DEBUG", "ILS::renew_all: patron '%s': renew_ok: %s", $patron->name, $patron->renew_ok);
     } else {
         $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: ILS::renew_all: Invalid patron id: '$patron_id'");
-        syslog("LOG_DEBUG", "ILS::renew_all: Invalid patron id: '%s'", $patron_id);
     }
 
     if (!defined($patron)) {

@@ -9,7 +9,6 @@ package C4::SIP::ILS::Item;
 use strict;
 use warnings;
 
-use Sys::Syslog qw(syslog);
 use Koha::Logger;
 use Carp;
 
@@ -81,7 +80,6 @@ sub new {
 	my $item = GetBiblioFromItemNumber($itemnumber);    # actually biblio.*, biblioitems.* AND items.*  (overkill)
 	if (! $item) {
         $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: new ILS::Item('$item_id'): not found");
-		syslog("LOG_DEBUG", "new ILS::Item('%s'): not found", $item_id);
 		warn "new ILS::Item($item_id) : No item '$item_id'.";
         return;
 	}
@@ -111,8 +109,6 @@ sub new {
 	bless $self, $type;
 
     $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: new ILS::Item('$item_id'): found with title '$self->{title}'");
-    syslog("LOG_DEBUG", "new ILS::Item('%s'): found with title '%s'",
-	   $item_id, $self->{title});
 
     return $self;
 }
@@ -175,7 +171,6 @@ sub hold_patron_name {
     my $holder = GetMember(borrowernumber=>$borrowernumber);
     unless ($holder) {
         $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: While checking hold, GetMember failed for borrowernumber '$borrowernumber'");
-        syslog("LOG_ERR", "While checking hold, GetMember failed for borrowernumber '$borrowernumber'");
         return;
     }
     my $email = $holder->{email} || '';

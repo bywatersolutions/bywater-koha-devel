@@ -12,7 +12,6 @@ use warnings;
 use Exporter;
 use Carp;
 
-use Sys::Syslog qw(syslog);
 use Koha::Logger;
 use Data::Dumper;
 
@@ -38,7 +37,6 @@ sub new {
     $debug and warn "new Patron (GetMember): " . Dumper($kp);
     unless (defined $kp) {
         $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: new ILS::Patron($patron_id): no such patron");
-        syslog("LOG_DEBUG", "new ILS::Patron(%s): no such patron", $patron_id);
         return;
     }
     $kp = GetMemberDetails($kp->{borrowernumber});
@@ -127,7 +125,6 @@ sub new {
     $self->{server} = $server;
     $debug and warn Dumper($self);
     $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: new ILS::Patron($patron_id): found patron '$self->{id}'");
-    syslog("LOG_DEBUG", "new ILS::Patron(%s): found patron '%s'", $patron_id,$self->{id});
     bless $self, $type;
     return $self;
 }
@@ -330,9 +327,6 @@ sub enable {
     $self->{server}->{logger}->debug( "$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: "
           . "Patron($self->{id})->enable: charge: $self->{charge_ok}, "
           . "renew:$self->{renew_ok}, recall:$self->{recall_ok}, hold:$self->{hold_ok}" );
-    syslog("LOG_DEBUG", "Patron(%s)->enable: charge: %s, renew:%s, recall:%s, hold:%s",
-       $self->{id}, $self->{charge_ok}, $self->{renew_ok},
-       $self->{recall_ok}, $self->{hold_ok});
     $self->{screen_msg} = "Enable feature not implemented."; # "All privileges restored.";   # TODO: not really affecting patron record
     return $self;
 }

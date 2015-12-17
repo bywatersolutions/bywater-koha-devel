@@ -8,7 +8,6 @@ use strict;
 use warnings;
 use Exporter;
 use Encode;
-use Sys::Syslog qw(syslog);
 use Koha::Logger;
 use POSIX qw(strftime);
 use Socket qw(:crlf);
@@ -72,8 +71,6 @@ sub add_field {
 
     if (!defined($value)) {
         $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: add_field: Undefined value being added to '$field_id'");
-        syslog("LOG_DEBUG", "add_field: Undefined value being added to '%s'",
-               $field_id);
 		$value = '';
     }
     $value=~s/\r/ /g; # CR terminates a sip message
@@ -126,11 +123,9 @@ sub add_count {
     }
 
     $count = sprintf("%04d", $count);
-    if (length($count) != 4) {
+    if ( length($count) != 4 ) {
         $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: handle_patron_info: $label wrong size: '$count'");
-		syslog("LOG_WARNING", "handle_patron_info: %s wrong size: '%s'",
-	       $label, $count);
-		$count = ' ' x 4;
+        $count = ' ' x 4;
     }
     return $count;
 }
@@ -171,7 +166,6 @@ sub read_SIP_packet {
     my $fh;
     unless ( $fh = shift ) {
         $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet: no filehandle argument!");
-        syslog("LOG_ERR", "read_SIP_packet: no filehandle argument!");
     }
     my $len1 = 999;
 
@@ -184,7 +178,6 @@ sub read_SIP_packet {
                 while ( chomp($record) ) { 1; }
                 $len1 = length($record);
                 $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet, INPUT MSG: '$record'");
-                syslog( "LOG_DEBUG", "read_SIP_packet, INPUT MSG: '$record'" );
                 $record =~ s/^\s*[^A-z0-9]+//s; # Every line must start with a "real" character.  Not whitespace, control chars, etc. 
                 $record =~ s/[^A-z0-9]+$//s;    # Same for the end.  Note this catches the problem some clients have sending empty fields at the end, like |||
                 $record =~ s/\015?\012//g;      # Extra line breaks must die
@@ -199,18 +192,15 @@ sub read_SIP_packet {
         my $len2 = length($record);
         if ( $record ) {
             $server->{logger}->info("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet, INPUT MSG: '$record'");
-            syslog("LOG_INFO", "read_SIP_packet, INPUT MSG: '$record'");
         }
         if ($len1 != $len2) {
             $server->{logger}->debug("$server->{server}->{peeraddr}:$server->{account}->{id}: read_SIP_packet, trimmed " . $len1-$len2 . " character(s) (after chomps).");
-            syslog("LOG_DEBUG", "read_SIP_packet, trimmed %s character(s) (after chomps).", $len1-$len2);
         }
     } else {
         $server->{logger}->debug( "$server->{server}->{peeraddr}:$server->{account}->{id}: "
               . "read_SIP_packet input "
               . ( defined($record) ? "empty ($record)" : 'undefined' )
               . ", end of input." );
-        syslog("LOG_WARNING", "read_SIP_packet input %s, end of input.", (defined($record) ? "empty ($record)" : 'undefined'));
     }
     #
     # Cen-Tec self-check terminals transmit '\r\n' line terminators.
@@ -224,10 +214,8 @@ sub read_SIP_packet {
     # on the input.
     #  
     # This is now handled by the vigorous cleansing above.
-    # syslog("LOG_INFO", encode_utf8("INPUT MSG: '$record'")) if $record;
     if ( $record ) {
         $server->{logger}->debug( "$server->{server}->{peeraddr}:$server->{account}->{id}: INPUT MSG: '$record'" );
-        syslog("LOG_INFO", "INPUT MSG: '$record'");
     }
     return $record;
 }
@@ -271,7 +259,6 @@ sub write_msg {
         STDOUT->autoflush(1);
         print $msg, $terminator;
         $server->{logger}->info( "$server->{server}->{peeraddr}:$server->{account}->{id}: OUTPUT MSG: '$msg'");
-        syslog("LOG_INFO", "OUTPUT MSG: '$msg'");
     }
 
     $last_response = $msg;
