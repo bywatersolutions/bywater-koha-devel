@@ -352,6 +352,7 @@ sub _initialize {
 		syslog("LOG_WARNING", "Unsupported field '%s' in %s message '%s'",
 			$fn, $self->{name}, $msg);
 	} elsif (defined($self->{fields}->{$fn})) {
+        $self->{server}->{logger}->warn("$self->{server}->{server}->{peeraddr}:$id: Duplicate field '$fn' (previous value '$self->{fields}->{$fn}') in $self->{name} message '$msg'");
 		syslog("LOG_WARNING", "Duplicate field '%s' (previous value '%s') in %s message '%s'",
 			$fn, $self->{fields}->{$fn}, $self->{name}, $msg);
 	} else {

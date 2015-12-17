@@ -201,11 +201,13 @@ sub checkin {
     # It's ok to check it in if it exists, and if it was checked out
     # or it was not checked out but the checked_in_ok flag was set
     $circ->ok( ( $checked_in_ok && $item ) || ( $item && $item->{patron} ) );
+    $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: C4::SIP::ILS::checkin - using checked_in_ok") if $checked_in_ok;
     syslog("LOG_DEBUG", "C4::SIP::ILS::checkin - using checked_in_ok") if $checked_in_ok;
 
     if ( !defined( $item->{patron} ) ) {
         $circ->screen_msg("Item not checked out") unless $checked_in_ok;
-	syslog("LOG_DEBUG", "C4::SIP::ILS::checkin - item not checked out");
+        $self->{server}->{logger}->debug("$self->{server}->{server}->{peeraddr}:$self->{server}->{account}->{id}: C4::SIP::ILS::checkin - item not checked out");
+        syslog("LOG_DEBUG", "C4::SIP::ILS::checkin - item not checked out");
     }
     else {
         if ( $circ->ok ) {
