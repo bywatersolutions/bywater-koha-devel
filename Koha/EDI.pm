@@ -35,6 +35,7 @@ use Koha::Edifact::Order;
 use Koha::Edifact;
 use Log::Log4perl;
 use Text::Unidecode;
+use Koha::Plugins::Handler;
 
 our $VERSION = 1.1;
 our @EXPORT_OK =
@@ -79,11 +80,25 @@ sub create_edi_order {
     my $ean_obj =
       $schema->resultset('EdifactEan')->search($ean_search_keys)->single;
 
-    my $edifact = Koha::Edifact::Order->new(
-        { orderlines => \@orderlines, vendor => $vendor, ean => $ean_obj } );
-    if ( !$edifact ) {
-        return;
+    my $edifact;
+    my $edifact_order_params = { orderlines => \@orderlines, vendor => $vendor, ean => $ean_obj };
+    if ( $vendor->plugin ) {
+        $edifact = Koha::Plugins::Handler->run(
+            {
+                class  => $vendor->plugin,
+                method => 'edifact',
+                params => {
+                    object => "Order",
+                    params => $edifact_order_params,
+                }
+            }
+        );
     }
+    else {
+        $edifact = Koha::Edifact::Order->new( $edifact_order_params );
+    }
+
+    return unless $edifact;
 
     my $order_file = $edifact->encode();
 
