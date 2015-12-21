@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS vendor_edi_accounts (
   invoices_enabled tinyint(1) not null default 0,
   orders_enabled tinyint(1) not null default 0,
   shipment_budget integer(11) references aqbudgets( budget_id ),
+  plugin varchar(256) NOT NULL DEFAULT "",
   PRIMARY KEY  (id),
   KEY vendorid (vendor_id),
   KEY shipmentbudget (shipment_budget),
