@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS `vendor_edi_accounts` (
   `pia_use_issn` tinyint(1) NOT NULL DEFAULT '1',
   `pia_use_isbn10` tinyint(1) NOT NULL DEFAULT '1',
   `pia_use_isbn13` tinyint(1) NOT NULL DEFAULT '1',
+  plugin varchar(256) NOT NULL DEFAULT "",
   PRIMARY KEY (`id`),
   KEY `vendorid` (`vendor_id`),
   KEY `shipmentbudget` (`shipment_budget`),
@@ -97,6 +98,20 @@ BEGIN
         -- Otherwise Suppliers unique orderline reference ('SLI')
         ALTER TABLE aqorders ADD COLUMN suppliers_reference_number varchar(35);
         ALTER TABLE aqorders ADD COLUMN suppliers_reference_qualifier varchar(3);
+    END IF;
+END $$
+CALL Alter_Table $$
+DELIMITER ;
+
+-- Upgrade the vendor_edi_accounts table, add plugin column
+DELIMITER $$
+DROP PROCEDURE IF EXISTS Alter_Table $$
+CREATE PROCEDURE Alter_Table()
+BEGIN
+    DECLARE _count INT;
+    SET _count = ( SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'vendor_edi_accounts' AND column_name = 'plugin' ) ;
+    IF _count = 0 THEN
+        ALTER TABLE vendor_edi_accounts ADD COLUMN plugin varchar(256) NOT NULL DEFAULT "",
     END IF;
 END $$
 CALL Alter_Table $$

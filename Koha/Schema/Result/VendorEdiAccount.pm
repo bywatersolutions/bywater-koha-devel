@@ -194,6 +194,13 @@ __PACKAGE__->table("vendor_edi_accounts");
   default_value: 1
   is_nullable: 0
 
+=head2 plugin
+
+  data_type: 'varchar'
+  default_value: (empty string)
+  is_nullable: 0
+  size: 256
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -253,6 +260,8 @@ __PACKAGE__->add_columns(
   { data_type => "tinyint", default_value => 1, is_nullable => 0 },
   "pia_use_isbn13",
   { data_type => "tinyint", default_value => 1, is_nullable => 0 },
+  "plugin",
+  { data_type => "varchar", default_value => "", is_nullable => 0, size => 256 },
 );
 
 =head1 PRIMARY KEY
@@ -299,8 +308,8 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "RESTRICT",
-    on_update     => "RESTRICT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
   },
 );
 
@@ -319,14 +328,14 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "RESTRICT",
-    on_update     => "RESTRICT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
   },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-12-15 07:21:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qcPwXVjbPRUao7Xg0mwFDg
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2015-12-21 12:59:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xPfUnPxnQOmWWX3shkTVRA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -23,6 +23,7 @@ use CGI;
 use C4::Auth;
 use C4::Output;
 use Koha::Database;
+use Koha::Plugins;
 
 my $input = CGI->new();
 
@@ -72,6 +73,9 @@ if ( $op eq 'acct_form' ) {
         ]
     );
 
+    my @plugins = Koha::Plugins->new()->GetPlugins('edifact');
+    $template->param( plugins => \@plugins );
+
 }
 elsif ( $op eq 'delete_confirm' ) {
     show_account();
@@ -102,6 +106,7 @@ else {
                 quote_file_suffix
                 order_file_suffix
                 invoice_file_suffix
+                plugin
             )
           )
         {
