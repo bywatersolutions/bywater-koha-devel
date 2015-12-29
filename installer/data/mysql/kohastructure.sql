@@ -1187,6 +1187,7 @@ CREATE TABLE `issuingrules` ( -- circulation and fine rules
   `norenewalbefore` int(4) default NULL, -- no renewal allowed until X days or hours before due date. In the unit set in issuingrules.lengthunit
   `auto_renew` BOOLEAN default FALSE, -- automatic renewal
   `reservesallowed` smallint(6) NOT NULL default "0", -- how many holds are allowed
+  `holds_per_record` SMALLINT(6) NOT NULL DEFAULT 1, -- How many holds a patron can have on a given bib
   `branchcode` varchar(10) NOT NULL default '', -- the branch this rule is for (branches.branchcode)
   overduefinescap decimal(28,6) default NULL, -- the maximum amount of an overdue fine
   onshelfholds tinyint(1) NOT NULL default 0, -- allow holds for items that are on shelf
