@@ -145,6 +145,8 @@
                                             [% END %]
                                             [% IF ( bibitemloo.already_reserved ) %]
                                                 <div class="alert">You have already requested this title.</div>
+                                            [% ELSIF ( bibitemloo.itemsAvailable ) %]
+                                                <div class="alert">One or more items available, all items must be unavailable in order to place a request.</div>
                                             [% ELSE %]
                                                 [% UNLESS ( bibitemloo.bib_available ) %]
                                                     <div class="alert">No available items.</div>

@@ -191,6 +191,12 @@ __PACKAGE__->table("issuingrules");
   is_nullable: 0
   size: 1
 
+=head2 allow_hold_if_items_available
+
+  data_type: 'tinyint'
+  default_value: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -257,6 +263,8 @@ __PACKAGE__->add_columns(
   { data_type => "tinyint", default_value => 0, is_nullable => 0 },
   "opacitemholds",
   { data_type => "char", default_value => "N", is_nullable => 0, size => 1 },
+  "allow_hold_if_items_available",
+  { data_type => "tinyint", default_value => 1, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -276,8 +284,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("branchcode", "categorycode", "itemtype");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2015-12-31 15:26:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:K/8SKpDjba5CM4+WPZtWPw
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2016-01-02 12:22:52
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:P6v2zqse5sAEUI5qHdFOHQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -299,13 +299,15 @@ function checkMultiHold() {
     </form>
   [% ELSE %]
 
-[% IF ( exceeded_maxreserves || alreadyreserved || none_available || alreadypossession || ageRestricted ) %]
+[% IF ( exceeded_maxreserves || alreadyreserved || none_available || alreadypossession || ageRestricted || itemsAvailable) %]
     <div class="dialog alert">
 
     [% UNLESS ( multi_hold ) %]
       <h3>Cannot place hold</h3>
       <ul>
-        [% IF ( exceeded_maxreserves ) %]
+        [% IF itemsAvailable %]
+          <li><strong>Items available: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrowernumber %]">[% borrowerfirstname %] [% borrowersurname %] </a> can only place a hold if all items are unavailable.</li>
+        [% ELSIF ( exceeded_maxreserves ) %]
           <li><strong>Too many holds: </strong> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrowernumber %]">[% borrowerfirstname %] [% borrowersurname %] </a> can only place a maximum of [% maxreserves %] total holds.</li>
         [% ELSIF ( alreadypossession ) %]
           <li> <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrowernumber %]">[% borrowerfirstname %] [% borrowersurname %]</a> <strong>is already in possession</strong> of one item</li>

@@ -1198,6 +1198,7 @@ CREATE TABLE `issuingrules` ( -- circulation and fine rules
   cap_fine_to_replacement_price BOOLEAN NOT NULL DEFAULT  '0', -- cap the fine based on item's replacement price
   onshelfholds tinyint(1) NOT NULL default 0, -- allow holds for items that are on shelf
   opacitemholds char(1) NOT NULL default 'N', -- allow opac users to place specific items on hold
+  allow_hold_if_items_available TINYINT(1) NOT NULL DEFAULT 1, -- allow holds or not if other items available
   PRIMARY KEY  (`branchcode`,`categorycode`,`itemtype`),
   KEY `categorycode` (`categorycode`),
   KEY `itemtype` (`itemtype`)

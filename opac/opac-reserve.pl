@@ -563,7 +563,10 @@ foreach my $biblioNum (@biblionumbers) {
         $biblioLoopIter{already_patron_possession} = 1;
     }
 
-    $biblioLoopIter{holdable} &&= CanBookBeReserved($borrowernumber,$biblioNum) eq 'OK';
+    my $can_book_be_reserved = CanBookBeReserved( $borrowernumber, $biblioNum );
+
+    $biblioLoopIter{holdable} &&= $can_book_be_reserved eq 'OK';
+    $biblioLoopIter{itemsAvailable} = 1 if $can_book_be_reserved eq 'itemsAvailable';
 
     push @$biblioLoop, \%biblioLoopIter;
 

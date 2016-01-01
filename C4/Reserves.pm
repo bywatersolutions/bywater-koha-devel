@@ -29,6 +29,7 @@ use C4::Members;
 use C4::Items;
 use C4::Circulation;
 use C4::Accounts;
+use C4::Circulation qw(CanBookBeIssued);
 
 # for _koha_notify_reserve
 use C4::Members::Messaging;
@@ -41,6 +42,7 @@ use Koha::Calendar;
 use Koha::Database;
 use Koha::Hold;
 use Koha::Holds;
+use Koha::Items;
 
 use List::MoreUtils qw( firstidx any );
 use Carp;
@@ -421,19 +423,20 @@ See CanItemBeReserved() for possible return values.
 
 =cut
 
-sub CanBookBeReserved{
-    my ($borrowernumber, $biblionumber) = @_;
+sub CanBookBeReserved {
+    my ( $borrowernumber, $biblionumber ) = @_;
 
     my $items = GetItemnumbersForBiblio($biblionumber);
+
     #get items linked via host records
     my @hostitems = get_hostitemnumbers_of($biblionumber);
-    if (@hostitems){
-    push (@$items,@hostitems);
+    if (@hostitems) {
+        push( @$items, @hostitems );
     }
 
     my $canReserve;
-    foreach my $item (@$items) {
-        $canReserve = CanItemBeReserved( $borrowernumber, $item );
+    foreach my $itemnumber (@$items) {
+        $canReserve = CanItemBeReserved( $borrowernumber, $itemnumber );
         return 'OK' if $canReserve eq 'OK';
     }
     return $canReserve;
@@ -459,7 +462,7 @@ sub CanItemBeReserved{
     my $dbh             = C4::Context->dbh;
     my $ruleitemtype; # itemtype of the matching issuing rule
     my $allowedreserves = 0;
-            
+
     # we retrieve borrowers and items informations #
     # item->{itype} will come for biblioitems if necessery
     my $item = GetItem($itemnumber);
@@ -476,7 +479,7 @@ sub CanItemBeReserved{
     my $controlbranch = C4::Context->preference('ReservesControlBranch');
 
     # we retrieve user rights on this itemtype and branchcode
-    my $sth = $dbh->prepare("SELECT categorycode, itemtype, branchcode, reservesallowed
+    my $sth = $dbh->prepare("SELECT categorycode, itemtype, branchcode, reservesallowed, allow_hold_if_items_available
                              FROM issuingrules
                              WHERE (categorycode in (?,'*') )
                              AND (itemtype IN (?,'*'))
@@ -495,8 +498,8 @@ sub CanItemBeReserved{
                                 LEFT JOIN borrowers USING (borrowernumber)
                             WHERE borrowernumber = ?
                                 ";
-    
-    
+
+
     my $branchcode   = "";
     my $branchfield  = "reserves.branchcode";
 
@@ -507,20 +510,24 @@ sub CanItemBeReserved{
         $branchfield = "borrowers.branchcode";
         $branchcode = $borrower->{branchcode};
     }
-    
-    # we retrieve rights 
+
+    my $allow_hold_if_items_available;
+
+    # we retrieve rights
     $sth->execute($borrower->{'categorycode'}, $item->{'itype'}, $branchcode);
-    if(my $rights = $sth->fetchrow_hashref()){
-        $ruleitemtype    = $rights->{itemtype};
-        $allowedreserves = $rights->{reservesallowed}; 
-    }else{
+    if ( my $rights = $sth->fetchrow_hashref() ) {
+        $ruleitemtype                  = $rights->{itemtype};
+        $allowedreserves               = $rights->{reservesallowed};
+        $allow_hold_if_items_available = $rights->{allow_hold_if_items_available};
+    }
+    else {
         $ruleitemtype = '*';
     }
 
     # we retrieve count
 
     $querycount .= "AND $branchfield = ?";
-    
+
     # If using item-level itypes, fall back to the record
     # level itemtype if the hold has no associated item
     $querycount .=
@@ -530,7 +537,7 @@ sub CanItemBeReserved{
       if ( $ruleitemtype ne "*" );
 
     my $sthcount = $dbh->prepare($querycount);
-    
+
     if($ruleitemtype eq "*"){
         $sthcount->execute($borrowernumber, $branchcode);
     }else{
@@ -569,6 +576,20 @@ sub CanItemBeReserved{
         my $itembranch = $item->{homebranch};
         if ($itembranch ne $borrower->{branchcode}) {
             return 'cannotReserveFromOtherBranches';
+        }
+    }
+
+    unless ( $allow_hold_if_items_available ) {
+        my $item = Koha::Items->find($itemnumber);
+        my @items = Koha::Items->search({ biblionumber => $item->biblionumber });
+        foreach $item (@items) {
+            my ( $issuingimpossible, $needsconfirmation ) = C4::Circulation::CanBookBeIssued(
+                $borrower, $item->barcode, my $duedate,
+                my $inprocess,
+                my $ignore_reserves = 1
+            );
+
+            return 'itemsAvailable' unless ( keys %$issuingimpossible || keys %$needsconfirmation );
         }
     }
 
@@ -744,8 +765,8 @@ sub GetReservesToBranch {
     my $dbh = C4::Context->dbh;
     my $sth = $dbh->prepare(
         "SELECT reserve_id,borrowernumber,reservedate,itemnumber,timestamp
-         FROM reserves 
-         WHERE priority='0' 
+         FROM reserves
+         WHERE priority='0'
            AND branchcode=?"
     );
     $sth->execute( $frombranch );
@@ -770,7 +791,7 @@ sub GetReservesForBranch {
 
     my $query = "
         SELECT reserve_id,borrowernumber,reservedate,itemnumber,waitingdate
-        FROM   reserves 
+        FROM   reserves
         WHERE   priority='0'
         AND found='W'
     ";
@@ -1389,7 +1410,7 @@ sub ModReserveMinusPriority {
     my $dbh   = C4::Context->dbh;
     my $query = "
         UPDATE reserves
-        SET    priority = 0 , itemnumber = ? 
+        SET    priority = 0 , itemnumber = ?
         WHERE  reserve_id = ?
     ";
     my $sth_upd = $dbh->prepare($query);
@@ -1604,7 +1625,7 @@ sub ToggleLowestPriority {
 
     my $sth = $dbh->prepare( "UPDATE reserves SET lowestPriority = NOT lowestPriority WHERE reserve_id = ?");
     $sth->execute( $reserve_id );
-    
+
     _FixPriority({ reserve_id => $reserve_id, rank => '999999' });
 }
 
@@ -1814,7 +1835,7 @@ sub _FixPriority {
             $priority[$j]->{'reserve_id'}
         );
     }
-    
+
     $sth = $dbh->prepare( "SELECT reserve_id FROM reserves WHERE lowestPriority = 1 ORDER BY priority" );
     $sth->execute();
 
@@ -2052,7 +2073,7 @@ sub _koha_notify_reserve {
     if (! $notification_sent) {
         &$send_notification('print', 'HOLD');
     }
-    
+
 }
 
 =head2 _ShiftPriorityByDateAndPriority

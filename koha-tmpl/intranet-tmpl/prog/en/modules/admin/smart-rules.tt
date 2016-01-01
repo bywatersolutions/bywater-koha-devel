@@ -172,6 +172,7 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
                 <th>Holds allowed (count)</th>
                 <th>On shelf holds allowed</th>
                 <th>Item level holds</th>
+                <th>Allow hold if others available</th>
                 <th>Rental discount (%)</th>
                 <th colspan="2">&nbsp;</th>
             </tr>
@@ -250,6 +251,7 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
 							<td>[% rule.reservesallowed %]</td>
                                                         <td>[% IF rule.onshelfholds %]Yes[% ELSE %]No[% END %]</td>
                                                         <td>[% IF rule.opacitemholds == 'F'%]Force[% ELSIF rule.opacitemholds == 'Y'%]Allow[% ELSE %]Don't allow[% END %]</td>
+                                                        <td>[% IF rule.allow_hold_if_items_available %]Yes[% ELSE %]No[% END %]</td>
 							<td>[% rule.rentaldiscount %]</td>
                             <td><a href="#" class="editrule">Edit</a></td>
 							<td>
@@ -328,6 +330,12 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
                             <option value="F">Force</option>
                         </select>
                     </td>
+                    <td>
+                        <select name="allow_hold_if_items_available" id="allow_hold_if_items_available">
+                            <option value="0">No</option>
+                            <option value="1" selected="selected">Yes</option>
+                        </select>
+                    </td>
                     <td><input type="text" name="rentaldiscount" id="rentaldiscount" size="2" /></td>
                     <td colspan="2">
                         <input type="hidden" name="branch" value="[% current_branch %]"/>
@@ -359,6 +367,7 @@ for="tobranch"><strong>Clone these rules to:</strong></label> <input type="hidde
                       <th>Holds allowed (count)</th>
                       <th>On shelf holds allowed</th>
                       <th>Item level holds</th>
+                      <th>Allow hold if others available</th>
                       <th>Rental discount (%)</th>
                       <th colspan="2">&nbsp;</th>
                     </tr>

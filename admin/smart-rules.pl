@@ -144,6 +144,7 @@ elsif ($op eq 'add') {
     my $hardduedatecompare = $input->param('hardduedatecompare');
     my $rentaldiscount = $input->param('rentaldiscount');
     my $opacitemholds = $input->param('opacitemholds') || 0;
+    my $allow_hold_if_items_available = $input->param('allow_hold_if_items_available') || 0;
     my $overduefinescap = $input->param('overduefinescap') || undef;
     my $cap_fine_to_replacement_price = $input->param('cap_fine_to_replacement_price') eq 'on';
     $debug and warn "Adding $br, $bor, $itemtype, $fine, $maxissueqty, $maxonsiteissueqty, $cap_fine_to_replacement_price";
@@ -173,6 +174,7 @@ elsif ($op eq 'add') {
         onshelfholds                  => $onshelfholds,
         opacitemholds                 => $opacitemholds,
         overduefinescap               => $overduefinescap,
+        allow_hold_if_items_available => $allow_hold_if_items_available,
         cap_fine_to_replacement_price => $cap_fine_to_replacement_price,
     };
 
