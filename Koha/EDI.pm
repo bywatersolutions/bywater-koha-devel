@@ -86,9 +86,8 @@ sub create_edi_order {
         $edifact = Koha::Plugins::Handler->run(
             {
                 class  => $vendor->plugin,
-                method => 'edifact',
+                method => 'edifact_order',
                 params => {
-                    object => "Order",
                     params => $edifact_order_params,
                 }
             }
@@ -133,8 +132,25 @@ sub process_invoice {
     my $schema = Koha::Database->new()->schema();
     my $logger = Log::Log4perl->get_logger();
     my $vendor_acct;
-    my $edi =
+
+    my $plugin = $invoice_message->edi_acct()->plugin();
+    my $edi_plugin;
+    if ( $plugin ) {
+        $edi_plugin = Koha::Plugins::Handler->run(
+            {
+                class  => $plugin,
+                method => 'edifact',
+                params => {
+                    invoice_message => $invoice_message,
+                    transmission => $invoice_message->raw_msg,
+                }
+            }
+        );
+    }
+
+    my $edi = $edi_plugin ||
       Koha::Edifact->new( { transmission => $invoice_message->raw_msg, } );
+
     my $messages = $edi->message_array();
 
     if ( @{$messages} ) {
