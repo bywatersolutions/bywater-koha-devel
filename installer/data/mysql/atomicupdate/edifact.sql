@@ -111,7 +111,7 @@ BEGIN
     DECLARE _count INT;
     SET _count = ( SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'vendor_edi_accounts' AND column_name = 'plugin' ) ;
     IF _count = 0 THEN
-        ALTER TABLE vendor_edi_accounts ADD COLUMN plugin varchar(256) NOT NULL DEFAULT "",
+        ALTER TABLE vendor_edi_accounts ADD COLUMN plugin varchar(256) NOT NULL DEFAULT "";
     END IF;
 END $$
 CALL Alter_Table $$
