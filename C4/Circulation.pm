@@ -1852,6 +1852,25 @@ sub AddReturn {
 
     my $borrowernumber = $borrower->{'borrowernumber'} || undef;    # we don't know if we had a borrower or not
 
+    my $yaml = C4::Context->preference('UpdateItemLocationOnCheckin');
+    if ($yaml) {
+        $yaml = "$yaml\n\n";  # YAML is anal on ending \n. Surplus does not hurt
+        my $rules;
+        eval { $rules = YAML::Load($yaml); };
+        if ($@) {
+            warn "Unable to parse UpdateItemLocationOnCheckin syspref : $@";
+        }
+        else {
+            foreach my $key ( keys %$rules ) {
+                if ( $item->{location} eq $key ) {
+                    $messages->{'ItemLocationUpdated'} = { from => $item->{location}, to => $rules->{$key} };
+                    ModItem( { location => $rules->{$key} }, undef, $itemnumber );
+                    last;
+                }
+            }
+        }
+    }
+
     my $yaml = C4::Context->preference('UpdateNotForLoanStatusOnCheckin');
     if ($yaml) {
         $yaml = "$yaml\n\n";  # YAML is anal on ending \n. Surplus does not hurt

@@ -446,6 +446,19 @@ $(document).ready(function () {
                             [% END %]
                         </p>
                     [% END %]
+                    [% IF ( errmsgloo.ItemLocationUpdated ) %]
+                        <p class="problem">
+                            Item location updated
+                            from
+                            [% IF errmsgloo.ItemLocationUpdated.from %]
+                                [% AuthorisedValues.GetByCode( 'LOC', errmsgloo.ItemLocationUpdated.from ) %]
+                            [% END %]
+                            to
+                            [% IF errmsgloo.ItemLocationUpdated.to %]
+                                [% AuthorisedValues.GetByCode( 'LOC', errmsgloo.ItemLocationUpdated.to ) %]
+                            [% END %]
+                        </p>
+                    [% END %]
                     [% IF ( errmsgloo.badbarcode ) %]
                         <p class="problem">No item with barcode: [% errmsgloo.msg %]</p>
                     [% END %]

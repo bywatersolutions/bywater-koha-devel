@@ -423,6 +423,13 @@ Circulation:
             - calculate and update overdue charges when an item is returned.
             - <br /><b>NOTE If you are doing hourly loans then you should have this on.</b>
         -
+            - pref: UpdateItemLocationOnCheckin
+              type: textarea
+              class: code
+            - This is is a list of value pairs. When an item is checked in, if the location value on the left matches the items location value
+            - "it will be updated to the right-hand value. E.g. ''PROC: FIC'' will cause an item that was set to ''Book Cart'' to now be in the ''Fiction'' shelving location. "
+            - Each pair of values should be on a separate line.
+        -
             - pref: UpdateNotForLoanStatusOnCheckin
               type: textarea
               class: code
