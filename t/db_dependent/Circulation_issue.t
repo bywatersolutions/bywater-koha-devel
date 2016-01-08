@@ -27,7 +27,7 @@ use C4::Items;
 use C4::Context;
 use C4::Reserves;
 
-use Test::More tests => 32;
+use Test::More tests => 35;
 
 BEGIN {
     use_ok('C4::Circulation');
@@ -388,6 +388,32 @@ ok( $item->{notforloan} eq 9, q{UpdateNotForLoanStatusOnCheckin updates notforlo
 AddReturn( 'barcode_3', $samplebranch1->{branchcode} );
 $item = GetItem( $itemnumber );
 ok( $item->{notforloan} eq 9, q{UpdateNotForLoanStatusOnCheckin does not update notforloan value from 9 with setting "1: 9"} );
+
+my $itemnumber2;
+($biblionumber, $biblioitemnumber, $itemnumber2) = C4::Items::AddItem(
+    {
+        barcode        => 'barcode_4',
+        itemcallnumber => 'callnumber4',
+        homebranch     => $samplebranch1->{branchcode},
+        holdingbranch  => $samplebranch1->{branchcode},
+        location => 'FIC',
+    },
+    $biblionumber
+);
+
+C4::Context->set_preference( 'UpdateItemLocationOnCheckin', q{} );
+AddReturn( 'barcode_4', $samplebranch1->{branchcode} );
+my $item2 = GetItem( $itemnumber2 );
+ok( $item2->{location} eq 'FIC', 'UpdateItemLocationOnCheckin does not modify value when not enabled' );
+
+C4::Context->set_preference( 'UpdateItemLocationOnCheckin', 'FIC: GEN' );
+AddReturn( 'barcode_4', $samplebranch1->{branchcode} );
+$item2 = GetItem( $itemnumber2 );
+ok( $item2->{location} eq 'GEN', q{UpdateItemLocationOnCheckin updates location value from 'FIC' to 'GEN' with setting "FIC: GEN"} );
+
+AddReturn( 'barcode_4', $samplebranch1->{branchcode} );
+$item2 = GetItem( $itemnumber2 );
+ok( $item2->{location} eq 'GEN', q{UpdateItemLocationOnCheckin does not update location value from 'GEN' with setting "FIC: GEN"} );
 
 # Bug 14640 - Cancel the hold on checking out if asked
 my $reserve_id = AddReserve('CPL', $borrower_id1, $biblionumber,
