@@ -163,17 +163,17 @@ require( [ 'koha-backend', 'search', 'macros', 'marc-editor', 'marc-record', 'pr
 
         $('#quicksearch .search-box').each( function() {
             shortcut.add( 'enter', $.proxy( function() {
-                var terms = [];
+                var terms = {};
 
                 $('#quicksearch .search-box').each( function() {
                     if ( !this.value ) return;
 
-                    terms.push( [ $(this).data('qualifier'), this.value ] );
+                    terms[ $(this).data('qualifier') ] = this.value;
                 } );
 
-                if ( !terms.length ) return;
+                if ( $.isEmptyObject(terms) ) return;
 
-                if ( Search.Run( z3950Servers, Search.JoinTerms(terms) ) ) {
+                if ( Search.Run( z3950Servers, terms ) ) {
                     $("#search-overlay").show();
                     showResultsBox();
                 }
@@ -463,17 +463,17 @@ require( [ 'koha-backend', 'search', 'macros', 'marc-editor', 'marc-record', 'pr
     }
 
     function startAdvancedSearch() {
-        var terms = [];
+        var terms = {};
 
         $('#advanced-search-ui .search-box').each( function() {
             if ( !this.value ) return;
 
-            terms.push( [ $(this).data('qualifier'), this.value ] );
+            terms[ $(this).data('qualifier') ] = this.value;
         } );
 
-        if ( !terms.length ) return;
+        if ( $.isEmptyObject(terms) ) return;
 
-        if ( Search.Run( z3950Servers, Search.JoinTerms(terms) ) ) {
+        if ( Search.Run( z3950Servers, terms ) ) {
             $('#advanced-search-ui').modal('hide');
             $("#search-overlay").show();
             showResultsBox();
@@ -546,19 +546,15 @@ require( [ 'koha-backend', 'search', 'macros', 'marc-editor', 'marc-record', 'pr
         $.each( data.hits, function( undef, hit ) {
             backends.search.records[ hit.server + ':' + hit.index ] = hit.record;
 
-            switch ( hit.server ) {
-                case 'koha:biblioserver':
-                    var bibnumField = hit.record.field( bibnumMap[0] );
+            hit.id = 'search/' + hit.server + ':' + hit.index;
+            if ( hit.server == 'koha:biblioserver' ) {
+                var bibnumField = hit.record.field( bibnumMap[0] );
 
-                    if ( bibnumField && bibnumField.hasSubfield( bibnumMap[1] ) ) {
-                        hit.id = 'catalog/' + bibnumField.subfield( bibnumMap[1] );
-                        break;
-                    }
-
-                    // Otherwise, fallthrough
-
-                default:
-                    hit.id = 'search/' + hit.server + ':' + hit.index;
+                if ( bibnumField && bibnumField.hasSubfield( bibnumMap[1] ) ) {
+                    hit.id = 'catalog/' + bibnumField.subfield( bibnumMap[1] );
+                }
+            } else if ( /^batch:/.test(hit.server) && hit.import_record_id ) {
+                hit.id = hit.server + '/' + hit.import_record_id;
             }
 
             var result = '<tr>';
@@ -708,13 +704,6 @@ require( [ 'koha-backend', 'search', 'macros', 'marc-editor', 'marc-record', 'pr
                     var saved_val = Preferences.user.selected_save_targets[target_id];
 
                     if ( saved_val != null ) setSaveTargetChecked( target_id, saved_val );
-                } );
-                break;
-            case 'selected_search_targets':
-                $.each( z3950Servers, function( server_id, server ) {
-                    var saved_val = Preferences.user.selected_search_targets[server_id];
-
-                    if ( saved_val != null ) server.checked = saved_val;
                 } );
                 break;
         }
