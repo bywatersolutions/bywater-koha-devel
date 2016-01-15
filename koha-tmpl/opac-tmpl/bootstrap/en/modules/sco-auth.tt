@@ -1,28 +1,25 @@
 [% USE Koha %]
 [% INCLUDE 'doc-head-open.inc' %]
-<title>[% IF ( LibraryNameTitle ) %][% LibraryNameTitle %][% ELSE %]Koha online[% END %] catalog &rsaquo;
-[% IF Koha.Preference( 'opacuserlogin' ) == 1 %]
-    Log in to your account
-[% ELSE %]
-    Catalog login disabled
-[% END %]</title>
+<title>[% IF ( LibraryNameTitle ) %][% LibraryNameTitle %][% ELSE %]Koha online[% END %] self-checkout station &rsaquo;
+    Self-checkout login
+</title>
 [% INCLUDE 'doc-head-close.inc' %]
 [% BLOCK cssinclude %][% END %]
+[% IF ( SCOUserCSS ) %]<style type="text/css">[% SCOUserCSS %]</style>[% END %]
 </head>
-[% INCLUDE 'bodytag.inc' bodyid='opac-login-page' bodyclass='scrollto' %]
-[% INCLUDE 'masthead.inc' %]
+[% INCLUDE 'bodytag.inc' bodyid='sco-login-page' bodyclass='scrollto' %]
+[% INCLUDE 'masthead.inc' %] 
 
 <div class="main">
     <ul class="breadcrumb">
-        <li><a href="/cgi-bin/koha/opac-main.pl">Home</a> <span class="divider">&rsaquo;</span></li>
+        <li><a href="/cgi-bin/koha/sco/sco-main.pl">Home</a> <span class="divider">&rsaquo;</span></li>
         <li><a href="#">Log in</a></li>
     </ul>
 
-    <div class="container-fluid">
+   <div class="container-fluid">
         <div class="row-fluid">
             <div class="span7 offset2">
-                <div id="opac-auth" class="maincontent">
-                    <!--CONTENT-->
+                <div id="sco-auth" class="maincontent">
                     [% IF Koha.Preference( 'opacuserlogin' ) == 1 %]
                         [% IF ( nopermission ) %]
                             <!-- This is what is displayed if user doesnt have permission -->
@@ -31,8 +28,9 @@
                                 <p>Sorry, the system doesn't think you have permission to access this page. </p>
                             </div>
                         [% END %]
-
-                        [% IF ( loginprompt ) %]
+                     [% END %]
+                    <!--CONTENT-->
+                [% IF ( loginprompt ) %]
                             <!-- login prompt time-->
                             <h3>Log in to your account</h3>
 
@@ -56,10 +54,10 @@
                                     <p>You entered an incorrect username or password. Please try again! And remember, passwords are case sensitive.</p>
                                 </div>
                             [% END %]
+                            
+                            [% INCLUDE 'alt-auth.inc' %] 
 
-                            [% INCLUDE 'alt-auth.inc' %]
-
-                            <form action="/cgi-bin/koha/opac-user.pl" name="auth" id="auth" method="post">
+                          <form action="/cgi-bin/koha/sco/sco-main.pl" name="auth" id="auth" method="post">
                                 <input type="hidden" name="koha_login_context" value="opac" />
                                 <fieldset class="brief">
                                     [% FOREACH INPUT IN INPUTS %]
@@ -71,31 +69,10 @@
                                 </fieldset>
 
                                 <input type="submit" value="Log in" class="btn" />
-                                <div id="nologininstructions">
-                                    [% IF Koha.Preference('NoLoginInstructions') %]
-                                        [% Koha.Preference('NoLoginInstructions') %]
-                                    [% ELSE %]
-                                        <h5>Don't have a password yet?</h5><p> If you don't have a password yet, stop by the circulation desk the next time you're in the library. We'll happily set one up for you.</p>
-                                        <h5>Don't have a library card?</h5><p> If you don't have a library card, stop by your local library to sign up.</p>
-                                    [% END # / IF Koha.Preference('NoLoginInstructions') %]
-                                    [% IF PatronSelfRegistration && PatronSelfRegistrationDefaultCategory %]<span id="registrationinstructions">You may <a href="/cgi-bin/koha/opac-memberentry.pl">register here</a>.</span>[% END %]
                                 </div>
                             </form>
                         [% END # / IF loginprompt %]
-
-                    [% ELSE %]
-                        <h4>Logging on to the catalog has not been enabled by the library.</h4>
-                        <ul>
-                            <li>To report this error, you can <a href="mailto:[% admin %]">email the Koha Administrator</a>.</li>
-                            <li>Use top menu bar to navigate to another part of Koha.</li>
-                        </ul>
-                    [% END # / IF opacuserlogin %]
-
-                    [% IF persona %]
-                        <p><a href="#" class="persona-button" id="browserid" ><span>Sign in with your Email</span></a></p>
-                    [% END %]
-
-                </div> <!-- /.opac-auth -->
+                </div> <!-- /.sco-auth -->
             </div> <!-- /.span12 -->
         </div> <!-- /.row-fluid -->
     </div> <!-- /.container-fluid -->
@@ -103,12 +80,7 @@
 
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
-<script type="text/javascript">
-//<![CDATA[
-    // Hide circular 'Log in to Your Account' link in opac-auth.pl
-    $(document).ready(function() {
-        if ( $("#auth" ) ) { $("#members ul li a").hide(); }
-    });
-//]]>
+[% IF ( SCOUserJS ) %]<script type="text/javascript">[% SCOUserJS %]</script>[% END %]
 </script>
 [% END %]
+

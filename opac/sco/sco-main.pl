@@ -67,7 +67,7 @@ my ($template, $loggedinuser, $cookie) = get_template_and_user({
     authnotrequired => 0,
     flagsrequired => { circulate => "self_checkout" },
     query => $query,
-    type  => "opac",
+    type  => "sco",
     debug => 1,
 });
 

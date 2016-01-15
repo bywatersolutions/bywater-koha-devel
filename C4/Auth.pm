@@ -1197,7 +1197,14 @@ sub checkauth {
     $LibraryNameTitle =~ s/<(?:\/?)(?:br|p)\s*(?:\/?)>/ /sgi;
     $LibraryNameTitle =~ s/<(?:[^<>'"]|'(?:[^']*)'|"(?:[^"]*)")*>//sg;
 
-    my $template_name = ( $type eq 'opac' ) ? 'opac-auth.tt' : 'auth.tt';
+    my $template_name;
+    if( $type eq 'opac' ) {
+        $template_name = 'opac-auth.tt'
+    }
+    elsif( $type eq 'sco' ){
+        $template_name = 'sco-auth.tt'
+    }
+    else { $template_name = 'auth.tt' }
     my $template = C4::Templates::gettemplate( $template_name, $type, $query );
     $template->param(
         branchloop                            => GetBranchesLoop(),
@@ -1243,6 +1250,8 @@ sub checkauth {
         PatronSelfRegistrationDefaultCategory => C4::Context->preference("PatronSelfRegistrationDefaultCategory"),
         persona                               => C4::Context->preference("Persona"),
         opac_css_override                     => $ENV{'OPAC_CSS_OVERRIDE'},
+        SCOUserCSS                            => C4::Context->preference("SCOUserCSS"),
+        SCOUserJS                             => C4::Context->preference("SCOUserJS"),
     );
 
     $template->param( OpacPublic => C4::Context->preference("OpacPublic") );

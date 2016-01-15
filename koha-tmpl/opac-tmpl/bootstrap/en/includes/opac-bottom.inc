@@ -267,12 +267,14 @@ $(document).ready(function() {
 </script>
 [% PROCESS jsinclude %]
 
-[% IF ( OPACUserJS ) %]
+[% UNLESS template.name.match('sco-auth.tt') %]
+    [% IF ( OPACUserJS ) %]
     <script type="text/javascript">
         //<![CDATA[
         [% OPACUserJS %]
         //]]>
     </script>
+    [% END %]
 [% END %]
 </body>
 </html>
