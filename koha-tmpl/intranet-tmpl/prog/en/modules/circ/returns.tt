@@ -451,11 +451,27 @@ $(document).ready(function () {
                             Item location updated
                             from
                             [% IF errmsgloo.ItemLocationUpdated.from %]
-                                [% AuthorisedValues.GetByCode( 'LOC', errmsgloo.ItemLocationUpdated.from ) %]
+                                [% IF errmsgloo.ItemLocationUpdated.from == '' %]
+                                 empty   
+                                [% ELSIF AuthorisedValues.GetByCode( 'LOC', errmsgloo.ItemLocationUpdated.from ) == '' %]
+                                    [% errmsgloo.ItemLocationUpdated.from %] (Not an authorized value)
+                                [% ELSE %]
+                                    [% AuthorisedValues.GetByCode( 'LOC', errmsgloo.ItemLocationUpdated.from ) %]
+                                [% END %]
+                            [% ELSE %]
+                                "Blank"
                             [% END %]
                             to
                             [% IF errmsgloo.ItemLocationUpdated.to %]
-                                [% AuthorisedValues.GetByCode( 'LOC', errmsgloo.ItemLocationUpdated.to ) %]
+                                [% IF errmsgloo.ItemLocationUpdated.to == '' %]
+                                   empty 
+                                [% ELSIF AuthorisedValues.GetByCode( 'LOC', errmsgloo.ItemLocationUpdated.to ) == '' %]
+                                    [% errmsgloo.ItemLocationUpdated.to %] (Not an authorized value)
+                                [% ELSE %]
+                                    [% AuthorisedValues.GetByCode( 'LOC', errmsgloo.ItemLocationUpdated.to ) %]
+                                [% END %]
+                            [% ELSE %]
+                                BLANK
                             [% END %]
                         </p>
                     [% END %]

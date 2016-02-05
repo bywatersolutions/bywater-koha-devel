@@ -1861,11 +1861,25 @@ sub AddReturn {
             warn "Unable to parse UpdateItemLocationOnCheckin syspref : $@";
         }
         else {
-            foreach my $key ( keys %$rules ) {
-                if ( $item->{location} eq $key ) {
-                    $messages->{'ItemLocationUpdated'} = { from => $item->{location}, to => $rules->{$key} };
-                    ModItem( { location => $rules->{$key} }, undef, $itemnumber );
-                    last;
+            if (defined $rules->{all}) {
+                if ($rules->{all} eq '_PERM_') { $rules->{all} = $item->{permanent_location}; }
+                if ($rules->{all} eq '_BLANK_') { $rules->{all} = ''; }
+                if ( $item->{location} ne $rules->{all}) {
+                    $messages->{'ItemLocationUpdated'} = { from => $item->{location}, to => $rules->{all} };
+                    ModItem( { location => $rules->{all} }, undef, $itemnumber );
+                }
+            }
+            else {
+                foreach my $key ( keys %$rules ) {
+                    if ( $rules->{$key} eq '_PERM_' ) { $rules->{$key} = $item->{permanent_location}; }
+                    if ( $rules->{$key} eq '_BLANK_') { $rules->{$key} = '' ;}
+#                    warn Data::Dumper::Dumper($key,$item->{location}, 
+                    if ( ($item->{location} eq $key && $item->{location} ne $rules->{$key}) || ($key eq '_BLANK_' && $item->{location} eq '' && $rules->{$key} ne '') ) {
+                        warn Data::Dumper::Dumper( $key );
+                        $messages->{'ItemLocationUpdated'} = { from => $item->{location}, to => $rules->{$key} };
+                        ModItem( { location => $rules->{$key} }, undef, $itemnumber );
+                        last;
+                    } 
                 }
             }
         }
