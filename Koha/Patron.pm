@@ -22,6 +22,7 @@ use Modern::Perl;
 use Carp;
 
 use Koha::Database;
+use Koha::Patrons;
 use Koha::Patron::Images;
 
 use base qw(Koha::Object);
@@ -52,6 +53,12 @@ sub image {
     my ( $self ) = @_;
 
     return Koha::Patron::Images->find( $self->borrowernumber )
+}
+
+sub guarantees {
+    my ( $self ) = @_;
+
+    return Koha::Patrons->search( { guarantorid => $self->id } );
 }
 
 =head3 type
