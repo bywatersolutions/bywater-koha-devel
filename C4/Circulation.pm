@@ -1337,7 +1337,8 @@ sub AddIssue {
             }
         );
 
-        if ( C4::Context->preference('ReturnToShelvingCart') ) { ## ReturnToShelvingCart is on, anything issued should be taken off the cart.
+        if ( $item->{'location'} eq 'CART' && $item->{'permanent_location'} ne 'CART'  ) { 
+        ## Item was moved to cart via UpdateItemLocationOnCheckin, anything issued should be taken off the cart.
           CartToShelf( $item->{'itemnumber'} );
         }
         $item->{'issues'}++;
@@ -1832,17 +1833,6 @@ sub AddReturn {
 
     my $item = GetItem($itemnumber) or die "GetItem($itemnumber) failed";
 
-    if ( $item->{'location'} eq 'PROC' ) {
-        if ( C4::Context->preference("InProcessingToShelvingCart") ) {
-            $item->{'location'} = 'CART';
-        }
-        else {
-            $item->{location} = $item->{permanent_location};
-        }
-
-        ModItem( $item, $item->{'biblionumber'}, $item->{'itemnumber'} );
-    }
-
         # full item data, but no borrowernumber or checkout info (no issue)
         # we know GetItem should work because GetItemnumberFromBarcode worked
     my $hbr = GetBranchItemRule($item->{'homebranch'}, $item->{'itype'})->{'returnbranch'} || "homebranch";
@@ -2022,15 +2012,12 @@ sub AddReturn {
             );
             $sth->execute( $item->{'itemnumber'} );
             # if we have a reservation with valid transfer, we can set it's status to 'W'
-            ShelfToCart( $item->{'itemnumber'} ) if ( C4::Context->preference("ReturnToShelvingCart") );
             C4::Reserves::ModReserveStatus($item->{'itemnumber'}, 'W');
         } else {
             $messages->{'WrongTransfer'}     = $tobranch;
             $messages->{'WrongTransferItem'} = $item->{'itemnumber'};
         }
         $validTransfert = 1;
-    } else {
-        ShelfToCart( $item->{'itemnumber'} ) if ( C4::Context->preference("ReturnToShelvingCart") );
     }
 
     # fix up the accounts.....

@@ -471,7 +471,7 @@ $(document).ready(function () {
                                     [% AuthorisedValues.GetByCode( 'LOC', errmsgloo.ItemLocationUpdated.to ) %]
                                 [% END %]
                             [% ELSE %]
-                                BLANK
+                                "Blank"
                             [% END %]
                         </p>
                     [% END %]
