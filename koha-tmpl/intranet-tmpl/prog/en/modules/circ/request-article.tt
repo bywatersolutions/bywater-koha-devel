@@ -161,7 +161,8 @@ $(document).ready(function() {
                     [% ELSE %]
                         [% IF biblio.can_article_request( patron ) %]
 
-                            <form id="place-article-request" method="post" action="/cgi-bin/koha/circ/request-article-do.pl">
+                            <form id="place-article-request" method="post" action="/cgi-bin/koha/circ/request-article.pl">
+                                <input type="hidden" name="action" value="create" />
                                 <input type="hidden" name="biblionumber" id="biblionumber" value="[% biblio.biblionumber %]" />
                                 <input type="hidden" name="borrowernumber" id="borrowernumber" value="[% patron.id %]" />
 

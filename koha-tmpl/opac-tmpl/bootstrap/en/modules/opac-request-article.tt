@@ -25,7 +25,8 @@
 
             <h3>Place article request for [% biblio.title %]</h3>
 
-            <form id="place-article-request" method="post" action="/cgi-bin/koha/opac-request-article-do.pl">
+            <form id="place-article-request" method="post" action="/cgi-bin/koha/opac-request-article.pl">
+                <input type="hidden" name="action" value="create" />
                 <input type="hidden" name="biblionumber" id="biblionumber" value="[% biblio.biblionumber %]" />
 
                 <fieldset class="rows">

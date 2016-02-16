@@ -26,26 +26,59 @@ use Koha::Biblios;
 use Koha::Borrowers;
 use Koha::ArticleRequests;
 
-my $input = new CGI;
+my $cgi = new CGI;
 
 my ( $template, $borrowernumber, $cookie, $flags ) = get_template_and_user(
     {
         template_name   => "circ/request-article.tt",
-        query           => $input,
+        query           => $cgi,
         type            => "intranet",
         authnotrequired => 0,
         flagsrequired   => { circulate => 'circulate_remaining_permissions' },
     }
 );
 
-my $biblionumber      = $input->param('biblionumber');
-my $patron_cardnumber = $input->param('patron_cardnumber');
-my $patron_id         = $input->param('patron_id');
+my $action            = $cgi->param('action') || q{};
+my $biblionumber      = $cgi->param('biblionumber');
+my $patron_cardnumber = $cgi->param('patron_cardnumber');
+my $patron_id         = $cgi->param('patron_id');
 
 my $biblio = Koha::Biblios->find($biblionumber);
-my $patron = Koha::Borrowers->find( $patron_id ? $patron_id : { cardnumber => $patron_cardnumber } );
+my $patron = Koha::Borrowers->find(
+    $patron_id ? $patron_id : { cardnumber => $patron_cardnumber } );
 
-if (!$patron && $patron_cardnumber) {
+if ( $action eq 'create' ) {
+    my $borrowernumber = $cgi->param('borrowernumber');
+    my $branchcode     = $cgi->param('branchcode');
+
+    my $itemnumber = $cgi->param('itemnumber') || undef;
+    my $title      = $cgi->param('title')      || undef;
+    my $author     = $cgi->param('author')     || undef;
+    my $volume     = $cgi->param('volume')     || undef;
+    my $issue      = $cgi->param('issue')      || undef;
+    my $date       = $cgi->param('date')       || undef;
+    my $pages      = $cgi->param('pages')      || undef;
+    my $chapters   = $cgi->param('chapters')   || undef;
+
+    my $ar = Koha::ArticleRequest->new(
+        {
+            borrowernumber => $borrowernumber,
+            biblionumber   => $biblionumber,
+            branchcode     => $branchcode,
+            itemnumber     => $itemnumber,
+            title          => $title,
+            author         => $author,
+            volume         => $volume,
+            issue          => $issue,
+            date           => $date,
+            pages          => $pages,
+            chapters       => $chapters,
+        }
+    )->store();
+
+}
+
+if ( !$patron && $patron_cardnumber ) {
     my $results = C4::Utils::DataTables::Members::search(
         {
             searchmember => $patron_cardnumber,
@@ -71,4 +104,4 @@ $template->param(
     patron => $patron,
 );
 
-output_html_with_http_headers $input, $cookie, $template->output;
+output_html_with_http_headers $cgi, $cookie, $template->output;

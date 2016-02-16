@@ -39,7 +39,40 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
+my $action = $cgi->param('action') || q{};
 my $biblionumber = $cgi->param('biblionumber');
+
+if ( $action eq 'create' ) {
+    my $branchcode = $cgi->param('branchcode');
+
+    my $itemnumber = $cgi->param('itemnumber') || undef;
+    my $title      = $cgi->param('title')      || undef;
+    my $author     = $cgi->param('author')     || undef;
+    my $volume     = $cgi->param('volume')     || undef;
+    my $issue      = $cgi->param('issue')      || undef;
+    my $date       = $cgi->param('date')       || undef;
+    my $pages      = $cgi->param('pages')      || undef;
+    my $chapters   = $cgi->param('chapters')   || undef;
+
+    my $ar = Koha::ArticleRequest->new(
+        {
+            borrowernumber => $borrowernumber,
+            biblionumber   => $biblionumber,
+            branchcode     => $branchcode,
+            itemnumber     => $itemnumber,
+            title          => $title,
+            author         => $author,
+            volume         => $volume,
+            issue          => $issue,
+            date           => $date,
+            pages          => $pages,
+            chapters       => $chapters,
+        }
+    )->store();
+
+    print $cgi->redirect("/cgi-bin/koha/opac-user.pl#opac-user-article-requests");
+    exit;
+}
 
 my $biblio = Koha::Biblios->find($biblionumber);
 my $patron = Koha::Borrowers->find($borrowernumber);
