@@ -318,6 +318,10 @@ body {
     width: 14em;
 }
 
+#advanced-search-fields .marc-subfield-input {
+    width: 4em;
+}
+
 .fa.fa-spinner {
     display: inline-block;
     height: 16px;
