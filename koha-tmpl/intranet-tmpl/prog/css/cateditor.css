@@ -330,6 +330,18 @@ body {
     padding: -1px;
     vertical-align: text-top;
 }
+#advanced-search-fields .marc-subfield-input {
+    width: 4ex;
+}
+
+.icon-loading {
+    display: inline-block;
+    height: 16px;
+    width: 16px;
+    background: transparent url("../img/spinner-small.gif") top left no-repeat;
+    padding: -1px;
+    vertical-align: text-top;
+}
 
 /*> Search results */
 
