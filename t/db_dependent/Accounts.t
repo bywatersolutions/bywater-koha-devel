@@ -35,7 +35,7 @@ BEGIN {
 }
 
 can_ok( 'C4::Accounts',
-    qw( recordpayment
+    qw(
         makepayment
         getnextacctno
         chargelostitem
@@ -136,7 +136,7 @@ for my $data  (@test_data) {
 
 $dbh->do(q|DELETE FROM accountlines|);
 
-subtest "recordpayment() tests" => sub {
+subtest "Koha::Account::pay tests" => sub {
 
     plan tests => 10;
 
@@ -153,6 +153,8 @@ subtest "recordpayment() tests" => sub {
     $borrower->branchcode( $branchcode );
     $borrower->store;
 
+    my $account = Koha::Account->new({ patron_id => $borrower->id });
+
     my $line1 = Koha::Account::Line->new({ borrowernumber => $borrower->borrowernumber, amountoutstanding => 100 })->store();
     my $line2 = Koha::Account::Line->new({ borrowernumber => $borrower->borrowernumber, amountoutstanding => 200 })->store();
     $line1->_result->discard_changes;
@@ -163,7 +165,6 @@ subtest "recordpayment() tests" => sub {
     my $count = $sth->fetchrow_array;
     is($count, 2, 'There is 2 lines as expected');
 
-    # Testing recordpayment -------------------------
     # There is $100 in the account
     $sth = $dbh->prepare("SELECT amountoutstanding FROM accountlines WHERE borrowernumber=?");
     my $amountoutstanding = $dbh->selectcol_arrayref($sth, {}, $borrower->borrowernumber);
@@ -176,9 +177,9 @@ subtest "recordpayment() tests" => sub {
     # We make a $20 payment
     my $borrowernumber = $borrower->borrowernumber;
     my $data = '20.00';
-    my $sys_paytype;
     my $payment_note = '$20.00 payment note';
-    recordpayment($borrowernumber, $data, $sys_paytype, $payment_note);
+    $account->pay( { amount => $data, note => $payment_note } );
+
     # There is now $280 in the account
     $sth = $dbh->prepare("SELECT amountoutstanding FROM accountlines WHERE borrowernumber=?");
     $amountoutstanding = $dbh->selectcol_arrayref($sth, {}, $borrower->borrowernumber);
@@ -187,6 +188,7 @@ subtest "recordpayment() tests" => sub {
         $amountleft += $line;
     }
     is($amountleft, 280, 'The account has $280 as expected' );
+
     # Is the payment note well registered
     $sth = $dbh->prepare("SELECT note FROM accountlines WHERE borrowernumber=? ORDER BY accountlines_id DESC LIMIT 1");
     $sth->execute($borrower->borrowernumber);
@@ -196,7 +198,8 @@ subtest "recordpayment() tests" => sub {
     # We make a -$30 payment (a NEGATIVE payment)
     $data = '-30.00';
     $payment_note = '-$30.00 payment note';
-    recordpayment($borrowernumber, $data, $sys_paytype, $payment_note);
+    $account->pay( { amount => $data, note => $payment_note } );
+
     # There is now $310 in the account
     $sth = $dbh->prepare("SELECT amountoutstanding FROM accountlines WHERE borrowernumber=?");
     $amountoutstanding = $dbh->selectcol_arrayref($sth, {}, $borrower->borrowernumber);
@@ -214,7 +217,8 @@ subtest "recordpayment() tests" => sub {
     #We make a $150 payment ( > 1stLine )
     $data = '150.00';
     $payment_note = '$150.00 payment note';
-    recordpayment($borrowernumber, $data, $sys_paytype, $payment_note);
+    $account->pay( { amount => $data, note => $payment_note } );
+
     # There is now $160 in the account
     $sth = $dbh->prepare("SELECT amountoutstanding FROM accountlines WHERE borrowernumber=?");
     $amountoutstanding = $dbh->selectcol_arrayref($sth, {}, $borrower->borrowernumber);
@@ -232,7 +236,8 @@ subtest "recordpayment() tests" => sub {
     #We make a $200 payment ( > amountleft )
     $data = '200.00';
     $payment_note = '$200.00 payment note';
-    recordpayment($borrowernumber, $data, $sys_paytype, $payment_note);
+    $account->pay( { amount => $data, note => $payment_note } );
+
     # There is now -$40 in the account
     $sth = $dbh->prepare("SELECT amountoutstanding FROM accountlines WHERE borrowernumber=?");
     $amountoutstanding = $dbh->selectcol_arrayref($sth, {}, $borrower->borrowernumber);
