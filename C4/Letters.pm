@@ -1018,7 +1018,16 @@ ENDSQL
         $params->{'from_address'},                # from_address
         $params->{'letter'}->{'content-type'},    # content_type
     );
-    return $dbh->last_insert_id(undef,undef,'message_queue', undef);
+
+    my $id = $dbh->last_insert_id(undef,undef,'message_queue', undef);
+
+    $content = $params->{letter}->{content};
+    if ( $content =~ /__MESSAGE_ID__/ ) {
+        $content =~ s/__MESSAGE_ID__/$id/g;
+        $dbh->do( "UPDATE message_queue SET content = ? WHERE message_id = ?", undef, ($content, $id) );
+    }
+
+    return $id;
 }
 
 =head2 SendQueuedMessages ([$hashref]) 
