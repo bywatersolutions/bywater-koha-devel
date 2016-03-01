@@ -770,6 +770,7 @@ sub GetPreparedLetter {
         {
             content => $letter->{content},
             tables  => $tables,
+            substitute => $substitute,
         }
     );
 
@@ -1015,7 +1016,16 @@ ENDSQL
         $params->{'from_address'},                # from_address
         $params->{'letter'}->{'content-type'},    # content_type
     );
-    return $dbh->last_insert_id(undef,undef,'message_queue', undef);
+
+    my $id = $dbh->last_insert_id(undef,undef,'message_queue', undef);
+
+    $content = $params->{letter}->{content};
+    if ( $content =~ /__MESSAGE_ID__/ ) {
+        $content =~ s/__MESSAGE_ID__/$id/g;
+        $dbh->do( "UPDATE message_queue SET content = ? WHERE message_id = ?", undef, ($content, $id) );
+    }
+
+    return $id;
 }
 
 =head2 SendQueuedMessages ([$hashref]) 
@@ -1440,6 +1450,7 @@ sub _process_tt {
 
     my $content = $params->{content};
     my $tables = $params->{tables};
+    my $substitute = $params->{substitute};
 
     my $use_template_cache = C4::Context->config('template_cache_dir') && defined $ENV{GATEWAY_INTERFACE};
     my $template           = Template->new(
@@ -1454,7 +1465,9 @@ sub _process_tt {
         }
     ) or die Template->error();
 
-    my $tt_params = _get_tt_params( $tables );
+    my $table_params = _get_tt_params( $tables );
+
+    my $tt_params = $substitute ? { %$substitute, %$table_params } : $table_params;
 
     my $output;
     $template->process( \$content, $tt_params, \$output ) || croak "ERROR PROCESSING TEMPLATE: " . $template->error();

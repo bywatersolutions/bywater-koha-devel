@@ -57,6 +57,7 @@ my @holds_waiting_days_to_call;
 my $library_code;
 my $help;
 my $outfile;
+my $use_tt;
 
 # maps to convert I-tiva terms to Koha terms
 my $type_module_map = {
@@ -73,12 +74,13 @@ my $type_notice_map = {
 
 GetOptions(
     'o|output:s'            => \$outfile,
-    'v'                     => \$verbose,
-    'lang:s'                => \$language,
-    'type:s'                => \@types,
+    'v|verbose'             => \$verbose,
+    'l|lang:s'              => \$language,
+    't|type:s'              => \@types,
     'w|waiting-hold-day:s'  => \@holds_waiting_days_to_call,
     'c|code|library-code:s' => \$library_code,
-    'help|h'                => \$help,
+    'tt|template-toolkit'   => \$use_tt,
+    'h|help'                => \$help,
 );
 
 $language = uc($language);
@@ -124,9 +126,20 @@ foreach my $type (@types) {
             module      => $module,
             letter_code => $code,
             tables      => {
-                borrowers   => $issues->{'borrowernumber'},
-                biblio      => $issues->{'biblionumber'},
-                biblioitems => $issues->{'biblionumber'},
+                borrowers   => $issues->{borrowernumber},
+                biblio      => $issues->{biblionumber},
+                biblioitems => $issues->{biblionumber},
+                items       => $issues->{itemnumber},
+                issues      => $issues->{itemnumber},
+                branches    => $issues->{site},
+            },
+            substitute => {
+                format       => $format,
+                language     => $language,
+                type         => $type,
+                level        => $issues->{level},
+                library_code => $library_code,
+                due_date     => $due_date,
             },
             message_transport_type => 'phone',
         );
@@ -143,9 +156,14 @@ foreach my $type (@types) {
             );
         }
 
-        print $OUT "\"$format\",\"$language\",\"$type\",\"$issues->{level}\",\"$issues->{cardnumber}\",\"$issues->{patron_title}\",\"$issues->{firstname}\",";
-        print $OUT "\"$issues->{surname}\",\"$issues->{phone}\",\"$issues->{email}\",\"$library_code\",";
-        print $OUT "\"$issues->{site}\",\"$issues->{site_name}\",\"$issues->{barcode}\",\"$due_date\",\"$issues->{title}\",\"$message_id\"\n";
+        if ( $use_tt ) {
+            $letter->{content} =~ s/__MESSAGE_ID__/$message_id/g;
+            print $OUT $letter->{content};
+        } else {
+            print $OUT "\"$format\",\"$language\",\"$type\",\"$issues->{level}\",\"$issues->{cardnumber}\",\"$issues->{patron_title}\",\"$issues->{firstname}\",";
+            print $OUT "\"$issues->{surname}\",\"$issues->{phone}\",\"$issues->{email}\",\"$library_code\",";
+            print $OUT "\"$issues->{site}\",\"$issues->{site_name}\",\"$issues->{barcode}\",\"$due_date\",\"$issues->{title}\",\"$message_id\"\n";
+        }
     }
 }
 
@@ -206,6 +224,12 @@ consortium purposes and apply library specific settings, such as
 prompts, to those notices.
 This field can be blank if all messages are from a single library.
 
+=item B<--template-toolkit>
+
+OPTIONAL. If set, processes the notice content as Template Toolkit syntax and sends the content as the CSV line instead
+of generated a fixed CSV line. This allows the contents of the CSV file to be created dynamically instead of using the
+fixed format that is outputted without this flag.
+
 =back
 
 =cut
@@ -214,7 +238,7 @@ sub GetOverdueIssues {
     my $query = "SELECT borrowers.borrowernumber, borrowers.cardnumber, borrowers.title as patron_title, borrowers.firstname, borrowers.surname,
                 borrowers.phone, borrowers.email, borrowers.branchcode, biblio.biblionumber, biblio.title, items.barcode, issues.date_due,
                 max(overduerules.branchcode) as rulebranch, TO_DAYS(NOW())-TO_DAYS(date_due) as daysoverdue, delay1, delay2, delay3,
-                issues.branchcode as site, branches.branchname as site_name
+                issues.branchcode as site, branches.branchname as site_name, items.itemnumber
                 FROM borrowers JOIN issues USING (borrowernumber)
                 JOIN items USING (itemnumber)
                 JOIN biblio USING (biblionumber)
@@ -248,7 +272,7 @@ sub GetOverdueIssues {
 sub GetPredueIssues {
     my $query = "SELECT borrowers.borrowernumber, borrowers.cardnumber, borrowers.title as patron_title, borrowers.firstname, borrowers.surname,
                 borrowers.phone, borrowers.email, borrowers.branchcode, biblio.biblionumber, biblio.title, items.barcode, issues.date_due,
-                issues.branchcode as site, branches.branchname as site_name
+                issues.branchcode as site, branches.branchname as site_name, items.itemnumber
                 FROM borrowers JOIN issues USING (borrowernumber)
                 JOIN items USING (itemnumber)
                 JOIN biblio USING (biblionumber)
@@ -273,7 +297,7 @@ sub GetPredueIssues {
 sub GetWaitingHolds {
     my $query = "SELECT borrowers.borrowernumber, borrowers.cardnumber, borrowers.title as patron_title, borrowers.firstname, borrowers.surname,
                 borrowers.phone, borrowers.email, borrowers.branchcode, biblio.biblionumber, biblio.title, items.barcode, reserves.waitingdate,
-                reserves.branchcode AS site, branches.branchname AS site_name,
+                reserves.branchcode AS site, branches.branchname AS site_name, items.itemnumber,
                 TO_DAYS(NOW())-TO_DAYS(reserves.waitingdate) AS days_since_waiting
                 FROM borrowers JOIN reserves USING (borrowernumber)
                 JOIN items USING (itemnumber)
