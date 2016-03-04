@@ -100,6 +100,13 @@ Patrons:
            class: integer
          - results per page in the staff client.
      -
+         - pref: PatronQuickAdd
+           choices:
+               yes: Use
+               no:  "Don't use"
+         - "the patron quick add form when entering a new patron. Displays only mandatory fields and fields specified here:"
+         - pref: PatronQuickAddFields
+     -
          - "Use the SMS::Send::"
          - pref: SMSSendDriver
          - driver to send SMS messages.

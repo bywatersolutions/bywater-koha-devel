@@ -1,4 +1,4 @@
-        <fieldset class="rows" id="memberentry_address">
+        <fieldset class="rows full_form" id="memberentry_address">
         <legend id="alt_address_lgd">Alternate address</legend><ol>
         [% UNLESS noB_address %]
             <li>

@@ -1,4 +1,4 @@
-<fieldset class="rows" id="memberentry_mainaddress">
+<fieldset class="rows full_form" id="memberentry_mainaddress">
     <legend id="main_address_lgd">Main address</legend><ol>
 [% UNLESS nostreettype %]
     [% IF roadtypes %]

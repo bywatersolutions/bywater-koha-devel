@@ -8,6 +8,11 @@
 //<![CDATA[
     $(document).ready(function() {
 
+        $("#toggle_fast_add").click(function(){
+            $(".toggler").toggle();
+            return false;
+        });
+
         [% IF categorycode %]
             update_category_code( "[% categorycode %]" );
         [% ELSE %]
@@ -133,7 +138,7 @@
 	[% END %]
 
 
-[% UNLESS ( check_member ) %]<form name="form" id="entryform"  action="/cgi-bin/koha/members/memberentry.pl" method="post" autocomplete="off">
+[% UNLESS ( check_member ) %]<form name="form" id="entryform"  action="/cgi-bin/koha/members/memberentry.pl" method="post" autocomplete="off" class='toggler' >
 <input type="hidden" name="nodouble"  value="[% nodouble %]" /> [% END %]
 <!--    field always hidden in different form (1,2,3) -->
 <input type="hidden" name="BorrowerMandatoryField" value="[% BorrowerMandatoryField %]" />
@@ -159,7 +164,7 @@
 
 [% IF ( step_1 ) %]
 [%UNLESS notitle && nosurname && nofirstname && nodateofbirth && noinitials && noothernames &&nosex %]
-	<fieldset class="rows" id="memberentry_identity">
+	<fieldset class="rows full_form" id="memberentry_identity">
 		<legend id="identity_lgd">[% IF ( I ) %]Organization [% ELSE %]Patron [% END %]identity</legend>
 		<ol>
 		[% UNLESS ( I ) %]
@@ -287,7 +292,7 @@
 [% END # hide fieldset %]
 
 [% IF ( showguarantor ) %]<input type="hidden" id="guarantorid" name="guarantorid"   value="[% guarantorid %]" />
-    <fieldset class="rows">
+    <fieldset class="rows full_form">
         <legend>Guarantor information</legend>
         <ol>
 [% IF ( P ) %]
@@ -391,7 +396,7 @@
 [% END # nostreet && nocity etc group%]
 
 [% UNLESS nophone && nophonepro && nomobile && noemail && noemailpro && nofax %]
-  <fieldset class="rows" id="memberentry_contact">
+  <fieldset class="rows full_form" id="memberentry_contact">
     <legend id="contact_lgd">Contact</legend><ol>
         [% UNLESS nophone %]
       <li>
@@ -495,7 +500,7 @@
 [% END %]
 [% IF ( step_3 ) %]
 
-  <fieldset class="rows" id="memberentry_library_management">
+  <fieldset class="rows full_form" id="memberentry_library_management">
     <legend id="library_management_lgd">Library management</legend><ol>
       [% UNLESS nocardnumber %]
         <li>
@@ -604,7 +609,7 @@
 	</ol>
   </fieldset>
     [% UNLESS nodateenrolled &&  noopacnote && noborrowernotes %]
-	<fieldset class="rows" id="memberentry_subscription">
+	<fieldset class="rows full_form" id="memberentry_subscription">
 	<legend id="library_setup_lgd">Library set-up</legend><ol>
         [% UNLESS nodateenrolled %]
 		<li>
@@ -683,7 +688,7 @@
     [% END # hide fieldset %]
 
     [% UNLESS nouserid && nopassword %]
-	<fieldset class="rows" id="memberentry_userid">
+	<fieldset class="rows full_form" id="memberentry_userid">
         <legend id="opac_staff_login_lgd">OPAC/Staff login</legend><ol>
         [% UNLESS nouserid %]
 		<li>
@@ -805,7 +810,7 @@
         [% END # hide fieldset %][% END %]
 		<!--this zones are not necessary in modif mode -->
         [% UNLESS ( opadd || opduplicate ) %]
-		<fieldset class="rows">
+		<fieldset class="rows full_form">
             <legend>Patron account flags</legend>
 			<ol class="radio">
 			[% FOREACH flagloo IN flagloop %]
@@ -836,7 +841,7 @@
 			</ol>
 			</fieldset>
 
-              <fieldset class="rows">
+              <fieldset class="rows full_form">
                 <legend>Patron restrictions</legend>
 
                 [% IF ( debarments ) %]
@@ -893,7 +898,7 @@
 [% END %]
 
 [% IF ( step_4 ) %][% IF ( ExtendedPatronAttributes ) %][% UNLESS ( no_patron_attribute_types ) %]
-  <fieldset class="rows" id="memberentry_patron_attributes">
+  <fieldset class="rows full_form" id="memberentry_patron_attributes">
     <legend>Additional attributes and identifiers</legend>
     <input type="hidden" name="setting_extended_patron_attributes" value="1" />
     [% FOREACH pa_loo IN patron_attributes %]
@@ -941,7 +946,7 @@
 [% END %][% END %][% END %]
 
 [% IF ( step_5 ) %][% IF ( EnhancedMessagingPreferences ) %]
-  <fieldset class="rows" id="memberentry_messaging_prefs">
+  <fieldset class="rows full_form" id="memberentry_messaging_prefs">
     <legend id="patron_messaging_prefs_lgd">Patron messaging preferences</legend>
     [% IF ( opadd ) %]
     <!-- handle changing prefs if creating new patron and changing
@@ -1011,9 +1016,11 @@
     [% END %]
   </fieldset>
 [% END %] [% END %]
+</form>
 
 [% UNLESS ( check_member ) %]
     <fieldset class="action">
+        <div class="btn-group"><a class="btn" id="toggle_fast_add" href="#">Fast-add/Full Results</a></div>
         <input type="submit" name="save" onclick="return check_form_borrowers();" value="Save" />
       [% IF ( opadd ) %]
        <a class="cancel" href="/cgi-bin/koha/members/member.pl">Cancel</a>
@@ -1022,8 +1029,35 @@
 	   [% END %]
     </fieldset>
 [% END %]
+
+[% IF Koha.Preference('PatronQuickAdd') && opadd %]
+<form id="quakcers" class='toggler'>
+    <fieldset class="rows quick_add"><legend>Quick Add</legend>
+        <ol id="quackadd">
+        </ol>
+    </fieldset>
 </form>
-  
+<script>
+    $(document).ready(function () {
+        $("#entryform").hide();
+        [% q_add_f = Koha.Preference('PatronQuickAddFields').split('\|') %]
+        var qaddfields = "[% FOREACH field IN q_add_f.unique %][% field %] [% END %]";
+        var splitted = qaddfields.split(); 
+        var list = "<fieldset class=\"rows\"><legend>Quick Add</legend><ol>";
+        $("#entryform label").each(function () {
+            var input_label = $(this).attr('for');
+            if ( input_label == 'sex-female' ) { input_label='sex'; }
+            else if ( input_label == 'btitle' ) { input_label='title'; }
+            if( qaddfields.indexOf( input_label ) != -1 || $(this).attr('class') == 'required' ){
+            item = $(this).parent().clone().appendTo("#quackadd");
+            if( input_label == 'password') $("#entryform label[for='password2']").parent().clone().appendTo("#quackadd");
+            item = "<li>" + item + "</li>";
+            list += item;
+            }
+         });
+    });
+</script>
+[% END %]
 </div>
 </div>
 

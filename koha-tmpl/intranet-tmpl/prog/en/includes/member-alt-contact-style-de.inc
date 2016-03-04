@@ -1,4 +1,4 @@
-        <fieldset class="rows" id="memberentry_altaddress">
+        <fieldset class="rows full_form" id="memberentry_altaddress">
             <legend id="alt_contact_lgd">Alternate contact</legend><ol>
         [% UNLESS noaltcontactsurname %]
             <li>
