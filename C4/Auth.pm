@@ -177,7 +177,11 @@ sub get_template_and_user {
             $in->{'query'},
             $in->{'authnotrequired'},
             $in->{'flagsrequired'},
-            $in->{'type'}
+            $in->{'type'},
+            undef,
+            {
+                template_name => $in->{template_name}
+            },
         );
     }
 
@@ -506,6 +510,7 @@ sub get_template_and_user {
 
         my $library_categories = Koha::LibraryCategories->search({categorytype => 'searchdomain', show_in_pulldown => 1}, { order_by => ['categorytype', 'categorycode']});
         $template->param(
+            IS_SCO                                => $in->{template_name} =~ m|sco/| || 0,
             OpacAdditionalStylesheet                   => C4::Context->preference("OpacAdditionalStylesheet"),
             AnonSuggestions                       => "" . C4::Context->preference("AnonSuggestions"),
             AuthorisedValueImages                 => C4::Context->preference("AuthorisedValueImages"),
@@ -746,6 +751,7 @@ sub checkauth {
     my $flagsrequired   = shift;
     my $type            = shift;
     my $persona         = shift;
+    my $params          = shift;
     $type = 'opac' unless $type;
 
     my $dbh     = C4::Context->dbh;
@@ -1203,6 +1209,7 @@ sub checkauth {
     my $template_name = ( $type eq 'opac' ) ? 'opac-auth.tt' : 'auth.tt';
     my $template = C4::Templates::gettemplate( $template_name, $type, $query );
     $template->param(
+        IS_SCO                                => $params->{template_name} =~ m|sco/| || 0,
         branchloop                            => GetBranchesLoop(),
         OpacAdditionalStylesheet                   => C4::Context->preference("OpacAdditionalStylesheet"),
         opaclayoutstylesheet                  => C4::Context->preference("opaclayoutstylesheet"),
