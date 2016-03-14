@@ -120,7 +120,7 @@
     <div class="col-md-3">
         <div id="search-facets">
             <ul>
-                <li>Servers:<ul id="advanced-search-servers"></ul></li>
+                <li>Servers:<ul id="advanced-search-servers" class="search-target-list"></ul></li>
             </ul>
         </div>
     </div>
@@ -201,7 +201,7 @@
     <div class="col-md-3">
         <div id="search-facets">
             <ul>
-                <li>Servers:<ul id="search-serversinfo"></ul></li>
+                <li>Servers:<ul id="search-serversinfo" class="search-target-list"></ul></li>
             </ul>
         </div>
     </div>
@@ -273,7 +273,18 @@
             <button class="btn btn-small" type="submit" id="create-batch"><i class="icon-plus"></i> <span>Create new batch...</span></button>
             <button class="btn btn-small" type="submit" id="manage-batches"><i class="icon-list"></i> <span>Manage import batches...</span></button>
         </div>
-        <ul id="batches-list"></ul>
+        <table id="batches-table">
+            <thead>
+                <tr>
+                    <th>Batch</th>
+                    <th>Searchable?</th>
+                    <th>Save target?</th>
+                    <th>&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
     </div>
     <div class="span3">
     </div>
