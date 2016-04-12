@@ -12222,16 +12222,6 @@ if ( C4::Context->preference("Version") < TransformToNum($DBversion) ) {
 
 $DBversion = "XXX";
 if ( C4::Context->preference("Version") < TransformToNum($DBversion) ) {
-    my $installer = C4::Installer->new();
-    my $full_path = C4::Context->config('intranetdir') . "/installer/data/$installer->{dbms}/elasticsearch_mapping.sql";
-    my $error     = $installer->load_sql($full_path);
-    warn $error if $error;
-    print "Upgrade to $DBversion done (Bug 12478 - set up elasticsearch tables)\n";
-    SetVersion($DBversion);
-}
-
-$DBversion = "XXX";
-if ( C4::Context->preference("Version") < TransformToNum($DBversion) ) {
     $dbh->do(q|
         ALTER TABLE search_marc_to_field DROP FOREIGN KEY search_marc_to_field_ibfk_1
     |);
