@@ -158,25 +158,21 @@
                     [% END %]
                 </ul>
             </li>
-        [% ELSIF guarantor %]
-            <li>
-                <span class="label">Guarantor:</span>
-                [% IF guarantor.borrowernumber AND logged_in_user.can_see_patron_infos( guarantor ) %]
-                    <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% guarantor.borrowernumber %]">[% guarantor.firstname | html %] [% guarantor.surname | html %]</a>
-                [% ELSE %]
-                    [% guarantor.firstname | html %] [% guarantor.surname | html %]
-                [% END %]
-            </li>
+        [% ELSIF guarantor_relationships %]
+            [% FOREACH gr IN guarantor_relationships %]
+                <li>
+                    <span class="label">Guarantor:</span>
+                    [% IF gr.guarantor_id %]
+                        [% SET guarantor = gr.guarantor %]
+                        <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% guarantor.id %]">[% guarantor.firstname %] [% guarantor.surname %]</a>
+                    [% ELSE %]
+                        [% gr.firstname %] [% gr.surname %]
+                    [% END %]
+                </li>
+            [% END %]
         [% END %]
     </ol>
 </div>
-      <div class="action">
-        [% IF ( guarantor.borrowernumber ) %]
-        <a href="memberentry.pl?op=modify&amp;borrowernumber=[% patron.borrowernumber %]&amp;step=1&amp;guarantorid=[% guarantor.borrowernumber %]">Edit</a>
-        [% ELSE %]
-        <a href="memberentry.pl?op=modify&amp;borrowernumber=[% patron.borrowernumber %]&amp;step=1">Edit</a>
-        [% END %]</div>
-
 </div>
 
 <!-- Begin Upload Patron Image Section -->
@@ -405,7 +401,7 @@
     <ul>
         <li><a href="#checkouts">[% issuecount %] Checkout(s)</a></li>
         [% IF relatives_issues_count %]
-            <li><a href="#relatives-issues" id="relatives-issues-tab">Relatives' checkouts</a></li>
+            <li><a href="#relatives-issues" id="relatives-issues-tab">[% relatives_issues_count %] Relatives' checkouts</a></li>
         [% END %]
         <li><a href="#finesandcharges">Fines &amp; Charges</a></li>
         <li>

@@ -171,10 +171,6 @@
       "type": ["string", "null"],
       "description": "used for children to include title of guarantor"
     },
-    "guarantorid": {
-      "type": ["integer", "null"],
-      "description": "borrowernumber used for children or professionals to link them to guarantor or organizations"
-    },
     "borrowernotes": {
       "type": ["string", "null"],
       "description": "a note on the patron's account"
