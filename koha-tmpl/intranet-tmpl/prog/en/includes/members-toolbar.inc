@@ -6,21 +6,17 @@
 [% SET NorwegianPatronDBEnable = Koha.Preference( 'NorwegianPatronDBEnable' ) %]
 <div id="toolbar" class="btn-toolbar">
     [% IF CAN_user_borrowers_edit_borrowers %]
-        [% IF ( guarantor ) %]
-            <a id="editpatron" class="btn btn-default btn-sm" href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=[% patron.borrowernumber %]&amp;guarantorid=[% guarantor.borrowernumber %]&amp;categorycode=[% patron.categorycode %]">
-        [% ELSE %]
-            <a id="editpatron" class="btn btn-default btn-sm" href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=[% patron.borrowernumber %]&amp;categorycode=[% patron.categorycode %]">
-        [% END %]
-        <i class="fa fa-pencil"></i> Edit</a>
+        <a id="editpatron" class="btn btn-default btn-sm" href="/cgi-bin/koha/members/memberentry.pl?op=modify&amp;destination=circ&amp;borrowernumber=[% patron.borrowernumber %]&amp;categorycode=[% patron.categorycode %]">
+            <i class="fa fa-pencil"></i> Edit
+        </a>
     [% END %]
 
     [% IF CAN_user_borrowers_edit_borrowers %]
         [% IF patron.is_adult AND Koha.Preference("borrowerRelationship") %]
             <a id="addchild" class="btn btn-default btn-sm" href="/cgi-bin/koha/members/memberentry.pl?op=add&amp;guarantorid=[% patron.borrowernumber %]"><i class="fa fa-plus"></i> Add child</a>
         [% END %]
-        [% IF CAN_user_borrowers_edit_borrowers %]
-            <a id="changepassword" class="btn btn-default btn-sm" href="/cgi-bin/koha/members/member-password.pl?member=[% patron.borrowernumber %]"><i class="fa fa-lock"></i> Change password</a>
-        [% END %]
+
+        <a id="changepassword" class="btn btn-default btn-sm" href="/cgi-bin/koha/members/member-password.pl?member=[% patron.borrowernumber %]"><i class="fa fa-lock"></i> Change password</a>
         <a id="duplicate" class="btn btn-default btn-sm" href="/cgi-bin/koha/members/memberentry.pl?op=duplicate&amp;borrowernumber=[% patron.borrowernumber %]&amp;categorycode=[% patron.categorycode %]"><i class="fa fa-copy"></i> Duplicate</a>
     [% END %]
 

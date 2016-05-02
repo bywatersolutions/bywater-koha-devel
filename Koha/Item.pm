@@ -28,6 +28,7 @@ use C4::Context;
 use Koha::Checkouts;
 use Koha::IssuingRules;
 use Koha::Item::Transfer;
+use Koha::Biblios;
 use Koha::Patrons;
 use Koha::Libraries;
 

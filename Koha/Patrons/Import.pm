@@ -213,6 +213,15 @@ sub import_patrons {
             next LINE;
         }
 
+        my $relationship        = $borrower{relationship};
+        my $guarantor_id        = $borrower{guarantor_id};
+        my $guarantor_firstname = $borrower{guarantor_firstname};
+        my $guarantor_surname   = $borrower{guarantor_surname};
+        delete $borrower{relationship};
+        delete $borrower{guarantor_id};
+        delete $borrower{guarantor_firstname};
+        delete $borrower{guarantor_surname};
+
         if ($borrowernumber) {
 
             # borrower exists
@@ -347,6 +356,20 @@ sub import_patrons {
                     }
                 );
             }
+        }
+
+        # Add a guarantor if we are given a relationship
+        if ( $relationship ) {
+            $guarantor_id ||= undef;
+            Koha::Patron::Relationship->new(
+                {
+                    guarantee_id => $borrowernumber,
+                    relationship => $relationship,
+                    guarantor_id => $guarantor_id,
+                    firstname    => $guarantor_firstname,
+                    surname      => $guarantor_surname,
+                }
+            )->store();
         }
     }
 

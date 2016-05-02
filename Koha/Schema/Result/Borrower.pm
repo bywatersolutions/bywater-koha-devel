@@ -1389,12 +1389,6 @@ __PACKAGE__->many_to_many("ordernumbers", "aqorder_users", "ordernumber");
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-02-16 17:54:53
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wM40W+toV8ca5LFwinkHxA
 
-__PACKAGE__->belongs_to(
-    "guarantor",
-    "Koha::Schema::Result::Borrower",
-    { borrowernumber => "guarantorid" },
-);
-
 __PACKAGE__->add_columns(
     '+lost' => { is_boolean => 1 },
     '+gonenoaddress' => { is_boolean => 1 }

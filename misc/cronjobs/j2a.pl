@@ -163,12 +163,12 @@ $verbose and print "The age limit for category $fromcat is $agelimit\n";
 my $itsyourbirthday = "$year-$mon-$mday";
 
 if ( not $noaction ) {
+    # Start a transaction since we need to delete from relationships and update borrowers atomically
+    $dbh->{AutoCommit} = 0;
+
     if ($mybranch) {    #yep, we received a specific branch to work on.
         $verbose and print "Looking for patrons of $mybranch to update from $fromcat to $tocat that were born before $itsyourbirthday\n";
-        my $query = qq|
-            UPDATE borrowers
-            SET guarantorid ='0',
-                categorycode = ?
+        my $where = qq|
             WHERE dateofbirth <= ?
               AND dateofbirth != '0000-00-00'
               AND branchcode = ?
@@ -177,10 +177,28 @@ if ( not $noaction ) {
                 FROM categories
                 WHERE category_type = 'C'
                   AND categorycode = ?
-              )|;
+              )
+        |;
+
+        my $query = qq|
+            DELETE relationships FROM relationships
+            LEFT JOIN borrowers ON ( borrowers.borrowernumber = relationships.guarantee_id )
+            $where
+        |;
         my $sth = $dbh->prepare($query);
+        $sth->execute( $itsyourbirthday, $mybranch, $fromcat )
+          or ( $dbh->rollback && die "can't execute" );
+
+        $query = qq|
+            UPDATE borrowers
+            SET categorycode = ?
+            $where
+        |;
+        $sth = $dbh->prepare($query);
         my $res = $sth->execute( $tocat, $itsyourbirthday, $mybranch, $fromcat )
-          or die "can't execute";
+          or ( $dbh->rollback && die "can't execute" );
+
+        $dbh->commit;
 
         if ( $res eq '0E0' ) {
             print "No patrons updated\n";
@@ -191,10 +209,7 @@ if ( not $noaction ) {
     }
     else {    # branch was not supplied, processing all branches
         $verbose and print "Looking in all branches for patrons to update from $fromcat to $tocat that were born before $itsyourbirthday\n";
-        my $query = qq|
-            UPDATE borrowers
-            SET guarantorid = '0',
-                categorycode = ?
+        my $where = qq|
             WHERE dateofbirth <= ?
               AND dateofbirth!='0000-00-00'
               AND categorycode IN (
@@ -202,10 +217,27 @@ if ( not $noaction ) {
                 FROM categories
                 WHERE category_type = 'C'
                   AND categorycode = ?
-              )|;
+              )
+        |;
+
+        my $query = qq|
+            DELETE relationships FROM relationships
+            LEFT JOIN borrowers ON ( borrowers.borrowernumber = relationships.guarantee_id )
+            $where
+        |;
         my $sth = $dbh->prepare($query);
+        $sth->execute( $itsyourbirthday, $fromcat )
+          or ( $dbh->rollback && die "can't execute" );
+
+        $query = qq|
+            UPDATE borrowers
+            SET categorycode = ?
+            $where
+        |;
+        $sth = $dbh->prepare($query);
         my $res = $sth->execute( $tocat, $itsyourbirthday, $fromcat )
-          or die "can't execute";
+          or ( $dbh->rollback && die "can't execute" );
+        $dbh->commit;
 
         if ( $res eq '0E0' ) {
             print "No patrons updated\n";
@@ -267,6 +299,7 @@ else {
         my $sth = $dbh->prepare($query);
         $sth->execute( $itsyourbirthday, $fromcat )
           or die "Couldn't execute statement: " . $sth->errstr;
+        $dbh->commit;
 
         while ( my @res = $sth->fetchrow_array() ) {
             my $firstname = $res[0];
