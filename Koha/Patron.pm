@@ -30,16 +30,17 @@ use C4::Context;
 use C4::Log;
 use Koha::AuthUtils;
 use Koha::Checkouts;
+use Koha::Old::Checkouts;
 use Koha::Database;
 use Koha::DateUtils;
 use Koha::Exceptions::Password;
 use Koha::Holds;
-use Koha::Old::Checkouts;
+use Koha::Patrons;
 use Koha::Patron::Categories;
+use Koha::Patron::Relationships;
 use Koha::Patron::HouseboundProfile;
 use Koha::Patron::HouseboundRole;
 use Koha::Patron::Images;
-use Koha::Patrons;
 use Koha::Virtualshelves;
 use Koha::Club::Enrollments;
 use Koha::Account;
@@ -198,7 +199,6 @@ sub store {
 
             # Set default values if not set
             $self->sms_provider_id(undef) unless $self->sms_provider_id;
-            $self->guarantorid(undef)     unless $self->guarantorid;
 
             unless ( $self->in_storage ) {    #AddMember
 
@@ -363,19 +363,9 @@ sub category {
     return Koha::Patron::Category->_new_from_dbic( $self->_result->categorycode );
 }
 
-=head3 guarantor
-
-Returns a Koha::Patron object for this patron's guarantor
+=head3 image
 
 =cut
-
-sub guarantor {
-    my ( $self ) = @_;
-
-    return unless $self->guarantorid();
-
-    return Koha::Patrons->find( $self->guarantorid() );
-}
 
 sub image {
     my ( $self ) = @_;
@@ -383,21 +373,57 @@ sub image {
     return scalar Koha::Patron::Images->find( $self->borrowernumber );
 }
 
+=head3 library
+
+Returns a Koha::Library object representing the patron's home library.
+
+=cut
+
 sub library {
     my ( $self ) = @_;
     return Koha::Library->_new_from_dbic($self->_result->branchcode);
 }
 
-=head3 guarantees
+=head3 guarantor_relationships
 
-Returns the guarantees (list of Koha::Patron) of this patron
+Returns Koha::Patron::Relationships object for this patron's guarantors
+
+Returns the set of relationships for the patrons that are guarantors for this patron.
+
+This is returned instead of a Koha::Patron object because the guarantor
+may not exist as a patron in Koha. If this is true, the guarantors name
+exists in the Koha::Patron::Relationship object and will have no guarantor_id.
 
 =cut
 
-sub guarantees {
-    my ( $self ) = @_;
+sub guarantor_relationships {
+    my ($self) = @_;
 
-    return Koha::Patrons->search( { guarantorid => $self->borrowernumber }, { order_by => { -asc => ['surname','firstname'] } } );
+    return Koha::Patron::Relationships->search( { guarantee_id => $self->id } );
+}
+
+=head3 guarantee_relationships
+
+Returns Koha::Patron::Relationships object for this patron's guarantors
+
+Returns the set of relationships for the patrons that are guarantees for this patron.
+
+The method returns Koha::Patron::Relationship objects for the sake
+of consistency with the guantors method.
+A guarantee by definition must exist as a patron in Koha.
+
+=cut
+
+sub guarantee_relationships {
+    my ($self) = @_;
+
+    return Koha::Patron::Relationships->search(
+        { guarantor_id => $self->id },
+        {
+            prefetch => 'borrowers',
+            order_by => { -asc => [ 'borrowers.surname', 'borrowers.firstname' ] },
+        }
+    );
 }
 
 =head3 housebound_profile
@@ -435,23 +461,22 @@ Returns the siblings of this patron.
 =cut
 
 sub siblings {
-    my ( $self ) = @_;
+    my ($self) = @_;
 
-    my $guarantor = $self->guarantor;
+    my @guarantors = $self->guarantor_relationships()->guarantors();
 
-    return unless $guarantor;
+    return unless @guarantors;
 
-    return Koha::Patrons->search(
-        {
-            guarantorid => {
-                '!=' => undef,
-                '=' => $guarantor->id,
-            },
-            borrowernumber => {
-                '!=' => $self->borrowernumber,
-            }
-        }
-    );
+    my @siblings =
+      map { $_->guarantee_relationships()->guarantees() } @guarantors;
+
+    return unless @siblings;
+
+    my %seen;
+    @siblings =
+      grep { !$seen{ $_->id }++ && ( $_->id != $self->id ) } @siblings;
+
+    return wantarray ? @siblings : Koha::Patrons->search( { borrowernumber => { -in => [ map { $_->id } @siblings ] } } );
 }
 
 =head3 merge_with
@@ -1237,6 +1262,7 @@ my $is_child = $patron->is_child
 Return true if the patron has a category with a type Child (C)
 
 =cut
+
 sub is_child {
     my( $self ) = @_;
     return $self->category->category_type eq 'C' ? 1 : 0;
@@ -1306,6 +1332,35 @@ sub generate_userid {
 
      return $self;
 
+}
+
+
+=head3 add_guarantor
+
+    my @relationships = $patron->add_guarantor(
+        {
+            borrowernumber => $borrowernumber,
+            relationships  => $relationship,
+        }
+    );
+
+    Adds a new guarantor to a patron.
+
+=cut
+
+sub add_guarantor {
+    my ( $self, $params ) = @_;
+
+    my $guarantor_id = $params->{guarantor_id};
+    my $relationship = $params->{relationship};
+
+    return Koha::Patron::Relationship->new(
+        {
+            guarantee_id => $self->id,
+            guarantor_id => $guarantor_id,
+            relationship => $relationship
+        }
+    )->store();
 }
 
 =head2 Internal methods

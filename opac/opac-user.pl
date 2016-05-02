@@ -39,6 +39,7 @@ use Koha::Holds;
 use Koha::Database;
 use Koha::ItemTypes;
 use Koha::Patron::Attribute::Types;
+use Koha::Patrons;
 use Koha::Patron::Messages;
 use Koha::Patron::Discharge;
 use Koha::Patrons;
@@ -76,6 +77,8 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 );
 
 my %renewed = map { $_ => 1 } split( ':', $query->param('renewed') || '' );
+
+my $patron = Koha::Patrons->find( $borrowernumber );
 
 my $show_priority;
 for ( C4::Context->preference("OPACShowHoldQueueDetails") ) {
@@ -338,14 +341,12 @@ my $patron_messages = Koha::Patron::Messages->search(
 if (   C4::Context->preference('AllowPatronToSetCheckoutsVisibilityForGuarantor')
     || C4::Context->preference('AllowStaffToSetCheckoutsVisibilityForGuarantor') )
 {
-    my @relatives =
-      Koha::Database->new()->schema()->resultset("Borrower")->search(
-        {
-            privacy_guarantor_checkouts => 1,
-            'me.guarantorid'           => $borrowernumber
-        },
-        { prefetch => [ { 'issues' => { 'item' => 'biblio' } } ] }
-      );
+    my @relatives;
+    # Filter out guarantees that don't want guarantor to see checkouts
+    foreach my $gr ( $patron->guarantee_relationships() ) {
+        my $g = $gr->guarantee;
+        push( @relatives, $g ) if $g->privacy_guarantor_checkouts;
+    }
     $template->param( relatives => \@relatives );
 }
 
