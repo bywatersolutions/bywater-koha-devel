@@ -109,7 +109,7 @@ if ( $patron->is_child ) {
 
 my $op = $input->param('op') || 'delete_confirm';
 my $dbh = C4::Context->dbh;
-my $is_guarantor = $dbh->selectrow_array("SELECT COUNT(*) FROM borrowers WHERE guarantorid=?", undef, $member);
+my $is_guarantor = $patron->guarantee_relationships->count;
 if ( $op eq 'delete_confirm' or $countissues > 0 or $charges or $is_guarantor or $deletelocal == 0) {
 
     $template->param(
@@ -121,8 +121,8 @@ if ( $op eq 'delete_confirm' or $countissues > 0 or $charges or $is_guarantor or
     if ( $charges > 0 ) {
         $template->param(charges => $charges);
     }
-    if ($is_guarantor) {
-        $template->param(guarantees => 1);
+    if ( $is_guarantor ) {
+        $template->param( guarantees => 1 );
     }
     if ($deletelocal == 0) {
         $template->param(keeplocal => 1);

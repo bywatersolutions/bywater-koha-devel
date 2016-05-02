@@ -42,16 +42,26 @@
                 [% IF ( dateofbirth ) %]<li><span class="label">Date of birth:</span>[% dateofbirth | $KohaDates %]</li>[% END %]
                 [% IF ( sex ) %]<li><span class="label">Gender:</span>[% IF ( sex == 'F' ) %]Female[% ELSIF ( sex == 'M' ) %]Male[% ELSE %][% sex %][% END %]</li>[% END %][% END %]
             [% END %]
-    [% IF ( isguarantee ) %]
-        [% IF ( guaranteeloop ) %]
-            <li><span class="label">Guarantees:</span><ul>[% FOREACH guaranteeloo IN guaranteeloop %]<li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% guaranteeloo.borrowernumber %]">[% guaranteeloo.name %]  </a></li>[% END %]</ul></li>
-        [% END %]
-    [% ELSE %]
-        [% IF ( guarantor.borrowernumber ) %]
-            <li><span class="label">Guarantor:</span><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% guarantor.borrowernumber %]">[% guarantor.surname %], [% guarantor.firstname %]</a></li>
-        [% END %]
-    [% END %]
-	</ol>
+
+            [% IF guarantees %]
+                <li>
+                    <span class="label">Guarantees:</span>
+                    <ul>
+                        [% FOREACH guarantee IN guarantees %]
+                            <li><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% guarantee.borrowernumber %]">[% guarantee.firstname %] [% guarantee.surname %]</a></li>
+                        [% END %]
+                    </ul>
+                </li>
+            [% ELSIF guarantor_relationships %]
+                [% FOREACH gr IN guarantor_relationships %]
+                    <li>
+                        <span class="label">Guarantor:</span>
+                        [% SET guarantor = gr.guarantor %]
+                        <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% guarantor.id %]">[% guarantor.firstname %] [% guarantor.surname %]</a>
+                    </li>
+                [% END %]
+            [% END %]
+	    </ol>
 	</div>
     </div>
     </div>

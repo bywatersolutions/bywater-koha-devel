@@ -213,6 +213,11 @@ sub import_patrons {
             next LINE;
         }
 
+        my $relationship        = $borrower{relationship};
+        my $guarantor_id        = $borrower{guarantor_id};
+        delete $borrower{relationship};
+        delete $borrower{guarantor_id};
+
         if ($borrowernumber) {
 
             # borrower exists
@@ -348,6 +353,17 @@ sub import_patrons {
                     }
                 );
             }
+        }
+
+        # Add a guarantor if we are given a relationship
+        if ( $guarantor_id ) {
+            Koha::Patron::Relationship->new(
+                {
+                    guarantee_id => $borrowernumber,
+                    relationship => $relationship,
+                    guarantor_id => $guarantor_id,
+                }
+            )->store();
         }
     }
 

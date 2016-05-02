@@ -33,6 +33,7 @@ use C4::Auth;
 use C4::Output;
 use Koha::Patrons;
 use Koha::Patron::Categories;
+use Koha::Patrons;
 
 # use Smart::Comments;
 
@@ -53,7 +54,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 my $borrowernumber = $input->param('borrowernumber');
 my $catcode        = $input->param('catcode');
 my $cattype        = $input->param('cattype');
-my $catcode_multi = $input->param('catcode_multi');
+my $catcode_multi  = $input->param('catcode_multi');
 my $op             = $input->param('op');
 
 my $logged_in_user = Koha::Patrons->find( $loggedinuser ) or die "Not logged in";
@@ -70,23 +71,26 @@ if ( $op eq 'multi' ) {
     );
     output_html_with_http_headers $input, $cookie, $template->output;
 }
-
 elsif ( $op eq 'update' ) {
     my $patron         = Koha::Patrons->find( $borrowernumber );
     output_and_exit_if_error( $input, $cookie, $template, { module => 'members', logged_in_user => $logged_in_user, current_patron => $patron } );
 
+    $_->delete() for $patron->guarantor_relationships();
     $patron->guarantorid(undef);
     $patron->categorycode($catcode);
     $patron->store;
 
-    if (  $catcode_multi ) {
+    if ($catcode_multi) {
         $template->param(
-                SUCCESS        => 1,
-                borrowernumber => $borrowernumber,
-                );
+            SUCCESS        => 1,
+            borrowernumber => $borrowernumber,
+        );
         output_html_with_http_headers $input, $cookie, $template->output;
-    } else {
-        print $input->redirect("/cgi-bin/koha/members/moremember.pl?borrowernumber=$borrowernumber");
+    }
+    else {
+        print $input->redirect(
+            "/cgi-bin/koha/members/moremember.pl?borrowernumber=$borrowernumber"
+        );
     }
 }
 

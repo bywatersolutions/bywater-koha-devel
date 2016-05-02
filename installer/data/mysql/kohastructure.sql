@@ -582,7 +582,6 @@ CREATE TABLE `deletedborrowers` ( -- stores data related to the patrons/borrower
   `contactname` LONGTEXT, -- used for children and profesionals to include surname or last name of guarantor or organization name
   `contactfirstname` MEDIUMTEXT, -- used for children to include first name of guarantor
   `contacttitle` MEDIUMTEXT, -- used for children to include title (Mr., Mrs., etc) of guarantor
-  `guarantorid` int(11) default NULL, -- borrowernumber used for children or professionals to link them to guarantors or organizations
   `borrowernotes` LONGTEXT, -- a note on the patron/borrower's account that is only visible in the staff client
   `relationship` varchar(100) default NULL, -- used for children to include the relationship to their guarantor
   `sex` varchar(1) default NULL, -- patron/borrower's gender
@@ -1612,7 +1611,6 @@ CREATE TABLE `borrowers` ( -- this table includes information about your patrons
   `contactname` LONGTEXT, -- used for children and profesionals to include surname or last name of guarantor or organization name
   `contactfirstname` MEDIUMTEXT, -- used for children to include first name of guarantor
   `contacttitle` MEDIUMTEXT, -- used for children to include title (Mr., Mrs., etc) of guarantor
-  `guarantorid` int(11) default NULL, -- borrowernumber used for children or professionals to link them to guarantors or organizations
   `borrowernotes` LONGTEXT, -- a note on the patron/borrower's account that is only visible in the staff client
   `relationship` varchar(100) default NULL, -- used for children to include the relationship to their guarantor
   `sex` varchar(1) default NULL, -- patron/borrower's gender
@@ -1647,7 +1645,6 @@ CREATE TABLE `borrowers` ( -- this table includes information about your patrons
   KEY `categorycode` (`categorycode`),
   KEY `branchcode` (`branchcode`),
   UNIQUE KEY `userid` (`userid`),
-  KEY `guarantorid` (`guarantorid`),
   KEY `surname_idx` (`surname` (191)),
   KEY `firstname_idx` (`firstname` (191)),
   KEY `othernames_idx` (`othernames` (191)),
@@ -3449,12 +3446,7 @@ CREATE TABLE IF NOT EXISTS `borrower_modifications` (
   `lost` tinyint(1) DEFAULT NULL,
   `debarred` date DEFAULT NULL,
   `debarredcomment` varchar(255) DEFAULT NULL,
-  `contactname` LONGTEXT,
-  `contactfirstname` MEDIUMTEXT,
-  `contacttitle` MEDIUMTEXT,
-  `guarantorid` int(11) DEFAULT NULL,
   `borrowernotes` LONGTEXT,
-  `relationship` varchar(100) DEFAULT NULL,
   `sex` varchar(1) DEFAULT NULL,
   `password` varchar(30) DEFAULT NULL,
   `flags` int(11) DEFAULT NULL,
@@ -4132,6 +4124,21 @@ CREATE TABLE IF NOT EXISTS club_fields (
   KEY club_id (club_id),
   CONSTRAINT club_fields_ibfk_3 FOREIGN KEY (club_template_field_id) REFERENCES club_template_fields (id) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT club_fields_ibfk_4 FOREIGN KEY (club_id) REFERENCES clubs (id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Table structure for table 'guarantors_guarantees'
+--
+
+DROP TABLE IF EXISTS borrower_relationships;
+CREATE TABLE `borrower_relationships` (
+      id INT(11) NOT NULL AUTO_INCREMENT,
+      guarantor_id INT(11) NULL DEFAULT NULL,
+      guarantee_id INT(11) NOT NULL,
+      relationship VARCHAR(100) COLLATE utf8_unicode_ci NOT NULL,
+      PRIMARY KEY (id),
+      CONSTRAINT r_guarantor FOREIGN KEY ( guarantor_id ) REFERENCES borrowers ( borrowernumber ) ON UPDATE CASCADE ON DELETE CASCADE,
+      CONSTRAINT r_guarantee FOREIGN KEY ( guarantee_id ) REFERENCES borrowers ( borrowernumber ) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --

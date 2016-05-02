@@ -428,24 +428,24 @@
 
                                     <tbody>
                                         [% FOREACH r IN relatives %]
-                                            [% FOREACH i IN r.issues %]
+                                            [% FOREACH c IN r.checkouts %]
                                                 <tr>
                                                     <td>
                                                         <a href="/cgi-bin/koha/opac-detail.pl?biblionumber=[% i.item.biblio.biblionumber %]">
-                                                            [% i.item.biblio.title %][% IF ( i.item.enumchron ) %] [% i.item.enumchron %][% END %]
+                                                            [% c.item.biblio.title %][% IF ( c.item.enumchron ) %] [% c.item.enumchron %][% END %]
                                                         </a>
                                                     </td>
 
                                                     <td>
-                                                        [% i.date_due | $KohaDates %]
+                                                        [% c.date_due | $KohaDates %]
                                                     </td>
 
                                                     <td>
-                                                        [% i.item.barcode %]
+                                                        [% c.item.barcode %]
                                                     </td>
 
                                                     <td>
-                                                        [% i.item.itemcallnumber %]
+                                                        [% c.item.itemcallnumber %]
                                                     </td>
 
                                                     <td>
