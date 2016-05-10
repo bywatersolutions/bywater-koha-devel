@@ -26,30 +26,32 @@
 # You should have received a copy of the GNU General Public License
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
-use strict;
-use warnings;
-use 5.010;
+use Modern::Perl;
+
+use Carp;
+use File::Spec;
+use Getopt::Long;
+use Parallel::ForkManager;
 
 use C4::Context;
 use C4::Overdues;
-use Getopt::Long;
-use Carp;
-use File::Spec;
+use C4::Log;
 
 use Koha::Calendar;
 use Koha::DateUtils;
-use C4::Log;
 
 my $help;
 my $verbose;
 my $output_dir;
 my $log;
+my $max_processes = 0;
 
 GetOptions(
-    'h|help'    => \$help,
-    'v|verbose' => \$verbose,
-    'l|log'     => \$log,
-    'o|out:s'   => \$output_dir,
+    'h|help'            => \$help,
+    'v|verbose'         => \$verbose,
+    'l|log'             => \$log,
+    'o|out:s'           => \$output_dir,
+    'm|max-processes:s' => \$max_processes,
 );
 my $usage = << 'ENDUSAGE';
 
@@ -63,6 +65,7 @@ This script has the following parameters :
     -l --log: log the output to a file (optional if the -o parameter is given)
     -o --out:  ouput directory for logs (defaults to env or /tmp if !exist)
     -v --verbose
+    -m --max-processes: The maximum number of concurrent fine calculating processes
 
 ENDUSAGE
 
@@ -97,6 +100,17 @@ if ($filename) {
 }
 my $counted = 0;
 my $overdues = Getoverdues();
+
+my $pm = Parallel::ForkManager->new( $max_processes, '/tmp' );
+$pm->run_on_finish(    # called BEFORE the first call to start()
+    sub {
+        my ( $pid, $exit_code, $ident, $exit_signal, $core_dump, $data ) = @_;
+
+        $counted++ if $exit_code;
+    }
+);
+
+OVERDUES_LOOP:
 for my $overdue ( @{$overdues} ) {
     next if $overdue->{itemlost};
 
@@ -105,6 +119,10 @@ for my $overdue ( @{$overdues} ) {
 "ERROR in Getoverdues : issues.borrowernumber IS NULL.  Repair 'issues' table now!  Skipping record.\n";
         next;
     }
+
+    # Forking a child process now, no sense forking earlier as those children would do almost nothing
+    my $pid = $pm->start and next OVERDUES_LOOP;
+
     my $borrower = BorType( $overdue->{borrowernumber} );
     my $branchcode =
         ( $control eq 'ItemHomeLibrary' ) ? $overdue->{homebranch}
@@ -118,9 +136,8 @@ for my $overdue ( @{$overdues} ) {
 
     my $datedue = dt_from_string( $overdue->{date_due} );
     if ( DateTime->compare( $datedue, $today ) == 1 ) {
-        next;    # not overdue
+        $pm->finish(0);    # not overdue
     }
-    ++$counted;
 
     my ( $amount, $type, $unitcounttotal ) =
       CalcFine( $overdue, $borrower->{categorycode},
@@ -152,7 +169,11 @@ for my $overdue ( @{$overdues} ) {
         push @cells, $type, $unitcounttotal, $amount;
         say {$fh} join $delim, @cells;
     }
+    $pm->finish(1);
 }
+
+$pm->wait_all_children;
+
 if ($filename){
     close $fh;
 }
