@@ -157,9 +157,11 @@ map{
     $library ? $s->{branchcodesuggestedby} = $library->branchname : ()
 } @$suggestions_loop;
 
+my $own_suggestions_count = 0;
 foreach my $suggestion(@$suggestions_loop) {
     if($suggestion->{'suggestedby'} == $borrowernumber) {
         $suggestion->{'showcheckbox'} = $borrowernumber;
+        $own_suggestions_count++;
     } else {
         $suggestion->{'showcheckbox'} = 0;
     }
@@ -195,6 +197,7 @@ $template->param(
     messages => \@messages,
     suggestionsview => 1,
     suggested_by_anyone => $suggested_by_anyone,
+    own_suggestions_count => $own_suggestions_count,
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;

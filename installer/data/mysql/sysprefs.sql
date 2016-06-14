@@ -233,6 +233,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('MaxFine',NULL,'','Maximum fine a patron can have for all late returns at one moment. Single item caps are specified in the circulation rules matrix.','Integer'),
 ('MaxItemsForBatch','1000',NULL,'Max number of items record to process in a batch (modification or deletion)','Integer'),
 ('maxItemsInSearchResults','20',NULL,'Specify the maximum number of items to display for each result on a page of results','free'),
+('MaxOpenSuggestions','',NULL,'Limit the number of open suggestions a patron can have at once','Integer')
 ('maxoutstanding','5','','maximum amount withstanding to be able make holds','Integer'),
 ('maxRecordsForFacets','20',NULL,NULL,'Integer'),
 ('maxreserves','50','','Define maximum number of holds a patron can place','Integer'),
