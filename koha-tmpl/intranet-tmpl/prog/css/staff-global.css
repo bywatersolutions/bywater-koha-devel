@@ -3007,3 +3007,8 @@ fieldset.rows + fieldset.action {
 #patron_search #filters {
     display: none;
 }
+
+span.name {
+    font-weight: bold;
+    font-style: italic;
+}
