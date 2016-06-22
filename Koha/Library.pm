@@ -35,25 +35,6 @@ Koha::Library - Koha Library Object class
 
 =cut
 
-sub get_categories {
-    my ( $self, $params ) = @_;
-    # TODO This should return Koha::LibraryCategories
-    return $self->{_result}->categorycodes( $params );
-}
-
-sub update_categories {
-    my ( $self, $categories ) = @_;
-    $self->_result->delete_related( 'branchrelations' );
-    $self->add_to_categories( $categories );
-}
-
-sub add_to_categories {
-    my ( $self, $categories ) = @_;
-    for my $category ( @$categories ) {
-        $self->_result->add_to_categorycodes( $category->_result );
-    }
-}
-
 =head3 type
 
 =cut
