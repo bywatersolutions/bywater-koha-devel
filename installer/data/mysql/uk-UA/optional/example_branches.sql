@@ -1,6 +1,4 @@
 TRUNCATE branches;
-TRUNCATE branchcategories;
-TRUNCATE branchrelations;
 
 INSERT INTO `branches` (`branchcode`, `branchname`, `branchaddress1`, `branchaddress2`, `branchaddress3`, `branchphone`, `branchfax`, `branchemail`, `issuing`, `branchip`, `branchprinter`) VALUES
 ('AB',   'Абонемент', 
@@ -19,21 +17,3 @@ INSERT INTO `branches` (`branchcode`, `branchname`, `branchaddress1`, `branchadd
              'Україна', 'м. Тернопіль', 'вул. Руська 56, кабінет 5 (другий корпус)', '8 (0352) 52-53-45', '', 'lib@tu.edu.te.ua', NULL, '', NULL),
 ('NPLU', 'Національна парламентська бібліотека України', 
              'Україна', 'м. Київ', 'вул. Грушевського, 1', '38 (044) 278-85-12', '38 (044) 278-85-12', 'office@nplu.org', NULL, '192.168.1.*', NULL);
-
-INSERT INTO `branchcategories` (`categorycode`, `categoryname`, `codedescription`, `categorytype`) VALUES
-('HOME',   'Домівка',                    'Може встановлюватися як домашня бібліотека',   'properties'),
-('ISSUE',  'Книговидача',                'Може видавати книги',                          'properties'),
-('NATIOS', 'Національна бібліотека',     'Пошукова область національних бібліотек',      'searchdomain'),
-('PUBLS',  'Публічні бібліотеки',        'Пошукова область публічних бібліотек',         'searchdomain'),
-('UNIVS',  'Університетські бібліотеки', 'Пошукова область університетських бібліотек',  'searchdomain');
-
-INSERT INTO `branchrelations` (`branchcode`, `categorycode`) VALUES
-('AB',   'ISSUE'),
-('ABH',  'ISSUE'),
-('LNSL', 'HOME'),
-('LNSL', 'NATIOS'),
-('NPLU', 'HOME'),
-('NPLU', 'NATIOS'),
-('STL',  'HOME'),
-('STL',  'UNIVS');
-
