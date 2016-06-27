@@ -130,10 +130,15 @@
                    <input type="hidden" name="cancelall" value="1" />
                    <input type="hidden" name="allbranches" value="[% allbranches | html %]" />
                    <input type="hidden" name="tab" value="holdsover">
+
                    [% IF TransferWhenCancelAllWaitingHolds %]
                        <input type="submit" value="Cancel and Transfer all" />
                    [% ELSE %]
                        <input type="submit" value="Cancel all" />
+                   [% END %]
+                   
+                   [% IF Koha.Preference('ExpireReservesMaxPickUpDelayCharge') %]
+                       <p><input type="checkbox" class="charge_cancel_fee" name="charge_cancel_fee" value="1" checked="checked" /> Charge cancelation fee</p>
                    [% END %]
                </form>
                [% UNLESS TransferWhenCancelAllWaitingHolds %]
@@ -178,6 +183,11 @@
                             <input type="hidden" name="fbr" value="[% overloo.holdingbranch | html %]" />
                             <input type="hidden" name="tbr" value="[% overloo.homebranch | html %]" />
                             <input type="hidden" name="tab" value="holdsover">
+
+                            [% IF Koha.Preference('ExpireReservesMaxPickUpDelayCharge') %]
+                                <p><input type="checkbox" class="charge_cancel_fee" name="charge_cancel_fee" value="1" checked="checked" /> Charge cancelation fee</p>
+                            [% END %]
+
                             [% IF ( overloo.dotransfer ) %]
                             <input type="submit" value="Cancel hold and return to : [% Branches.GetName( overloo.homebranch ) | html %]" />
                             [% ELSE %]

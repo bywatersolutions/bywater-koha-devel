@@ -42,13 +42,14 @@ use Koha::Patrons;
 
 my $input = new CGI;
 
-my $item           = $input->param('itemnumber');
-my $borrowernumber = $input->param('borrowernumber');
-my $fbr            = $input->param('fbr') || '';
-my $tbr            = $input->param('tbr') || '';
-my $all_branches   = $input->param('allbranches') || '';
-my $cancelall      = $input->param('cancelall');
-my $tab            = $input->param('tab');
+my $item              = $input->param('itemnumber');
+my $borrowernumber    = $input->param('borrowernumber');
+my $fbr               = $input->param('fbr') || '';
+my $tbr               = $input->param('tbr') || '';
+my $all_branches      = $input->param('allbranches') || '';
+my $cancelall         = $input->param('cancelall');
+my $tab               = $input->param('tab');
+my $charge_cancel_fee = $input->param('charge_cancel_fee');
 
 my ( $template, $loggedinuser, $cookie, $flags ) = get_template_and_user(
     {
@@ -69,7 +70,7 @@ $template->param( TransferWhenCancelAllWaitingHolds => 1 ) if $transfer_when_can
 my @cancel_result;
 # if we have a return from the form we cancel the holds
 if ($item) {
-    my $res = cancel( $item, $borrowernumber, $fbr, $tbr );
+    my $res = cancel( $item, $borrowernumber, $fbr, $tbr, undef, $charge_cancel_fee );
     push @cancel_result, $res if $res;
 }
 
@@ -134,7 +135,7 @@ while ( my $hold = $holds->next ) {
 
     if ($today > $calcDate) {
         if ($cancelall) {
-            my $res = cancel( $item->itemnumber, $patron->borrowernumber, $holdingbranch, $homebranch, !$transfer_when_cancel_all );
+            my $res = cancel( $item->itemnumber, $patron->borrowernumber, $holdingbranch, $homebranch, !$transfer_when_cancel_all, $charge_cancel_fee );
             push @cancel_result, $res if $res;
             next;
         } else {
@@ -174,13 +175,13 @@ if ($item && $tab eq 'holdsover' && !@cancel_result) {
 exit;
 
 sub cancel {
-    my ($item, $borrowernumber, $fbr, $tbr, $skip_transfers ) = @_;
+    my ($item, $borrowernumber, $fbr, $tbr, $skip_transfers, $charge_cancel_fee ) = @_;
 
     my $transfer = $fbr ne $tbr; # XXX && !$nextreservinfo;
 
     return if $transfer && $skip_transfers;
 
-    my ( $messages, $nextreservinfo ) = ModReserveCancelAll( $item, $borrowernumber );
+    my ( $messages, $nextreservinfo ) = ModReserveCancelAll( $item, $borrowernumber, $charge_cancel_fee );
 
 # 	if the document is not in his homebranch location and there is not reservation after, we transfer it
     if ($transfer && !$nextreservinfo) {

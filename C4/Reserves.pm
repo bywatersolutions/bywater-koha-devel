@@ -1089,12 +1089,12 @@ function to cancel reserv,check other reserves, and transfer document if it's ne
 sub ModReserveCancelAll {
     my $messages;
     my $nextreservinfo;
-    my ( $itemnumber, $borrowernumber ) = @_;
+    my ( $itemnumber, $borrowernumber, $charge_cancel_fee ) = @_;
 
     #step 1 : cancel the reservation
     my $holds = Koha::Holds->search({ itemnumber => $itemnumber, borrowernumber => $borrowernumber });
     return unless $holds->count;
-    $holds->next->cancel;
+    $holds->next->cancel( { charge_cancel_fee => $charge_cancel_fee } );
 
     #step 2 launch the subroutine of the others reserves
     ( $messages, $nextreservinfo ) = GetOtherReserves($itemnumber);
