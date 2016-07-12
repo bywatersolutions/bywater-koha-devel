@@ -36,6 +36,7 @@ use C4::Debug;
 use Koha::DateUtils;
 use Koha::Account::Line;
 use Koha::Account::Lines;
+use Koha::Account::Offset;
 
 use vars qw(@ISA @EXPORT);
 
@@ -590,6 +591,14 @@ sub UpdateFine {
                     accounttype   => 'FU',
                 }
             )->store();
+
+            Koha::Account::Offset->new(
+                {
+                    debit_id => $accountline->id,
+                    type     => 'Fine Update',
+                    amount   => $diff,
+                }
+            )->store();
         }
     } else {
         if ( $amount ) { # Don't add new fines with an amount of 0
@@ -615,6 +624,14 @@ sub UpdateFine {
                     lastincrement     => $amount,
                     accountno         => $nextaccntno,
                     issue_id          => $issue_id,
+                }
+            )->store();
+
+            Koha::Account::Offset->new(
+                {
+                    debit_id => $accountline->id,
+                    type     => 'Fine',
+                    amount   => $amount,
                 }
             )->store();
         }
