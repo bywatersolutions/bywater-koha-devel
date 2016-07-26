@@ -665,7 +665,7 @@
                         [% END %]
                         <label for="dropboxcheck">Book drop mode</label>
                     </p>
-                    [% IF Koha.Preference('ExpireReservesMaxPickUpDelayCharge') %]
+                    [% IF Koha.Preference('WaitingHoldCancelationFee') %]
                     <p>
                         [% IF ( forgivemanualholdsexpire ) %]
                         <input type="checkbox" id="forgivemanualholdsexpire" name="forgivemanualholdsexpire" value="forgivemanualholdsexpire" checked="checked" />

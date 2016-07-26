@@ -331,7 +331,7 @@ my $cancel_hold = $hold->cancel();
 Cancel a hold:
 - The hold will be moved to the old_reserves table with a priority=0
 - The priority of other holds will be updated
-- The patron will be charge (see ExpireReservesMaxPickUpDelayCharge) if the charge_cancel_fee parameter is set
+- The patron will be charge (see WaitingHoldCancelationFee) if the charge_cancel_fee parameter is set
 - a CANCEL HOLDS log will be done if the pref HoldsLog is on
 
 =cut
@@ -349,7 +349,7 @@ sub cancel {
             C4::Reserves::_FixPriority({ biblionumber => $self->biblionumber });
 
             # and, if desired, charge a cancel fee
-            my $charge = C4::Context->preference("ExpireReservesMaxPickUpDelayCharge");
+            my $charge = C4::Context->preference("WaitingHoldCancelationFee");
             if ( $charge && $params->{'charge_cancel_fee'} ) {
                 C4::Accounts::manualinvoice($self->borrowernumber, $self->itemnumber, '', 'HE', $charge);
             }

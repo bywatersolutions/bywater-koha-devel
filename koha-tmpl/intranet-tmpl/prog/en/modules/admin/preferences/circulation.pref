@@ -602,9 +602,10 @@ Circulation:
                   no: "Don't allow"
             - "holds to expire automatically if they have not been picked by within the time period specified in ReservesMaxPickUpDelay"
         -
-            - If using ExpireReservesMaxPickUpDelay, charge a borrower who allows his or her waiting hold to expire a fee of
-            - pref: ExpireReservesMaxPickUpDelayCharge
+            - Charge an amount of
+            - pref: WaitingHoldCancelationFee
               class: currency
+            - if a waiting hold cancellation fee is to be charged, based on if the hold has been waiting more days than defined by ReservesMaxPickUpDelay.
         -
             - Satisfy holds using items from the libraries
             - pref: StaticHoldsQueueWeight

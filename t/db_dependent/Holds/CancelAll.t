@@ -37,7 +37,7 @@ my $borrowers_count = 2;
 
 my ( $biblionumber, $title, $biblioitemnumber ) = create_helper_biblio('DUMMY');
 
-C4::Context->set_preference( 'ExpireReservesMaxPickUpDelayCharge', '5.00' );
+C4::Context->set_preference( 'WaitingHoldCancelationFee', '5.00' );
 
 my ( undef, undef, $itemnumber ) = AddItem(
     {
@@ -106,7 +106,7 @@ is( $hold, undef, 'Hold canceled correctly' );
 $accountlines =
   Koha::Account::Lines->search( { borrowernumber => $borrowernumber } );
 is( $accountlines->count(), 1, "Found charge for cancelation" );
-is( $accountlines->as_list->[0]->amountoutstanding, '5.000000', 'Charge is equal to ExpireReservesMaxPickUpDelayCharge' );
+is( $accountlines->as_list->[0]->amountoutstanding, '5.000000', 'Charge is equal to WaitingHoldCancelationFee' );
 
 # Helper method to set up a Biblio.
 sub create_helper_biblio {

@@ -137,7 +137,7 @@
                        <input type="submit" value="Cancel all" />
                    [% END %]
                    
-                   [% IF Koha.Preference('ExpireReservesMaxPickUpDelayCharge') %]
+                   [% IF Koha.Preference('WaitingHoldCancelationFee') %]
                        <p><input type="checkbox" class="charge_cancel_fee" name="charge_cancel_fee" value="1" checked="checked" /> Charge cancelation fee</p>
                    [% END %]
                </form>
@@ -184,7 +184,7 @@
                             <input type="hidden" name="tbr" value="[% overloo.homebranch | html %]" />
                             <input type="hidden" name="tab" value="holdsover">
 
-                            [% IF Koha.Preference('ExpireReservesMaxPickUpDelayCharge') %]
+                            [% IF Koha.Preference('WaitingHoldCancelationFee') %]
                                 <p><input type="checkbox" class="charge_cancel_fee" name="charge_cancel_fee" value="1" checked="checked" /> Charge cancelation fee</p>
                             [% END %]
 
