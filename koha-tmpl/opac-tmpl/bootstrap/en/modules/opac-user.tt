@@ -239,14 +239,14 @@
                                                         Not renewable
                                                     [% ELSIF ( ISSUE.norenew_overdue ) %]
                                                         Not allowed <span class="renewals">(overdue)</span>
+                                                    [% ELSIF ( ISSUE.on_reserve ) %]
+                                                        <span class="renewals">(On hold)</span>
                                                     [% ELSIF ( ISSUE.auto_renew || ISSUE.auto_too_soon ) %]
                                                         Automatic renewal
                                                         <span class="renewals">([% ISSUE.renewsleft %] of [% ISSUE.renewsallowed %] renewals remaining)</span>
                                                     [% ELSIF ( ISSUE.too_soon ) %]
                                                         No renewal before [% ISSUE.soonestrenewdate %]
                                                         <span class="renewals">([% ISSUE.renewsleft %] of [% ISSUE.renewsallowed %] renewals remaining)</span>
-                                                    [% ELSIF ( ISSUE.on_reserve ) %]
-                                                        <span class="renewals">(On hold)</span>
                                                     [% END %]
                                                     </td>
                                                 [% END %]
