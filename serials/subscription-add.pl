@@ -35,6 +35,10 @@ use Koha::DateUtils;
 use Koha::ItemTypes;
 use Carp;
 
+use Koha::Subscription::Numberpattern;
+use Koha::Subscription::Frequency;
+use Koha::SharedContent;
+
 #use Smart::Comments;
 
 our $query = CGI->new;
@@ -289,14 +293,26 @@ sub _guess_enddate {
 }
 
 sub redirect_add_subscription {
+    my $periodicity = $query->param('frequency');
+    if ($periodicity eq 'mana') {
+        my $subscription_freq = Koha::Subscription::Frequency->new()->set(
+            {
+                description   => $query->param('sfdescription'),
+                unit          => $query->param('unit'),
+                unitsperissue => $query->param('unitsperissue'),
+                issuesperunit => $query->param('issuesperunit'),
+            }
+        )->store();
+        $periodicity = $subscription_freq->id;
+    }
+    my $numberpattern = Koha::Subscription::Numberpatterns->new_or_existing({ $query->Vars });
+
     my $auser          = $query->param('user');
     my $branchcode     = $query->param('branchcode');
     my $aqbooksellerid = $query->param('aqbooksellerid');
     my $cost           = $query->param('cost');
     my $aqbudgetid     = $query->param('aqbudgetid');
-    my $periodicity    = $query->param('frequency');
     my @irregularity   = $query->multi_param('irregularity');
-    my $numberpattern  = $query->param('numbering_pattern');
     my $locale         = $query->param('locale');
     my $graceperiod    = $query->param('graceperiod') || 0;
 
@@ -326,6 +342,12 @@ sub redirect_add_subscription {
     my $previousitemtype  = $query->param('previousitemtype');
     my $skip_serialseq    = $query->param('skip_serialseq');
 
+    my $mana_id;
+    if ( $query->param('mana_id') ne "" ) {
+        $mana_id = $query->param('mana_id');
+        Koha::SharedContent::increment_entity_value("subscription",$mana_id, "nbofusers");
+    }
+
     my $startdate      = output_pref( { str => scalar $query->param('startdate'),      dateonly => 1, dateformat => 'iso' } );
     my $enddate        = output_pref( { str => scalar $query->param('enddate'),        dateonly => 1, dateformat => 'iso' } );
     my $firstacquidate = output_pref( { str => scalar $query->param('firstacquidate'), dateonly => 1, dateformat => 'iso' } );
@@ -337,7 +359,6 @@ sub redirect_add_subscription {
             $enddate = _guess_enddate($startdate, $periodicity, $numberlength, $weeklength, $monthlength)
         }
     }
-
     my $subscriptionid = NewSubscription(
         $auser, $branchcode, $aqbooksellerid, $cost, $aqbudgetid, $biblionumber,
         $startdate, $periodicity, $numberlength, $weeklength,
@@ -346,9 +367,12 @@ sub redirect_add_subscription {
         join(";",@irregularity), $numberpattern, $locale, $callnumber,
         $manualhistory, $internalnotes, $serialsadditems,
         $staffdisplaycount, $opacdisplaycount, $graceperiod, $location, $enddate,
-        $skip_serialseq, $itemtype, $previousitemtype
+        $skip_serialseq, $itemtype, $previousitemtype, $mana_id
     );
-
+    if ( (C4::Context->preference('Mana')) and ( grep { $_ eq "subscription" } split(/,/, C4::Context->preference('AutoShareWithMana'))) ){
+        my $result = Koha::SharedContent::send_entity( $query->param('mana_language') || '', $loggedinuser, $subscriptionid, 'subscription');
+        $template->param( mana_msg => $result->{msg} );
+    }
     my $additional_fields = Koha::AdditionalField->all( { tablename => 'subscription' } );
     insert_additional_fields( $additional_fields, $biblionumber, $subscriptionid );
 
@@ -377,12 +401,23 @@ sub redirect_mod_subscription {
         : $firstacquidate;
 
     my $periodicity = $query->param('frequency');
+    if ($periodicity eq 'mana') {
+        my $subscription_freq = Koha::Subscription::Frequency->new()->set(
+            {
+                description   => $query->param('sfdescription'),
+                unit          => $query->param('unit'),
+                unitsperissue => $query->param('unitsperissue'),
+                issuesperunit => $query->param('issuesperunit'),
+            }
+        )->store();
+        $periodicity = $subscription_freq->id;
+    }
+    my $numberpattern = Koha::Subscription::Numberpatterns->new_or_existing({ $query->Vars });
 
     my $subtype = $query->param('subtype');
     my $sublength = $query->param('sublength');
     my ($numberlength, $weeklength, $monthlength)
         = _get_sub_length( $subtype, $sublength );
-    my $numberpattern = $query->param('numbering_pattern');
     my $locale = $query->param('locale');
     my $lastvalue1 = $query->param('lastvalue1');
     my $innerloop1 = $query->param('innerloop1');
@@ -404,6 +439,15 @@ sub redirect_mod_subscription {
     my $itemtype          = $query->param('itemtype');
     my $previousitemtype  = $query->param('previousitemtype');
     my $skip_serialseq    = $query->param('skip_serialseq');
+
+    my $mana_id;
+    if ( defined( $query->param('mana_id') ) ) {
+        $mana_id = $query->param('mana_id');
+        Koha::SharedContent::increment_entity_value("subscription",$mana_id, "nbofusers");
+    }
+    else {
+        $mana_id = undef;
+    }
 
     # Guess end date
     if(!defined $enddate || $enddate eq '') {
@@ -430,7 +474,7 @@ sub redirect_mod_subscription {
         $status, $biblionumber, $callnumber, $notes, $letter,
         $manualhistory, $internalnotes, $serialsadditems, $staffdisplaycount,
         $opacdisplaycount, $graceperiod, $location, $enddate, $subscriptionid,
-        $skip_serialseq, $itemtype, $previousitemtype
+        $skip_serialseq, $itemtype, $previousitemtype, $mana_id
     );
 
     my $additional_fields = Koha::AdditionalField->all( { tablename => 'subscription' } );

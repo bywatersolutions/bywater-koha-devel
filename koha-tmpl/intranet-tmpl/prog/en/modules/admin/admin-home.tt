@@ -14,6 +14,15 @@
     <div class="row">
         <div class="col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
 
+            [% IF ( Koha.Preference('Mana') == 2) %]
+              <div class="dialog alert">
+                <fieldset>
+                     <p><center> You haven't decided if you want to activate Mana Knowlede Base, please let us know by clicking<center></p>
+                     <a href=/cgi-bin/koha/admin/share_content.pl><center>Here</center></a>
+                </fieldset>
+              </div>
+            [% END %]
+
         <h1>Koha administration</h1>
         <div class="row">
             <div class="col-md-6 sysprefs">
@@ -186,6 +195,9 @@
                     [% IF ( CAN_user_parameters_manage_usage_stats ) %]
                         <dt><a href="/cgi-bin/koha/admin/usage_statistics.pl">Share your usage statistics</a></dt>
                         <dd>Share with the Koha community the usage statistics of your Koha installation.</dd>
+
+                        <dt><a href="/cgi-bin/koha/admin/share_content.pl">Using Mana-KB</a></dt>
+                        <dd>Share content (subscriptions, reports) with Koha communty</dd>
                     [% END %]
                 </dl>
             [% END %]

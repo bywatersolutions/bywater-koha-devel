@@ -25,7 +25,7 @@ use base qw(Koha::Object);
 
 =head1 NAME
 
-Koha::Subscription::Frequency - Koha Subscription Frequency Object class
+Koha::Subscription::Frequency - Koha Subscription::Frequency Object class
 
 =head1 API
 

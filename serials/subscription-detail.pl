@@ -33,6 +33,8 @@ use Koha::Acquisition::Bookseller;
 use Date::Calc qw/Today Day_of_Year Week_of_Year Add_Delta_Days/;
 use Carp;
 
+use Koha::SharedContent;
+
 my $query = new CGI;
 my $op = $query->param('op') || q{};
 my $issueconfirmed = $query->param('issueconfirmed');
@@ -60,7 +62,6 @@ my ($template, $loggedinuser, $cookie)
                 debug => 1,
                 });
 
-
 my $subs = GetSubscription($subscriptionid);
 
 output_and_exit( $query, $cookie, $template, 'unknown_subscription')
@@ -72,31 +73,38 @@ my ($totalissues,@serialslist) = GetSerials($subscriptionid);
 $totalissues-- if $totalissues; # the -1 is to have 0 if this is a new subscription (only 1 issue)
 
 if ($op eq 'del') {
-	if ($$subs{'cannotedit'}){
-		carp "Attempt to delete subscription $subscriptionid by ".C4::Context->userenv->{'id'}." not allowed";
-		print $query->redirect("/cgi-bin/koha/serials/subscription-detail.pl?subscriptionid=$subscriptionid");
-		exit;
-	}
-	
+    if ($$subs{'cannotedit'}){
+        carp "Attempt to delete subscription $subscriptionid by ".C4::Context->userenv->{'id'}." not allowed";
+        print $query->redirect("/cgi-bin/koha/serials/subscription-detail.pl?subscriptionid=$subscriptionid");
+        exit;
+    }
+
     # Asking for confirmation if the subscription has not strictly expired yet or if it has linked issues
     my $strictlyexpired = HasSubscriptionStrictlyExpired($subscriptionid);
     my $linkedissues = CountIssues($subscriptionid);
     my $countitems   = HasItems($subscriptionid);
     if ($strictlyexpired == 0 || $linkedissues > 0 || $countitems>0) {
-		$template->param(NEEDSCONFIRMATION => 1);
-		if ($strictlyexpired == 0) { $template->param("NOTEXPIRED" => 1); }
-		if ($linkedissues     > 0) { $template->param("LINKEDISSUES" => 1); }
-		if ($countitems       > 0) { $template->param("LINKEDITEMS"  => 1); }
+        $template->param(NEEDSCONFIRMATION => 1);
+        if ($strictlyexpired == 0) { $template->param("NOTEXPIRED" => 1); }
+        if ($linkedissues     > 0) { $template->param("LINKEDISSUES" => 1); }
+        if ($countitems       > 0) { $template->param("LINKEDITEMS"  => 1); }
     } else {
-		$issueconfirmed = "1";
+        $issueconfirmed = "1";
     }
     # If it's ok to delete the subscription, we do so
     if ($issueconfirmed eq "1") {
-		&DelSubscription($subscriptionid);
+        &DelSubscription($subscriptionid);
         print $query->redirect("/cgi-bin/koha/serials/serials-home.pl");
         exit;
     }
 }
+elsif ( $op and $op eq "share" ) {
+    my $mana_language = $query->param('mana_language');
+    my $result = Koha::SharedContent::send_entity($mana_language, $loggedinuser, $subscriptionid, 'subscription');
+    $template->param( mana_code => $result->{msg} );
+    $subs->{mana_id} = $result->{id};
+}
+
 my $hasRouting = check_routing($subscriptionid);
 
 (undef, $cookie, undef, undef)
@@ -163,6 +171,7 @@ $template->param(
     default_bib_view => $default_bib_view,
     orders_grouped => $orders_grouped,
     (uc(C4::Context->preference("marcflavour"))) => 1,
+    mana_comments => $subs->{comments},
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;

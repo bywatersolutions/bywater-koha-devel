@@ -20,11 +20,15 @@ package Koha::Subscription;
 use Modern::Perl;
 
 use Carp;
+use JSON;
 
-use Koha::Database;
-use Koha::Biblios;
 use Koha::Acquisition::Booksellers;
+use Koha::Biblioitems;
+use Koha::Biblios;
+use Koha::Database;
 use Koha::Subscription::Frequencies;
+use Koha::Subscription::Numberpatterns;
+use Koha::Subscriptions;
 
 use base qw(Koha::Object);
 
@@ -121,7 +125,79 @@ sub frequency {
     return Koha::Subscription::Frequency->_new_from_dbic($frequency_rs);
 }
 
-=head3 type
+=head3 get_search_info
+
+=cut
+
+sub get_search_info {
+    my $self=shift;
+    my $searched_sub_id = shift;
+    my $biblio = Koha::Biblios->find( { 'biblionumber' => $searched_sub_id } );
+    return unless $biblio;
+    my $biblioitem =
+      Koha::Biblioitems->find( { 'biblionumber' => $searched_sub_id } );
+
+    my $sub_mana_info = {
+        'title'         => $biblio->title,
+        'issn'          => $biblioitem->issn,
+        'ean'           => $biblioitem->ean,
+        'publishercode' => $biblioitem->publishercode
+    };
+    return $sub_mana_info;
+}
+
+=head3 get_sharable_info
+
+=cut
+
+sub get_sharable_info {
+    my $self = shift;
+    my $shared_sub_id = shift;
+    my $subscription  = Koha::Subscriptions->find($shared_sub_id);
+    my $biblio        = Koha::Biblios->find( $subscription->biblionumber );
+    my $biblioitem    = Koha::Biblioitems->find(
+        { 'biblionumber' => $subscription->biblionumber } );
+    my $sub_frequency =
+      Koha::Subscription::Frequencies->find( $subscription->periodicity );
+    my $sub_numberpatteern =
+      Koha::Subscription::Numberpatterns->find( $subscription->numberpattern );
+
+    my $sub_mana_info = {
+        'title'           => $biblio->title,
+        'sfdescription'   => $sub_frequency->description,
+        'unit'            => $sub_frequency->unit,
+        'unitsperissue'   => $sub_frequency->unitsperissue,
+        'issuesperunit'   => $sub_frequency->issuesperunit,
+        'label'           => $sub_numberpatteern->label,
+        'sndescription'   => $sub_numberpatteern->description,
+        'numberingmethod' => $sub_numberpatteern->numberingmethod,
+        'label1'          => $sub_numberpatteern->label1,
+        'add1'            => $sub_numberpatteern->add1,
+        'every1'          => $sub_numberpatteern->every1,
+        'whenmorethan1'   => $sub_numberpatteern->whenmorethan1,
+        'setto1'          => $sub_numberpatteern->setto1,
+        'numbering1'      => $sub_numberpatteern->numbering1,
+        'label2'          => $sub_numberpatteern->label2,
+        'add2'            => $sub_numberpatteern->add2,
+        'every2'          => $sub_numberpatteern->every2,
+        'whenmorethan2'   => $sub_numberpatteern->whenmorethan2,
+        'setto2'          => $sub_numberpatteern->setto2,
+        'numbering2'      => $sub_numberpatteern->numbering2,
+        'label3'          => $sub_numberpatteern->label3,
+        'add3'            => $sub_numberpatteern->add3,
+        'every3'          => $sub_numberpatteern->every3,
+        'whenmorethan3'   => $sub_numberpatteern->whenmorethan3,
+        'setto3'          => $sub_numberpatteern->setto3,
+        'numbering3'      => $sub_numberpatteern->numbering3,
+        'issn'            => $biblioitem->issn,
+        'ean'             => $biblioitem->ean,
+        'publishercode'   => $biblioitem->publishercode
+    };
+    return $sub_mana_info;
+}
+
+
+=head3 _type
 
 =cut
 
