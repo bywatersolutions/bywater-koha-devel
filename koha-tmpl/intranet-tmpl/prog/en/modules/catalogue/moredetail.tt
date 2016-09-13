@@ -15,6 +15,7 @@
     browser.show();
 //]]>
 </script>
+<script type="text/javascript" src="[% interface %]/[% theme %]/js/app/moredetail.js"></script>
 </head>
 <body id="catalog_moredetail" class="catalog">
 [% USE KohaDates %]
@@ -199,6 +200,7 @@
             [% END %]
 
             </ol></div>
+            <div id="item-messages-[% ITEM_DAT.itemnumber %]" class="item-messages"></div>
             <div class="listgroup"><h4>History</h4>
             <ol class="bibliodetails">
 
