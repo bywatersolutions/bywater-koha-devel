@@ -46,6 +46,8 @@ use C4::Members;
 use Koha::Number::Price;
 use Koha::Acquisition::Order;
 use Koha::Acquisition::Bookseller;
+use Koha::ItemTypes;
+use Koha::Acquisition::Currencies;
 
 my $input = new CGI;
 my ($template, $loggedinuser, $cookie, $userflags) = get_template_and_user({
