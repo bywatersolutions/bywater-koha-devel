@@ -1,0 +1,15 @@
+{
+  "widgetIdPathParam": {
+    "name": "widget_id",
+    "in": "path",
+    "description": "Internal widget identifier",
+    "required": true,
+    "type": "integer"
+  },
+  "widgetIdQueryParam": {
+    "name": "widget_id",
+    "in": "query",
+    "description": "Internal widget identifier",
+    "type": "integer"
+  }
+}

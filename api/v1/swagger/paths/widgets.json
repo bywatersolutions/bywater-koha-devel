@@ -1,0 +1,32 @@
+{
+  "/widgets": {
+    "get": {
+      "operationId": "listWidgets",
+      "tags": ["widget"],
+      "produces": ["application/json"],
+      "responses": {
+        "200": {
+          "description": "A list of widgets",
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref": "../definitions.json#/widget"
+            }
+          }
+        },
+        "403": {
+          "description": "Access forbidden",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "404": {
+          "description": "Widget not found",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        }
+      }
+    }
+  }
+}

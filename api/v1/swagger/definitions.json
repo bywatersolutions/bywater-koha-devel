@@ -8,6 +8,9 @@
   "hold": {
     "$ref": "definitions/hold.json"
   },
+  "widget": {
+    "$ref": "definitions/widget.json"
+  },
   "error": {
     "$ref": "definitions/error.json"
   }

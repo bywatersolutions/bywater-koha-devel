@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+        "description": "The internal id for this widget"
+    },
+    "code": {
+      "description": "The code for this widget"
+    },
+    "name": {
+      "description": "The name of this widget"
+    }
+  }
+}
