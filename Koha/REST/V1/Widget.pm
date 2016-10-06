@@ -45,4 +45,18 @@ sub list {
     return $c->$cb( $widgets, 200 );
 }
 
+sub get {
+    my ( $c, $args, $cg ) = @_;
+
+    my $i = $args->{widget_id};
+
+    my $widget = {
+        id => $i,
+        code => "W$i",
+        name => "Widget $i",
+    };
+
+    return $c->$cb( $widget, 200 );
+}
+
 1;

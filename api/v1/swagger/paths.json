@@ -13,5 +13,8 @@
   },
   "/widgets": {
     "$ref": "paths/widgets.json#/~1widgets"
+},
+  "/widgets/{widget_id}": {
+    "$ref": "paths/widgets.json#/~1widgets~1{widget_id}"
   }
 }

@@ -7,5 +7,11 @@
   },
   "holdIdPathParam": {
     "$ref": "parameters/hold.json#/holdIdPathParam"
+  },
+  "widgetIdPathParam": {
+    "$ref": "parameters/widget.json#/widgetIdPathParam"
+  },
+  "widgetIdQueryParam": {
+    "$ref": "parameters/widget.json#/widgetIdQueryParam"
   }
 }

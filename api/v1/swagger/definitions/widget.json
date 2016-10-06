@@ -1,7 +1,7 @@
 {
   "type": "object",
   "properties": {
-    "id": {
+    "widget_id": {
         "description": "The internal id for this widget"
     },
     "code": {

@@ -28,5 +28,43 @@
         }
       }
     }
+  },
+  "/widgets/{widget_id}": {
+    "get": {
+      "operationId": "getWidget",
+      "tags": ["widget"],
+      "parameters": [{
+          "$ref": "../parameters.json#/widgetIdPathParam"
+        }
+      ],
+      "produces": [
+          "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "A widget",
+          "schema": {
+            "$ref": "../definitions.json#/widget"
+          }
+        },
+        "403": {
+          "description": "Access forbidden",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "404": {
+          "description": "Widget not found",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        }
+      },
+      "x-koha-authorization": {
+        "permissions": {
+          "borrowers": "1"
+        }
+      }
+    }
   }
 }
