@@ -43,63 +43,6 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 );
 
 my $dbh = C4::Context->dbh;
-if ( $op eq 'add_form' ) {
-    my $city;
-    if ($cityid) {
-        $city = Koha::Cities->find($cityid);
-    }
-
-    $template->param( city => $city, );
-} elsif ( $op eq 'add_validate' ) {
-    my $cityid       = $input->param('cityid');
-    my $city_name    = $input->param('city_name');
-    my $city_state   = $input->param('city_state');
-    my $city_zipcode = $input->param('city_zipcode');
-    my $city_country = $input->param('city_country');
-
-    if ($cityid) {
-        my $city = Koha::Cities->find($cityid);
-        $city->city_name($city_name);
-        $city->city_state($city_state);
-        $city->city_zipcode($city_zipcode);
-        $city->city_country($city_country);
-        eval { $city->store; };
-        if ($@) {
-            push @messages, { type => 'error', code => 'error_on_update' };
-        } else {
-            push @messages, { type => 'message', code => 'success_on_update' };
-        }
-    } else {
-        my $city = Koha::City->new(
-            {   city_name    => $city_name,
-                city_state   => $city_state,
-                city_zipcode => $city_zipcode,
-                city_country => $city_country,
-            }
-        );
-        eval { $city->store; };
-        if ($@) {
-            push @messages, { type => 'error', code => 'error_on_insert' };
-        } else {
-            push @messages, { type => 'message', code => 'success_on_insert' };
-        }
-    }
-    $searchfield = q||;
-    $op          = 'list';
-} elsif ( $op eq 'delete_confirm' ) {
-    my $city = Koha::Cities->find($cityid);
-    $template->param( city => $city, );
-} elsif ( $op eq 'delete_confirmed' ) {
-    my $city = Koha::Cities->find($cityid);
-    my $deleted = eval { $city->delete; };
-
-    if ( $@ or not $deleted ) {
-        push @messages, { type => 'error', code => 'error_on_delete' };
-    } else {
-        push @messages, { type => 'message', code => 'success_on_delete' };
-    }
-    $op = 'list';
-}
 
 if ( $op eq 'list' ) {
     my $cities = Koha::Cities->search( { city_name => { -like => "%$searchfield%" } } );

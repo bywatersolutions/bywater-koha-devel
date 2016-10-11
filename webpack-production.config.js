@@ -3,6 +3,7 @@ var webpack = require('webpack');
 module.exports = {
     entry: {
         moredetail: './koha-tmpl/intranet-tmpl/prog/js/public/moredetail.js',
+        cities: './koha-tmpl/intranet-tmpl/prog/js/public/cities.js',
     },
     output: {
         path: './koha-tmpl/intranet-tmpl/prog/js/app',
