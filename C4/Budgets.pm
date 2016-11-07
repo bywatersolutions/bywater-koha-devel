@@ -332,7 +332,7 @@ sub GetBudgetSpent {
 	my ($budget_id) = @_;
 	my $dbh = C4::Context->dbh;
 	my $sth = $dbh->prepare(qq|
-        SELECT SUM( COALESCE(unitprice, ecost) * quantity ) AS sum FROM aqorders
+        SELECT SUM( COALESCE(unitprice, ecost) + ( COALESCE(unitprice, ecost) * gstrate ) * quantity ) AS sum FROM aqorders
             WHERE budget_id = ? AND
             quantityreceived > 0 AND
             datecancellationprinted IS NULL
@@ -358,7 +358,7 @@ sub GetBudgetOrdered {
 	my ($budget_id) = @_;
 	my $dbh = C4::Context->dbh;
 	my $sth = $dbh->prepare(qq|
-        SELECT SUM(ecost *  quantity) AS sum FROM aqorders
+        SELECT SUM(ecost  + ( ecost * gstrate ) *  quantity) AS sum FROM aqorders
             WHERE budget_id = ? AND
             quantityreceived = 0 AND
             datecancellationprinted IS NULL
