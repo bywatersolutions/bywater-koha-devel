@@ -1,0 +1,158 @@
+[% extra_js.push( c.uri_for_static('js/test.js') ) %]
+[% extra_css.push( c.uri_for_static('css/test.css') ) %]
+
+[%- SET display_templates = [ ['resolve', 'human'], ['xml', 'XML'], ['opensearch', 'OpenSearch'], ] -%]
+[%- SET genres = [ 'article', 'book', 'bookitem', 'journal' ] -%]
+
+<div id="test">
+
+	<form name="testform" class="form-horizontal" action="[% c.uri_for( c.controller('Test').action_for('do') ) | html %]" method="post">
+
+		<div class="control-group">
+			<label class="control-label" for="_site">site</label>
+			<div class="controls">
+				<select class="span4" name="_site" id="_site">
+					[% FOREACH site IN sites %]
+						<option value="[% site.key | html %]" [% 'SELECTED' IF site.key == current_site_key %]>[% site.name | html %] ([% site.key | html %])</option>
+					[% END %]
+				</select>
+			</div>
+		</div>
+
+		<div class="control-group">
+			<label class="control-label" for="_template">template</label>
+			<div class="controls">
+				<select class="span2" name="_template" id="_template">
+					[% FOREACH display_template IN display_templates %]
+						<option value="[% display_template.0 | html %]">[% display_template.1 | html %]</option>
+					[% END %]
+				</select>
+			</div>
+		</div>
+
+
+		<div class="control-group">
+			<label class="control-label" for="genre">genre</label>
+			<div class="controls">
+				<select class="span2" name="genre" id="genre">
+					[% FOREACH genre IN genres %]
+						<option value="[% genre | html %]">[% genre %]</option>
+					[% END %]
+				</select>
+			</div>
+		</div>
+
+		<div class="control-group">
+			<label class="control-label" for="atitle">article title</label>
+			<div class="controls">
+				<input type="text" name="atitle" id="atitle" size="50" maxlength="256"/>
+			</div>
+		</div>
+
+		<div class="control-group">
+			<label class="control-label" for="title">source/title</label>
+			<div class="controls">
+				<input class="span4" type="text" name="title" id="title" maxlength="256"/>
+			</div>
+		</div>
+
+		<div class="control-group">
+			<div class="labels-row control-label">
+				<label for="aulast">author (last, </label><label for="aufirst">first)</label>
+			</div>
+			<div class="controls controls-row">
+				<input type="text" name="aulast" id="aulast" />, <input type="text" name="aufirst" id="aufirst" />
+			</div>
+		</div>
+
+		<div class="control-group">
+			<div class="labels-row control-label">
+				<label for="issn">ISSN</label> / <label for="eissn">eISSN</label> / <label for="isbn">ISBN</label>
+			</div>
+			<div class="controls controls-row">
+				<input style="width: 6em;" type="text" name="issn" id="issn" maxlength="9" /> /
+				<input style="width: 6em;" type="text" name="eissn" id="eissn" maxlength="9" /> /
+				<input style="width: 12em;" type="text" name="isbn" id="isbn" maxlength="16" />
+			</div>
+		</div>
+
+		<div class="control-group">
+			<div class="labels-row control-label">
+				<label for="volume">volume</label> / <label for="issue">issue</label> / <label for="date">date</label>
+			</div>
+			<div class="controls controls-row">
+				<input style="width: 5em;" type="text" name="volume" id="volume" maxlength="9" /> /
+				<input style="width: 5em;" type="text" name="issue" id="issue" maxlength="9" /> /
+				<input style="width: 5em;" type="text" name="date" id="date" maxlength="16" /> <br />
+			</div>
+		</div>
+
+		<div class="control-group">
+			<div class="labels-row control-label">
+				<label for="pages">pages</label> / <label for="spage">spage</label> / <label for="epage">epage</label>
+			</div>
+			<div class="controls controls-row">
+				<input style="width: 5em;" type="text" name="pages" id="pages" maxlength="6" /> /
+				<input style="width: 5em;" type="text" name="spage" id="spage" maxlength="6" /> /
+				<input style="width: 5em;" type="text" name="epage" id="epage" maxlength="6" /> <br />
+			</div>
+		</div>
+
+		<div class="control-group">
+			<label class="control-label" for="doi">DOI</label>
+			<div class="controls">
+				<input type="text" name="doi" id="doi" size="50" maxlength="256"/>
+			</div>
+		</div>
+
+		<div class="control-group">
+			<label class="control-label" for="pmid">pmid</label>
+			<div class="controls">
+				<input type="text" name="pmid" id="pmid" size="50" maxlength="256"/>
+			</div>
+		</div>
+
+		<div class="control-group">
+			<div class="controls">
+				<input type="submit" name="_submit" value="submit" class="btn"/>
+			</div>
+		</div>
+
+
+		<hr />
+
+		[% SET tests = [] %]
+		[% PROCESS test_data.tt %]
+		[% FOREACH test IN tests %]
+			<button class="btn" type="submit" onClick="[%- INCLUDE create_test_js test = test -%] return false;">fill in</button> [% PROCESS describe_test %]<br />
+		[% END %]
+
+	</form>
+</div>
+
+
+[% BLOCK describe_test -%]
+	[% SET descriptions = [] -%]
+	[% FOREACH field IN ['atitle', 'title', 'issn', 'date', 'volume', 'issue', 'spage', 'pages', '_resources'] %]
+		[% NEXT UNLESS test.$field.defined -%]
+		[%- descriptions.push(test.$field) -%]
+	[%- END %]
+	[%- descriptions.join(', ') -%]
+[%- END %]
+
+[% BLOCK create_test_js -%]
+	[%- FOREACH key IN test.keys -%]
+		[%- NEXT IF key == 'description' -%]
+		[%- NEXT IF key == '_resources' -%]
+		[%- IF key == 'genre' -%]
+			[%- FOREACH genre IN genres -%]
+				[%- IF genre == test.$key -%]
+document.forms['testform'].genre.options[[% loop.index %]].selected = 1;
+					[%- LAST -%]
+				[%- END -%]
+			[%- END -%]
+		[%- ELSE -%]
+document.forms['testform'].[% key %].value='[% test.$key %]';
+		[%- END -%]
+	[%- END -%]
+[%- END -%]

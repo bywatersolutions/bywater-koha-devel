@@ -1,0 +1,20 @@
+[%- PROCESS site_setup.tt -%]
+[%# extra_js.push( c.uri_for_js('jquery.selectboxes.js') ) %]
+
+<style>
+.edit-in-place { border: 1px solid #888;}
+</style>
+
+<div id="resource">
+  <h3>[% erm.main_name | html %]</h3>
+
+  [% IF editing_enabled %]<a href="#" id="toggle-empty-fields" class="hidden-phone">[% c.loc('toggle empty fields') %]</a>[% END %]
+
+  <dl id="resource-fields" class="dl-horizontal">
+    [% FOREACH display_field IN display_fields %]
+      [% PROCESS display_field.tt | trim %]
+    [% END %]
+  </dl>
+</div>
+
+

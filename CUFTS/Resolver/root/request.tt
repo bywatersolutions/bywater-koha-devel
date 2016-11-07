@@ -1,0 +1,7 @@
+[% IF request.genre == 'journal' || request.genre == 'article' %]
+ [% PROCESS request_journal.tt %]
+[% ELSIF request.genre == 'book' || request.genre == 'bookitem' %]
+ [% PROCESS request_monograph.tt %]
+[% ELSE %]
+ [% c.loc('Unrecognized genre for request display.') %]
+[% END %]

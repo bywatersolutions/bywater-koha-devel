@@ -1,0 +1,78 @@
+<h2>ERM Provider fields to export</h2>
+
+<form action="[% url("$url_base/erm/provider/selected_export/") %]" method="post">
+
+Export Format: <select name="format">
+    <option value="html">HTML</option>
+    <option value="csv">CSV</option>
+    <option value="json">JSON</option>
+</select>
+<br /><br />
+<table class="grid" style="width: 30em; margin-bottom: 10px;">
+ <tr><td class="heading"><input class="toggleall" type="checkbox" name="ignore" value=""> toggle all</td></tr>
+</table>
+
+<table class="grid" style="width: 30em; margin-bottom: 10px;">
+ <tr><td class="heading"><input class="toggle" type="checkbox" name="ignore" value=""> toggle group</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="id"> id</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="key"> resource identifier</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="provider_name"> provider name</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="local_provider_name"> local provider name</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="admin_user"> admin user</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="admin_password"> admin password</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="admin_url"> admin URL</td></tr>
+
+ <tr><td><input type="checkbox" name="columns" value="provider_contact"> provider contact</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="provider_notes"> provider notes</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="support_email"> support email</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="support_phone"> support phone</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="support_url"> support URL</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="knowledgebase"> knowledgebase</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="customer_number"> customer number</td></tr>
+</table>
+
+
+<table class="grid" style="width: 30em; margin-bottom: 10px;">
+ <tr><td class="heading"><input class="toggle" type="checkbox" name="ignore" value=""> toggle group</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="stats_available"> stats available</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="stats_url"> stats URL</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="stats_frequency"> stats frequency</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="stats_delivery"> stats delivery</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="stats_counter"> stats counter</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="stats_user"> stats user</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="stats_password"> stats password</td></tr>
+ <tr><td><input type="checkbox" name="columns" value="stats_notes"> stats notes</td></tr>
+</table>
+
+
+
+<input type="submit" name="do_export" value="Export" />
+</form>
+
+<br /><br />
+
+<script>
+
+$(document).ready( function(){
+    $('input.toggle').bind( 'change',
+        function() {
+            var checkbox = $(this).parents('table').find(':checkbox').each(
+                function(i,cb) { $(cb).attr('checked', !$(cb).attr('checked')) }
+            );
+            $(this).attr('checked', !$(this).attr('checked'))
+            return false;
+        }
+    );
+
+    $('input.toggleall').bind( 'change',
+        function() {
+            var checkbox = $(':checkbox').each(
+                function(i,cb) { $(cb).attr('checked', !$(cb).attr('checked')) }
+            );
+            $(this).attr('checked', !$(this).attr('checked'))
+            return false;
+        }
+    );
+
+});
+</script>

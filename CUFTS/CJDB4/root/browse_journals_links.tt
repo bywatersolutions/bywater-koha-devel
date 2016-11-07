@@ -1,0 +1,43 @@
+<div class="links">
+ [%- SET count = 0 -%]
+  <ul>
+ [%- FOREACH link IN links.$journal_id -%]
+  [%- SET resource = undef -%]
+  [%- IF link.link_type > 0 -%]
+   [% SET resource_id = link.get_column('resource');
+      SET resource = resources_display.$resource_id %]
+   [% NEXT UNLESS resource %]
+  [%- END -%]
+  [%-SET count = count + 1 -%]
+
+  [% PROCESS coverage_strings.tt coverage_strings={} %]
+
+   <li>
+    <a href="[% link.url | html %]">
+    [%- IF coverage_strings.fulltext %][% coverage_strings.fulltext %][% END -%]
+    [%- IF coverage_strings.print %]In print: [% coverage_strings.print %][% END -%]
+    [%- IF coverage_strings.citation %]Citations only: [% coverage_strings.citation %][% END -%]
+    </a>
+    from <br class="visible-phone" />
+    [%- PROCESS journals_link_name.tt -%]
+
+    [%- IF link.journal_cjdb_note %]
+     <dl class="dl-horizontal">
+        <dt class="journal-note note">[% c.loc('Journal Note:') | html %]</dt>
+        <dd class="journal-note note">[% link.journal_cjdb_note | html %]</dd>
+     </dl>
+    [%- END -%]
+
+    [%- IF resource.cjdb_note %]
+     <dl class="dl-horizontal">
+      <dt class="resource-note note">[% c.loc('Resource Note:') | html %]</dt>
+      <dd class="resource-note note">[% resource.cjdb_note | html %]</dd>
+     </dl>
+    [%- END %]
+  </li>
+ [%- END -%]
+  </ul>
+ [% IF count == 0 %]
+   [% c.loc('No links are currently available for this journal.') | html %]
+ [% END %]
+</div>

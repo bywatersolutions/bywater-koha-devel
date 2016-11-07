@@ -1,0 +1,177 @@
+[% USE JSON.Escape %]
+
+<script>var CUFTS_Resolver = { resources: {} };</script>
+[% SET services_in_order = ['fulltext', 'table of contents', 'journal', 'database', 'holdings', 'web search'] %]
+
+<div id="results">
+
+ [% USE results_iter = iterator(results) %]
+ [% FOREACH compiled_result IN results_iter %]
+
+  <div class="result">
+
+   [% SET resource = compiled_result.resource %]
+   [% SET service_total = compiled_result.services.size %]
+   [% SET service_count = 0 %]
+
+   <ul class="results">
+   [% FOREACH service_name IN services_in_order %]
+
+    [% NEXT UNLESS compiled_result.services.exists(service_name) %]
+    [% SET service = compiled_result.services.$service_name %]
+    [% SET service_count = service_count + 1 %]
+
+    [% IF service_count == 1 %]
+
+     <span class="results-from">[%- PROCESS service_name_long -%] <span class="results-from-resource">[% resource.name | html %]</span>: </span>
+     [% IF service_total > 1 %]
+      <span class="results-others-available">(show other services)</span>
+     [% END %]
+
+      [% FOREACH result IN service.results %]
+       [% PROCESS show_result add_classes='' %]
+      [% END %]
+
+    [% ELSE %] [%# not the first service... Prepare hidden layer contents for services other than the best one %]
+     [% FOREACH result IN service.results %]
+      [% PROCESS show_result add_classes='other-results hidden-result' %]
+     [% END %]
+    [% END %]
+
+  [% END %]
+  </ul>
+  </div>
+ [% END %]
+
+ <div>
+  <a href="[% c.uri_for_site( c.controller('DocumentDelivery').action_for('authenticate'), [ request_id ] ) %]">Request item</a>
+ </div>
+
+</div>
+
+[% BLOCK show_result %]
+ [% IF service_name == 'holdings' %]
+  <li class="[% add_classes %]">[% PROCESS result_icon %][% PROCESS result_service_name %]</li>
+ [% ELSE %]
+  <li class="[% add_classes %]"><a href="[% result.url %]">[% PROCESS result_icon %][% PROCESS result_service_name %]</a></li>
+ [% END %]
+[% END %]
+
+[% BLOCK result_icon %]
+ [% SWITCH service_name %]
+  [% CASE 'fulltext' %]
+   <i class="icon-file"></i>
+  [% CASE 'table of contents' %]
+   <i class="icon-list-alt"></i>
+  [% CASE 'journal' %]
+   <i class="icon-book"></i>
+  [% CASE 'database' %]
+   <i class="icon-folder-open"></i>
+  [% CASE 'holdings' %]
+   <i class="icon-briefcase"></i>
+  [% CASE 'web search' %]
+   <i class="icon-search"></i>
+  [% CASE %]
+   <i class="icon-question-sign"></i>
+ [% END %]
+[% END %]
+
+[% BLOCK result_service_name %]
+ [% SWITCH service_name %]
+  [% CASE 'fulltext' %]
+   [% c.loc('Fulltext article') | html %]: [%- PROCESS article_title -%]
+  [% CASE 'table of contents' %]
+   [% c.loc('Issue or article list') | html %]: [%- PROCESS table_of_contents -%]
+  [% CASE 'journal' %]
+   [% c.loc('Journal') | html %]: [%- PROCESS journal_title -%]
+  [% CASE 'database' %]
+   [% c.loc('Database:') | html %] [% resource.name | html %]
+  [% CASE 'holdings' %]
+   [% c.loc('Searching for books') | html %]:
+   <div class="parallel-holdings" resource="[% resource.id %]">
+    <table class="table">
+    </table>
+   </div>
+   <script>
+     CUFTS_Resolver.resources['[% resource.id %]'] = {
+         'monograph_searches': [% result.extra_data.targets.json %],
+         'monograph_searches_total': 0,
+         'monograph_searches_completed': 0,
+         'monograph_searches_failed': 0,
+     };
+   </script>
+ [% END %]
+[% END %]
+
+[% BLOCK journal_title %]
+ [%- IF result.title -%]
+  [% result.title | html %]
+ [%- ELSIF request.title -%]
+  [% request.title | html %]
+ [% END %]
+[% END %]
+
+[% BLOCK article_title %]
+ [%- IF result.atitle -%]
+  [% result.atitle | html %]
+ [%- ELSIF request.atitle -%]
+  [% request.atitle | html %]
+ [%- ELSIF result.title -%]
+ [% c.loc('from') | html %] [% result.title | html %]
+ [%- ELSIF request.title -%]
+  [% c.loc('from') | html %] [% request.title | html %]
+ [%- ELSE %]
+  [% c.loc('from journal') | html %]
+ [%- END -%]
+[% END %]
+
+[% BLOCK table_of_contents %]
+ [%- IF result.title -%]
+  [% result.title | html %]
+ [%- ELSIF request.title -%]
+  [% request.title | html %]
+ [%- ELSE %]
+  [% c.loc('from journal') | html %]
+ [%- END -%]
+ [% IF request.volume %]volume: [% request.volume %][% END %]
+ [% IF request.issue %]issue: [% request.issue %][% END %]
+[% END %]
+
+
+[% BLOCK service_name_description %]
+ [% SWITCH service_name %]
+  [% CASE 'fulltext' %]
+   [% c.loc('Fulltext of the article') | html %]
+  [% CASE 'table of contents' %]
+   [% c.loc('Table of contents for the issue') | html %]
+  [% CASE 'journal' %]
+   [% c.loc('Journal home page or list of articles in journal') | html %]
+  [% CASE 'database' %]
+   [% c.loc('Database of articles') | html %]
+  [% CASE 'holdings' %]
+   [% c.loc('Check for holdings') | html %]
+  [% CASE 'web search' %]
+   [% c.loc('Search the web') | html %]
+  [% CASE %]
+   [% c.loc('Unrecognized service') | html %]
+ [% END %]
+[% END %]
+
+[% BLOCK service_name_long %]
+ [% SWITCH service_name %]
+  [% CASE 'fulltext' %]
+   [% c.loc('Fulltext of the article is available from') | html %]
+  [% CASE 'table of contents' %]
+   [% c.loc('Table of contents for the issue is available from') | html %]
+  [% CASE 'journal' %]
+   [% c.loc('The journal is available from') | html %]
+  [% CASE 'database' %]
+   [% c.loc('The article may be available by searching in') | html %]
+  [% CASE 'holdings' %]
+   [% c.loc('Check for holdings in') | html %]
+  [% CASE 'web search' %]
+   [% c.loc('Search the web using') | html %]
+  [% CASE %]
+   [% c.loc('Unrecognized service from') | html %]
+ [% END %]
+[% END %]

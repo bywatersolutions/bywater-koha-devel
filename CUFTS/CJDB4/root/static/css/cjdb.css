@@ -1,0 +1,347 @@
+/* NOTE: Sites should not use this file as is. It will already be inlcuded in the HTML. You're better off
+         starting with blank CSS and overriding only what you need to. Otherwise future updates may break. */
+
+ul {
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+}
+
+h1 {
+	font-family: DINWebBold, sans-serif;
+	font-size: 32px;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: normal;
+}
+
+
+header {
+	background: #326ead;
+	width: 100%;
+	color: white;
+}
+
+header h1 {
+	padding: 5px;
+	margin: 0;
+}
+
+.page-header {
+	margin: 10px 0 20px;
+}
+
+footer {
+	margin-top: 15px;
+	padding-top: 10px;
+	border-top: 1px solid #eee;
+	text-align: center;
+}
+
+select[name="t"] {
+	width: 8em;
+}
+
+.a-to-z ul>li>a {
+	font-size: 80%;
+	padding: 3px 9px;
+}
+
+#content {
+	padding-bottom: 20px;
+}
+
+ul.breadcrumb {
+	background: none;
+	padding: 0;
+	margin: 10px 0 5px 3px;
+}
+
+/* Account */
+
+#account-bar {
+	margin-top: 3px;
+	float: right;
+}
+
+#account-bar .account-name {
+	margin-right: 15px;
+}
+
+#account-manage {}
+
+#account-manage .controls.account-key {
+	padding-top: 5px;
+}
+
+/* Special fonts for the tabs */
+
+.nav {
+	font-size: 90%;
+	font-family: arial, sans-serif;
+	margin-bottom: 0;
+}
+
+/* Browse form */
+
+#browse-form  {
+	margin-bottom: 15px;
+}
+
+#browse-form ul.nav {
+	margin-bottom: 0;
+}
+
+#browse-form div.tab-content {
+	border-bottom: 1px solid #ddd;
+	border-left: 1px solid #ddd;
+	border-right: 1px solid #ddd;
+	padding: 0px;
+}
+
+#browse-form form {
+	margin: 10px;
+}
+
+#browse-form-mobile form {
+	margin: 0;
+}
+
+#browse-form-mobile input.search-query {
+	position: relative;
+}
+
+#browse-form .subjects-also {
+	margin-left: 10px;
+}
+
+/* List sites */
+
+#list-sites ul {
+}
+
+/* Cover images */
+
+#browse .covers  {
+	width: 110px;
+	height: 110px;
+	padding: 5px;
+	/*border: 1px solid #eee;*/
+}
+
+#browse .covers div {
+	width: 100px;
+	height: 100px;
+	background: none;
+	position: absolute;  /* Make images appear on top of each other. This is because we show images for all the ISSNs - Syndetics normally shows for only one ISSN, but occassionally will have an image for two. This hides them in a stack. */
+}
+
+#browse .covers img {
+	max-width: 100px;
+	max-height: 100px;
+	margin: 0 auto;
+}
+
+
+/* Browse list */
+
+#browse .journal {
+	border-bottom: 1px solid #eee;
+	padding-bottom: 15px;
+}
+
+#browse #links ul {
+	list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+/* Journal */
+
+#journal .covers {
+	width: 15%;
+	max-width: 150px;
+	height: 200px;
+	position: relative;
+	/*border: 1px solid #eee;*/
+}
+
+#journal .covers img {
+	width: 100%;
+	position: absolute;
+	top: 0;
+}
+
+#journal h3 {
+	font-family: 'Proxima Nova Bold',"Calibri","Droid Sans","Helvetica Neue","Helvetica","Arial",sans-serif;
+	text-transform: uppercase;
+	font-weight: 700;
+	font-size: 21px;
+	line-height: 30px;
+	color: #444;
+	margin-bottom: 0;
+}
+
+#journal ul {
+}
+
+#journal #links .license {
+	/*clear: right;*/
+}
+
+#journal #links h4 {
+	margin-bottom: 5px;
+	font-size: 18px;
+	margin-top: 15px;
+}
+
+#journal #links .journal-link-name {
+	font-style: italic;
+}
+
+#journal .coverage {
+	font-weight: bold;
+}
+
+#journal #links .links-details {
+	margin-left: 15px;
+}
+
+#journal #links a.btn {
+	margin: 5px 0 8px;
+}
+
+#journal .journal-container {
+	margin-right: 16%;
+}
+
+@media (max-width: 979px) {
+	#journal .journal-container {
+		margin-right: 10px;
+	}
+}
+
+#journal .license .tab-content {
+	height: 70px;
+	overflow: auto;
+	margin-bottom: 6px;
+	border-bottom: 1px solid #ddd;
+	border-left: 1px solid #ddd;
+	border-right: 1px solid #ddd;
+	padding: 5px;
+	-webkit-border-bottom-left-radius: 4px;
+	-moz-border-bottom-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+	-webkit-border-bottom-right-radius: 4px;
+	-moz-border-bottom-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+}
+
+/* Stop license tabs from floating down due to large cover image */
+#journal .nav-tabs::after, #journal .nav-pills::after {
+	clear: left;
+}
+
+/* These are styling for the "journal-note" and "resource-note" fields. Typically shown after a link. */
+
+.links .dl-horizontal:after {
+	clear: left;
+}
+
+.links dl {
+	margin: 0;
+	clear: left;
+}
+
+.links dt {
+	text-align: left;
+	float: left;
+	width: auto;
+}
+
+.links dd {
+	float: left;
+	width: auto;
+	margin: 0 0 0 .3em;
+}
+
+.links dd.journal-note, .links dd.resource-note {
+	color: #d11;
+}
+
+#browse .links dt {
+	margin-left: 10px;
+}
+
+/* Icon overrides */
+
+.icon-ok {
+	background-image: url("../images/glyphicons-halflings-green.png");
+}
+
+.icon-remove {
+	background-image: url("../images/glyphicons-halflings-red.png");
+}
+
+/* Selected journals */
+
+#selected-journals ol {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+#selected-journals li {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+#selected-journals .selected-column-one {
+	padding-right: 15px;
+	float: left;
+}
+
+#selected-journals .selected-column-two {
+	padding-right: 15px;
+	float: left;
+}
+
+/* LCC Subject Browse */
+
+#lcc-browse>ol {
+	margin: 0;
+	padding: 0;
+}
+
+#lcc-browse a.lcc-browse-trigger {
+	font-size: 18px;
+	float: left;
+}
+
+#lcc-browse ol, #lcc-browse li {
+	list-style: none;
+}
+
+.lcc-count {
+	color: #888;
+	font-style: italic;
+}
+
+#lcc-browse .trigger-content {
+	width: 1em;
+}
+
+/* Tags */
+
+table.tags {
+	width: auto;
+}
+
+ol.tags, ol.tags li {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+

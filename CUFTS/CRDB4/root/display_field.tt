@@ -1,0 +1,104 @@
+[% USE HTML %]
+
+[% SET display_field_name = display_field.field %]
+
+[% SWITCH display_field_name %]
+ [% CASE vendor %]
+  [% RETURN %]
+ [% CASE 'description_full' %]
+  [% INCLUDE render_field field_name="description_full", hide_label = 1 %]
+ [% CASE 'group_records' %]
+  [% SET group_record_text = undef %]
+  [% PROCESS group_record_field.tt %]
+  [% INCLUDE render_field field_name="group_records", hide_label = 1, field_data=group_record_text %]
+ [% CASE 'names' %]
+  [% INCLUDE render_field field_name="names", field_label="Alternate names", field_data=HTML.escape( erm.names({'main' => 0}).force_list.sort('name').map_join('name', ', ') ) %]
+ [% CASE 'resource_type' %]
+  [% INCLUDE render_field field_name="resource_type", field_data=HTML.escape( erm.resource_type.resource_type ) %]
+ [% CASE 'subjects' %]
+  [% SET subject_list = [] %]
+  [% FOREACH subject IN subject_links %]
+   [% subject_list.push( '<a href="' _ subject.1 _'">' _ HTML.escape(subject.0) _ '</a>' ) %]
+  [% END %]
+  [% INCLUDE render_field field_name="subjects", field_data=subject_list.join(', ') %]
+ [% CASE 'resource_medium' %]
+  [% INCLUDE render_field field_name="resource_medium", field_data=HTML.escape( erm.resource_medium.resource_medium ) %]
+ [% CASE 'consortia' %]
+  [% INCLUDE render_field field_name="consortia", field_data=HTML.escape( erm.consortia.consortia ) %]
+ [% CASE 'pricing_model' %]
+  [% INCLUDE render_field field_name="pricing_model", field_data=HTML.escape( erm.pricing_model.pricing_model ) %]
+ [% CASE 'content_types' %]
+  [% INCLUDE render_field field_name="content_types", field_data=HTML.escape( erm.content_types.force_list.sort('content_type').map_join('content_type', ', ') ) %]
+ [% CASE 'url' %]
+  [% IF erm.url.length %]
+   [% SET url_field_data = '<a class="btn btn-medium btn-primary" href="' _ c.uri_for_site( c.controller('Resource').action_for('goto'), [ erm.id ] ) _ '">Connect</a>' %]
+  [% END %]
+  [% INCLUDE render_field field_name="url", field_data=url_field_data, hide_label = 1 %]
+ [% CASE %]
+  [% INCLUDE render_field field_name=display_field_name %]
+[% END %]
+
+[% BLOCK render_field %]
+ [%# Takes: field_name [ field_label ] [ field_data ] [ show_flag ] [ access_roles ] [ data_only ]
+
+     If you do not want your field data HTML escaped, you must provide the data through the field_data parameter.
+
+     Field label will be set to ucfirst with _ translated to space unless supplied.
+
+ %]
+
+ [% IF !field_name.length %]
+  <!-- Bad call to display_field TT block: field_name is empty. -->
+  [% RETURN %]
+ [% END %]
+
+ [% IF display_field.staff_view %]
+  [% RETURN UNLESS c.account.has_role('staff') %]
+ [% END %]
+
+ [% IF !field_label.defined %]
+  [% USE field_label = String field_name %]
+  [% CALL field_label.lower.replace('_', ' ').replace('url', 'URL').capital %]
+ [% END %]
+
+ [% IF !field_data.defined %]
+  [% IF erm.has_column( field_name ) AND erm.$field_name.defined AND erm.$field_name != '' %]
+   [% SET field_data = erm.$field_name | html %]
+   [% SET field_type = erm.column_info( field_name ).data_type %]
+  [% ELSIF erm.license AND erm.license.has_column( field_name ) %]
+   [% SET field_data = erm.license.$field_name | html %]
+   [% SET field_type = erm.license.column_info( field_name ).data_type %]
+  [% ELSIF erm.provider AND erm.provider.has_column( field_name ) %]
+   [% SET field_data = erm.provider.$field_name | html %]
+   [% SET field_type = erm.provider.column_info( field_name ).data_type %]
+  [% ELSIF erm.has_column( field_name ) %]
+   [% SET field_data = erm.$field_name | html %]
+   [% SET field_type = erm.column_info( field_name ).data_type %]
+  [% ELSE %]
+   [% RETURN %]  [%# No erm main or license field is available %]
+  [% END %]
+ [% END %]
+
+ [% SET has_data = field_data.length %]
+ [% IF has_data AND field_type == 'boolean' %]
+  [% SET field_data = field_data ? 'yes' : 'no' %]
+ [% END %]
+
+ [%# RETURN IF !has_data AND !editing_enabled %]
+
+  <dt id="resource-[% field_name %]-label" class="resource-label [% has_data ? 'has-data' : 'no-data' %] [% !hide_label OR editing_enabled ? 'has-label' : 'no-label' %]">[% field_label | html %]</dt>
+  <dd id="resource-[% field_name %]-data" class="resource-data [% has_data ? 'has-data' : 'no-data' %] [% !hide_label OR editing_enabled ? 'has-label' : 'no-label' %]">
+    [% IF editing_enabled AND display_field.staff_edit %]
+     <span class="resource-edit-control hidden-phone" data-url="[% c.uri_for_site( c.controller('Resource::Field').action_for('edit'), [ erm.id ], field_name ) | html %]" data-field="[% field_name | html %]">
+      <span class="resource-edit-control-savecancel" style="display: none">
+       <a href="#" class="edit-save"><i class="icon icon-ok" title="save"></i></a>
+       <a href="#" class="edit-cancel"><i class="icon icon-remove" title="cancel"></i></a>
+      </span>
+      <span class="resource-edit-control-edit">
+       <a href="#" class="edit-edit"><i class="icon icon-pencil" title="edit"></i></a>
+      </span>
+     </span>
+    [% END %]
+    <span class="field-data">[% field_data %]&nbsp;</span>
+  </dd>
+[% END %]

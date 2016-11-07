@@ -1,0 +1,33 @@
+[%# PROCESS page_title.tt %]
+[% PROCESS browse_form.tt %]
+<div id="browse">
+
+[% IF pager.total_entries == 0 %]
+ [% c.loc('No results found.') | html %]
+[% END %]
+
+[% IF browse_type AND browse_value %]Browsing journals by [% browse_type %]: [% browse_value %][% END %]
+
+[% PROCESS pager.tt %]
+
+[% FOREACH journal IN journals %]
+ [% SET journal_id = journal.id %]
+ <div class="journal media">
+
+  <div class="covers pull-left hidden-phone"><a class="" href="#">
+   [%- FOREACH issn IN issns.$journal_id -%]
+    <div>[% PROCESS journal_cover.tt issn=issn.issn %]</div>
+   [%- END -%]
+  </a></div>
+
+  <div class="media-body">
+    <h4 class="media-heading"><a href="[% c.uri_for_site( c.controller('Journal').action_for('view'), journal.get_column('journals_auth') ) | html %]">[% journal.result_title | html %]</a></h4>
+    [%- PROCESS browse_journals_links.tt -%]
+  </div>
+
+</div>
+
+[% END %]
+
+[% PROCESS pager.tt %]
+</div>

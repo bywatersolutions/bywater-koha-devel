@@ -1,0 +1,29 @@
+[%- SET issn = request.issn || request.eissn -%]
+
+<div id="request">
+ <dl class="dl-horizontal">
+
+  <dt>[% c.loc('title') | html %]</dt>
+  <dd>[% request.atitle | html %]</dd>
+
+   <dt>[% c.loc('source') | html %]</dt>
+   <dd>[% request.title || request.stitle | html %][% IF issn %] [[% issn.substr(4,0,'-') | html %]][% END %]
+       <br />
+       [% IF request.volume %][% c.loc('volume') | html %]: [% request.volume | html %][% END %]
+       [% IF request.issue %][% c.loc('issue') | html %]: [% request.issue | html %][% END %]
+       [% IF request.pages %]
+        [% c.loc('pages') | html %]: [% request.pages | html %]
+       [% ELSIF request.spage && request.epage %]
+        [% c.loc('pages') | html %]: [% request.spage | html %]-[% request.epage | html %]
+       [% ELSIF request.spage %]
+        [% c.loc('start page') | html %]: [% request.spage | html %]
+       [% END %]
+       [% IF request.date %][% c.loc('date') | html %]: [% request.date | html %][% END %]
+   </dd>
+
+ [% IF request.doi %]<dt>[% c.loc('doi') | html %]</dt><dd>[% request.doi | html %]</dd>[% END %]
+ [% IF request.pmid %]<dt>[% c.loc('pmid') | html %]</dt><dd>[% request.pmid | html %]</dd>[% END %]
+ [% IF request.oai %]<dt>[% c.loc('oai') | html %]</dt><dd>[% request.oai | html %]</dd>[% END %]
+
+</dl>
+</div>

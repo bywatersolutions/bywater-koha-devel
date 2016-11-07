@@ -1,0 +1,23 @@
+[% PROCESS request.tt %]
+
+
+<form class="form-horizontal" style="clear:both;">
+    <div class="control-group">
+      <label class="control-label" for="authenticate_name">Name</label>
+      <div class="controls">
+        <input type="text" id="authenticate_name" name="authenticate_name">
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label" for="authenticate_password">Password</label>
+      <div class="controls">
+        <input type="text" id="authenticate_password" name="authenticate_password">
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="controls">
+        <button type="submit" class="btn">[% c.loc('authenticate') %]</button>
+      </div>
+    </div>
+</div>
+</form>

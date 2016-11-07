@@ -1,0 +1,5 @@
+[%# This is where you can put site specific setup info like adding to breadcrumbs. Try to use %]
+[%# this template if possible and avoid overriding more advanced templates that may changing as %]
+[%# development is done and features are added. %]
+
+[%# SET google_scholar_url = 'http://proxy.lib.sfu.ca/form?qurl=http%3a%2f%2fscholar.google.com%2fscholar' -%]

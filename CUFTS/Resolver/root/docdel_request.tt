@@ -1,0 +1,9 @@
+[% PROCESS request.tt %]
+
+
+<div style="clear: both;">
+
+[% c.loc('Successfully authenticated.') %]
+
+<a href="" class="btn">[% c.loc('place request') %]</a>
+</div>

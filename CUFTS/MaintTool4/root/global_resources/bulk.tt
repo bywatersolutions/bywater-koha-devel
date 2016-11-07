@@ -1,0 +1,34 @@
+[%- SET header_section = c.loc('Global Resources') -%]
+[%- breadcrumbs.push([ c.uri_for( c.controller('GlobalResources').action_for('list'), { page => gr_page } ), c.loc('Global Resources List') ] ) -%]
+[%- breadcrumbs.push([ '', resource.name ] ) -%]
+[%- SET page_id = 'global-resources-bulk' -%]
+
+[% PROCESS form_results.tt %]
+
+<div class="form-inline" style="margin: 0 0 2px 14px;">
+ <h1 style="width: 50%; margin: 0; padding: 0; display: inline">[% resource.name | html %]</h1>
+
+<div class="span4" style="float: right; text-align: right;">
+ <a class="btn" href="[% c.uri_for( c.controller('GlobalResources').action_for('view'), resource.id, { gr_page => gr_page } ) | html %]">[% c.loc('view') %]</a>
+ <a class="btn" href="[% c.uri_for( c.controller('GlobalResources').action_for('edit'), resource.id, { gr_page => gr_page } ) | html %]">[% c.loc('edit') %]</a>
+ [% IF resource.do_module('has_title_list') %]
+  <a class="btn" href="[% c.uri_for( c.controller('GlobalResources').action_for('titles_list'), [resource.id], { gr_page => gr_page } ) | html %]">[% c.loc('titles: ') | html %][% resource.title_count %]</a>
+ [% END %]
+ <a class="btn btn-danger" href="[% c.uri_for( c.controller('GlobalResources').action_for('delete'), [resource.id], { gr_page => gr_page } ) | html %]">[% c.loc('delete') %]</a>
+</div>
+
+</div>
+
+[% PROCESS global_resources/subview.tt %]
+
+<form action="[% c.uri_for( c.controller.action_for('bulk'), [resource.id] ) | html %]" method="post" enctype="multipart/form-data">
+<input type="hidden" name="gr_page" value="[% gr_page | html %]" />
+<fieldset class="container-fluid well">
+<h2 class="legend">[% c.loc('title list maintenance') | html %]</h2>
+
+<div class="control-group">
+    <label for="file">[% c.loc('upload title list') | html %]:</label>
+   <input id="file" type="file" name="file" /> <input type="submit" name="upload" value="upload" class="btn" />
+</div>
+</fieldset>
+</form>

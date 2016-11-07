@@ -1,0 +1,50 @@
+[%- SET isbn = request.isbn -%]
+
+<div id="request">
+ <dl class="dl-horizontal">
+
+  <dt>[% c.loc('Title') | html %]</dt>
+  <dd>[% request.title || request.stitle || c.loc('Unknown') | html %]</dd>
+
+  [% IF request.au || request.aulast %]
+   <dt>[% c.loc('Author') | html %]</dt>
+   <dd>[% request.au || request.aulast | html %]</dd>
+  [% END %]
+
+  [% IF isbn %]
+   <dt>[% c.loc('ISBN') | html %]</dt>
+   <dd>[% PROCESS dashed_isbn | html %]</dd>
+  [% END %]
+
+  [% IF request.pages %]
+   <dt>[% c.loc('Pages') | html %]</dt>
+   <dd>[% request.pages | html %]</dd>
+  [% END %]
+
+  [% IF request.spage %]
+   <dt>[% c.loc('Pages') | html %]</dt>
+   <dd>[% request.spage | html %] - [% request.epage | html %]</dd>
+  [% END %]
+
+  [% IF request.date %]
+   <dt>[% c.loc('Date') | html %]</dt>
+   <dd>[% request.date | html %]</dd>
+  [% END %]
+
+  [% IF request.pub %]
+   <dt>[% c.loc('Publisher') | html %]</dt>
+   <dd>[% request.pub | html %]</dd>
+  [% END %]
+
+</dl>
+</div>
+
+[% BLOCK dashed_isbn %]
+ [% IF isbn.length == 13 %]
+  [% isbn.substr(3,0,'-').substr(5,0,'-').substr(9,0,'-').substr(-1,0,'-') | html %]
+ [% ELSIF isbn.length == 10 %]
+  [% isbn.substr(1,0,'-').substr(5,0,'-').substr(-1,0,'-') | html %]
+ [% ELSE %]
+  [% isbn | html %]
+ [% END %]
+[% END %]

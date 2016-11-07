@@ -1,0 +1,67 @@
+[%- PROCESS site_setup.tt -%]
+
+[% IF c.account.has_role('edit_erm_records') %]
+  [% SET editing_enabled = 1 %]
+  [% IF facets.subject AND facets.size == 1 %]
+    [% SET sorting_enabled = 1 %]
+  [% END %]
+[% END %]
+
+<div class="row-fluid">
+  <div id="facet-menu">[% PROCESS facet_menu.tt %]</div>
+  <div id="browse" [% IF sorting_enabled %]data-subject="[% facets.subject %]"[% END %]>
+
+    [% IF ( facets.subject AND facets.size == 1 AND subject_description.length ) OR sorting_enabled %]
+      <div id="browse-brief-subject_description" class="alert alert-info">
+        <h4>[% SET val = facets.subject %][% subject_lookup.$val %]</h4>
+        [% IF sorting_enabled %]<a href="#" class="edit-browse-subject hidden-phone"><i class="icon-pencil"></i></a>[% END %]
+        <div id="browse-brief-subject_description-content">
+        [% subject_description || c.loc('No subject description.') %]
+      </div></div>
+    [% END %]
+
+    [% IF facets.subject AND facets.size == 1 %]
+
+      <h2>[% c.loc('Top Resources') | html %]</h2>
+      <ol class="browse-resources browse-resources-top [% IF sorting_enabled %]sortable[% END %]">
+
+        [%- SET record_index = 0 -%]
+        [% FOREACH record IN records %]
+          [%- LAST IF record.rank == 0 -%]
+          [%- SET record_index = record_index + 1 -%]
+          [% PROCESS display_record.tt %]
+        [% END %]
+      </ol>
+
+
+      [% IF record_index < records.size OR sorting_enabled %]
+        <h2>[% c.loc('Other Resources') | html %]</h2>
+        <ol class="browse-resources browse-resources-other [% IF sorting_enabled %]sortable[% END %]">
+
+          [% WHILE record_index < records.size %]
+            [%- SET record = records.$record_index -%]
+            [%- SET record_index = record_index + 1 -%]
+            [% PROCESS display_record.tt %]
+          [% END %]
+
+        </ol>
+
+      [% END %]
+
+    [% ELSE %]
+
+      <ol class="browse-resources">
+        [% FOREACH record IN records %]
+          [% PROCESS display_record.tt %]
+        [% END %]
+      </ol>
+
+    [% END %]
+
+    [% IF records.size == 0 %]
+      <p>[% c.loc('No records found for your current search.') | html %]</p>
+    [% END %]
+
+  </div>
+
+</div>

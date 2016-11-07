@@ -1,0 +1,12 @@
+form {
+	margin-top: 20px;
+}
+
+.labels-row {
+
+}
+
+.labels-row label {
+	display: inline;
+	float: none;
+}

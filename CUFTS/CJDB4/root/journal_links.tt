@@ -1,0 +1,44 @@
+<div id="links" class="links">
+  <!-- <h3>Availability</h3> -->
+  <ul>
+ [%- SET count = 0 -%]
+ [%- FOREACH link IN links -%]
+
+  [%- SET resource = undef -%]
+  [%- IF link.link_type > 0 -%]
+    [% SET resource_id = link.resource;
+      SET resource = resources_display.$resource_id %]
+    [% NEXT UNLESS resource %]
+  [%- END -%]
+  [%- SET count = count + 1 -%]
+
+   <li>
+      <h4>[% PROCESS journal_coverages.tt %] [% c.loc('from') | html %] <span class="journal-link-name">[%- PROCESS journals_link_name.tt -%]</span></h4>
+      <div class="links-details">
+        <dl class="dl-horizontal">
+
+          [%- IF link.journal_cjdb_note %]
+              <dt class="journal-note note">[% c.loc('Journal Note:') | html %]</dt>
+              <dd class="journal-note note">[% link.journal_cjdb_note | html %]</dd>
+          [%- END -%]
+
+          [%- IF resource.cjdb_note %]
+            <dt class="resource-note note">[% c.loc('Resource Note:') | html %]</dt>
+            <dd class="resource-note note">[% resource.cjdb_note | html %]</dd>
+          [%- END %]
+
+        </dl>
+        <a class="btn btn-medium btn-primary" href="[% link.url | html %]">[% c.loc('Access Journal') | html %]</a>
+
+        [% PROCESS journal_license.tt %]
+
+      </div>
+
+   </li>
+ [%- END -%]
+  </ul>
+ [% IF count == 0 %]
+  [% c.loc('No links are currently available for this journal.') | html %]
+ [% END %]
+</div>
+
