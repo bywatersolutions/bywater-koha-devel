@@ -157,8 +157,8 @@ foreach my $type (@types) {
         }
 
         if ( $use_tt ) {
-            $letter->{content} =~ s/__MESSAGE_ID__/$message_id/g;
-            print $OUT $letter->{content};
+            my $message = GetMessage( $message_id );
+            print $OUT $message->{content};
         } else {
             print $OUT "\"$format\",\"$language\",\"$type\",\"$issues->{level}\",\"$issues->{cardnumber}\",\"$issues->{patron_title}\",\"$issues->{firstname}\",";
             print $OUT "\"$issues->{surname}\",\"$issues->{phone}\",\"$issues->{email}\",\"$library_code\",";
