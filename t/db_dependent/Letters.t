@@ -18,7 +18,7 @@
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
-use Test::More tests => 79;
+use Test::More tests => 80;
 use Test::MockModule;
 use Test::Warn;
 
@@ -99,7 +99,7 @@ is( $message_id, undef, 'EnqueueLetter without the letter argument returns undef
 
 delete $my_message->{message_transport_type};
 $my_message->{letter} = {
-    content      => 'a message',
+    content      => 'a message:__MESSAGE_ID__',
     title        => 'message title',
     metadata     => 'metadata',
     code         => 'TEST_MESSAGE',
@@ -122,7 +122,8 @@ is( @$messages, 1, 'one message stored for the borrower' );
 is( $messages->[0]->{message_id}, $message_id, 'EnqueueLetter returns the message id correctly' );
 is( $messages->[0]->{borrowernumber}, $borrowernumber, 'EnqueueLetter stores the borrower number correctly' );
 is( $messages->[0]->{subject}, $my_message->{letter}->{title}, 'EnqueueLetter stores the subject correctly' );
-is( $messages->[0]->{content}, $my_message->{letter}->{content}, 'EnqueueLetter stores the content correctly' );
+is( @{[ split( /:/, $messages->[0]->{content} ) ]}->[0], @{[ split( /:/, $my_message->{letter}->{content} ) ]}->[0], 'EnqueueLetter stores the content correctly' );
+ok( @{[ split( /:/, $messages->[0]->{content} ) ]}->[1] =~ /^\d+$/, 'Content __MESSAGE_ID__ is replaced with an actual integer id' );
 is( $messages->[0]->{message_transport_type}, $my_message->{message_transport_type}, 'EnqueueLetter stores the message type correctly' );
 is( $messages->[0]->{status}, 'pending', 'EnqueueLetter stores the status pending correctly' );
 
