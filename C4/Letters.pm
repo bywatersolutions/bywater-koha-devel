@@ -768,8 +768,8 @@ sub GetPreparedLetter {
 
     $letter->{content} = _process_tt(
         {
-            content => $letter->{content},
-            tables  => $tables,
+            content    => $letter->{content},
+            tables     => $tables,
             substitute => $substitute,
         }
     );

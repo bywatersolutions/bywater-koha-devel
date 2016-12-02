@@ -18,7 +18,7 @@
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
-use Test::More tests => 15;
+use Test::More tests => 16;
 use Test::Warn;
 
 use MARC::Record;
@@ -279,3 +279,15 @@ $prepared_letter = GetPreparedLetter(
     )
 );
 is( $prepared_letter->{content}, $modification->id(), 'Patron modification object used correctly' );
+
+$sth->execute( "TEST_SUBSTITUTION", "[% SubstituteMe %]" );
+$prepared_letter = GetPreparedLetter(
+    (
+        module      => 'test',
+        letter_code => 'TEST_SUBSTITUTION',
+        substitute => {
+            SubstituteMe => 'Substituted'
+        }
+    )
+);
+is( $prepared_letter->{content}, 'Substituted', 'Substitution works correctly' );
