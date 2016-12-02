@@ -19,7 +19,7 @@
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
-use Test::More tests => 17;
+use Test::More tests => 18;
 use Test::Warn;
 
 use MARC::Record;
@@ -934,3 +934,15 @@ sub process_letter {
     );
     return $letter;
 }
+
+$sth->execute( "TEST_SUBSTITUTION", "[% SubstituteMe %]" );
+$prepared_letter = GetPreparedLetter(
+    (
+        module      => 'test',
+        letter_code => 'TEST_SUBSTITUTION',
+        substitute => {
+            SubstituteMe => 'Substituted'
+        }
+    )
+);
+is( $prepared_letter->{content}, 'Substituted', 'Substitution works correctly' );
