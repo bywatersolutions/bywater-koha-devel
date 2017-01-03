@@ -9,7 +9,6 @@ package C4::SIP::ILS::Item;
 use strict;
 use warnings;
 
-use Sys::Syslog qw(syslog);
 use Carp;
 use Template;
 
@@ -78,7 +77,6 @@ sub new {
 
     unless ( $item ) {
         C4::SIP::SIPServer::get_logger()->debug("new ILS::Item('$item_id'): not found");
-        syslog("LOG_DEBUG", "new ILS::Item('%s'): not found", $item_id);
         warn "new ILS::Item($item_id) : No item '$item_id'.";
         return;
     }
@@ -108,7 +106,6 @@ sub new {
 	bless $self, $type;
 
     C4::SIP::SIPServer::get_logger()->debug("new ILS::Item('$item_id'): found with title '$self->{title}'");
-    syslog("LOG_DEBUG", "new ILS::Item('%s'): found with title '%s'",
 	   $item_id, $self->{title});
 
     return $self;
@@ -183,7 +180,6 @@ sub hold_patron_name {
     my $holder = Koha::Patrons->find( $borrowernumber );
     unless ($holder) {
         C4::SIP::SIPServer::get_logger()->debug("While checking hold, failed to retrieve the patron with borrowernumber '$borrowernumber'");
-        syslog("LOG_ERR", "While checking hold, failed to retrieve the patron with borrowernumber '$borrowernumber'");
         return;
     }
     my $email = $holder->email || '';
