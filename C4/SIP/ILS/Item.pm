@@ -13,6 +13,7 @@ use Sys::Syslog qw(syslog);
 use Carp;
 use Template;
 
+use C4::SIP::SIPServer;
 use C4::SIP::ILS::Transaction;
 
 use C4::Debug;
@@ -71,14 +72,17 @@ use Koha::Items;
 =cut
 
 sub new {
-	my ($class, $item_id) = @_;
-	my $type = ref($class) || $class;
+    my ($class, $item_id) = @_;
+    my $type = ref($class) || $class;
     my $item = Koha::Items->find( { barcode => $item_id } );
+
     unless ( $item ) {
-		syslog("LOG_DEBUG", "new ILS::Item('%s'): not found", $item_id);
-		warn "new ILS::Item($item_id) : No item '$item_id'.";
+        C4::SIP::SIPServer::get_logger()->debug("new ILS::Item('$item_id'): not found");
+        syslog("LOG_DEBUG", "new ILS::Item('%s'): not found", $item_id);
+        warn "new ILS::Item($item_id) : No item '$item_id'.";
         return;
-	}
+    }
+
     my $self = $item->unblessed;
     $self->{      'id'       } = $item->barcode;     # to SIP, the barcode IS the id.
     $self->{permanent_location}= $item->homebranch;
@@ -103,6 +107,7 @@ sub new {
     $self->{pending_queue} = [( grep {(! defined $_->{found}) or  $_->{found} ne 'W' } @{$self->{hold_queue}} )];
 	bless $self, $type;
 
+    C4::SIP::SIPServer::get_logger()->debug("new ILS::Item('$item_id'): found with title '$self->{title}'");
     syslog("LOG_DEBUG", "new ILS::Item('%s'): found with title '%s'",
 	   $item_id, $self->{title});
 
@@ -177,6 +182,7 @@ sub hold_patron_name {
 
     my $holder = Koha::Patrons->find( $borrowernumber );
     unless ($holder) {
+        C4::SIP::SIPServer::get_logger()->debug("While checking hold, failed to retrieve the patron with borrowernumber '$borrowernumber'");
         syslog("LOG_ERR", "While checking hold, failed to retrieve the patron with borrowernumber '$borrowernumber'");
         return;
     }
