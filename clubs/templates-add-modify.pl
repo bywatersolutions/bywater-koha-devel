@@ -75,12 +75,12 @@ if ( $cgi->param('name') ) {    # Update or create club
     $id ||= $club_template->id();
 
     # Update club creation fields
-    my @field_id                        = $cgi->param('club_template_field_id');
-    my @field_name                      = $cgi->param('club_template_field_name');
-    my @field_description               = $cgi->param('club_template_field_description');
-    my @field_authorised_value_category = $cgi->param('club_template_field_authorised_value_category');
+    my @field_id                        = $cgi->multi_param('club_template_field_id');
+    my @field_name                      = $cgi->multi_param('club_template_field_name');
+    my @field_description               = $cgi->multi_param('club_template_field_description');
+    my @field_authorised_value_category = $cgi->multi_param('club_template_field_authorised_value_category');
 
-    my @field_delete = $cgi->param('club_template_field_delete');
+    my @field_delete = $cgi->multi_param('club_template_field_delete');
 
     for ( my $i = 0 ; $i < @field_id ; $i++ ) {
         my $field_id                        = $field_id[$i];
@@ -109,12 +109,12 @@ if ( $cgi->param('name') ) {    # Update or create club
     }
 
     # Update club enrollment fields
-    @field_id                        = $cgi->param('club_template_enrollment_field_id');
-    @field_name                      = $cgi->param('club_template_enrollment_field_name');
-    @field_description               = $cgi->param('club_template_enrollment_field_description');
-    @field_authorised_value_category = $cgi->param('club_template_enrollment_field_authorised_value_category');
+    @field_id                        = $cgi->multi_param('club_template_enrollment_field_id');
+    @field_name                      = $cgi->multi_param('club_template_enrollment_field_name');
+    @field_description               = $cgi->multi_param('club_template_enrollment_field_description');
+    @field_authorised_value_category = $cgi->multi_param('club_template_enrollment_field_authorised_value_category');
 
-    @field_delete = $cgi->param('club_template_enrollment_field_delete');
+    @field_delete = $cgi->multi_param('club_template_enrollment_field_delete');
 
     for ( my $i = 0 ; $i < @field_id ; $i++ ) {
         my $field_id                        = $field_id[$i];

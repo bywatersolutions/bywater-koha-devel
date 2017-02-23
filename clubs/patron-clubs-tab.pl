@@ -39,17 +39,17 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
-my $borrowernumber = $cgi->param('borrowernumber');
+my $patronnumber = $cgi->param('borrowernumber');
 
-my $borrower = Koha::Patrons->find($borrowernumber);
+my $patron = Koha::Patrons->find($patronnumber);
 
-my @enrollments = $borrower->get_club_enrollments();
-my @clubs       = $borrower->get_enrollable_clubs();
+my @enrollments = $patron->get_club_enrollments();
+my @clubs       = $patron->get_enrollable_clubs();
 
 $template->param(
     enrollments    => \@enrollments,
     clubs          => \@clubs,
-    borrowernumber => $borrowernumber
+    borrowernumber => $patronnumber
 );
 
 output_html_with_http_headers( $cgi, $cookie, $template->output );

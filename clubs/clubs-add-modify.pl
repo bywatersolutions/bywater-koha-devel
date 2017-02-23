@@ -68,9 +68,9 @@ if ( $cgi->param('name') ) {    # Update or create club
         }
     )->store();
 
-    my @club_template_field_id = $cgi->param('club_template_field_id');
-    my @club_field_id          = $cgi->param('club_field_id');
-    my @club_field             = $cgi->param('club_field');
+    my @club_template_field_id = $cgi->multi_param('club_template_field_id');
+    my @club_field_id          = $cgi->multi_param('club_field_id');
+    my @club_field             = $cgi->multi_param('club_field');
 
     for ( my $i = 0 ; $i < @club_template_field_id ; $i++ ) {
         my $club_template_field_id = $club_template_field_id[$i] || undef;

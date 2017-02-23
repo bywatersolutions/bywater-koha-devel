@@ -45,7 +45,7 @@
                     </li>
 
                     <li>
-                        <label for="name">Allow public enrollment:</label>
+                        <label for="is_enrollable_from_opac">Allow public enrollment:</label>
                         [% IF club_template.is_enrollable_from_opac %]
                             <input type="checkbox" id="club-template-is-enrollable-from-opac" name="is_enrollable_from_opac" checked="checked" />
                         [% ELSE %]
@@ -55,7 +55,7 @@
                     </li>
 
                     <li>
-                        <label for="name">Require valid email address:</label>
+                        <label for="is_email_required">Require valid email address:</label>
                         [% IF club_template.is_email_required %]
                             <input type="checkbox" id="club-template-is-email-required" name="is_email_required" checked="checked" />
                         [% ELSE %]
@@ -65,7 +65,7 @@
                     </li>
 
                     <li>
-                        <label for="name">Library:</label>
+                        <label for="branchcode">Library:</label>
                         <select name="branchcode" id="club-template-branchcode">
                             <option value="">&nbsp</option>
                             [% PROCESS options_for_libraries libraries => Branches.all( selected => club_template.branchcode ) %]
