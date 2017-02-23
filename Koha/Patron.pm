@@ -585,14 +585,14 @@ sub holds {
     return Koha::Holds->_new_from_dbic($holds_rs);
 }
 
-=head3 FirstValidEmailAddress
+=head3 first_valid_email_address
 
 =cut
 
-sub FirstValidEmailAddress {
+sub first_valid_email_address {
     my ($self) = @_;
 
-    return $self->email() || $self->emailpro() || $self->b_email() || q{};
+    return $self->email() || $self->emailpro() || $self->B_email() || q{};
 }
 
 =head3 get_club_enrollments
@@ -627,7 +627,7 @@ sub get_enrollable_clubs {
     my $params;
     $params->{is_enrollable_from_opac} = $is_enrollable_from_opac
       if $is_enrollable_from_opac;
-    $params->{is_email_required} = 0 unless $self->FirstValidEmailAddress();
+    $params->{is_email_required} = 0 unless $self->first_valid_email_address();
 
     $params->{borrower} = $self;
 

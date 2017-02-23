@@ -977,7 +977,7 @@ sub GetFirstValidEmailAddress {
 
     my $borrower = Koha::Patrons->find( $borrowernumber );
 
-    return $borrower->FirstValidEmailAddress();
+    return $borrower->first_valid_email_address();
 }
 
 =head2 GetNoticeEmailAddress
