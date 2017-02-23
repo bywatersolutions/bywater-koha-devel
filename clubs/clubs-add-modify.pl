@@ -44,7 +44,7 @@ my $schema = Koha::Database->new()->schema();
 
 my $id = $cgi->param('id');
 my $club = $id ? Koha::Clubs->find($id) : Koha::Club->new();
-$template->param( stored => $id ? 'updated' : 'stored' ) if $cgi->param('name');
+my $stored = $cgi->param('name') ? $id ? 'updated' : 'stored' : undef;
 
 my $club_template_id = $cgi->param('club_template_id');
 my $club_template = $club->club_template() || Koha::Club::Templates->find($club_template_id);
@@ -92,6 +92,9 @@ if ( $cgi->param('name') ) {    # Update or create club
     }
 
     $id ||= $club->id();
+
+    print $cgi->redirect("/cgi-bin/koha/clubs/clubs.pl?stored=$stored&club_id=$id");
+    exit;
 }
 
 $club = Koha::Clubs->find($id);

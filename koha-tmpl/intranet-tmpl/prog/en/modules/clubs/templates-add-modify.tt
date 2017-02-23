@@ -12,13 +12,6 @@
 
 <div class="yui-t7">
     <div class="yui-main">
-        [% IF stored %]
-            <div class="alert">
-                <p>Your club template was [% IF stored == 'updated' %] updated [% ELSE %] saved [% END %]</p>
-                <a href="clubs.pl">Return to patron clubs</a>
-            </div>
-        [% END %]
-
         <form method="post" class="validated">
             <input type="hidden" name="id" value="[% club_template.id %]" />
 

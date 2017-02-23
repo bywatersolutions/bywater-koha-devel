@@ -39,10 +39,20 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
+my $stored = $cgi->param('stored');
+my $club_template_id = $cgi->param('club_template_id');
+my $club_id = $cgi->param('club_id');
+
+my $club_template = $club_template_id ? Koha::Club::Templates->find( $club_template_id ) : undef;
+my $club = $club_id ? Koha::Clubs->find( $club_id ) : undef;
+
 my @club_templates = Koha::Club::Templates->search();
 my @clubs          = Koha::Clubs->search();
 
 $template->param(
+    stored         => $stored,
+    club_template  => $club_template,
+    club           => $club,
     club_templates => \@club_templates,
     clubs          => \@clubs,
 );

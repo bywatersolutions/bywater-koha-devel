@@ -78,6 +78,24 @@
             <div class="yui-b">
                 <h1>Patron clubs</h1>
 
+                [% IF club_template %]
+                    <div class="dialog message">
+                        [% IF stored == 'updated' %]
+                            <p>Club template <i>[% club_template.name %]</i> was updated.</p>
+                        [% ELSE %]
+                            <p>Club template <i>[% club_template.name %]</i> was saved.</p>
+                        [% END %]
+                    </div>
+                [% ELSIF club %]
+                    <div class="dialog message">
+                        [% IF stored == 'updated' %]
+                            <p>Club <i>[% club.name %]</i> was updated.</p>
+                        [% ELSE %]
+                            <p>Club <i>[% club.name %]</i> was saved.</p>
+                        [% END %]
+                    </div>
+                [% END %]
+
                 <h3>Club templates</h3>
 
                 [% IF CAN_user_clubs_edit_templates %]

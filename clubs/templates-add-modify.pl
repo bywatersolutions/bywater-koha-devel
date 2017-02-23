@@ -47,15 +47,16 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 my $id = $cgi->param('id');
 
 my $club_template;
+my $stored;
 
 if ( $cgi->param('name') ) {    # Update or create club
     if ($id) {
         $club_template = Koha::Club::Templates->find($id);
-        $template->param( stored => 'updated' );
+        $stored        = 'updated';
     }
     else {
         $club_template = Koha::Club::Template->new();
-        $template->param( stored => 'created' );
+        $stored = 'created';
     }
 
     $club_template->set(
@@ -66,9 +67,7 @@ if ( $cgi->param('name') ) {    # Update or create club
             branchcode  => $cgi->param('branchcode')  || undef,
             date_updated            => dt_from_string(),
             is_email_required       => $cgi->param('is_email_required') ? 1 : 0,
-            is_enrollable_from_opac => $cgi->param('is_enrollable_from_opac')
-            ? 1
-            : 0,
+            is_enrollable_from_opac => $cgi->param('is_enrollable_from_opac') ? 1 : 0,
         }
     )->store();
 
@@ -142,6 +141,9 @@ if ( $cgi->param('name') ) {    # Update or create club
             )->store();
         }
     }
+
+    print $cgi->redirect("/cgi-bin/koha/clubs/clubs.pl?stored=$stored&club_template_id=$id");
+    exit;
 }
 
 $club_template ||= Koha::Club::Templates->find($id);
