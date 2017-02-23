@@ -8,13 +8,13 @@ CREATE TABLE IF NOT EXISTS club_templates (
   description text,
   is_enrollable_from_opac tinyint(1) NOT NULL DEFAULT '0',
   is_email_required tinyint(1) NOT NULL DEFAULT '0',
-  `branchcode` varchar(10) COLLATE utf8_unicode_ci NULL DEFAULT NULL,
+  branchcode varchar(10) NULL DEFAULT NULL,
   date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   date_updated timestamp NULL DEFAULT NULL,
   is_deletable tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (id),
   KEY ct_branchcode (branchcode),
-  CONSTRAINT `club_templates_ibfk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `club_templates_ibfk_1` FOREIGN KEY (branchcode) REFERENCES `branches` (branchcode) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS clubs (
   description text,
   date_start date DEFAULT NULL,
   date_end date DEFAULT NULL,
-  `branchcode` varchar(10) COLLATE utf8_unicode_ci NULL DEFAULT NULL,
+  branchcode varchar(10) NULL DEFAULT NULL,
   date_created timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   date_updated timestamp NULL DEFAULT NULL,
   PRIMARY KEY (id),
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS club_enrollments (
   date_canceled timestamp NULL DEFAULT NULL,
   date_created timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   date_updated timestamp NULL DEFAULT NULL,
-  `branchcode` varchar(10) COLLATE utf8_unicode_ci NULL DEFAULT NULL,
+  branchcode varchar(10) NULL DEFAULT NULL,
   PRIMARY KEY (id),
   KEY club_id (club_id),
   KEY borrowernumber (borrowernumber),
@@ -122,9 +122,9 @@ CREATE TABLE IF NOT EXISTS club_fields (
   CONSTRAINT club_fields_ibfk_4 FOREIGN KEY (club_id) REFERENCES clubs (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-INSERT INTO userflags (bit, flag, flagdesc, defaulton) VALUES (21, 'clubs', 'Patron clubs', '0');
+INSERT IGNORE INTO userflags (bit, flag, flagdesc, defaulton) VALUES (21, 'clubs', 'Patron clubs', '0');
 
-INSERT INTO permissions (module_bit, code, description) VALUES
+INSERT IGNORE INTO permissions (module_bit, code, description) VALUES
    (21, 'edit_templates', 'Create and update club templates'),
    (21, 'edit_clubs', 'Create and update clubs'),
    (21, 'enroll', 'Enroll patrons in clubs')
