@@ -66,13 +66,7 @@
                         <label for="name">Library:</label>
                         <select name="branchcode" id="club-template-branchcode">
                             <option value="">&nbsp</option>
-                            [% FOREACH b IN Branches.GetBranches() %]
-                                [% IF b.branchcode == club.branch.branchcode %]
-                                    <option value="[% b.branchcode %]" selected="selected">[% b.branchname %]</option>
-                                [% ELSE %]
-                                    <option value="[% b.branchcode %]">[% b.branchname %]</option>
-                                [% END %]
-                            [% END %]
+                            [% PROCESS options_for_libraries libraries => Branches.all( selected => club.branch.branchcode ) %]
                         </select>
                     </li>
 

@@ -1,6 +1,5 @@
 [% USE Branches %]
 [% USE AuthorisedValues %]
-[% SET AuthorisedValuesCategories = AuthorisedValues.GetCategories %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Koha &rsaquo; Tools &rsaquo; Patron clubs &rsaquo; Club template</title>
 [% INCLUDE 'doc-head-close.inc' %]
@@ -69,13 +68,7 @@
                         <label for="name">Library:</label>
                         <select name="branchcode" id="club-template-branchcode">
                             <option value="">&nbsp</option>
-                            [% FOREACH b IN Branches.GetBranches() %]
-                                [% IF b.branchcode == club_template.branchcode %]
-                                    <option value="[% b.branchcode %]" selected="selected">[% b.branchname %]</option>
-                                [% ELSE %]
-                                    <option value="[% b.branchcode %]">[% b.branchname %]</option>
-                                [% END %]
-                            [% END %]
+                            [% PROCESS options_for_libraries libraries => Branches.all( selected => club_template.branchcode ) %]
                         </select>
                         <span class="hint">If set, only librarians logged in with this branch will be able to modify this club template.</span>
                     </li>
@@ -102,13 +95,7 @@
                                 <label for="field-description-[% f.id %]">Authorised value category:</label>
                                 <select name="club_template_field_authorised_value_category" id="field-authorised-value-category-[% f.id %]">
                                     <option value="">&nbsp;</option>
-                                    [% FOREACH c IN AuthorisedValuesCategories %]
-                                        [% IF f.authorised_value_category == c %]
-                                            <option selected="selected" value="[% c %]">[% c %]</option>
-                                        [% ELSE %]
-                                            <option value="[% c %]">[% c %]</option>
-                                        [% END %]
-                                    [% END %]
+                                    [% PROCESS options_for_authorised_value_categories authorised_value_categories => AuthorisedValues.GetCategories( selected => f.authorised_value_category) %]
                                 </select>
                             </li>
 
@@ -147,13 +134,7 @@
                                 <label for="enrollment-field-description-[% f.id %]">Authorised value category:</label>
                                 <select name="club_template_enrollment_field_authorised_value_category" id="enrollment-field-authorised-value-category-[% f.id %]">
                                     <option value="">&nbsp;</option>
-                                    [% FOREACH c IN AuthorisedValuesCategories %]
-                                        [% IF f.authorised_value_category == c %]
-                                            <option selected="selected" value="[% c %]">[% c %]</option>
-                                        [% ELSE %]
-                                            <option value="[% c %]">[% c %]</option>
-                                        [% END %]
-                                    [% END %]
+                                    [% PROCESS options_for_authorised_value_categories authorised_value_categories => AuthorisedValues.GetCategories( selected => f.authorised_value_category) %]
                                 </select>
                             </li>
 
@@ -201,9 +182,7 @@
             <label for="club_template_field_authorised_value_category">Authorised value category:</label>
             <select name="club_template_field_authorised_value_category">
                 <option value="">&nbsp;</option>
-                [% FOREACH c IN AuthorisedValuesCategories %]
-                    <option value="[% c %]">[% c %]</option>
-                [% END %]
+                [% PROCESS options_for_authorised_value_categories authorised_value_categories => AuthorisedValues.GetCategories() %]
             </select>
         </li>
 
@@ -231,9 +210,7 @@
             <label for="club_template_enrollment_field_authorised_value_category">Authorised value category:</label>
             <select name="club_template_enrollment_field_authorised_value_category">
                 <option value="">&nbsp;</option>
-                [% FOREACH c IN AuthorisedValuesCategories %]
-                    <option value="[% c %]">[% c %]</option>
-                [% END %]
+                [% PROCESS options_for_authorised_value_categories authorised_value_categories => AuthorisedValues.GetCategories() %]
             </select>
         </li>
 
