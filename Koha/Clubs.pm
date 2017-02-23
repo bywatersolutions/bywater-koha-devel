@@ -39,18 +39,18 @@ This object represents a collection of clubs a patron may enroll in.
 
 =cut
 
-=head3 GetEnrollable
+=head3 get_enrollable
 
 =cut
 
-sub GetEnrollable {
+sub get_enrollable {
     my ( $self, $params ) = @_;
 
     # We need to filter out all the already enrolled in clubs
     my $borrower = $params->{borrower};
     if ($borrower) {
         delete( $params->{borrower} );
-        my @enrollments = $borrower->GetClubEnrollments();
+        my @enrollments = $borrower->get_club_enrollments();
         if (@enrollments) {
             $params->{'me.id'} = { -not_in => [ map { $_->club()->id() } @enrollments ] };
         }

@@ -595,33 +595,33 @@ sub FirstValidEmailAddress {
     return $self->email() || $self->emailpro() || $self->b_email() || q{};
 }
 
-=head3 GetClubEnrollments
+=head3 get_club_enrollments
 
 =cut
 
-sub GetClubEnrollments {
+sub get_club_enrollments {
     my ($self) = @_;
 
     return Koha::Club::Enrollments->search( { borrowernumber => $self->borrowernumber(), date_canceled => undef } );
 }
 
-=head3 GetClubEnrollmentsCount
+=head3 get_club_enrollments_count
 
 =cut
 
-sub GetClubEnrollmentsCount {
+sub get_club_enrollments_count {
     my ($self) = @_;
 
-    my $e = $self->GetClubEnrollments();
+    my $e = $self->get_club_enrollments();
 
     return $e->count();
 }
 
-=head3 GetEnrollableClubs
+=head3 get_enrollable_clubs
 
 =cut
 
-sub GetEnrollableClubs {
+sub get_enrollable_clubs {
     my ( $self, $is_enrollable_from_opac ) = @_;
 
     my $params;
@@ -631,17 +631,17 @@ sub GetEnrollableClubs {
 
     $params->{borrower} = $self;
 
-    return Koha::Clubs->GetEnrollable($params);
+    return Koha::Clubs->get_enrollable($params);
 }
 
-=head3 GetEnrollableClubsCount
+=head3 get_enrollable_clubs_count
 
 =cut
 
-sub GetEnrollableClubsCount {
+sub get_enrollable_clubs_count {
     my ( $self, $is_enrollable_from_opac ) = @_;
 
-    my $e = $self->GetEnrollableClubs($is_enrollable_from_opac);
+    my $e = $self->get_enrollable_clubs($is_enrollable_from_opac);
 
     return $e->count();
 }

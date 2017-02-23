@@ -526,8 +526,8 @@ function validate1(date) {
             </li>
         [% END %]
         <li><a id="debarments-tab-link" href="#reldebarments">[% debarments.size %] Restrictions</a></li>
-        [% SET enrollments = borrower.GetClubEnrollmentsCount %]
-        [% SET enrollable  = borrower.GetEnrollableClubsCount %]
+        [% SET enrollments = borrower.get_club_enrollments_count %]
+        [% SET enrollable  = borrower.get_enrollable_clubs_count %]
         [% IF CAN_user_clubs && ( enrollments || enrollable ) %]
             <li>
                 <a id="clubs-tab-link" href="#clubs-tab">

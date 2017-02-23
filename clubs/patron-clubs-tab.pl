@@ -43,8 +43,8 @@ my $borrowernumber = $cgi->param('borrowernumber');
 
 my $borrower = Koha::Patrons->find($borrowernumber);
 
-my @enrollments = $borrower->GetClubEnrollments();
-my @clubs       = $borrower->GetEnrollableClubs();
+my @enrollments = $borrower->get_club_enrollments();
+my @clubs       = $borrower->get_enrollable_clubs();
 
 $template->param(
     enrollments    => \@enrollments,
