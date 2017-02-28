@@ -41,7 +41,7 @@ use List::MoreUtils qw/ any /;
 use Encode qw( encode is_utf8);
 
 # use utf8;
-use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $debug $ldap $cas $caslogout $shib $shib_login);
+use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $debug $ldap $cas $caslogout $shib $shib_login $sip);
 
 BEGIN {
     sub psgi_env { any { /^psgi\./ } keys %ENV }
@@ -58,12 +58,17 @@ BEGIN {
       &get_all_subpermissions &get_user_subpermissions
     );
     %EXPORT_TAGS = ( EditPermissions => [qw(get_all_subpermissions get_user_subpermissions)] );
+    $sip       = C4::Context->config('use_sip') || 0;
     $ldap      = C4::Context->config('useldapserver') || 0;
     $cas       = C4::Context->preference('casAuthentication');
     $shib      = C4::Context->config('useshibboleth') || 0;
     $caslogout = C4::Context->preference('casLogout');
     require C4::Auth_with_cas;    # no import
 
+    if ($sip) {
+        require C4::Auth_with_sip;
+        import C4::Auth_with_sip qw(checkpw_sip);
+    }
     if ($ldap) {
         require C4::Auth_with_ldap;
         import C4::Auth_with_ldap qw(checkpw_ldap);
@@ -1786,6 +1791,11 @@ sub checkpw {
         } else {
             @return = (0);
         }
+    } elsif ($sip) {
+        $debug and print STDERR "## checkpw - checking SIP\n";
+        my ( $retval, $retcard, $retuserid ) = checkpw_sip( $userid, $password );   # EXTERNAL AUTH
+        return 0 if $retval == -1;                                                  # Incorrect userid/password for SIP server login attempt
+        ($retval) and return ( $retval, $retcard, $retuserid );
     }
 
     # If we are in a shibboleth session (shibboleth is enabled, and a shibboleth match attribute is present)
