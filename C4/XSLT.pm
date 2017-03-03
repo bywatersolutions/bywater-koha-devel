@@ -314,9 +314,11 @@ sub buildKohaItemsNamespace {
     my $location = "";
     my $ccode = "";
     my $xml = '';
+    my %descs = map { $_->{authorised_value} => $_ } Koha::AuthorisedValues->get_descriptions_by_koha_field( { kohafield => 'items.notforloan' } );
+
     for my $item (@items) {
         my $status;
-
+        my $substatus = '';
         my ( $transfertwhen, $transfertfrom, $transfertto ) = C4::Circulation::GetTransfers($item->{itemnumber});
 
         my $reservestatus = C4::Reserves::GetReserveStatus( $item->{itemnumber} );
@@ -325,6 +327,11 @@ sub buildKohaItemsNamespace {
              (defined $transfertwhen && $transfertwhen ne '') || $item->{itemnotforloan} || (defined $reservestatus && $reservestatus eq "Waiting") || $item->{has_pending_hold} ){
             if ( $item->{notforloan} < 0) {
                 $status = "On order";
+            }
+            if ( $item->{notforloan} > 0 ) {
+                    $status = "reallynotforloan";
+                    $substatus = $descs{$item->{notforloan}} || '';
+                    $substatus = $substatus->{opac_description} if $substatus;
             }
             if ( $item->{itemnotforloan} && $item->{itemnotforloan} > 0 || $item->{notforloan} && $item->{notforloan} > 0 || $item->{itype} && $itemtypes->{ $item->{itype} }->{notforloan} && $itemtypes->{ $item->{itype} }->{notforloan} == 1 ) {
                 $status = "reference";
@@ -366,6 +373,7 @@ sub buildKohaItemsNamespace {
           . "<location>$location</location>"
           . "<ccode>$ccode</ccode>"
           . "<status>".( $status // q{} )."</status>"
+          . "<substatus>$substatus</substatus>"
           . "<itemcallnumber>$itemcallnumber</itemcallnumber>"
           . "<stocknumber>$stocknumber</stocknumber>"
           . "</item>";
