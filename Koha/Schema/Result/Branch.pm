@@ -352,6 +352,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 circulation_rules
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::CirculationRule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "circulation_rules",
+  "Koha::Schema::Result::CirculationRule",
+  { "foreign.branchcode" => "self.branchcode" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 collections
 
 Type: has_many
@@ -543,8 +558,8 @@ Composing rels: L</branchrelations> -> categorycode
 __PACKAGE__->many_to_many("categorycodes", "branchrelations", "categorycode");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2016-10-24 13:56:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/9YwsU+GXK+fzc6IX2Tj5g
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2017-03-06 17:39:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Sui280/U4zxul2+irbx6sA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -97,6 +97,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 circulation_rules
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::CirculationRule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "circulation_rules",
+  "Koha::Schema::Result::CirculationRule",
+  { "foreign.categorycode" => "self.categorycode" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 branchcodes
 
 Type: many_to_many
@@ -108,8 +123,8 @@ Composing rels: L</branchrelations> -> branchcode
 __PACKAGE__->many_to_many("branchcodes", "branchrelations", "branchcode");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-10-14 20:56:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HU5N7lAiLIz6yC9va3fDbg
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2017-03-06 17:39:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:U+iAnklf50zzXkAFKmuBAw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
