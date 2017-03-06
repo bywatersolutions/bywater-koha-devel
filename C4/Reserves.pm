@@ -561,6 +561,26 @@ sub CanItemBeReserved {
         return 'tooManyReserves';
     }
 
+    my $rule = Koha::CirculationRules->get_effective_rule(
+        {
+            rule_name    => 'hold_limit',
+            categorycode => $borrower->{categorycode},
+            branchcode   => $branchcode,
+        }
+    );
+    if ( $rule ) {
+        my $count = Koha::Holds->search(
+            {
+                borrowernumber => $borrowernumber,
+                found          => undef, # Found holds don't count against a patron's holds limit
+            }
+        )->count();
+
+        if ( $count >= $rule->rule_value ) {
+            return 'tooManyReserves';
+        }
+    }
+
     my $circ_control_branch =
       C4::Circulation::_GetCircControlBranch( $item->unblessed(), $borrower );
     my $branchitemrule =
