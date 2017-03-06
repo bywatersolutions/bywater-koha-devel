@@ -4102,6 +4102,28 @@ CREATE TABLE IF NOT EXISTS club_fields (
   CONSTRAINT club_fields_ibfk_4 FOREIGN KEY (club_id) REFERENCES clubs (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+--
+-- Table structure for table `circulation_rules`
+--
+
+DROP TABLE IF EXISTS `circulation_rules`;
+CREATE TABLE `circulation_rules` (
+  `id` int(11) NOT NULL auto_increment,
+  `branchcode` varchar(10) NULL default NULL,
+  `categorycode` varchar(10) NULL default NULL,
+  `itemtype` varchar(10) NULL default NULL,
+  `rule_name` varchar(32) NOT NULL,
+  `rule_value` varchar(32) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `branchcode` (`branchcode`),
+  KEY `categorycode` (`categorycode`),
+  KEY `itemtype` (`itemtype`),
+  UNIQUE (`branchcode`,`categorycode`,`itemtype`),
+  CONSTRAINT `circulation_rules_ibfk_1` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `circulation_rules_ibfk_2` FOREIGN KEY (`categorycode`) REFERENCES `categories` (`categorycode`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `circulation_rules_ibfk_3` FOREIGN KEY (`itemtype`) REFERENCES `itemtypes` (`itemtype`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
