@@ -29,6 +29,8 @@ use Koha::DateUtils;
 use Koha::Database;
 use Koha::IssuingRule;
 use Koha::IssuingRules;
+use Koha::CirculationRule;
+use Koha::CirculationRules;
 use Koha::Logger;
 use Koha::RefundLostItemFeeRule;
 use Koha::RefundLostItemFeeRules;
@@ -458,6 +460,48 @@ elsif ( $op eq 'mod-refund-lost-item-fee-rule' ) {
         })->store;
     }
 }
+elsif ( $op eq 'add-hold-limits-by-patron-category' ) {
+    my $branchcode   = $input->param('branchcode')   || undef;
+    my $categorycode = $input->param('categorycode') || undef;
+    my $hold_limit   = $input->param('hold_limit')   || 0;
+
+    $branchcode   = undef if $branchcode eq '*';
+    $categorycode = undef if $categorycode eq '*';
+
+    my $rule = Koha::CirculationRules->find(
+        {
+            rule_name    => 'hold_limit',
+            branchcode   => $branchcode,
+            categorycode => $categorycode,
+        }
+    );
+
+    if ($rule) {
+        $rule->rule_value($hold_limit);
+        $rule->store();
+    }
+    else {
+        Koha::CirculationRule->new(
+            {
+                rule_name    => 'hold_limit',
+                rule_value   => $hold_limit,
+                branchcode   => $branchcode,
+                categorycode => $categorycode,
+            }
+        )->store();
+    }
+}
+elsif ( $op eq 'delete-circulation-rule' ) {
+    my $id = $input->param('id');
+
+    if ($id) {
+        my $rule = Koha::CirculationRules->find($id);
+        $rule->delete();
+    }
+}
+
+my $circulation_rules = Koha::CirculationRules->search();
+$template->param( circulation_rules => $circulation_rules );
 
 my $refundLostItemFeeRule = Koha::RefundLostItemFeeRules->find({ branchcode => $branch });
 $template->param(

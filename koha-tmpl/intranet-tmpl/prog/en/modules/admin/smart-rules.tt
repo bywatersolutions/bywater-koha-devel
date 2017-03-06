@@ -1,4 +1,5 @@
 [% USE Branches %]
+[% SET actual_branchcode = current_branchcode == '*' ? undef : current_branchcode %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Koha &rsaquo; Administration &rsaquo; Circulation and fine rules</title>
 [% INCLUDE 'doc-head-close.inc' %]
@@ -596,6 +597,49 @@ $(document).ready(function() {
         </form>
     </div>
     [% END %]
+
+    <div id="hold_limits_by_patron_category" class="container">
+        <h3>[% IF humanbranch %]Hold limits by patron category for [% Branches.GetName( humanbranch ) %][% ELSE %]Default hold limits by patron category[% END %]</h3>
+        <form method="post" action="/cgi-bin/koha/admin/smart-rules.pl">
+            <input type="hidden" name="op" value="add-hold-limits-by-patron-category" />
+            <input type="hidden" name="branchcode" value="[% current_branch %]"/>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Patron category</th>
+                        <th>Holds allowed (count)</th>
+                        <th>&nbsp;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    [% FOREACH cr IN circulation_rules %]
+                        [% IF cr.rule_name == 'hold_limit' && cr.branchcode == actual_branchcode %]
+                            <tr>
+                                <td>[% cr.patron_category.description %]</td>
+                                <td>[% cr.rule_value %]</td>
+                                <td class="actions">
+                                    <a class="btn btn-default btn-xs delete" href="/cgi-bin/koha/admin/smart-rules.pl?op=delete-circulation-rule&amp;id=[% cr.id %]"><i class="fa fa-trash"></i> Delete</a>
+                                </td>
+                            </tr>
+                        [% END %]
+                    [% END %]
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td>
+                            <select name="categorycode">
+                                [% FOREACH patron_category IN patron_categories%]
+                                    <option value="[% patron_category.categorycode %]">[% patron_category.description %]</option>
+                                [% END %]
+                            </select>
+                        </td>
+                        <td><input name="hold_limit" size="3" /></td>
+                        <td class="actions"><button type="submit" class="btn btn-default btn-xs"><i class="fa fa-plus"></i> Add</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </form>
+    </div>
 
     <div id="refund-lost-item-fee-on-return" class="container">
   [% IF current_branch == '*' %]
