@@ -12,7 +12,7 @@ use warnings;
 use Carp;
 use Template;
 
-use C4::SIP::SIPServer;
+#use C4::SIP::SIPServer;
 use C4::SIP::ILS::Transaction;
 
 use C4::Debug;
@@ -106,7 +106,6 @@ sub new {
 	bless $self, $type;
 
     C4::SIP::SIPServer::get_logger()->debug("new ILS::Item('$item_id'): found with title '$self->{title}'");
-	   $item_id, $self->{title});
 
     return $self;
 }
