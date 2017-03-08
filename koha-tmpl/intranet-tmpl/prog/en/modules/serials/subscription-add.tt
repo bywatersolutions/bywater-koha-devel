@@ -10,7 +10,7 @@
 <style type="text/css">
 fieldset.rows li.radio { width: 100%; } /* override staff-global.css */
 .yui-u li p label.widelabel {
-    width: 300px;  /* not enough for IE7 apparently */
+width: 300px;  /* not enough for IE7 apparently */
 }
 </style>
 </head>
@@ -214,8 +214,16 @@ fieldset.rows li.radio { width: 100%; } /* override staff-global.css */
 
                 <div id="page_2">
                     <div class="col-md-6">
+                [% IF ( Koha.Preference('Mana') == 2) %]
+                    <fieldset>
+                        <p><center>You haven't activated the Mana Knowledge Base, click
+                        <a href=/cgi-bin/koha/admin/preferences.pl?tab=&op=search&searchfield=request+to+mana+webservice>here</a>
+                         to configure.</center></p>
+                    </fieldset>
+                [% END %]
+
                         <div id="mana_search" class="dialog message">
-                            <p>Frequency and Numbering pattern have been already proposed for this subscription on Mana. To show results, click <a style="cursor:pointer" data-toggle="modal" data-target="#mana_search_result">Here</a></p>
+                            <p>Subscription found on Mana Knowledge Base:</p><p> <a style="cursor:pointer" data-toggle="modal" data-target="#mana_search_result">Quick fill</a></p>
                         </div>
                         <div id="subscription_form_planning">
                             <fieldset class="rows">
@@ -500,18 +508,14 @@ fieldset.rows li.radio { width: 100%; } /* override staff-global.css */
                 </div>
             </form>
         </div>
-        <div id="mana_search_result" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mana_search_result_label" style="width: 90%; left:5%; margin-left: auto; display: none;">
+        <div id="mana_search_result" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mana_search_result_label" style="width: 100%; left:0%; margin-left: auto; display: none;">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
+                        <button type="button" class="closebtn" data-dismiss="modal" aria-hidden="true">×</button>
                         <h3 id="mana_search_result_label"></h3>
                     </div>
                     <div class="modal-body">
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-                    </div>
-                </div>
             </div>
         </div>
 

@@ -22,7 +22,10 @@ use JSON;
 use HTTP::Request;
 use LWP::UserAgent;
 
-our $MANA_IP = "http://10.25.159.107:5000";
+use Koha::Serials;
+use Koha::Reports;
+
+our $MANA_IP = C4::Context->config('mana_config');
 
 sub manaRequest {
     my $mana_request = shift;
@@ -40,12 +43,20 @@ sub manaRequest {
     return $result if ( $response->code =~ /^2..$/ );
 }
 
-sub manaNewUserPatchRequest {
+sub manaIncrementRequest {
     my $resource = shift;
     my $id       = shift;
-
-    my $url = "$MANA_IP/$resource/$id.json/newUser";
-    my $request = HTTP::Request->new( PATCH => $url );
+    my $field    = shift;
+    my $step     = shift;
+    my $param;
+    $param->{step} = $step || 1;
+    $param->{id} = $id;
+    $param->{resource} = $resource;
+    $param = join '&',
+       map { defined $param->{$_} ? $_ . "=" . $param->{$_} : () }
+           keys %$param;
+    my $url = "$MANA_IP/$resource/$id.json/increment/$field?$param";
+    my $request = HTTP::Request->new( POST => $url );
 
     return manaRequest($request);
 }
@@ -62,6 +73,51 @@ sub manaPostRequest {
     $request->content($json);
 
     return manaRequest($request);
+}
+
+sub manaShareInfos{
+    my ($query, $loggedinuser, $ressourceid, $ressourcetype) = @_;
+    my $mana_language;
+    if ( $query->param('mana_language') ) {
+        $mana_language = $query->param('mana_language');
+    }
+    else {
+        my $result = $mana_language = C4::Context->preference('language');
+    }
+
+    my $mana_email;
+    if ( $loggedinuser ne 0 ) {
+        my $borrower = Koha::Patrons->find($loggedinuser);
+        $mana_email = $borrower->email
+          if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
+        $mana_email = $borrower->emailpro
+          if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
+        $mana_email =
+          Koha::Libraries->find( C4::Context->userenv->{'branch'} )->branchemail
+          if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
+    }
+    $mana_email = C4::Context->preference('KohaAdminEmailAddress')
+      if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
+    my %versions = C4::Context::get_versions();
+
+    my $mana_info = {
+        language    => $mana_language,
+        kohaversion => $versions{'kohaVersion'},
+        exportemail => $mana_email
+    };
+    my ($ressource, $ressource_mana_info);
+    my $packages = "Koha::".ucfirst($ressourcetype)."s";
+    my $package = "Koha::".ucfirst($ressourcetype);
+    $ressource_mana_info = $package->get_sharable_info($ressourceid);
+    $ressource_mana_info = { %$ressource_mana_info, %$mana_info };
+    $ressource = $packages->find($ressourceid);
+
+    my $result = Koha::SharedContent::manaPostRequest( $ressourcetype,
+        $ressource_mana_info );
+    if ( $result and ($result->{code} eq "200" or $result->{code} eq "201") ) {
+        $ressource->set( { mana_id => $result->{id} } )->store;
+    }
+    return $result;
 }
 
 sub manaGetRequestWithId {

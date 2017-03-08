@@ -104,44 +104,9 @@ if ($op eq 'del') {
     }
 }
 elsif ( $op and $op eq "share" ) {
-    my $mana_language;
-    if ( $query->param('mana_language') ) {
-        $mana_language = $query->param('mana_language');
-    }
-    else {
-        $mana_language = C4::Context->preference('language');
-    }
-
-    my $mana_email;
-    if ( $loggedinuser ne 0 ) {
-        my $borrower = Koha::Patrons->find($loggedinuser);
-        $mana_email = $borrower->email
-          if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
-        $mana_email = $borrower->emailpro
-          if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
-        $mana_email =
-          Koha::Libraries->find( C4::Context->userenv->{'branch'} )->branchemail
-          if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
-    }
-    $mana_email = C4::Context->preference('KohaAdminEmailAddress')
-      if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
-    my %versions = C4::Context::get_versions();
-
-    my $mana_info = {
-        language    => $mana_language,
-        kohaversion => $versions{'kohaVersion'},
-        exportemail => $mana_email
-    };
-    my $sub_mana_info = Koha::Subscription::get_sharable_info($subscriptionid);
-    $sub_mana_info = { %$sub_mana_info, %$mana_info };
-    my $result = Koha::SharedContent::manaPostRequest( "subscription",
-        $sub_mana_info );
-    if ( $result->{code} eq "200" and $result->{code} eq "201" ) {
-        my $subscription = Koha::Subscriptions->find($subscriptionid);
-        $subscription->set( { mana_id => $result->{id} } )->store;
-        $subs->{mana_id} = $result->{id};
-    }
+    my $result = Koha::SharedContent::manaShareInfos($query, $loggedinuser, $subscriptionid, 'subscription');
     $template->param( mana_code => $result->{code} );
+    $subs->{mana_id} = $result->{id};
 }
 
 my $hasRouting = check_routing($subscriptionid);
