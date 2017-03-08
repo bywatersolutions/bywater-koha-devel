@@ -379,7 +379,7 @@ sub redirect_add_subscription {
     my $mana_id;
     if ( $query->param('mana_id') ne "" ) {
         $mana_id = $query->param('mana_id');
-        Koha::SharedContent::manaNewUserPatchRequest("subscription",$mana_id);
+        Koha::SharedContent::manaIncrementRequest("subscription",$mana_id, "nbofusers");
     }
     else {
         $mana_id = undef;
@@ -406,7 +406,10 @@ sub redirect_add_subscription {
         $staffdisplaycount, $opacdisplaycount, $graceperiod, $location, $enddate,
         $skip_serialseq, $itemtype, $previousitemtype, $mana_id
     );
-
+    if ( grep { $_ eq "subscription" } split(/,/, C4::Context->preference('AutoShareWithMana')) ){
+        my $result = Koha::SharedContent::manaShareInfos( $query, $loggedinuser, $subscriptionid, 'subscription');
+        $template->param( mana_code => $result->{code} );
+    }
     my $additional_fields = Koha::AdditionalField->all( { tablename => 'subscription' } );
     insert_additional_fields( $additional_fields, $biblionumber, $subscriptionid );
 
@@ -466,7 +469,7 @@ sub redirect_mod_subscription {
     my $mana_id;
     if ( defined( $query->param('mana_id') ) ) {
         $mana_id = $query->param('mana_id');
-        Koha::SharedContent::manaNewUserPatchRequest("subscription",$mana_id);
+        Koha::SharedContent::manaIncrementRequest("subscription",$mana_id, "nbofusers");
     }
     else {
         $mana_id = undef;

@@ -130,6 +130,7 @@ sub frequency {
 =cut
 
 sub get_search_info {
+    my $self=shift;
     my $searched_sub_id = shift;
     my $biblio = Koha::Biblios->find( { 'biblionumber' => $searched_sub_id } );
     my $biblioitem =
@@ -145,6 +146,7 @@ sub get_search_info {
 }
 
 sub get_sharable_info {
+    my $self = shift;
     my $shared_sub_id = shift;
     my $subscription  = Koha::Subscriptions->find($shared_sub_id);
     my $biblio        = Koha::Biblios->find( $subscription->biblionumber );

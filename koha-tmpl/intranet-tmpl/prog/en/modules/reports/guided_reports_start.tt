@@ -135,6 +135,26 @@ canned reports and writing custom SQL reports.</p>
     </div>
 [% END %]
 
+<div id="mana_search_result" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mana_search_result_label" style="width: 100%; left:0%; margin-left: auto; display: none;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="closebtn" data-dismiss="modal" aria-hidden="true">×</button>
+                <h3 id="mana_search_result_label"> Mana Search</h3>
+            </div>
+            <div>
+                <form id="search_form" style="margin-left: 5%">
+                    Please enter a few key words:
+                    <input type=text id=mana_search_field>
+                    <input type=button class="mana_search_button" value="Search">
+                </form>
+                <div class="modal-body">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 [% IF ( saved1 ) %]
 [% IF ( savedreports ) %]<h1>Saved reports</h1>
 
@@ -169,6 +189,25 @@ canned reports and writing custom SQL reports.</p>
                 <option value="">All</option>
             </select>
         </div>
+<div style="display:inline-block">
+    [% IF (manamsg == 'success') %]
+     <div id="mana_search" class="dialog message">
+        <p> Shared successfully! Thanks for your help.</p>
+    </div>
+    [% ELSIF (manamsg == 'fail') %]
+     <div id="mana_search" class="dialog message">
+        <p> An error occured while sharing, please try again later.</p>
+    </div>
+    [% END %]
+
+   [% IF (Koha.Preference('Mana') == 1) %]
+    <div id="mana_search" class="dialog message">
+        <p> You want more reports? Check the Mana Knowledge Base <p> <a style="cursor:pointer" data-toggle="modal" data-target="#mana_search_result">Quick Search</a></p>
+    </div>
+    [% END %]
+
+</script>
+<h1> [% savedreport.sql %]</h1>
 <form action="/cgi-bin/koha/reports/guided_reports.pl" id="reports_form" method="post">
 <input type="hidden" name="phase" value="Delete Multiple" />
         <table id="table_reports">
@@ -204,23 +243,24 @@ canned reports and writing custom SQL reports.</p>
             <tbody>
                 [% FOREACH savedreport IN savedreports %]
                     [% UNLESS ( loop.odd ) %]<tr class="odd">[% ELSE %]<tr>[% END %]
-                        <td>
+                        <td class="report_checkbox">
                             [% IF ( CAN_user_reports_delete_reports ) %] <!-- not break CSS -->
                                 <input type="checkbox" name="ids" value="[% savedreport.id | html %]" />
                             [% END %]
+                        <input hidden class="report_sql" value="[% savedreport.savedsql %]">
                         </td>
-                        <td><label for="ids">[% savedreport.id | html %]</label></td>
-                        <td>
+                        <td class="report_id"><label for="ids">[% savedreport.id | html %]</label></td>
+                        <td class="report_name">
                             [% IF ( savedreport.report_name ) %]
                                 [% savedreport.report_name | html %]
                             [% ELSE %]
                                 [ no name ]
                             [% END %]
                         </td>
-                        <td>[% savedreport.type | html %]</td>
-                        <td>[% savedreport.groupname | html %]</td>
+                        <td class="report_type">[% savedreport.type | html %]</td>
+                        <td class="report_group">[% savedreport.groupname | html %]</td>
                         <td>[% savedreport.subgroupname | html %]</td>
-                        <td>[% savedreport.notes | html %]</td>
+                        <td class="report_notes">[% savedreport.notes | html %]</td>
                         <td>[% savedreport.borrowersurname | html %][% IF ( savedreport.borrowerfirstname ) %], [% savedreport.borrowerfirstname | html %][% END %] ([% savedreport.borrowernumber | html %])</td>
                         <td><span title="[% savedreport.date_created | html %]">[% savedreport.date_created | $KohaDates %]</span></td>
                         <td><span title="[% savedreport.last_modified | html %]">[% savedreport.last_modified | $KohaDates  with_hours => 1 %]</span></td>
@@ -267,6 +307,9 @@ canned reports and writing custom SQL reports.</p>
                                             <li><a href="/cgi-bin/koha/reports/guided_reports.pl?reports=[% savedreport.id | uri %]&amp;phase=Edit%20SQL"><i class="fa fa-pencil"></i> Edit</a></li>
                                             <li><a title="Duplicate this saved report" href="/cgi-bin/koha/reports/guided_reports.pl?phase=Create report from SQL&amp;sql=[% savedreport.savedsql |uri %]&amp;reportname=[% savedreport.report_name |uri %]&amp;notes=[% savedreport.notes |uri %]"><i class="fa fa-copy"></i> Duplicate</a></li>
                                         [% END %]
+                                        [% IF (Koha.Preference('Mana') == 1) %]
+                                            <li><a class="ShareButton" data-toggle="modal" href="#mana_share_report" title="Share your report with Mana Knowledge Base"><i class="fa fa-share-alt"></i> Share</a></li>
+                                        [% END %]
                                         <li><a href="/cgi-bin/koha/tools/scheduler.pl?id=[% savedreport.id | uri %]"><i class="fa fa-clock-o"></i> Schedule</a></li>
                                         [% IF ( CAN_user_reports_delete_reports ) %]
                                             <li><a class="confirmdelete" title="Delete this saved report" href="/cgi-bin/koha/reports/guided_reports.pl?reports=[% savedreport.id | html %]&amp;phase=Delete%20Saved"><i class="fa fa-trash"></i> Delete</a></li>
@@ -279,6 +322,7 @@ canned reports and writing custom SQL reports.</p>
                 [% END %]
             </tbody>
         </table>
+</div>
         [% IF ( CAN_user_reports_delete_reports ) %]
         <fieldset class="action">
             <input type="submit" value="Delete selected" />
@@ -318,6 +362,111 @@ canned reports and writing custom SQL reports.</p>
     </div>
 [% END %]
 [% END %]
+
+<div id="mana_share_report" class="modal fade" tabindex="-1" role="dialog" arialabelledby="mana_share_modal_label" style="display: none;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="mana_share_modal_label">Share with Mana</h3>
+            </div>
+            <div class="modal-body">
+                [% IF (mana_id) %]
+                    <div class="alert">
+                        <p>Your subscription is already linked with a Mana subscription model. Share it if you have made modifications, otherwise it will do nothing.</p>
+                    </div>
+                [% END %]
+                [% IF ( languages_loop ) %]
+                    [% UNLESS ( one_language_enabled ) %]
+                        <label id="noteerror" type="hidden">Please enter a report name and descriptive note before sharing (minimum 20 characters)</label>
+                        <div id="shared_infos" class="rows">
+                                <li> <span class="label">Id: </span><div id="shared_id"></div>
+                                </li>
+                                <li> <span class="label">Name: </span><div id="shared_name"></div>
+                                </li>
+                                <li> <span class="label">SQL: </span><div id="shared_sql"></div>
+                                </li>
+                                <li> <span class="label">Group: </span><div id="shared_group"></div>
+                                </li>
+                                <li> <span class="label">Type: </span><div id="shared_type"></div>
+                                </li>
+                                <li> <span class="label">Notes: </span><div id="shared_notes"></div>
+                                </li>
+
+                        </div>
+                        <div class="rows">
+                            <form method="post" id="mana_share_form" action="/cgi-bin/koha/reports/guided_reports.pl?phase=Share" class="validated" >
+                                <input type="hidden" name="phase" value="Share">
+
+                                <fieldset>
+                                    <label for="mana_language">Language:</label>
+                                    <select id="mana_language" name="mana_language">
+                                        [% FOREACH languages_loo IN languages_loop %]
+                                            [% IF ( languages_loo.group_enabled ) %]
+                                                [% IF ( languages_loo.plural ) %]
+                                                    [% FOREACH sublanguages_loo IN languages_loo.sublanguages_loop %]
+                                                        [% IF ( sublanguages_loo.enabled ) %]
+                                                            [% IF ( sublanguages_loo.sublanguage_current ) %]
+                                                                <option value="[% languages_loo.rfc4646_subtag %]" selected>
+                                                                    [% sublanguages_loo.native_description %]
+                                                                    [% sublanguages_loo.script_description %]
+                                                                    [% sublanguages_loo.region_description %]
+
+                                                                    [% sublanguages_loo.variant_description %]
+                                                                    ([% sublanguages_loo.rfc4646_subtag %])
+                                                                </option>
+                                                            [% ELSE %]
+                                                                <option value="[% languages_loo.rfc4646_subtag %]">
+                                                                    [% sublanguages_loo.native_description %]
+                                                                    [% sublanguages_loo.script_description %]
+                                                                    [% sublanguages_loo.region_description %]
+                                                                    [% sublanguages_loo.variant_description %]
+                                                                    ([% sublanguages_loo.rfc4646_subtag %])
+                                                                </option>
+                                                            [% END %]
+                                                        [% END %]
+                                                    [% END %]
+                                                [% ELSE %]
+                                                    [% IF ( languages_loo.group_enabled ) %]
+                                                        [% IF ( languages_loo.current ) %]
+                                                            <option value="[% languages_loo.rfc4646_subtag %]" selected>
+                                                                [% IF ( languages_loo.native_description ) %]
+                                                                    [% languages_loo.native_description %]
+                                                                [% ELSE %]
+                                                                    [% languages_loo.rfc4646_subtag %]
+                                                                [% END %]
+                                                            </option>
+                                                        [% ELSE %]
+                                                            <option value="[% languages_loo.rfc4646_subtag %]">
+                                                                [% IF ( languages_loo.native_description ) %]
+                                                                    [% languages_loo.native_description %]
+                                                                [% ELSE %]
+                                                                    [% languages_loo.rfc4646_subtag %]
+                                                                [% END %]
+                                                            </option>
+                                                        [% END %]
+                                                    [% END %]
+                                                [% END %]
+                                            [% END %]
+                                        [% END %]
+                                    </select>
+                                    <input type="hidden" id="reportid" name="reportid" value="[% savedreport.id %]"/>
+                                </fieldset>
+                            </form>
+                        </div>
+                    [% END %]
+                [% END %]
+            </div>
+            <div class="modal-footer">
+                <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+                [% IF one_language_enabled==0 %]
+                    <button id="ManaShareButton" type="submit" form="mana_share_form" class="btn btn-primary">Share</button>
+                [% ELSE %]
+                    <div id="ManaShareButton" class="btn-group"><a class="btn btn-primary"'onclick="share()">Share</a></div>
+                [% END %]
+            </div>
+        </div>
+    </div>
+</div>
 
 
 [% IF ( build1 ) %]
@@ -1025,6 +1174,10 @@ canned reports and writing custom SQL reports.</p>
             }
         }
 
+        function share() {
+            window.location="/cgi-bin/koha/reports/guided_reports.pl?phase=Save";
+        }
+
         $(document).ready(function(){
 
             hide_bar_element();
@@ -1149,6 +1302,30 @@ canned reports and writing custom SQL reports.</p>
             $(".goback").on("click",function(e){
                 e.preventDefault();
                 window.history.back();
+            });
+
+            $(".mana_search_button").on("click",function(){
+                mana_search($(this).prev().val());
+            });
+
+            $(".ShareButton").on("click", function(){
+                if($(this).closest("tr").find(".report_notes").text().length < 20 || $(this).closest("tr").find(".report_name").text().length < 20){
+                    $("#shared_infos").hide();
+                    $("#ManaShareButton").hide();
+                    $("#noterror").show();
+                }
+                else{
+                    $("#shared_id").html($(this).closest("tr").find(".report_id").text());
+                    $("#shared_name").html($(this).closest("tr").find(".report_name").text());
+                    $("#shared_sql").html($(this).closest("tr").find(".report_sql").val());
+                    $("#shared_type").html($(this).closest("tr").find(".report_type").text());
+                    $("#shared_group").html($(this).closest("tr").find(".report_group").text());
+                    $("#shared_notes").html($(this).closest("tr").find(".report_notes").text());
+                }
+            });
+
+            $('#search_form').submit(function () {
+                return false;
             });
 
             $("#addColumn").on("click",function(){
@@ -1342,6 +1519,104 @@ canned reports and writing custom SQL reports.</p>
                 return confirmDelete(MSG_CONFIRM_DELETE);
             });
         });
+        function mana_increment(mana_id, resourcename, fieldvalue, stepvalue = 1){
+            $.ajax( {
+                type: "POST",
+                url: "/cgi-bin/koha/svc/mana/addvaluetofield",
+                data: {id: mana_id, field: fieldvalue, resource: resourcename, step: stepvalue},
+                datatype: "json",
+            }).done( function() {
+            }).fail( function(){ });
+        }
+
+        function mana_use( mana_id ){
+            $.ajax( {
+                type:"POST",
+                url: "/cgi-bin/koha/svc/mana/use",
+                data: {id:mana_id, resource: 'report', saveinbase: 1},
+                dataType: "json",
+            })
+            .done( function (result){
+                window.location = ("/cgi-bin/koha/reports/guided_reports.pl?reports=").concat(result.id).concat("&amp;phase=Show%20SQL");
+            })
+            .fail( function ( foo, msg, longmsg){
+            });
+        }
+
+        function mana_search( textquery ){
+            $.ajax({
+                type: "POST",
+                url: "/cgi-bin/koha/svc/mana/search",
+                data: {biblionumber: $("#biblionumber").val(), resource: 'report', id: textquery, usecomments: 1},
+                dataType: "html",
+            })
+            .done( function( result ) {
+                $("#mana_search_result .modal-body").html(result);
+                $("#mana_search_result_label").text("Results from Mana Knowledge Base");
+                $("#mana_results_datatable").dataTable($.extend(true, {}, dataTablesDefaults,{
+                    "sPaginationType":"four_button",
+                    "autoWidth": false,
+                    "columnDefs": [
+                        { "width": "35%", "targets": 1 }
+                    ],
+                    "aoColumnDefs": [
+                        { 'bSortable': false, "bSearchable": false, 'aTargets': [ 'NoSort' ] },
+                        { "sType": "title-string", "aTargets" : [ "title-string" ] },
+                        { 'sType': "anti-the", 'aTargets' : [ 'anti-the'] }
+                    ]
+                }));
+                if($("td.dataTables_empty").length == 0){
+                     $("#mana_search").show();
+                }
+
+                $( "select[class='actionreport1']" ).show();
+                $( "button[class='actionreport2']" ).hide();
+                $("#CommentButton").on("click", function(){
+                    var resource_type = "report";
+                    var target_id = $("#selected_id").val();
+                    var manamsg = $("#manamsg").val();
+                    mana_comment(target_id, manamsg, resource_type);
+                    $("#comment_box").modal("hide");
+                });
+
+                $(".showbutton").on("click", function(){
+                    $(this).parent().hide();
+                    $(this).parent().next().show();
+                });
+
+                $("a[class='hidebutton']").on("click", function(){
+                    $(this).parent().hide();
+                    $(this).parent().prev().show();
+                });
+
+                $("#commentCloseButton").on("click", function(){
+                    $("#comment_box").modal("hide");
+                });
+
+                $(".actionreport1").on("click", function(){
+                    $("#selectedcomment").val($(this).val());
+                    $(this).parent("select").hide();
+                    $(this).parent("select").next().show();
+                });
+
+                $(".actionreport2").on("click", function(){
+                    $(this).hide();
+                    $(this).prev().show();
+                    mana_increment($("#selectedcomment").val(), 'resource_comment', 'nb', -1);
+                });
+            }).fail( function( result ){
+            });
+        }
+
+        function mana_comment( target_id, manamsg, resource_type ){
+            $.ajax( {
+                type: "POST",
+                url: "/cgi-bin/koha/svc/mana/share",
+                data: {message: manamsg, resource: resource_type , resource_id: target_id},
+                datatype: "json",
+            })
+        }
+
         function addColumn() {
             $("#availableColumns option:selected").clone().appendTo("#selectedColumns").attr("selected", "selected");
         }

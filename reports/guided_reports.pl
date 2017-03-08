@@ -38,6 +38,7 @@ use Koha::AuthorisedValues;
 use Koha::BiblioFrameworks;
 use Koha::Libraries;
 use Koha::Patron::Categories;
+use Koha::SharedContent;
 
 =head1 NAME
 
@@ -145,6 +146,7 @@ elsif ( $phase eq 'Build new' ) {
         }
     }
     $template->param(
+        'manamsg' => $input->param('manamsg') || '',
         'saved1'                => 1,
         'savedreports'          => $reports,
         'usecache'              => $usecache,
@@ -547,7 +549,7 @@ elsif ( $phase eq 'Build report' ) {
 
 elsif ( $phase eq 'Save' ) {
     # Save the report that has just been built
-    my $area           = $input->param('area');
+    my $area = $input->param('area');
     my $sql  = $input->param('sql');
     my $type = $input->param('type');
     $template->param(
@@ -651,6 +653,7 @@ elsif ( $phase eq 'Save Report' ) {
                     cache_expiry   => $cache_expiry,
                     public         => $public,
                 } );
+
                 logaction( "REPORTS", "ADD", $id, "$name | $sql" ) if C4::Context->preference("ReportsLog");
             $template->param(
                 'save_successful' => 1,
@@ -668,6 +671,14 @@ elsif ( $phase eq 'Save Report' ) {
     }
 }
 
+elsif ($phase eq 'Share'){
+    my $result = Koha::SharedContent::manaShareInfos($input, $borrowernumber, $input->param('reportid'), 'report');
+    if ( $result and ($result->{code} eq "200" or $result->{code} eq "201") ) {
+        print $input->redirect("/cgi-bin/koha/reports/guided_reports.pl?phase=Use%20saved&manamsg=success");
+    }else{
+        print $input->redirect("/cgi-bin/koha/reports/guided_reports.pl?phase=Use%20saved&manamsg=fail");
+    }
+}
 elsif ($phase eq 'Run this report'){
     # execute a saved report
     my $limit      = $input->param('limit') || 20;
