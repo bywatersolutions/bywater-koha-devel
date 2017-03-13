@@ -52,6 +52,7 @@ use Koha::AuthorisedValues;
 use Koha::Virtualshelves;
 use Koha::Ratings;
 use Koha::Reviews;
+use Koha::RDF::Store;
 
 BEGIN {
 	if (C4::Context->preference('BakerTaylorEnabled')) {
@@ -1180,5 +1181,9 @@ $template->param(
     'OpacLocationBranchToDisplay'         => C4::Context->preference('OpacLocationBranchToDisplay') ,
     'OpacLocationBranchToDisplayShelving' => C4::Context->preference('OpacLocationBranchToDisplayShelving'),
 );
+
+my $store = Koha::RDF::Store->new();
+my $triples = $store->get_triples_as_json( {resource=>C4::Context->preference('OPACBaseURL') . "/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber"} );
+$template->param('rdfjson'=> $triples );
 
 output_html_with_http_headers $query, $cookie, $template->output;

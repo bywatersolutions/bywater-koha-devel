@@ -9,6 +9,7 @@ use RDF::Trine::Store::DBI;
 use RDF::Trine::Parser;
 use RDF::Trine::Statement;
 use RDF::Trine::Node::Resource;
+use RDF::Trine::Serializer::RDFJSON;
 
 my $user = 'koha_kohadev';
 my $pass = 'password';
@@ -85,6 +86,15 @@ sub get_triples {
     my $resource = RDF::Trine::Node::Resource->new( $params->{resource} );
     return $self->{model}->get_statements(undef,undef,$resource);
 #    return $self->{model}->get_statements();
+}
+
+sub get_triples_as_json {
+    my ( $self, $params ) = @_;
+    die "Must supply a resource node" unless ( $params->{resource} );
+    my $resource = RDF::Trine::Node::Resource->new( $params->{resource} );
+    my $serializer = RDF::Trine::Serializer::RDFJSON->new();
+    my $json = $serializer->serialize_model_to_string( $self->{model}->get_statements(undef,undef,$resource) );
+    return $json
 }
 
 =head2 convert_and_store_record
