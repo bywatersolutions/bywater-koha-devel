@@ -311,7 +311,7 @@ sub days_between {
 
     # start and end should not be closed days
     my $days = $start_dt->delta_days($end_dt)->delta_days;
-    for (my $dt = $start_dt->clone();
+    for (my $dt = $start_dt->clone()->set_time_zone('UTC');
         $dt <= $end_dt;
         $dt->add(days => 1)
     ) {
@@ -335,7 +335,7 @@ sub hours_between {
     # take into account open/close times then it would be a duration
     # of library open hours
     my $skipped_days = 0;
-    for (my $dt = $start_dt->clone();
+    for (my $dt = $start_dt->clone()->set_time_zone('UTC');
         $dt <= $end_dt;
         $dt->add(days => 1)
     ) {
