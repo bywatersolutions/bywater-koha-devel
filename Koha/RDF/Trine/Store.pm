@@ -10,6 +10,7 @@ use RDF::Trine::Parser;
 use RDF::Trine::Statement;
 use RDF::Trine::Node::Resource;
 use RDF::Trine::Serializer::RDFJSON;
+use RDF::Trine::Serializer::RDFXML;
 
 my $user = 'koha_kohadev';
 my $pass = 'password';
@@ -58,7 +59,7 @@ Takes a hash with a subject->predicate->object triple and stores it in the store
 
 =cut
 
-sub store_triple {
+sub create_triple {
     my ( $self, $params ) = @_;
     unless ( $params->{subject} && $params->{object} & $params->{predicate} ) {
         die "Must supply subject, object, and predicate for triple";
@@ -66,8 +67,16 @@ sub store_triple {
     my $subject = RDF::Trine::Node::Resource->new( $params->{subject} );
     my $predicate = RDF::Trine::Node::Resource->new( $params->{predicate} );
     my $object = RDF::Trine::Node::Resource->new( $params->{object} );
-
     my $triple  = RDF::Trine::Statement->new($subject,$predicate,$object);
+    return $triple;
+}
+
+sub store_triple {
+    my ( $self, $params ) = @_;
+    unless ( $params->{triple} ) {
+        die "Must supply triple";
+    }
+    my $triple = $params->{triple};
     $self->{model}->add_statement($triple);
 #    my $parser     = RDF::Trine::Parser->new( 'ntriples' );
 #    $parser->parse_into_model( $seld->{base}, $triple, $self->{model} );
@@ -95,6 +104,17 @@ sub get_triples_as_json {
     my $serializer = RDF::Trine::Serializer::RDFJSON->new();
     my $json = $serializer->serialize_model_to_string( $self->{model}->get_statements(undef,undef,$resource) );
     return $json
+}
+
+sub get_triples_as_xml {
+    my ( $self, $params ) = @_;
+    die "Must supply a resource node" unless ( $params->{resource} );
+    my $resource = RDF::Trine::Node::Resource->new( $params->{resource} );
+    my $serializer = RDF::Trine::Serializer::RDFXML->new();
+    my $trips = $self->{model}->get_statements($resource,undef,undef);#(undef,undef,$resource); #get_triples( { resource => $resource } );
+    my $xml = ( $trips ) ?  $serializer->serialize_iterator_to_string( $trips ) : "" ;
+#    my $xml = $serializer->serialize_model_to_string( $self->{model}->get_statements(undef,undef,$resource) );
+    return $xml
 }
 
 =head2 convert_and_store_record

@@ -44,6 +44,7 @@ use C4::Acquisition qw(GetOrdersByBiblionumber);
 use Koha::AuthorisedValues;
 use Koha::Patrons;
 use Koha::Virtualshelves;
+use Koha::RDF::Store;
 
 my $query = CGI->new();
 
@@ -513,5 +514,14 @@ $template->param (countdeletedorders => $count_deletedorders_using_biblio);
 
 $template->param (basketsorders => \@baskets_orders);
 $template->param (basketsdeletedorders => \@baskets_deletedorders);
+
+my $predicate = $query->param('predicate');
+my $object = $query->param('object');
+my $subject = C4::Context->preference('OPACBaseURL') . "/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber" ;
+if ( $predicate && $object ) {
+    my $store = Koha::RDF::Store->new();
+    my $triple = $store->create_triple( {subject=> $subject, predicate=>$predicate, object=>$object });
+    $store->store_triple( {triple=> $triple} );
+}
 
 output_html_with_http_headers $query, $cookie, $template->output;

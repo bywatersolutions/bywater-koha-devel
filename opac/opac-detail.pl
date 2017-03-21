@@ -1183,7 +1183,7 @@ $template->param(
 );
 
 my $store = Koha::RDF::Store->new();
-my $triples = $store->get_triples_as_json( {resource=>C4::Context->preference('OPACBaseURL') . "/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber"} );
-$template->param('rdfjson'=> $triples );
+my $triples = $store->get_triples_as_xml( {resource=>C4::Context->preference('OPACBaseURL') . "/cgi-bin/koha/opac-detail.pl?biblionumber=$biblionumber"} );
+$template->param('rdfxml'=> $triples );
 
 output_html_with_http_headers $query, $cookie, $template->output;

@@ -1146,6 +1146,12 @@ function verify_images() {
 [% INCLUDE 'biblio-view-menu.inc' %]
 </div>
 [% END %]
+<form>
+<input type="text" name="predicate"><label for="predicate">Predicate</label>
+<input type="text" name="object"><label for="object">Object</label></br>
+<input type="submit" value="Submit">
+<input type="hidden" name="biblionumber" value=[% biblionumber %]>
+</form>
 </div>
 
 [% INCLUDE 'intranet-bottom.inc' %]
