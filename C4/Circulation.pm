@@ -1371,7 +1371,9 @@ sub AddIssue {
             }
             $datedue->truncate( to => 'minute' );
 
-            $issue = Koha::Database->new()->schema()->resultset('Issue')->update_or_create(
+            my $schema = Koha::Database->new()->schema();
+            my $guard = $schema->txn_scope_guard;
+            $issue = $schema->resultset('Issue')->update_or_create(
                 {
                     borrowernumber => $borrower->{'borrowernumber'},
                     itemnumber     => $item->{'itemnumber'},
@@ -1382,6 +1384,7 @@ sub AddIssue {
                     auto_renew      => $auto_renew ? 1 : 0
                 }
               );
+            $guard->commit;
 
             if ( C4::Context->preference('ReturnToShelvingCart') ) {
                 # ReturnToShelvingCart is on, anything issued should be taken off the cart.
