@@ -64,13 +64,16 @@ name.
 =cut
 
 my $allowed_setenvs = qr/^(
+    MEMCACHED_SERVERS |
+    MEMCACHED_NAMESPACE |
     OVERRIDE_SYSPREF_(\w+) |
     OVERRIDE_SYSPREF_NAMES |
     OPAC_BRANCH_DEFAULT |
     OPAC_CSS_OVERRIDE |
     OPAC_SEARCH_LIMIT |
     OPAC_LIMIT_OVERRIDE |
-    TZ
+    TZ |
+    TMPDIR
 )\ /x;
 
 sub call {
