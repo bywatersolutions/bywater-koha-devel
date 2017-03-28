@@ -114,7 +114,7 @@
 
                             [% UNLESS ( renew ) %]
                                 <form action="/cgi-bin/koha/sco/sco-main.pl" name="confirmForm" class="inline" method="post">
-                                    <input type="hidden" name="op" value="checkout" />
+                                    <input type="hidden" name="op" value="renew" />
                                     <input type="hidden" name="patronid" value="[% patronid %]" />
                                     <input type="hidden" name="barcode" value="[% barcode %]" />
                                     <input type="hidden" name="confirmed" value="1" />
@@ -122,7 +122,7 @@
                                   </form>
                             [% ELSE %]
                                 <form action="/cgi-bin/koha/sco/sco-main.pl" name="confirmForm" class="inline" method="post">
-                                    <input type="hidden" name="op" value="checkout" />
+                                    <input type="hidden" name="op" value="renew" />
                                     <input type="hidden" name="patronid" value="[% patronid %]" />
                                     <input type="hidden" name="barcode" value="[% barcode %]" />
                                     <input type="hidden" name="confirmed" value="1" />
@@ -281,7 +281,7 @@
                                                         <input type="hidden" name="patronid" value="[% patronid %]" />
                                                         <input type="hidden" name="barcode" value="[% ISSUE.barcode %]" />
                                                         [% IF ISSUE.can_be_renewed %]
-                                                            <input type="hidden" name="op" value="checkout" />
+                                                            <input type="hidden" name="op" value="renew" />
                                                             <input type="hidden" name="confirmed" value="1" />
                                                             [% UNLESS ( ISSUE.renew ) %]
                                                                 <input type="submit" value="Renew item"  name="confirm  " class="btn renew" />
