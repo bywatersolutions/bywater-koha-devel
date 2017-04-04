@@ -38,7 +38,7 @@ use Koha::Patrons;
 use Koha::Patron::Categories;
 
 my $input=new CGI;
-my $flagsrequired = { borrowers => 1 };
+my $flagsrequired = { borrowers => 'edit_borrowers' };
 
 my $borrowernumber=$input->param('borrowernumber');
 
@@ -89,7 +89,7 @@ if ($add){
         query           => $input,
         type            => "intranet",
         authnotrequired => 0,
-        flagsrequired   => { borrowers => 1,
+        flagsrequired   => { borrowers => 'edit_borrowers',
                              updatecharges => 'remaining_permissions' },
         debug           => 1,
     });

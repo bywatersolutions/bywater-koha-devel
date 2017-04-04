@@ -161,7 +161,7 @@ if ($show_results) {
             query           => $query,
             type            => "intranet",
             authnotrequired => 0,
-            flagsrequired   => { borrowers => 1 },
+            flagsrequired   => { borrowers => 'edit_borrowers' },
             flagsrequired   => { catalogue => 1 },
             debug           => 1,
         }

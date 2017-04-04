@@ -36,7 +36,7 @@ my ($template, $loggedinuser, $cookie, $flags)
                  query => $query,
                  type => "intranet",
                  authnotrequired => 0,
-                 flagsrequired => {borrowers => 1},
+                 flagsrequired => {borrowers => 'edit_borrowers'},
                  debug => 1,
                  });
 
