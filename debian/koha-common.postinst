@@ -21,7 +21,8 @@ fi
 
 #DEBHELPER#
 
-koha-upgrade-schema $(koha-list)
+# BWS-CUSTOM - Removing koha-upgrade-schema from post install tasks
+#koha-upgrade-schema $(koha-list)
 
 # Generate a config file if one doesn't exist already
 if [ ! -e $CONFIG ]; then
