@@ -145,7 +145,7 @@ sub get_opac_news {
     my $dbh = C4::Context->dbh;
     my $query = q{
                   SELECT opac_news.*, branches.branchname,
-                         timestamp AS newdate,
+                         opac_news.timestamp AS newdate,
                          borrowers.title AS author_title,
                          borrowers.firstname AS author_firstname,
                          borrowers.surname AS author_surname
@@ -162,7 +162,7 @@ sub get_opac_news {
         $query .= ' AND (opac_news.branchcode IS NULL OR opac_news.branchcode=?)';
         push @values,$branchcode;
     }
-    $query.= ' ORDER BY timestamp DESC ';
+    $query.= ' ORDER BY opac_news.timestamp DESC ';
     #if ($limit) {
     #    $query.= 'LIMIT 0, ' . $limit;
     #}
@@ -193,7 +193,7 @@ sub GetNewsToDisplay {
     my $dbh = C4::Context->dbh;
     # SELECT *,DATE_FORMAT(timestamp, '%d/%m/%Y') AS newdate
     my $query = q{
-     SELECT opac_news.*,timestamp AS newdate,
+     SELECT opac_news.*,opac_news.timestamp AS newdate,
      borrowers.title AS author_title,
      borrowers.firstname AS author_firstname,
      borrowers.surname AS author_surname
@@ -203,7 +203,7 @@ sub GetNewsToDisplay {
         expirationdate >= CURRENT_DATE()
         OR    expirationdate IS NULL
      )
-     AND   DATE(timestamp) < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+     AND   DATE(opac_news.timestamp) < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
      AND   (opac_news.lang = '' OR opac_news.lang = ?)
      AND   (opac_news.branchcode IS NULL OR opac_news.branchcode = ?)
      ORDER BY number
