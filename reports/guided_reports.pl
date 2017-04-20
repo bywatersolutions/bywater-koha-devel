@@ -673,10 +673,10 @@ elsif ( $phase eq 'Save Report' ) {
 
 elsif ($phase eq 'Share'){
     my $result = Koha::SharedContent::manaShareInfos($input, $borrowernumber, $input->param('reportid'), 'report');
-    if ( $result and ($result->{code} eq "200" or $result->{code} eq "201") ) {
-        print $input->redirect("/cgi-bin/koha/reports/guided_reports.pl?phase=Use%20saved&manamsg=success");
+    if ( $result ) {
+        print $input->redirect("/cgi-bin/koha/reports/guided_reports.pl?phase=Use%20saved&manamsg=".$result->{msg});
     }else{
-        print $input->redirect("/cgi-bin/koha/reports/guided_reports.pl?phase=Use%20saved&manamsg=fail");
+        print $input->redirect("/cgi-bin/koha/reports/guided_reports.pl?phase=Use%20saved&manamsg=noanswer");
     }
 }
 elsif ($phase eq 'Run this report'){

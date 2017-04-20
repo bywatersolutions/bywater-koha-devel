@@ -190,13 +190,9 @@ canned reports and writing custom SQL reports.</p>
             </select>
         </div>
 <div style="display:inline-block">
-    [% IF (manamsg == 'success') %]
+    [% IF manamsg %]
      <div id="mana_search" class="dialog message">
-        <p> Shared successfully! Thanks for your help.</p>
-    </div>
-    [% ELSIF (manamsg == 'fail') %]
-     <div id="mana_search" class="dialog message">
-        <p> An error occured while sharing, please try again later.</p>
+        <p> [% manamsg %] </p>
     </div>
     [% END %]
 

@@ -62,11 +62,7 @@
     [% IF mana_code.defined %]
         <div id="alert-community" class="dialog message">
             <p>
-                [% IF (mana_code == 201) %]
-                    The export is done, thank you for your contribution.
-                [% ELSIF (mana_code == 200) %]
-                    The model already exists on Mana, thank you for your contribution.
-                [% END %]
+                [% mana_code %]
             </p>
         </div>
     [% END %]

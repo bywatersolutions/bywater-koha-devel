@@ -80,6 +80,7 @@
             <div class="modal-body">
                 [% IF (mana_id) %]
                     <div class="alert">
+<h1>[% (mana_id) %]</h1>
                         <p>Your subscription is already linked with a Mana subscription model. Share it if you have made modifications, otherwise it will do nothing.</p>
                     </div>
                 [% END %]

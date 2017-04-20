@@ -406,9 +406,9 @@ sub redirect_add_subscription {
         $staffdisplaycount, $opacdisplaycount, $graceperiod, $location, $enddate,
         $skip_serialseq, $itemtype, $previousitemtype, $mana_id
     );
-    if ( grep { $_ eq "subscription" } split(/,/, C4::Context->preference('AutoShareWithMana')) ){
+    if ( (C4::Context->preference('Mana')) and ( grep { $_ eq "subscription" } split(/,/, C4::Context->preference('AutoShareWithMana'))) ){
         my $result = Koha::SharedContent::manaShareInfos( $query, $loggedinuser, $subscriptionid, 'subscription');
-        $template->param( mana_code => $result->{code} );
+        $template->param( mana_msg => $result->{msg} );
     }
     my $additional_fields = Koha::AdditionalField->all( { tablename => 'subscription' } );
     insert_additional_fields( $additional_fields, $biblionumber, $subscriptionid );

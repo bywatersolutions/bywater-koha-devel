@@ -415,7 +415,7 @@ function mana_search() {
                 { 'sType': "anti-the", 'aTargets' : [ 'anti-the'] }
             ]
         }));
-        if($("td.dataTables_empty").length == 0){
+        if( $("#mana_results_datatable").length && $("td.dataTables_empty").length == 0){
             $("#mana_search").show();
         }
         $( "select[class='actionreport1']" ).show();
