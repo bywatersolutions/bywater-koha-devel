@@ -5,63 +5,65 @@
 
 
 
-<table id="mana_results_datatable" width=100%>
-    <thead>
-        <tr>
-            <th>ISSN</th>
-            <th class="anti-the" width=50%>Title</th>
-            <th> Published by </th>
-            <th>Frequency</th>
-            <th>Numbering pattern</th>
-            <th title="number of libraries using this pattern"># of users</th>
-            <th class="title-string" title="last time a library used this pattern">Last import</th>
-            <th> Comments </th>
-            [% UNLESS search_only %]
-              <th class="NoSort">Actions</th>
-            [% END %]
-        </tr>
-    </thead>
-    <tbody>
-        [% FOREACH subscription IN subscriptions %]
-            [% UNLESS subscription.cannotdisplay %]
-                <tr id="row[% subscription.subscriptionid %]"
-                     [% IF subscription.nbofcomment > highWarned  %]
-                        class = "high-warned-row" title="this resource has been reported more than [% highWarned %] times, take care!"
-                     [% ELSIF subscription.nbofcomment > warned  %]
-                        class = "warned-row" title="this resource has been reported more than [% warned %] times, take care!"
-                     [% ELSIF subscription.nbofcomment > lowWarned  %]
-                        class = "highlighted-row" title="this resource has been reported more than [% lowWarned %] times, take care!"
-                     [% END %]
-                >
-                <input hidden class="rowid" value="[% subscription.id %]">
-                    <td>[% IF ( subscription.issn ) %][% subscription.issn %][% END %]</td>
-                    <td>[% subscription.title %]</a></td>
-                    <td>[% IF ( subscription.publishercode ) %][% subscription.publishercode %][% END %]</td>
-                    <td>[% IF ( subscription.sfdescription ) %][% subscription.sfdescription %][% END %]</td>
-                    <td>[% IF ( subscription.numberingmethod ) %][% subscription.numberingmethod %][% END %]</td>
-                    <td>[% IF ( subscription.nbofusers ) %][% subscription.nbofusers %][% END %]</td>
-                    <td><span title="[% subscription.lastimport %]">[% subscription.lastimport | $KohaDates %]</span></td>
-		    <td>[% FOREACH comment IN subscription.comments %][% comment.message %] ([% comment.nb %]) <br>[% END %]</td>
-
-                    [% UNLESS search_only %]
-                      <td>
-                          <button onclick="mana_use([% subscription.id %])"> <i class="fa fa-inbox"></i> Use</button>
-                          <input hidden type="text" id="selectedcomment">
-                          <select>
-                              <option selected disabled>Report mistake</option>
-                              [% FOREACH comment IN subscription.comments %]
-                                  <option class="actionreport1" value="[% comment.id %]" onclick="mana_increment('[% comment.id %]', 'resource_comment', 'nb')"> [% comment.message %] ([% comment.nb %])
-                              [% END %]
-                                  <option data-toggle="modal" onclick="($('#selected_id').val($('.rowid').val()))" data-target="#comment_box"> other
-                          </select>
-                          <button hidden class="actionreport2" hidden> Cancel</button>
-                      </td>
+[% IF statuscode == "200" %]
+    <table id="mana_results_datatable" width=100%>
+        <thead>
+            <tr>
+                <th>ISSN</th>
+                <th class="anti-the" width=50%>Title</th>
+                <th> Published by </th>
+                <th>Frequency</th>
+                <th>Numbering pattern</th>
+                <th title="number of libraries using this pattern"># of users</th>
+                <th class="title-string" title="last time a library used this pattern">Last import</th>
+                <th> Comments </th>
+                [% UNLESS search_only %]
+                  <th class="NoSort">Actions</th>
+                [% END %]
+            </tr>
+        </thead>
+        <tbody>
+            [% FOREACH subscription IN subscriptions %]
+                [% UNLESS subscription.cannotdisplay %]
+                    [% IF subscription.nbofcomment > highWarned  %]
+                    <tr id="row[% subscription.subscriptionid %]" class = "high-warned-row" title="this resource has been reported more than [% highWarned %] times, take care!">
+                    [% ELSIF subscription.nbofcomment > warned  %]
+                    <tr id="row[% subscription.subscriptionid %]" class = "warned-row" title="this resource has been reported more than [% warned %] times, take care!">
+                    [% ELSIF subscription.nbofcomment > lowWarned  %]
+                    <tr id="row[% subscription.subscriptionid %]" class = "highlighted-row" title="this resource has been reported more than [% lowWarned %] times, take care!">
                     [% END %]
-                </tr>
+                    <input hidden class="rowid" value="[% subscription.id %]">
+                        <td>[% IF ( subscription.issn ) %][% subscription.issn %][% END %]</td>
+                        <td>[% subscription.title %]</a></td>
+                        <td>[% IF ( subscription.publishercode ) %][% subscription.publishercode %][% END %]</td>
+                        <td>[% IF ( subscription.sfdescription ) %][% subscription.sfdescription %][% END %]</td>
+                        <td>[% IF ( subscription.numberingmethod ) %][% subscription.numberingmethod %][% END %]</td>
+                        <td>[% IF ( subscription.nbofusers ) %][% subscription.nbofusers %][% END %]</td>
+                        <td><span title="[% subscription.lastimport %]">[% subscription.lastimport | $KohaDates %]</span></td>
+                        <td>[% FOREACH comment IN subscription.comments %][% comment.message %] ([% comment.nb %]) <br>[% END %]</td>
+
+                        [% UNLESS search_only %]
+                            <td>
+                                <button onclick="mana_use([% subscription.id %])"> <i class="fa fa-inbox"></i> Use</button>
+                                <input hidden type="text" id="selectedcomment">
+                                <select>
+                                    <option selected disabled>Report mistake</option>
+                                    [% FOREACH comment IN subscription.comments %]
+                                        <option class="actionreport1" value="[% comment.id %]" onclick="mana_increment('[% comment.id %]', 'resource_comment', 'nb')"> [% comment.message %] ([% comment.nb %])
+                                    [% END %]
+                                        <option data-toggle="modal" onclick="($('#selected_id').val($('.rowid').val()))" data-target="#comment_box"> other
+                                </select>
+                                <button hidden class="actionreport2" hidden> Cancel</button>
+                            </td>
+                        [% END %]
+                    </tr>
+                [% END %]
             [% END %]
-        [% END %]
-    </tbody>
-</table>
+        </tbody>
+    </table>
+[% ELSE %]
+    <h4> [% msg %] statuscode: [% statuscode %] </h4>
+[% END %]
 
 <div id="comment_box" class="modal" tabindex="-1" role="dialog" aria-labelledby="mana_search_result_label" style="display: none;">
     <div class="modal-dialog modal-lg" style="width: 30%">

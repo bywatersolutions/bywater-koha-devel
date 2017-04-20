@@ -24,23 +24,33 @@ use LWP::UserAgent;
 
 use Koha::Serials;
 use Koha::Reports;
+use C4::Context;
 
 our $MANA_IP = C4::Context->config('mana_config');
 
 sub manaRequest {
     my $mana_request = shift;
     my $result;
-
     $mana_request->content_type('application/json');
     my $userAgent = LWP::UserAgent->new;
+    if ( $mana_request->method eq "POST" ){
+        my $content;
+        if ($mana_request->content) {$content = from_json( $mana_request->content )};
+        $content->{securitytoken} = C4::Context->preference("ManaToken");
+        $mana_request->content( to_json($content) );
+    }
+
     my $response  = $userAgent->request($mana_request);
 
-    if ( $response->code ne "204" ) {
-        $result = from_json( $response->decoded_content );
-    }
+    eval { $result = from_json( $response->decoded_content ); };
     $result->{code} = $response->code;
-
-    return $result if ( $response->code =~ /^2..$/ );
+    if ( $@ ){
+        $result->{msg} = $response->{_msg};
+    }
+    if ($response->is_error){
+        $result->{msg} = "An error occurred, mana server returned: ".$result->{msg};
+    }
+    return $result ;
 }
 
 sub manaIncrementRequest {
@@ -71,7 +81,6 @@ sub manaPostRequest {
     $content->{bulk_import} = 0;
     my $json = to_json( $content, { utf8 => 1 } );
     $request->content($json);
-
     return manaRequest($request);
 }
 
@@ -88,13 +97,15 @@ sub manaShareInfos{
     my $mana_email;
     if ( $loggedinuser ne 0 ) {
         my $borrower = Koha::Patrons->find($loggedinuser);
-        $mana_email = $borrower->email
-          if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
-        $mana_email = $borrower->emailpro
-          if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
-        $mana_email =
-          Koha::Libraries->find( C4::Context->userenv->{'branch'} )->branchemail
-          if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
+        if ($borrower){
+            $mana_email = $borrower->email
+              if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
+            $mana_email = $borrower->emailpro
+              if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
+            $mana_email =
+              Koha::Libraries->find( C4::Context->userenv->{'branch'} )->branchemail
+              if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
+        }
     }
     $mana_email = C4::Context->preference('KohaAdminEmailAddress')
       if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
@@ -114,8 +125,9 @@ sub manaShareInfos{
 
     my $result = Koha::SharedContent::manaPostRequest( $ressourcetype,
         $ressource_mana_info );
+
     if ( $result and ($result->{code} eq "200" or $result->{code} eq "201") ) {
-        $ressource->set( { mana_id => $result->{id} } )->store;
+       eval { $ressource->set( { mana_id => $result->{id} } )->store };
     }
     return $result;
 }

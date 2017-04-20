@@ -73,5 +73,7 @@ foreach my $resource (@{ $result->{data} }){
 }
 
 $template->param( $input->param('resource')."s" => $result->{data} );
+$template->param( statuscode => $result->{code} );
+$template->param( msg => $result->{msg} );
 
 output_with_http_headers $input, $cookie, $template->output, 'json';

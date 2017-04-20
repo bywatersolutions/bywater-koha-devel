@@ -1,0 +1,20 @@
+$(document).ready(function(){
+    $("#activatemana").on("click", function(){
+        var mylastname = $("#lastname").val()
+        var myfirstname = $("#firstname").val()
+        var myemail = $("#email").val()
+        $.ajax( {
+            type: "POST",
+            url: "/cgi-bin/koha/svc/mana/getToken",
+            data: { lastname: mylastname, firstname: myfirstname, email: myemail},
+            dataType: "json",
+        })
+        .done(function(result){
+            console.log(result.token);
+                $("#pref_ManaToken").val(result.token);
+                $("#pref_ManaToken").trigger("input");
+        }).fail( function( result ){
+        });
+        return false;
+    });
+});

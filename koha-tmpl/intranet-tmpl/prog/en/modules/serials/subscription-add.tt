@@ -222,7 +222,7 @@ width: 300px;  /* not enough for IE7 apparently */
                     </fieldset>
                 [% END %]
 
-                        <div id="mana_search" class="dialog message">
+                        <div hidden id="mana_search" class="dialog message">
                             <p>Subscription found on Mana Knowledge Base:</p><p> <a style="cursor:pointer" data-toggle="modal" data-target="#mana_search_result">Quick fill</a></p>
                         </div>
                         <div id="subscription_form_planning">
