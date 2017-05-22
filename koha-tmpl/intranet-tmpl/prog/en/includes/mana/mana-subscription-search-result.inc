@@ -4,7 +4,6 @@
 [% USE Branches %]
 
 
-
 [% IF statuscode == "200" %]
     <table id="mana_results_datatable" width=100%>
         <thead>
@@ -62,7 +61,7 @@
         </tbody>
     </table>
 [% ELSE %]
-    <h4> [% msg %] statuscode: [% statuscode %] </h4>
+    <h4>Mana search fails with the code: [% statuscode %] </h4>
 [% END %]
 
 <div id="comment_box" class="modal" tabindex="-1" role="dialog" aria-labelledby="mana_search_result_label" style="display: none;">

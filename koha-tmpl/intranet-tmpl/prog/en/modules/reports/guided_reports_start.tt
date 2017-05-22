@@ -155,6 +155,13 @@ canned reports and writing custom SQL reports.</p>
     </div>
 </div>
 
+[% IF report_converted %]
+    <div class="dialog message">
+        The report "[% report_converted %]" has been converted.
+    </div>
+[% END %]
+
+
 [% IF ( saved1 ) %]
 [% IF ( savedreports ) %]<h1>Saved reports</h1>
 
@@ -196,14 +203,8 @@ canned reports and writing custom SQL reports.</p>
     </div>
     [% END %]
 
-   [% IF (Koha.Preference('Mana') == 1) %]
-    <div id="mana_search" class="dialog message">
-        <p> You want more reports? Check the Mana Knowledge Base <p> <a style="cursor:pointer" data-toggle="modal" data-target="#mana_search_result">Quick Search</a></p>
-    </div>
-    [% END %]
-
 </script>
-<h1> [% savedreport.sql %]</h1>
+
 <form action="/cgi-bin/koha/reports/guided_reports.pl" id="reports_form" method="post">
 <input type="hidden" name="phase" value="Delete Multiple" />
         <table id="table_reports">
@@ -243,7 +244,7 @@ canned reports and writing custom SQL reports.</p>
                             [% IF ( CAN_user_reports_delete_reports ) %] <!-- not break CSS -->
                                 <input type="checkbox" name="ids" value="[% savedreport.id | html %]" />
                             [% END %]
-                        <input hidden class="report_sql" value="[% savedreport.savedsql %]">
+                        <input hidden class="report_sql" value="[% savedreport.savedsql |html %]">
                         </td>
                         <td class="report_id"><label for="ids">[% savedreport.id | html %]</label></td>
                         <td class="report_name">
@@ -1300,10 +1301,6 @@ canned reports and writing custom SQL reports.</p>
                 window.history.back();
             });
 
-            $(".mana_search_button").on("click",function(){
-                mana_search($(this).prev().val());
-            });
-
             $(".ShareButton").on("click", function(){
                 if($(this).closest("tr").find(".report_notes").text().length < 20 || $(this).closest("tr").find(".report_name").text().length < 20){
                     $("#shared_infos").hide();
@@ -1318,10 +1315,6 @@ canned reports and writing custom SQL reports.</p>
                     $("#shared_group").html($(this).closest("tr").find(".report_group").text());
                     $("#shared_notes").html($(this).closest("tr").find(".report_notes").text());
                 }
-            });
-
-            $('#search_form').submit(function () {
-                return false;
             });
 
             $("#addColumn").on("click",function(){
@@ -1515,103 +1508,6 @@ canned reports and writing custom SQL reports.</p>
                 return confirmDelete(MSG_CONFIRM_DELETE);
             });
         });
-        function mana_increment(mana_id, resourcename, fieldvalue, stepvalue = 1){
-            $.ajax( {
-                type: "POST",
-                url: "/cgi-bin/koha/svc/mana/addvaluetofield",
-                data: {id: mana_id, field: fieldvalue, resource: resourcename, step: stepvalue},
-                datatype: "json",
-            }).done( function() {
-            }).fail( function(){ });
-        }
-
-        function mana_use( mana_id ){
-            $.ajax( {
-                type:"POST",
-                url: "/cgi-bin/koha/svc/mana/use",
-                data: {id:mana_id, resource: 'report', saveinbase: 1},
-                dataType: "json",
-            })
-            .done( function (result){
-                window.location = ("/cgi-bin/koha/reports/guided_reports.pl?reports=").concat(result.id).concat("&amp;phase=Show%20SQL");
-            })
-            .fail( function ( foo, msg, longmsg){
-            });
-        }
-
-        function mana_search( textquery ){
-            $.ajax({
-                type: "POST",
-                url: "/cgi-bin/koha/svc/mana/search",
-                data: {biblionumber: $("#biblionumber").val(), resource: 'report', id: textquery, usecomments: 1},
-                dataType: "html",
-            })
-            .done( function( result ) {
-                $("#mana_search_result .modal-body").html(result);
-                $("#mana_search_result_label").text("Results from Mana Knowledge Base");
-                $("#mana_results_datatable").dataTable($.extend(true, {}, dataTablesDefaults,{
-                    "sPaginationType":"four_button",
-                    "autoWidth": false,
-                    "columnDefs": [
-                        { "width": "35%", "targets": 1 }
-                    ],
-                    "aoColumnDefs": [
-                        { 'bSortable': false, "bSearchable": false, 'aTargets': [ 'NoSort' ] },
-                        { "sType": "title-string", "aTargets" : [ "title-string" ] },
-                        { 'sType': "anti-the", 'aTargets' : [ 'anti-the'] }
-                    ]
-                }));
-                if($("td.dataTables_empty").length == 0){
-                     $("#mana_search").show();
-                }
-
-                $( "select[class='actionreport1']" ).show();
-                $( "button[class='actionreport2']" ).hide();
-                $("#CommentButton").on("click", function(){
-                    var resource_type = "report";
-                    var target_id = $("#selected_id").val();
-                    var manamsg = $("#manamsg").val();
-                    mana_comment(target_id, manamsg, resource_type);
-                    $("#comment_box").modal("hide");
-                });
-
-                $(".showbutton").on("click", function(){
-                    $(this).parent().hide();
-                    $(this).parent().next().show();
-                });
-
-                $("a[class='hidebutton']").on("click", function(){
-                    $(this).parent().hide();
-                    $(this).parent().prev().show();
-                });
-
-                $("#commentCloseButton").on("click", function(){
-                    $("#comment_box").modal("hide");
-                });
-
-                $(".actionreport1").on("click", function(){
-                    $("#selectedcomment").val($(this).val());
-                    $(this).parent("select").hide();
-                    $(this).parent("select").next().show();
-                });
-
-                $(".actionreport2").on("click", function(){
-                    $(this).hide();
-                    $(this).prev().show();
-                    mana_increment($("#selectedcomment").val(), 'resource_comment', 'nb', -1);
-                });
-            }).fail( function( result ){
-            });
-        }
-
-        function mana_comment( target_id, manamsg, resource_type ){
-            $.ajax( {
-                type: "POST",
-                url: "/cgi-bin/koha/svc/mana/share",
-                data: {message: manamsg, resource: resource_type , resource_id: target_id},
-                datatype: "json",
-            })
-        }
 
         function addColumn() {
             $("#availableColumns option:selected").clone().appendTo("#selectedColumns").attr("selected", "selected");

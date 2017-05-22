@@ -393,6 +393,9 @@ function show_page_2() {
 }
 
 function mana_search() {
+    $("#mana_search").html("<p>Mana kb is being asked for your subscription..</p>");
+    $("#mana_search").show();
+
     $.ajax({
         type: "POST",
         url: "/cgi-bin/koha/svc/mana/search",
@@ -416,8 +419,15 @@ function mana_search() {
             ]
         }));
         if( $("#mana_results_datatable").length && $("td.dataTables_empty").length == 0){
-            $("#mana_search").show();
+            $("#mana_search").html("<p>Subscription found on Mana Knowledge Base:</p><p> <a style='cursor:pointer' data-toggle='modal' data-target='#mana_search_result'>Quick fill</a></p>");
         }
+        else if ( $("#mana_results_datatable").length ){
+            $("#mana_search").html("<p>No subscription found on Mana Knowledge Base :(</p><p> Please feel free to share you pattern with all others librarians once you are done</p>");
+        }
+        else{
+            $("#mana_search").html( result );
+        }
+        $("#mana_search").show();
         $( "select[class='actionreport1']" ).show();
         $( "button[class='actionreport2']" ).hide();
 
@@ -446,6 +456,8 @@ function mana_search() {
         });
 
     }).fail(function(result){
+        console.log( msg );
+        console.log( longmsg );
     });
 }
 
@@ -548,9 +560,6 @@ function removeDisabledAttr() {
 
 $(document).ready(function() {
     mana_search();
-    $("#myid").on("click", function(){
-        debugger;
-    })
     $("#displayexample").hide();
     $("#mana_search_result").modal("hide");
     $("#aqbooksellerid").on('keypress', function(e) {

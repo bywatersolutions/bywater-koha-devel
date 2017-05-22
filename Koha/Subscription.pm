@@ -133,6 +133,7 @@ sub get_search_info {
     my $self=shift;
     my $searched_sub_id = shift;
     my $biblio = Koha::Biblios->find( { 'biblionumber' => $searched_sub_id } );
+    return unless $biblio;
     my $biblioitem =
       Koha::Biblioitems->find( { 'biblionumber' => $searched_sub_id } );
 
