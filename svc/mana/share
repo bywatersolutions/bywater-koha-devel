@@ -45,3 +45,22 @@ $content->{resource_id} = $input->param("resource_id");
 $content->{resource_type} = $input->param("resource");
 $content->{message} = $input->param("message");
 Koha::SharedContent::manaPostRequest('resource_comment', $content);
+    my $package = "Koha::".ucfirst($input->param('resource'));
+    my $resource;
+    my $result;
+eval{
+    $result = Koha::SharedContent::manaGetRequestWithId($input->param('resource'), $input->param('id') );
+};
+if ( $@ or $result->{code} == 500 ){
+    $resource->{errmsg} =  "Error: mana access got broken, please try again later\n\n ( error: $@ )";
+}
+else{
+    if ( $input->param( 'saveinbase' )) {
+        $resource = { id => $package->new_from_mana($result->{data})->id };
+    }
+    else{
+        $resource = $result->{data};
+    }
+}
+
+print(to_json($resource));

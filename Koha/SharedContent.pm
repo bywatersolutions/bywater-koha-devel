@@ -42,7 +42,7 @@ sub manaRequest {
 
     my $response  = $userAgent->request($mana_request);
 
-    eval { $result = from_json( $response->decoded_content ); };
+    eval { $result = from_json( $response->decoded_content, { utf8 => 1} ); };
     $result->{code} = $response->code;
     if ( $@ ){
         $result->{msg} = $response->{_msg};

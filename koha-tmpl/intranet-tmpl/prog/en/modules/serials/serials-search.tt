@@ -297,7 +297,7 @@
             </ul>
             [% IF mana %]
                 <div id="mana">
-                    [% INCLUDE 'mana-subscription-search-result.inc' %]
+                    [% INCLUDE 'mana/mana-subscription-search-result.inc' %]
                 </div>
             [% ELSE %]
             <div id="opened">

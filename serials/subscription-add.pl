@@ -307,7 +307,7 @@ sub manage_subscription_numbering_pattern_id {
             return $existing->id;
         }
 
-        $params->{label} = Koha::Subscription::Numberpattern->uniqueLabel($query->param('patternname'));
+        $params->{label} = Koha::Subscription::Numberpatterns->uniqueLabel($query->param('patternname'));
         $params->{description} = $query->param('sndescription');
 
 

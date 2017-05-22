@@ -30,7 +30,7 @@
                     [% END %]
                     <input hidden class="rowid" value="[% report.id %]">
                     <td>[% IF ( report.report_name ) %][% report.report_name %][% END %]</td>
-                    <td title="[% report.savedsql %]"><div>
+                    <td title="[% report.savedsql |html %]"><div>
                         [% IF report.notes.length > 200 %]
                             [% report.notes.substr(0,200) %]<a class="showbutton">Show More</a></div><div hidden>
                         [% END %]

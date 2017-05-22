@@ -182,6 +182,7 @@ elsif ( $phase eq 'Show SQL'){
         'notes'      => $report->notes,
         'sql'     => $report->savedsql,
         'showsql' => 1,
+        'mana_success' => $input->param('mana_success'),
     );
 }
 
