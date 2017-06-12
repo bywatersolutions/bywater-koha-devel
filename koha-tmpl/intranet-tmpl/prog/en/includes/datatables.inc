@@ -3,6 +3,9 @@
 <script type="text/javascript" src="[% interface %]/lib/jquery/plugins/jquery.dataTables.min_[% KOHA_VERSION %].js"></script>
 <script type="text/javascript" src="[% interface %]/lib/jquery/plugins/dataTables.buttons.min_[% KOHA_VERSION %].js"></script>
 <script type="text/javascript" src="[% interface %]/lib/jquery/plugins/buttons.colVis.min_[% KOHA_VERSION %].js"></script>
+<script type="text/javascript" src="[% interface %]/lib/jquery/plugins/jszip.min_[% KOHA_VERSION %].js"></script>
+<script type="text/javascript" src="[% interface %]/lib/jquery/plugins/buttons.print.min_[% KOHA_VERSION %].js"></script>
+<script type="text/javascript" src="[% interface %]/lib/jquery/plugins/buttons.html5.min_[% KOHA_VERSION %].js"></script>
 <script type="text/javascript">
 //<![CDATA[
     var MSG_DT_FIRST = _("First");
