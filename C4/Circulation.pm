@@ -2374,6 +2374,8 @@ sub _FixOverduesOnReturn {
         $accountline->accounttype('F');
     }
 
+    Koha::Account->new({ patron_id => $borrowernumber })->normalize_balance();
+
     return $accountline->store();
 }
 

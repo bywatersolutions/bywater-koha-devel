@@ -308,6 +308,8 @@ sub manualinvoice {
         }));
     }
 
+    Koha::Account->new({ patron_id => $borrowernumber })->normalize_balance();
+
     return 0;
 }
 

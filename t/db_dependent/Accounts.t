@@ -18,7 +18,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 28;
+use Test::More tests => 29;
 use Test::MockModule;
 use Test::Warn;
 
@@ -1016,6 +1016,42 @@ subtest "Payment notice tests" => sub {
     is( $notice->subject, 'Account writeoff', 'Notice subject is correct for payment' );
     is( $notice->letter_code, 'ACCOUNT_WRITEOFF', 'Notice letter code is correct for writeoff' );
     is( $notice->content, 'A writeoff of 13.00 has been applied to your account.', 'Notice content is correct for writeoff' );
+};
+
+subtest "Koha::Account::normalize_balance tests" => sub {
+
+    plan tests => 6;
+
+    # Create a borrower
+    my $categorycode = $builder->build({ source => 'Category' })->{ categorycode };
+    my $branchcode   = $builder->build({ source => 'Branch' })->{ branchcode };
+
+    my $borrower = Koha::Patron->new( {
+        cardnumber => 'kyliehall',
+        surname => 'Hall',
+        firstname => 'Kylie',
+    } );
+    $borrower->categorycode( $categorycode );
+    $borrower->branchcode( $branchcode );
+    $borrower->store;
+
+    my $account = Koha::Account->new({ patron_id => $borrower->id });
+
+    my $line1 = Koha::Account::Line->new({ borrowernumber => $borrower->borrowernumber, amount => -10, amountoutstanding => -10 })->store();
+    my $line2 = Koha::Account::Line->new({ borrowernumber => $borrower->borrowernumber, amount => 10, amountoutstanding => 10 })->store();
+
+    is( $account->balance(), 0, "Account balance is 0" );
+    is( $line1->amountoutstanding, "-10", 'Credit has amount outstanding of -10' );
+    is( $line2->amountoutstanding, "10", 'Fee has amount outstanding of 10' );
+
+    $account->normalize_balance();
+
+    is( $account->balance(), 0, "Account balance is 0" );
+
+    $line1->_result->discard_changes();
+    $line2->_result->discard_changes();
+    is( $line1->amountoutstanding, '0.000000', 'First fee has amount outstanding of 0' );
+    is( $line2->amountoutstanding, '0.000000', 'Second fee has amount outstanding of 0' );
 };
 
 1;

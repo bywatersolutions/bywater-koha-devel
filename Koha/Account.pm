@@ -60,7 +60,8 @@ Koha::Account->new( { patron_id => $borrowernumber } )->pay(
         library_id  => $branchcode,
         lines        => $lines, # Arrayref of Koha::Account::Line objects to pay
         account_type => $type,  # accounttype code
-        offset_type => $offset_type,    # offset type code
+        offset_type  => $offset_type,     # offset type code
+        credit_id    => credit_id,        # pay from balance of existing credit
     }
 );
 
@@ -79,6 +80,7 @@ sub pay {
     my $payment_type = $params->{payment_type} || undef;
     my $account_type = $params->{account_type};
     my $offset_type  = $params->{offset_type} || $type eq 'writeoff' ? 'Writeoff' : 'Payment';
+    my $credit_id    = $params->{credit_id};
 
     my $userenv = C4::Context->userenv;
 
@@ -214,20 +216,28 @@ sub pay {
 
     $description ||= $type eq 'writeoff' ? 'Writeoff' : q{};
 
-    my $payment = Koha::Account::Line->new(
-        {
-            borrowernumber    => $self->{patron_id},
-            accountno         => $accountno,
-            date              => dt_from_string(),
-            amount            => 0 - $amount,
-            description       => $description,
-            accounttype       => $account_type,
-            payment_type      => $payment_type,
-            amountoutstanding => 0 - $balance_remaining,
-            manager_id        => $manager_id,
-            note              => $note,
-        }
-    )->store();
+    my $payment;
+    if ($credit_id) {
+        $payment = Koha::Account::Lines->find($credit_id);
+        $payment->amountoutstanding( $balance_remaining * -1 );
+        $payment->store();
+    }
+    else {
+        $payment = Koha::Account::Line->new(
+            {
+                borrowernumber    => $self->{patron_id},
+                accountno         => $accountno,
+                date              => dt_from_string(),
+                amount            => 0 - $amount,
+                description       => $description,
+                accounttype       => $account_type,
+                payment_type      => $payment_type,
+                amountoutstanding => 0 - $balance_remaining,
+                manager_id        => $manager_id,
+                note              => $note,
+            }
+        )->store();
+    }
 
     foreach my $o ( @account_offsets ) {
         $o->credit_id( $payment->id() );
@@ -236,33 +246,35 @@ sub pay {
 
     $library_id ||= $userenv ? $userenv->{'branch'} : undef;
 
-    UpdateStats(
-        {
-            branch         => $library_id,
-            type           => $type,
-            amount         => $amount,
-            borrowernumber => $self->{patron_id},
-            accountno      => $accountno,
-        }
-    );
-
-    if ( C4::Context->preference("FinesLog") ) {
-        logaction(
-            "FINES", 'CREATE',
-            $self->{patron_id},
-            Dumper(
-                {
-                    action            => "create_$type",
-                    borrowernumber    => $self->{patron_id},
-                    accountno         => $accountno,
-                    amount            => 0 - $amount,
-                    amountoutstanding => 0 - $balance_remaining,
-                    accounttype       => $account_type,
-                    accountlines_paid => \@fines_paid,
-                    manager_id        => $manager_id,
-                }
-            )
+    unless ( $credit_id ) {
+        UpdateStats(
+            {
+                branch         => $library_id,
+                type           => $type,
+                amount         => $amount,
+                borrowernumber => $self->{patron_id},
+                accountno      => $accountno,
+            }
         );
+
+        if ( C4::Context->preference("FinesLog") ) {
+            logaction(
+                "FINES", 'CREATE',
+                $self->{patron_id},
+                Dumper(
+                    {
+                        action            => "create_$type",
+                        borrowernumber    => $self->{patron_id},
+                        accountno         => $accountno,
+                        amount            => 0 - $amount,
+                        amountoutstanding => 0 - $balance_remaining,
+                        accounttype       => $account_type,
+                        accountlines_paid => \@fines_paid,
+                        manager_id        => $manager_id,
+                    }
+                )
+            );
+        }
     }
 
     if ( C4::Context->preference('UseEmailReceipts') ) {
@@ -522,6 +534,35 @@ sub non_issues_charges {
     return $non_issues_charges->count
       ? $non_issues_charges->next->get_column('non_issues_charges') + 0
       : 0;
+}
+
+=head3 normalize_balance
+
+$account->normalize_balance();
+
+Find outstanding credits and use them to pay outstanding debits
+
+=cut
+
+sub normalize_balance {
+    my ($self) = @_;
+    my @credits = Koha::Account::Lines->search(
+        {
+            borrowernumber    => $self->{patron_id},
+            amountoutstanding => { '<' => 0 },
+        }
+    );
+
+    foreach my $credit (@credits) {
+        $self->pay(
+            {
+                credit_id => $credit->id,
+                amount    => $credit->amountoutstanding * -1,
+            }
+        );
+    }
+
+    return $self;
 }
 
 1;
