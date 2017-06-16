@@ -26,7 +26,7 @@ use Koha::Library;
 use t::lib::Mocks;
 use t::lib::TestBuilder;
 
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 use Test::Warn;
 
@@ -795,6 +795,47 @@ subtest 'get_hostitemnumbers_of' => sub {
 
     my @itemnumbers = C4::Items::get_hostitemnumbers_of( $biblionumber );
     is( @itemnumbers, 0, );
+};
+
+subtest 'Test logging for AddItem' => sub {
+
+    plan tests => 3;
+
+    t::lib::Mocks::mock_preference('CataloguingLog', 1);
+
+    $schema->storage->txn_begin;
+
+    my $builder = t::lib::TestBuilder->new;
+    my $library = $builder->build({
+        source => 'Branch',
+    });
+    my $itemtype = $builder->build({
+        source => 'Itemtype',
+    });
+
+    # Create a biblio instance for testing
+    t::lib::Mocks::mock_preference('marcflavour', 'MARC21');
+    my ($bibnum, $bibitemnum) = get_biblio();
+
+    # Add an item.
+    my ($item_bibnum, $item_bibitemnum, $itemnumber) = AddItem({ homebranch => $library->{branchcode}, holdingbranch => $library->{branchcode}, location => $location, itype => $itemtype->{itemtype} } , $bibnum);
+
+    # False means no logging
+    $schema->resultset('ActionLog')->search()->delete();
+    ModItem({ location => $location }, $bibnum, $itemnumber, 0);
+    is( $schema->resultset('ActionLog')->count(), 0, 'False value does not trigger logging' );
+
+    # True means logging
+    $schema->resultset('ActionLog')->search()->delete();
+    ModItem({ location => $location }, $bibnum, $itemnumber, 1, 'True value does trigger logging');
+    is( $schema->resultset('ActionLog')->count(), 1 );
+
+    # Undefined defaults to true
+    $schema->resultset('ActionLog')->search()->delete();
+    ModItem({ location => $location }, $bibnum, $itemnumber);
+    is( $schema->resultset('ActionLog')->count(), 1, 'Undefined value defaults to true, triggers logging' );
+
+    $schema->storage->txn_rollback;
 };
 
 # Helper method to set up a Biblio.
