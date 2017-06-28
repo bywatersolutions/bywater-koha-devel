@@ -149,6 +149,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 circulation_rules
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::CirculationRule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "circulation_rules",
+  "Koha::Schema::Result::CirculationRule",
+  { "foreign.itemtype" => "self.itemtype" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 default_branch_item_rule
 
 Type: might_have
@@ -195,8 +210,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2016-04-29 10:32:00
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1GiikODklVISOurHX37qjA
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2017-06-28 04:08:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7o86hHDFdmHShwhJ/iIzew
 
 # Use the ItemtypeLocalization view to create the join on localization
 our $LANGUAGE;
