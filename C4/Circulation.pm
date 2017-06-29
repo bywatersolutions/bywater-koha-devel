@@ -1438,6 +1438,7 @@ sub AddIssue {
                     other          => ( $sipmode ? "SIP-$sipmode" : '' ),
                     itemnumber     => $item->{'itemnumber'},
                     itemtype       => $item->{'itype'},
+                    location       => $item->{location},
                     borrowernumber => $borrower->{'borrowernumber'},
                     ccode          => $item->{'ccode'}
                 }
@@ -2971,6 +2972,7 @@ sub AddRenewal {
             amount         => $charge,
             itemnumber     => $itemnumber,
             itemtype       => $item->{itype},
+            location       => $item->{location},
             borrowernumber => $borrowernumber,
             ccode          => $item->{'ccode'}
         }
