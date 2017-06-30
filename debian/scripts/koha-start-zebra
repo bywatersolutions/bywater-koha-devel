@@ -32,6 +32,7 @@ start_zebra_instance()
 
     # get zebra log levels from koha-conf.xml
     local loglevels=$(get_loglevels $instancename)
+    local max_record_size=$(get_max_record_size $instancename)
 
     echo "Starting Zebra server for $instancename"
     touch "/var/log/koha/$instancename/zebra-error.log" \
@@ -51,6 +52,7 @@ start_zebra_instance()
         -- \
         zebrasrv \
         -v $loglevels \
+        -k $max_record_size \
         -f "/etc/koha/sites/$instancename/koha-conf.xml" && \
         return 0 || \
         return 1
