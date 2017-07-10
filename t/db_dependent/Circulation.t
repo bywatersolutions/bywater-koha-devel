@@ -36,6 +36,7 @@ use Koha::Database;
 use Koha::IssuingRules;
 use Koha::Checkouts;
 use Koha::Patrons;
+use Koha::CirculationRules;
 use Koha::Subscriptions;
 
 my $schema = Koha::Database->schema;
@@ -168,14 +169,15 @@ is(
 
 # Set a simple circ policy
 $dbh->do('DELETE FROM issuingrules');
+Koha::CirculationRules->search()->delete();
 $dbh->do(
     q{INSERT INTO issuingrules (categorycode, branchcode, itemtype, reservesallowed,
-                                maxissueqty, issuelength, lengthunit,
+                                issuelength, lengthunit,
                                 renewalsallowed, renewalperiod,
                                 norenewalbefore, auto_renew,
                                 fine, chargeperiod)
       VALUES (?, ?, ?, ?,
-              ?, ?, ?,
+              ?, ?,
               ?, ?,
               ?, ?,
               ?, ?
@@ -183,7 +185,7 @@ $dbh->do(
     },
     {},
     '*', '*', '*', 25,
-    20, 14, 'days',
+    14, 'days',
     1, 7,
     undef, 0,
     .10, 1
@@ -945,18 +947,29 @@ C4::Context->dbh->do("DELETE FROM accountlines");
     $dbh->do('DELETE FROM issues');
     $dbh->do('DELETE FROM items');
     $dbh->do('DELETE FROM issuingrules');
+	Koha::CirculationRules->search()->delete();
     $dbh->do(
         q{
-        INSERT INTO issuingrules ( categorycode, branchcode, itemtype, reservesallowed, maxissueqty, issuelength, lengthunit, renewalsallowed, renewalperiod,
-                    norenewalbefore, auto_renew, fine, chargeperiod ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+        INSERT INTO issuingrules ( categorycode, branchcode, itemtype, reservesallowed, issuelength, lengthunit, renewalsallowed, renewalperiod,
+                    norenewalbefore, auto_renew, fine, chargeperiod ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
         },
         {},
         '*', '*', '*', 25,
-        20,  14,  'days',
+        14,  'days',
         1,   7,
         undef,  0,
         .10, 1
     );
+	Koha::CirculationRules->set_rules(
+		{
+			categorycode => '*',
+			itemtype     => '*',
+			branchcode   => '*',
+			rules        => {
+				maxissueqty => 20
+			}
+		}
+	);
     my $biblio = MARC::Record->new();
     my ( $biblionumber, $biblioitemnumber ) = AddBiblio( $biblio, '' );
 
@@ -1551,7 +1564,6 @@ subtest 'AddReturn + CumulativeRestrictionPeriods' => sub {
             categorycode => '*',
             itemtype     => '*',
             branchcode   => '*',
-            maxissueqty  => 99,
             issuelength  => 1,
             firstremind  => 1,        # 1 day of grace
             finedays     => 2,        # 2 days of fine per day of overdue
