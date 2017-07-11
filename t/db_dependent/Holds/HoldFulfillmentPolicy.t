@@ -3,6 +3,7 @@
 use Modern::Perl;
 
 use C4::Context;
+use Koha::CirculationRules;
 
 use Test::More tests => 10;
 
@@ -46,10 +47,7 @@ my $library_C = $library3->{branchcode};
 $dbh->do("DELETE FROM transport_cost");
 $dbh->do("DELETE FROM tmp_holdsqueue");
 $dbh->do("DELETE FROM hold_fill_targets");
-$dbh->do("DELETE FROM default_branch_circ_rules");
-$dbh->do("DELETE FROM default_branch_item_rules");
-$dbh->do("DELETE FROM default_circ_rules");
-$dbh->do("DELETE FROM branch_item_rules");
+$dbh->do("DELETE FROM circulation_rules");
 
 $dbh->do("INSERT INTO biblio (frameworkcode, author, title, datecreated) VALUES ('', 'Koha test', '$bib_title', '2011-02-01')");
 
@@ -72,8 +70,18 @@ my $itemnumber =
   or BAIL_OUT("Cannot find newly created item");
 
 # With hold_fulfillment_policy = homebranch, hold should only be picked up if pickup branch = homebranch
-$dbh->do("DELETE FROM default_circ_rules");
-$dbh->do("INSERT INTO default_circ_rules ( holdallowed, hold_fulfillment_policy ) VALUES ( 2, 'homebranch' )");
+$dbh->do("DELETE FROM circulation_rules");
+Koha::CirculationRules->set_rules(
+    {
+        categorycode => undef,
+        branchcode   => undef,
+        itemtype     => undef,
+        rules        => {
+            holdallowed             => 2,
+            hold_fulfillment_policy => 'homebranch',
+        }
+    }
+);
 
 # Home branch matches pickup branch
 my $reserve_id = AddReserve( $library_A, $borrowernumber, $biblionumber, '', 1 );
@@ -94,8 +102,18 @@ is( $status, q{}, "Hold where pickup ne home, pickup ne holding not targeted" );
 CancelReserve( { reserve_id => $reserve_id } );
 
 # With hold_fulfillment_policy = holdingbranch, hold should only be picked up if pickup branch = holdingbranch
-$dbh->do("DELETE FROM default_circ_rules");
-$dbh->do("INSERT INTO default_circ_rules ( holdallowed, hold_fulfillment_policy ) VALUES ( 2, 'holdingbranch' )");
+$dbh->do("DELETE FROM circulation_rules");
+Koha::CirculationRules->set_rules(
+    {
+        categorycode => undef,
+        branchcode   => undef,
+        itemtype     => undef,
+        rules        => {
+            holdallowed             => 2,
+            hold_fulfillment_policy => 'holdingbranch',
+        }
+    }
+);
 
 # Home branch matches pickup branch
 $reserve_id = AddReserve( $library_A, $borrowernumber, $biblionumber, '', 1 );
@@ -116,8 +134,18 @@ is( $status, q{}, "Hold where pickup ne home, pickup ne holding not targeted" );
 CancelReserve( { reserve_id => $reserve_id } );
 
 # With hold_fulfillment_policy = any, hold should be pikcup up reguardless of matching home or holding branch
-$dbh->do("DELETE FROM default_circ_rules");
-$dbh->do("INSERT INTO default_circ_rules ( holdallowed, hold_fulfillment_policy ) VALUES ( 2, 'any' )");
+$dbh->do("DELETE FROM circulation_rules");
+Koha::CirculationRules->set_rules(
+    {
+        categorycode => undef,
+        branchcode   => undef,
+        itemtype     => undef,
+        rules        => {
+            holdallowed             => 2,
+            hold_fulfillment_policy => 'any',
+        }
+    }
+);
 
 # Home branch matches pickup branch
 $reserve_id = AddReserve( $library_A, $borrowernumber, $biblionumber, '', 1 );
