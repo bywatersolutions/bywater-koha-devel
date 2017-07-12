@@ -679,14 +679,14 @@ $(document).ready(function() {
                         <select name="refund">
                           [#% Default branch %#]
                           [% IF ( current_branch == '*' ) %]
-                            [% IF ( refundLostItemFeeRule.refund ) %]
+                            [% IF ( refundLostItemFeeRule.rule_value ) %]
                             <option value="1" selected="selected">
                             [% ELSE %]
                             <option value="1">
                             [% END %]
                                 Yes
                             </option>
-                            [% IF ( not refundLostItemFeeRule.refund ) %]
+                            [% IF ( not refundLostItemFeeRule.rule_value ) %]
                             <option value="0" selected="selected">
                             [% ELSE %]
                             <option value="0">
@@ -710,14 +710,14 @@ $(document).ready(function() {
                                 <option value="1">Yes</option>
                                 <option value="0">No</option>
                             [% ELSE %]
-                                [% IF ( refundLostItemFeeRule.refund ) %]
+                                [% IF ( refundLostItemFeeRule.rule_value ) %]
                                 <option value="1" selected="selected">
                                 [% ELSE %]
                                 <option value="1">
                                 [% END %]
                                     Yes
                                 </option>
-                                [% IF ( not refundLostItemFeeRule.refund ) %]
+                                [% IF ( not refundLostItemFeeRule.rule_value ) %]
                                 <option value="0" selected="selected">
                                 [% ELSE %]
                                 <option value="0">
