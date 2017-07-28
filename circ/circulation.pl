@@ -56,6 +56,7 @@ use Koha::Patron::Messages;
 use Koha::SearchEngine;
 use Koha::SearchEngine::Search;
 use Koha::Patron::Modifications;
+use Koha::Statistics;
 
 use Date::Calc qw(
   Today
@@ -266,6 +267,7 @@ if ($findborrower) {
         } elsif ( @$borrowers ) {
             $template->param( borrowers => $borrowers );
         } else {
+            Koha::Statistics->invalid_patron( { patron => $findborrower } );
             $query->param( 'findborrower', '' );
             $message = "'$findborrower'";
         }

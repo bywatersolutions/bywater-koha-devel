@@ -57,6 +57,7 @@ use Koha::RefundLostItemFeeRule;
 use Koha::RefundLostItemFeeRules;
 use Koha::Account::Lines;
 use Koha::Account::Offsets;
+use Koha::Statistics;
 use Carp;
 use List::MoreUtils qw( uniq );
 use Scalar::Util qw( looks_like_number );
@@ -670,7 +671,8 @@ sub CanBookBeIssued {
 
     my $item = GetItem(undef, $barcode );
     # MANDATORY CHECKS - unless item exists, nothing else matters
-    unless ( $item ) {
+    unless ( $item && $item->{barcode} ) {
+        Koha::Statistics->invalid_item( { item => $barcode } );
         $issuingimpossible{UNKNOWN_BARCODE} = 1;
     }
     return ( \%issuingimpossible, \%needsconfirmation ) if %issuingimpossible;
@@ -1804,6 +1806,7 @@ sub AddReturn {
     # get information on item
     my $item = GetItem( undef, $barcode );
     unless ($item) {
+        Koha::Statistics->invalid_item( { item => $barcode } );
         return ( 0, { BadBarcode => $barcode } );    # no barcode means no item or borrower.  bail out.
     }
 

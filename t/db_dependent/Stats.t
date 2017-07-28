@@ -3,10 +3,15 @@
 use Modern::Perl;
 use C4::Stats;
 
-use Test::More tests => 19;
+use Test::More tests => 31;
+use Test::MockModule;
+use t::lib::TestBuilder;
+use t::lib::Mocks;
 
 BEGIN {
     use_ok('C4::Stats');
+    use_ok('Koha::Statistic');
+    use_ok('Koha::Statistics');
 }
 can_ok(
     'C4::Stats',
@@ -163,6 +168,50 @@ is( $line->{location}, undef,
     "UpdateStats sets location to NULL if undef is passed in." );
 
 # More tests to write!
+
+my $builder = t::lib::TestBuilder->new;
+my $library = $builder->build( { source => 'Branch' } );
+my $branchcode = $library->{branchcode};
+my $context = new Test::MockModule('C4::Context');
+$context->mock(
+    'userenv',
+    sub {
+        return {
+            flags  => 1,
+            id     => 'my_userid',
+            branch => $branchcode,
+            number => '-1',
+        };
+    }
+);
+# Test Koha::Statistic->invalid_patron
+$dbh->do(q{DELETE FROM statistics});
+t::lib::Mocks::mock_preference( "LogInvalidPatrons", 0 );
+Koha::Statistics->invalid_patron( { patron => 'InvalidCardnumber' } );
+is( Koha::Statistics->search()->count(), 0, 'No stat line added if system preference LogInvalidPatrons is disabled' );
+
+t::lib::Mocks::mock_preference( "LogInvalidPatrons", 1 );
+Koha::Statistics->invalid_patron( { patron => 'InvalidCardnumber' } );
+my $stat = Koha::Statistics->search()->next();
+is( $stat->type, 'invalid_patron', 'Type set to invalid_patron' );
+is( $stat->associatedborrower, '-1', 'Associated library id set correctly' );
+is( $stat->other, 'InvalidCardnumber', 'Invalid cardnumber is set correctly' );
+is( $stat->branch, $branchcode, 'Branchcode is set correctly' );
+
+# Test Koha::Statistic->invalid_item
+$dbh->do(q{DELETE FROM statistics});
+t::lib::Mocks::mock_preference( "LogInvalidItems", 0 );
+Koha::Statistics->invalid_item( { item => 'InvalidBarcode' } );
+is( Koha::Statistics->search()->count(), 0, 'No stat line added if system preference LogInvalidItems is disabled' );
+
+t::lib::Mocks::mock_preference( "LogInvalidItems", 1 );
+Koha::Statistics->invalid_item( { item => 'InvalidBarcode' } );
+$stat = Koha::Statistics->search()->next();
+is( $stat->type, 'invalid_item', 'Type set to invalid_item' );
+is( $stat->associatedborrower, '-1', 'Associated library id set correctly' );
+is( $stat->other, 'InvalidBarcode', 'Invalid barcode is set correctly' );
+is( $stat->branch, $branchcode, 'Branchcode is set correctly' );
+
 
 #End transaction
 $dbh->rollback;
