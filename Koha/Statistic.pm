@@ -28,7 +28,7 @@ use Koha::PseudonymizedTransaction;
 use base qw(Koha::Object);
 
 our @allowed_accounts_types     = qw( writeoff payment );
-our @allowed_circulation_types  = qw( renew issue localuse return onsite_checkout recall item_found item_lost );
+our @allowed_circulation_types  = qw( renew issue localuse return onsite_checkout recall item_found item_lost invalid_item invalid_patron);
 our @mandatory_accounts_keys    = qw( type branch borrowernumber value );    # note that amount is mapped to value
 our @mandatory_circulation_keys = qw( type branch borrowernumber itemnumber ccode itemtype );
 

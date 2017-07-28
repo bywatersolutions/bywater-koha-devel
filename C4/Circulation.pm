@@ -63,6 +63,7 @@ use Koha::SearchEngine::Indexer;
 use Koha::Exceptions::Checkout;
 use Koha::Plugins;
 use Koha::Recalls;
+use Koha::Statistics;
 use Carp qw( carp );
 use List::MoreUtils qw( any );
 use Scalar::Util qw( looks_like_number blessed );
@@ -778,6 +779,7 @@ sub CanBookBeIssued {
 
     # MANDATORY CHECKS - unless item exists, nothing else matters
     unless ( $item_object ) {
+        Koha::Statistics->log_invalid_item( { item => $barcode } );
         $issuingimpossible{UNKNOWN_BARCODE} = 1;
     }
     return ( \%issuingimpossible, \%needsconfirmation ) if %issuingimpossible;
@@ -2122,6 +2124,7 @@ sub AddReturn {
     # get information on item
     my $item = Koha::Items->find({ barcode => $barcode });
     unless ($item) {
+        Koha::Statistics->log_invalid_item( { item => $barcode } );
         return ( 0, { BadBarcode => $barcode } );    # no barcode means no item or borrower.  bail out.
     }
 

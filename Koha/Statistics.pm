@@ -21,6 +21,7 @@ use Modern::Perl;
 use Koha::Database;
 
 use Koha::Statistic;
+use Koha::DateUtils qw(dt_from_string);
 
 use base qw(Koha::Objects);
 
@@ -32,9 +33,79 @@ Koha::Statistics - Koha Statistic Object set class
 
 =head2 Class Methods
 
+=head3 log_invalid_patron
+
+Koha::Statistics->log_invalid_patron( { patron => $cardnumber } );
+
 =cut
 
-=head3 type
+sub log_invalid_patron {
+    return unless C4::Context->preference('LogInvalidPatrons');
+
+    my ( $class, $params ) = @_;
+
+    my $patron = $params->{patron};
+
+    return $class->_log_invalid_value(
+        {
+            type  => 'patron',
+            value => $patron
+        }
+    );
+}
+
+=head3 log_invalid_item
+
+Koha::Statistics->log_invalid_item( { item => $barcode } );
+
+=cut
+
+sub log_invalid_item {
+    return unless C4::Context->preference('LogInvalidItems');
+
+    my ( $class, $params ) = @_;
+
+    my $item = $params->{item};
+
+    return $class->_log_invalid_value(
+        {
+            type  => 'item',
+            value => $item
+        }
+    );
+}
+
+=head3 invalid_value
+
+Koha::Statistics->invalid_value( { type => 'patron', value => $patron } );
+
+=cut
+
+sub _log_invalid_value {
+    my ( $class, $params ) = @_;
+
+    my $type  = $params->{type};
+    my $value = $params->{value};
+
+    my $branch = C4::Context->userenv ? C4::Context->userenv->{branch} : undef;
+    my $dt     = dt_from_string();
+    my $borrowernumber = C4::Context->userenv->{'number'};
+
+    return Koha::Statistic->new(
+        {
+            type           => "invalid_$type",
+            other          => $value,
+            itemnumber     => "",
+            ccode          => "",
+            itemtype       => "",
+            datetime       => $dt,
+            branch         => $branch,
+            borrowernumber => $borrowernumber
+        }
+    )->store();
+}
+
+=head3 _type
 
 =cut
 

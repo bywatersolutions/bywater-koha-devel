@@ -20,6 +20,18 @@ Circulation:
             - the automatic redirection to another patron when a patron barcode is scanned instead of a book.
             - This should not be enabled if you have overlapping patron and book barcodes.
         -
+            - pref: LogInvalidPatrons
+              choices:
+                  yes: Log
+                  no: Do not log
+            - scanned invalid patron identifiers as statistics.
+        -
+            - pref: LogInvalidItems
+              choices:
+                  yes: Log
+                  no: Do not log
+            - scanned invalid item identifiers as statistics.
+        -
             - pref: PatronAutoComplete
               choices:
                   1: Try

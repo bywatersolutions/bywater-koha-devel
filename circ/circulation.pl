@@ -55,6 +55,7 @@ use Koha::SearchEngine;
 use Koha::SearchEngine::Search;
 use Koha::Patron::Modifications;
 use Koha::Token;
+use Koha::Statistics;
 
 use List::MoreUtils qw( uniq );
 
@@ -240,6 +241,7 @@ if ($findborrower) {
     if ( $patron ) {
         $borrowernumber = $patron->borrowernumber;
     } else {
+        Koha::Statistics->log_invalid_patron( { patron => $findborrower } );
         print $query->redirect( "/cgi-bin/koha/members/member.pl?quicksearch=1&circsearch=1&searchmember=" . uri_escape_utf8($findborrower) );
         exit;
     }

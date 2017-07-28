@@ -131,6 +131,7 @@ my $patron;
 if ( $patronid ) {
     Koha::Plugins->call( 'patron_barcode_transform', \$patronid );
     $patron = Koha::Patrons->find( { cardnumber => $patronid } );
+    Koha::Statistics->log_invalid_patron( { patron => $patronid } ) unless $patron;
 }
 
 undef $jwt unless $patron;
@@ -142,8 +143,9 @@ my $return_only = 0;
 if ( $patron && $op eq "returnbook" && $allowselfcheckreturns ) {
     my $success = 1;
 
-
     my $item = Koha::Items->find( { barcode => $barcode } );
+    Koha::Statistics->log_invalid_item( { item => $barcode } ) unless $item;
+
     if ( $success && C4::Context->preference("CircConfirmItemParts") ) {
         if ( defined($item)
             && $item->materials )
@@ -167,6 +169,7 @@ if ( $patron && $op eq "returnbook" && $allowselfcheckreturns ) {
 elsif ( $patron && ( $op eq 'checkout' ) ) {
 
     my $item = Koha::Items->find( { barcode => $barcode } );
+    Koha::Statistics->log_invalid_item( { item => $barcode } ) unless $item;
     my $impossible  = {};
     my $needconfirm = {};
     ( $impossible, $needconfirm ) = CanBookBeIssued(
@@ -277,6 +280,7 @@ elsif ( $patron && ( $op eq 'checkout' ) ) {
 
 if ( $patron && ( $op eq 'renew' ) ) {
     my $item = Koha::Items->find({ barcode => $barcode });
+    Koha::Statistics->log_invalid_item( { item => $barcode } ) unless $item;
 
     if ( $patron->checkouts->find( { itemnumber => $item->itemnumber } ) ) {
         my ($status,$renewerror) = CanBookBeRenewed( $patron, $item->checkout );

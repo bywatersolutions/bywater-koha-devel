@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Test::Exception;
 
 use C4::Context;
@@ -27,6 +27,8 @@ use Koha::Database;
 use Koha::Statistics;
 
 use t::lib::TestBuilder;
+use t::lib::Mocks;
+use Test::MockModule;
 
 our $schema  = Koha::Database->new->schema;
 our $builder = t::lib::TestBuilder->new;
@@ -159,3 +161,58 @@ sub insert_and_fetch {
 
     # FIXME discard_changes would be nicer, but we dont have a PK (yet)
 }
+
+subtest 'Log borrower cardnumbers and item barcodes which are not valid' => sub {
+    plan tests => 10;
+    $schema->storage->txn_begin;
+
+    #my $builder    = t::lib::TestBuilder->new;
+    my $library    = $builder->build( { source => 'Branch' } );
+    my $branchcode = $library->{branchcode};
+    my $context    = Test::MockModule->new('C4::Context');
+    $context->mock(
+        'userenv',
+        sub {
+            return {
+                flags  => 1,
+                id     => 'my_userid',
+                branch => $branchcode,
+                number => '-1',
+            };
+        }
+    );
+
+    # Test Koha::Statistic->log_invalid_patron
+    my $dbh = $schema->storage->dbh;
+    $dbh->do(q{DELETE FROM statistics});
+    t::lib::Mocks::mock_preference( "LogInvalidPatrons", 0 );
+    Koha::Statistics->log_invalid_patron( { patron => 'InvalidCardnumber' } );
+    is(
+        Koha::Statistics->search()->count(), 0,
+        'No stat line added if system preference LogInvalidPatrons is disabled'
+    );
+
+    t::lib::Mocks::mock_preference( "LogInvalidPatrons", 1 );
+    Koha::Statistics->log_invalid_patron( { patron => 'InvalidCardnumber' } );
+    my $stat = Koha::Statistics->search()->next();
+    is( $stat->type,           'invalid_patron',    'Type set to invalid_patron' );
+    is( $stat->borrowernumber, '-1',                'Associated library id set correctly' );
+    is( $stat->other,          'InvalidCardnumber', 'Invalid cardnumber is set correctly' );
+    is( $stat->branch,         $branchcode,         'Branchcode is set correctly' );
+
+    # Test Koha::Statistic->log_invalid_item
+    $dbh->do(q{DELETE FROM statistics});
+    t::lib::Mocks::mock_preference( "LogInvalidItems", 0 );
+    Koha::Statistics->log_invalid_item( { item => 'InvalidBarcode' } );
+    is( Koha::Statistics->search()->count(), 0, 'No stat line added if system preference LogInvalidItems is disabled' );
+
+    t::lib::Mocks::mock_preference( "LogInvalidItems", 1 );
+    Koha::Statistics->log_invalid_item( { item => 'InvalidBarcode' } );
+    $stat = Koha::Statistics->search()->next();
+    is( $stat->type,           'invalid_item',   'Type set to invalid_item' );
+    is( $stat->borrowernumber, '-1',             'Associated library id set correctly' );
+    is( $stat->other,          'InvalidBarcode', 'Invalid barcode is set correctly' );
+    is( $stat->branch,         $branchcode,      'Branchcode is set correctly' );
+
+    $schema->storage->txn_rollback;
+};
