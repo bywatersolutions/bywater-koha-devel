@@ -35,6 +35,7 @@ use C4::Output;
 use strict;
 use warnings;
 use CGI qw ( -utf8 );
+use Koha::InvoiceAdjustments;
 
 my $dbh      = C4::Context->dbh;
 my $input    = new CGI;
@@ -119,6 +120,11 @@ while (my $data = $sth->fetchrow_hashref) {
 }
 $sth->finish;
 
+my $adjustments = Koha::InvoiceAdjustments->search({budget_id => $bookfund, closedate => { '!=' => undef } }, { join => 'invoiceid' } );
+while ( my $adj = $adjustments->next ){
+    $total += $adj->adjustment;
+}
+
 $total = sprintf( "%.2f", $total );
 
 $template->param(
@@ -126,6 +132,7 @@ $template->param(
     spent => \@spent,
     subtotal => $subtotal,
     shipmentcosts => \@shipmentcosts,
+    adjustments => $adjustments,
     total => $total,
     fund_code => $fund_code
 );
