@@ -361,7 +361,12 @@ sub update_local {
     my $userid     = shift or croak "No userid";
     my $password   = shift or croak "No password";
     my $borrowerid = shift or croak "No borrowerid";
-    my $borrower   = shift or croak "No borrower record";
+    my $orig_bor   = shift or croak "No borrower record";
+
+    my $borrower = { %$orig_bor }; # clone for safety
+    foreach my $key ( %$borrower ) {
+        delete $borrower->{$key} if $mapping{$key}->{no_update}
+    }
 
     # skip extended patron attributes in 'borrowers' attribute update
     my @keys = keys %$borrower;
@@ -525,7 +530,7 @@ Example XML stanza for LDAP configuration in KOHA_CONF.
       <userid       is="uid"            ></userid>
       <password     is="userpassword"   ></password>
       <email        is="mail"           ></email>
-      <categorycode is="employeetype"   >PT</categorycode>
+      <categorycode is="employeetype"   no_update="1">PT</categorycode>
       <phone        is="telephonenumber"></phone>
     </mapping> 
   </ldapserver> 
@@ -534,7 +539,9 @@ Example XML stanza for LDAP configuration in KOHA_CONF.
 The <mapping> subelements establish the relationship between mysql fields and LDAP attributes. The element name
 is the column in mysql, with the "is" characteristic set to the LDAP attribute name.  Optionally, any content
 between the element tags is taken as the default value.  In this example, the default categorycode is "PT" (for
-patron).  
+patron).
+
+If the parameter 'no_update' is true, that element will only be set from the LDAP source for replicaation and not for updates.
 
 =head1 CONFIGURATION
 
