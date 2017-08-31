@@ -4,108 +4,42 @@
 <title>Koha &rsaquo; Patrons &rsaquo; Set permissions for [% surname %], [% firstname %]</title>
 <link rel="stylesheet" type="text/css" href="[% interface %]/[% theme %]/css/treeview/jquery.treeview.css"/>
 [% INCLUDE 'doc-head-close.inc' %]
-<script type="text/javascript" src="[% interface %]/lib/jquery/plugins/jquery.treeview.pack.js"></script>
-<!-- set up tree -->
+<link href="[% interface %]/lib/jquery/plugins/treetable/stylesheets/jquery.treetable.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="[% interface %]/lib/jquery/plugins/treetable/jquery.treetable.js"></script>
 <script type="text/javascript">
     $(document).ready(function() {
-        $("#permissionstree").treeview({animated: "fast", collapsed: true});
+        $('#permissions-table').treetable({
+            expandable: true
+        });
 
-        // Enforce Superlibrarian Privilege Mutual Exclusivity
-        if($('input[id="flag-0"]:checked').length){
-            if ($('input[name="flag"]:checked').length > 1){
-                alert(_("Inconsistency detected! The superlibrarian privilege is mutually exclusive of other privileges, as it includes them all. This patron's privileges will now be reset to include only superlibrarian."));
-            }
-
-            $('input[name="flag"]').each(function() {
-                if($(this).attr('id') != "flag-0"){
-                    $(this).prop('disabled', true);
-                    $(this).prop('checked', false);
-                }
-            });
-        }
-
-        $('input#flag-0').click(function() {
-            if($('input[id="flag-0"]:checked').length){
-                $('input[name="flag"]').each(function() {
-                    if($(this).attr('id') != "flag-0"){
-                        $(this).prop('disabled', true);
-                        $(this).prop('checked', false);
-                    }
-                });
-            }
-            else {
-                $('input[name="flag"]').each(function() {
-                    $(this).prop('disabled', false);
-                });
+        // Expand any parent permissions with children that are set
+        $('input[name="permission"][checked="checked"]').each(function() {
+            var id = $(this).data('parent');
+            if ( id ) {
+                $('#permissions-table').treetable('expandNode', id );
             }
         });
 
-        $(".flag").on("change",function(){
-            if( $(this).hasClass("parent") ){
-                toggleChildren(this);
-            } else {
-                toggleParent(this);
-            }
-        });
+        // Behavior that occurs when a checkbox is changed
+        $('input[name="permission"]').on('change', function(){
+            var id = $(this).closest('tr').attr('id');
 
-    });
-
-    // manage checking/unchecking parent permissions
-    var originalChildStates = {}; /* keep track of subpermission checkbox values
-                                     so that user can recover from accidentally
-                                     toggling a parent/module permission */
-    function selectChildren(parentInput) {
-        var childListId = parentInput.id + '-children';
-        var list = document.getElementById(childListId);
-        var children = [];
-        if (list) {
-            var inputs = list.getElementsByTagName('input');
-            for (var i = 0; i < inputs.length; i++) {
-                if (inputs[i].type == 'checkbox') {
-                    children.push(inputs[i]);
-                }
-            }
-            
-        } 
-        return children;
-    }
-
-    function toggleChildren(parentInput) {
-        var children = selectChildren(parentInput);
-        if (children.length == 0) {
-            return;
-        }
-        var checked = parentInput.checked;
-        if (checked && parentInput.parentNode.className == 'expandable') {
-            /* expand the tree */
-            $(".hitarea", parentInput.parentNode).click();
-        }
-        for (var i = 0; i < children.length; i++) {
-            if (checked) {
-                originalChildStates[children[i].id] = children[i].checked;
-                children[i].checked = checked;
-            } else {
-                if (children[i].id in originalChildStates) {
-                    children[i].checked = originalChildStates[children[i].id];
+            if ( id != 'superlibrarian' ) { // Standard behavior
+                if ( $(this).attr('checked') ) {
+                    $('#permissions-table').treetable('expandNode', id );
+                    $(`input[data-parent=${id}]`).attr('checked', 'checked' );
                 } else {
-                    children[i].checked = checked;
+                    $(`input[data-parent=${id}]`).attr('checked', null );
+                }
+            } else { // Superlibrarian behavior
+                if ( $(this).attr('checked') ) {
+                    $(`input[name="permission"][value!="superlibrarian"]`).attr('checked', null ).attr('disabled', 'disabled' );
+                } else {
+                    $(`input[name="permission"][value!="superlibrarian"]`).attr('disabled', null );
                 }
             }
-        }
-    }
-
-    function toggleParent(childInput) {
-        originalChildStates[childInput.id] = childInput.checked;
-        if (childInput.checked) {
-            return;
-        }
-        var parentId = childInput.parentNode.parentNode.id.replace(/-children$/, '');;
-        var parentInput = document.getElementById(parentId);
-        if (parentInput) {  
-            parentInput.checked = false;
-        }
-    }
-
+        });
+    });
 </script>
 </head>
 <body id="pat_member-flags" class="pat">
@@ -115,64 +49,71 @@
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/members/members-home.pl">Patrons</a>  &rsaquo; Set permissions for [% surname %], [% firstname %]</div>
 
 <div id="doc3" class="yui-t2">
-   
-   <div id="bd">
-	<div id="yui-main">
-	<div class="yui-b">
-[% INCLUDE 'members-toolbar.inc' %]
+    <div id="bd">
+        <div id="yui-main">
+        <div class="yui-b">
+            [% INCLUDE 'members-toolbar.inc' %]
 
-<form method="post" action="/cgi-bin/koha/members/member-flags.pl">
-    <input type="hidden" name="csrf_token" value="[% csrf_token %]" />
-    <input type="hidden" name="member" id="borrowernumber" value="[% borrowernumber %]" />
-    <input type="hidden" name="newflags" value="1" />
-    <h1>Set permissions for [% surname %], [% firstname %]</h1>
-    <!-- <ul id="permissionstree"><li class="root">All privileges<ul> -->
-    <ul id="permissionstree" class="treeview-grey">
-        <!-- <li class="folder-close">One level down<ul> -->
-    [% FOREACH loo IN loop %]
-        [% IF ( loo.expand ) %]
-        <li class="open">
-        [% ELSE %]
-        <li>
-        [% END %]
-			[% IF ( loo.checked ) %]
-                <input type="checkbox" class="flag parent" id="flag-[% loo.bit %]" name="flag" value="[% loo.flag %]" checked="checked" />
-			[% ELSE %]
-                <input type="checkbox" class="flag parent" id="flag-[% loo.bit %]" name="flag" value="[% loo.flag %]" />
-			[% END %]
-                <label class="permissioncode" for="flag-[% loo.bit %]">[% loo.flag %]</label>
-                <span class="permissiondesc">[% PROCESS main_permissions name=loo.flag %]</span>
-            [% IF ( loo.sub_perm_loop ) %]
-                <ul id="flag-[% loo.bit %]-children">
-                    [% FOREACH sub_perm_loo IN loo.sub_perm_loop %]
-                        <li>
-			            [% IF ( sub_perm_loo.checked ) %]
-                            <input type="checkbox" class="flag child" id="[% sub_perm_loo.id %]" name="flag" value="[% sub_perm_loo.perm %]" checked="checked" />
-			            [% ELSE %]
-                            <input type="checkbox" class="flag child" id="[% sub_perm_loo.id %]" name="flag" value="[% sub_perm_loo.perm %]" />
-			            [% END %]
-                    <label class="permissioncode" for="[% sub_perm_loo.id %]">[% sub_perm_loo.code %]</label>
-                             <span class="permissiondesc">[% PROCESS sub_permissions name=sub_perm_loo.code %]</span>
-                        </li>
+            <form method="post" action="/cgi-bin/koha/members/member-flags.pl">
+                <input type="hidden" name="csrf_token" value="[% csrf_token %]" />
+                <input type="hidden" name="borrowernumber" id="borrowernumber" value="[% borrowernumber %]" />
+                <input type="hidden" name="set_permissions" value="1" />
+                <h1>Set permissions for [% surname %], [% firstname %]</h1>
+
+                <table id="permissions-table">
+                    <tr data-tt-id="superlibrarian" id="superlibrarian">
+                        <td>
+                            [% IF patron.has_permission( p.code ) %]
+                                <input type="checkbox" name="permission" value="superlibrarian" checked="checked"/>
+                            [% ELSE %]
+                                <input type="checkbox" name="permission" value="superlibrarian"/>
+                            [% END %]
+                        </td>
+                        <td>superlibrarian</td>
+                        <td><span class="permissiondesc">[% PROCESS permissions name='superlibrarian' %]</span>
+                    </tr>
+                    [% FOREACH p IN permissions %]
+                        [% NEXT IF p.code == 'superlibrarian' %]
+                        <tr data-tt-id="[% p.code %]" id="[% p.code %]">
+                            <td>
+                                [% IF patron.has_permission( p.code ) %]
+                                    <input type="checkbox" name="permission" value="[% p.code %]" checked="checked"/>
+                                [% ELSE %]
+                                    <input type="checkbox" name="permission" value="[% p.code %]"/>
+                                [% END %]
+                            </td>
+                            <td>[% p.code %]</td>
+                            <td><span class="permissiondesc">[% PROCESS permissions name=p.code %]</span>
+                        </tr>
+
+                        [% FOREACH s IN p.subpermissions() %]
+                            <tr data-tt-parent-id="[% p.code %]" data-tt-id="[% s.code %]" id="[% s.code %]">
+                                <td>
+                                    [% IF patron.has_permission( s.code ) %]
+                                        <input type="checkbox" name="permission" value="[% s.code %]" checked="checked" data-parent="[% p.code %]"/>
+                                    [% ELSE %]
+                                        <input type="checkbox" name="permission" value="[% s.code %]" data-parent="[% p.code %]"/>
+                                    [% END %]
+                                </td>
+                                <td>[% s.code %]</td>
+                                <td><span class="permissiondesc">[% PROCESS permissions name=s.code %]</span>
+                            </tr>
+                        [% END %]
                     [% END %]
-                </ul>
-                </li>
-            [% ELSE %]
-                </li>
-			[% END %]
-    [% END %]
-        <!-- </ul></li> -->
-    <!-- </ul></li></ul> -->
-    </ul>
+                </table>
 
-<fieldset class="action"><input type="submit" value="Save" /> <a class="cancel" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrowernumber %]">Cancel</a></fieldset>
+                <input type="hidden" name="borrowernumber" value="[% borrowernumber %]" />
 
-</form>
-</div>
-</div>
+                <fieldset class="action">
+                    <input type="submit" value="Save" />
+                    <a class="cancel" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrowernumber %]">Cancel</a>
+                </fieldset>
+            </form>
+        </div>
+    </div>
 
-<div class="yui-b">
-[% INCLUDE 'circ-menu.inc' %]
-</div>
+    <div class="yui-b">
+    [% INCLUDE 'circ-menu.inc' %]
+    </div>
 </div>
 [% INCLUDE 'intranet-bottom.inc' %]

@@ -36,6 +36,7 @@ use Koha::AuthUtils qw(get_script_name hash_password);
 use Koha::Libraries;
 use Koha::LibraryCategories;
 use Koha::Patrons;
+use Koha::Permissions;
 use POSIX qw/strftime/;
 use List::MoreUtils qw/ any /;
 use Encode qw( encode is_utf8);
@@ -57,7 +58,6 @@ BEGIN {
     @EXPORT_OK = qw(&check_api_auth &get_session &check_cookie_auth &checkpw &checkpw_internal &checkpw_hash
       &get_all_subpermissions &get_user_subpermissions
     );
-    %EXPORT_TAGS = ( EditPermissions => [qw(get_all_subpermissions get_user_subpermissions)] );
     $ldap      = C4::Context->config('useldapserver') || 0;
     $cas       = C4::Context->preference('casAuthentication');
     $shib      = C4::Context->config('useshibboleth') || 0;
@@ -1038,7 +1038,7 @@ sub checkauth {
 
                 if ( $return == 1 ) {
                     my $select = "
-                    SELECT borrowernumber, firstname, surname, flags, borrowers.branchcode,
+                    SELECT borrowernumber, firstname, surname, borrowers.branchcode,
                     branches.branchname    as branchname,
                     branches.branchprinter as branchprinter,
                     email
@@ -1061,10 +1061,10 @@ sub checkauth {
                         }
                     }
                     if ( $sth->rows ) {
-                        ( $borrowernumber, $firstname, $surname, $userflags,
+                        ( $borrowernumber, $firstname, $surname, 
                             $branchcode, $branchname, $branchprinter, $emailaddress ) = $sth->fetchrow;
                         $debug and print STDERR "AUTH_3 results: " .
-                          "$cardnumber,$borrowernumber,$userid,$firstname,$surname,$userflags,$branchcode,$emailaddress\n";
+                          "$cardnumber,$borrowernumber,$userid,$firstname,$surname,$branchcode,$emailaddress\n";
                     } else {
                         print STDERR "AUTH_3: no results for userid='$userid', cardnumber='$cardnumber'.\n";
                     }
@@ -1116,7 +1116,6 @@ sub checkauth {
                     $session->param( 'surname',      $surname );
                     $session->param( 'branch',       $branchcode );
                     $session->param( 'branchname',   $branchname );
-                    $session->param( 'flags',        $userflags );
                     $session->param( 'emailaddress', $emailaddress );
                     $session->param( 'ip',           $session->remote_addr() );
                     $session->param( 'lasttime',     time() );
@@ -1854,35 +1853,35 @@ sub checkpw_internal {
 
     my $sth =
       $dbh->prepare(
-        "select password,cardnumber,borrowernumber,userid,firstname,surname,borrowers.branchcode,branches.branchname,flags from borrowers join branches on borrowers.branchcode=branches.branchcode where userid=?"
+        "select password,cardnumber,borrowernumber,userid,firstname,surname,borrowers.branchcode,branches.branchname from borrowers join branches on borrowers.branchcode=branches.branchcode where userid=?"
       );
     $sth->execute($userid);
     if ( $sth->rows ) {
         my ( $stored_hash, $cardnumber, $borrowernumber, $userid, $firstname,
-            $surname, $branchcode, $branchname, $flags )
+            $surname, $branchcode, $branchname )
           = $sth->fetchrow;
 
         if ( checkpw_hash( $password, $stored_hash ) ) {
 
             C4::Context->set_userenv( "$borrowernumber", $userid, $cardnumber,
-                $firstname, $surname, $branchcode, $branchname, $flags ) unless $no_set_userenv;
+                $firstname, $surname, $branchcode, $branchname ) unless $no_set_userenv;
             return 1, $cardnumber, $userid;
         }
     }
     $sth =
       $dbh->prepare(
-        "select password,cardnumber,borrowernumber,userid,firstname,surname,borrowers.branchcode,branches.branchname,flags from borrowers join branches on borrowers.branchcode=branches.branchcode where cardnumber=?"
+        "select password,cardnumber,borrowernumber,userid,firstname,surname,borrowers.branchcode,branches.branchname from borrowers join branches on borrowers.branchcode=branches.branchcode where cardnumber=?"
       );
     $sth->execute($userid);
     if ( $sth->rows ) {
         my ( $stored_hash, $cardnumber, $borrowernumber, $userid, $firstname,
-            $surname, $branchcode, $branchname, $flags )
+            $surname, $branchcode, $branchname )
           = $sth->fetchrow;
 
         if ( checkpw_hash( $password, $stored_hash ) ) {
 
             C4::Context->set_userenv( $borrowernumber, $userid, $cardnumber,
-                $firstname, $surname, $branchcode, $branchname, $flags ) unless $no_set_userenv;
+                $firstname, $surname, $branchcode, $branchname ) unless $no_set_userenv;
             return 1, $cardnumber, $userid;
         }
     }
@@ -1915,45 +1914,37 @@ sub checkpw_hash {
 
 =head2 getuserflags
 
-    my $authflags = getuserflags($flags, $userid, [$dbh]);
+    my $authflags = getuserflags($userid);
 
 Translates integer flags into permissions strings hash.
 
-C<$flags> is the integer userflags value ( borrowers.userflags )
 C<$userid> is the members.userid, used for building subpermissions
-C<$authflags> is a hashref of permissions
 
 =cut
 
 sub getuserflags {
-    my $flags  = shift;
-    my $userid = shift;
-    my $dbh    = @_ ? shift : C4::Context->dbh;
-    my $userflags;
-    {
-        # I don't want to do this, but if someone logs in as the database
-        # user, it would be preferable not to spam them to death with
-        # numeric warnings. So, we make $flags numeric.
-        no warnings 'numeric';
-        $flags += 0;
-    }
-    my $sth = $dbh->prepare("SELECT bit, flag, defaulton FROM userflags");
-    $sth->execute;
+    my $params = shift;
 
-    while ( my ( $bit, $flag, $defaulton ) = $sth->fetchrow ) {
-        if ( ( $flags & ( 2**$bit ) ) || $defaulton ) {
-            $userflags->{$flag} = 1;
+    my $userid               = $params->{userid};
+    my $force_subpermissions = $params->{force_subpermissions};
+
+    my $patron = Koha::Patrons->find( { userid => $userid } );
+    return unless $patron;
+
+    my $userflags;
+    my @permissions = Koha::Permissions->search( { parent => undef } );
+    foreach my $p (@permissions) {
+        my $patron_has = $p->patron_has( $patron->id );
+
+        if ( $patron_has && !$force_subpermissions ) {
+            $userflags->{ $p->code() } = $p->patron_has( $patron->id );
         }
         else {
-            $userflags->{$flag} = 0;
+            my @subpermissions = $p->subpermissions;
+            foreach my $sp ( $p->subpermissions ) {
+                $userflags->{ $p->code } = $sp->patron_has( $patron->id );
+            }
         }
-    }
-
-    # get subpermissions and merge with top-level permissions
-    my $user_subperms = get_user_subpermissions($userid);
-    foreach my $module ( keys %$user_subperms ) {
-        next if $userflags->{$module} == 1;    # user already has permission for everything in this module
-        $userflags->{$module} = $user_subperms->{$module};
     }
 
     return $userflags;
@@ -1987,20 +1978,7 @@ necessary to check borrowers.flags.
 sub get_user_subpermissions {
     my $userid = shift;
 
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare( "SELECT flag, user_permissions.code
-                             FROM user_permissions
-                             JOIN permissions USING (module_bit, code)
-                             JOIN userflags ON (module_bit = bit)
-                             JOIN borrowers USING (borrowernumber)
-                             WHERE userid = ?" );
-    $sth->execute($userid);
-
-    my $user_perms = {};
-    while ( my $perm = $sth->fetchrow_hashref ) {
-        $user_perms->{ $perm->{'flag'} }->{ $perm->{'code'} } = 1;
-    }
-    return $user_perms;
+    return getuserflags( { userid => $userid, force_subpermissions => 1 } );
 }
 
 =head2 get_all_subpermissions
@@ -2008,25 +1986,22 @@ sub get_user_subpermissions {
   my $perm_hashref = get_all_subpermissions();
 
 Returns a hashref of hashrefs defining all specific
-permissions currently defined.  The return value
-has the same structure as that of C<get_user_subpermissions>,
-except that the innermost hash value is the description
-of the subpermission.
+permissions currently defined.  The return value has
+the same basic structure as that of C<get_user_subpermissions>
 
 =cut
 
 sub get_all_subpermissions {
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare( "SELECT flag, code
-                             FROM permissions
-                             JOIN userflags ON (module_bit = bit)" );
-    $sth->execute();
+    my $permissions;
 
-    my $all_perms = {};
-    while ( my $perm = $sth->fetchrow_hashref ) {
-        $all_perms->{ $perm->{'flag'} }->{ $perm->{'code'} } = 1;
+    my @permissions = Koha::Permissions->search({ parent => undef });
+    foreach my $p ( @permissions ) {
+        foreach my $sp ( $p->subpermissions ) {
+            $permissions->{ $p->code }->{ $sp->code } = 1;
+        }
     }
-    return $all_perms;
+
+    return $permissions;
 }
 
 =head2 haspermission
@@ -2042,10 +2017,8 @@ Returns member's flags or 0 if a permission is not met.
 
 sub haspermission {
     my ( $userid, $flagsrequired ) = @_;
-    my $sth = C4::Context->dbh->prepare("SELECT flags FROM borrowers WHERE userid=?");
-    $sth->execute($userid);
-    my $row = $sth->fetchrow();
-    my $flags = getuserflags( $row, $userid );
+
+    my $flags = getuserflags( { userid => $userid } );
     if ( $userid eq C4::Context->config('user') ) {
 
         # Super User Account from /etc/koha.conf

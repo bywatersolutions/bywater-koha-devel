@@ -841,7 +841,7 @@ sub CanUserManageBasket {
         my ($flags) = $sth->fetchrow_array;
         $sth->finish;
 
-        $userflags = C4::Auth::getuserflags($flags, $borrower->{userid}, $dbh);
+        $userflags = C4::Auth::getuserflags( { userid => $borrower->{userid} });
     }
 
     unless ($userflags->{superlibrarian}

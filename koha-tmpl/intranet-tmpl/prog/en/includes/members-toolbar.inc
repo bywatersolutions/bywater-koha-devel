@@ -178,7 +178,7 @@ function searchToHold(){
                     <li class="disabled"><a data-toggle="tooltip" data-placement="left" title="You are not authorized to renew patrons" id="renewpatron" href="#">Renew patron</a></li>
                 [% END %]
                 [% IF ( CAN_user_permissions ) %]
-                    <li><a id="patronflags" href="/cgi-bin/koha/members/member-flags.pl?member=[% borrowernumber %]">Set permissions</a></li>
+                    <li><a id="patronflags" href="/cgi-bin/koha/members/member-flags.pl?borrowernumber=[% borrowernumber %]">Set permissions</a></li>
                 [% ELSE %]
                     <li class="disabled"><a data-toggle="tooltip" data-placement="left" title="You are not authorized to set permissions" id="patronflags" href="#">Set permissions</a></li>
                 [% END %]

@@ -14,11 +14,7 @@ ALTER TABLE permissions ADD FOREIGN KEY ( parent ) REFERENCES permissions ( code
 
 ALTER TABLE user_permissions ADD CONSTRAINT user_permissions_ibfk_2 FOREIGN KEY (code) REFERENCES permissions(code);
 
-INSERT INTO permissions ( parent, code, description ) VALUES ( NULL, 'superlibrarian', 'Access to all librarian functions' );
-
-INSERT INTO permissions ( parent, code, description ) 
-SELECT 'superlibrarian', flag, flagdesc FROM userflags
- WHERE flag != 'superlibrarian';
+INSERT INTO permissions ( parent, code, description ) SELECT NULL, flag, flagdesc FROM userflags;
 
 UPDATE permissions LEFT JOIN userflags ON ( userflags.bit = permissions.module_bit ) SET parent = flag WHERE flag != 'superlibrarian';
 

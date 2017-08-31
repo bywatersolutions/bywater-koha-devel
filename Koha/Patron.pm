@@ -32,6 +32,7 @@ use Koha::Old::Checkouts;
 use Koha::Patron::Categories;
 use Koha::Patron::HouseboundProfile;
 use Koha::Patron::HouseboundRole;
+use Koha::Patron::Permissions;
 use Koha::Patron::Images;
 use Koha::Patrons;
 use Koha::Virtualshelves;
@@ -653,6 +654,55 @@ sub account_locked {
           and $self->login_attempts
           and $self->login_attempts >= $FailedLoginAttempts )? 1 : 0;
 }
+
+=head3 has_permission
+
+my $bool = $patron->has_permission( $permission_code );
+
+=cut
+
+sub has_permission {
+    my ( $self, $code ) = @_;
+
+    return Koha::Patron::Permissions->find(
+        {
+            borrowernumber => $self->id,
+            code           => $code,
+        }
+    ) ? 1 : 0;
+}
+
+=head3 set_permissions
+
+$patron->set_permissions( { permissions => \@permissions } );
+
+Given a list of permissions, set the patron to those and only those permissions
+
+=cut
+
+sub set_permissions {
+    my ( $self, $params ) = @_;
+
+    my @permissions = @{ $params->{permissions} };
+
+    $self->_result->result_source->schema->txn_do(
+        sub {
+            Koha::Patron::Permissions->search( { borrowernumber => $self->id } )
+              ->delete();
+
+            Koha::Patron::Permission->new(
+                {
+                    borrowernumber => $self->id,
+                    code           => $_
+                }
+              )->store()
+              for @permissions;
+        }
+    );
+
+    return $self;
+}
+
 
 =head3 type
 
