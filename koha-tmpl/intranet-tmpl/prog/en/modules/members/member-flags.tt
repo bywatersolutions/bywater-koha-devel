@@ -6,6 +6,43 @@
 <title>Koha &rsaquo; Patrons &rsaquo; Set permissions for [% patron.surname %], [% patron.firstname %]</title>
 [% Asset.css("css/treeview/jquery.treeview.css") %]
 [% INCLUDE 'doc-head-close.inc' %]
+<link href="[% interface %]/lib/jquery/plugins/treetable/stylesheets/jquery.treetable.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="[% interface %]/lib/jquery/plugins/treetable/jquery.treetable.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#permissions-table').treetable({
+            expandable: true
+        });
+
+        // Expand any parent permissions with children that are set
+        $('input[name="permission"][checked="checked"]').each(function() {
+            var id = $(this).data('parent');
+            if ( id ) {
+                $('#permissions-table').treetable('expandNode', id );
+            }
+        });
+
+        // Behavior that occurs when a checkbox is changed
+        $('input[name="permission"]').on('change', function(){
+            var id = $(this).closest('tr').attr('id');
+
+            if ( id != 'superlibrarian' ) { // Standard behavior
+                if ( $(this).attr('checked') ) {
+                    $('#permissions-table').treetable('expandNode', id );
+                    $(`input[data-parent=${id}]`).attr('checked', 'checked' );
+                } else {
+                    $(`input[data-parent=${id}]`).attr('checked', null );
+                }
+            } else { // Superlibrarian behavior
+                if ( $(this).attr('checked') ) {
+                    $(`input[name="permission"][value!="superlibrarian"]`).attr('checked', null ).attr('disabled', 'disabled' );
+                } else {
+                    $(`input[name="permission"][value!="superlibrarian"]`).attr('disabled', null );
+                }
+            }
+        });
+    });
+</script>
 </head>
 
 <body id="pat_member-flags" class="pat">
@@ -15,74 +52,72 @@
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/members/members-home.pl">Patrons</a>  &rsaquo; Set permissions for [% patron.surname %], [% patron.firstname %]</div>
 
 <div id="doc3" class="yui-t2">
-   
-   <div id="bd">
-	<div id="yui-main">
-	<div class="yui-b">
-[% INCLUDE 'members-toolbar.inc' %]
+    <div id="bd">
+        <div id="yui-main">
+        <div class="yui-b">
+            [% INCLUDE 'members-toolbar.inc' %]
 
-<form method="post" action="/cgi-bin/koha/members/member-flags.pl">
-    <input type="hidden" name="csrf_token" value="[% csrf_token %]" />
-    <input type="hidden" name="member" id="borrowernumber" value="[% patron.borrowernumber %]" />
-    <input type="hidden" name="newflags" value="1" />
-    <h1>Set permissions for [% patron.surname %], [% patron.firstname %]</h1>
-    <!-- <ul id="permissionstree"><li class="root">All privileges<ul> -->
-    <ul id="permissionstree" class="treeview-grey">
-        <!-- <li class="folder-close">One level down<ul> -->
-    [% FOREACH loo IN loop %]
-        [% IF ( loo.expand ) %]
-        <li class="open">
-        [% ELSE %]
-        <li>
-        [% END %]
-			[% IF ( loo.checked ) %]
-          [% IF disable_superlibrarian_privs && loo.bit == 0 %]
-              <input type="checkbox" disabled="disabled" class="flag parent superlib" id="flag-[% loo.bit %]_disabled" name="flag" value="[% loo.flag %]" checked="checked" title="The system preference ProtectSuperlibrarianPrivileges is enabled" />
-              <input type="hidden" id="flag-[% loo.bit %]" name="flag" value="[% loo.flag %]" >
-          [% ELSE %]
-              <input type="checkbox" class="flag parent" id="flag-[% loo.bit %]" name="flag" value="[% loo.flag %]" checked="checked" />
-          [% END %]
-			[% ELSE %]
-          [% IF disable_superlibrarian_privs && loo.bit == 0 %]
-              <input type="checkbox" disabled="disabled" class="flag parent" id="flag-[% loo.bit %]_disabled" name="flag" value="[% loo.flag %]" title="The system preference ProtectSuperlibrarianPrivileges is enabled" />
-          [% ELSE %]
-              <input type="checkbox" class="flag parent" id="flag-[% loo.bit %]" name="flag" value="[% loo.flag %]" />
-          [% END %]
-			[% END %]
-                <label class="permissioncode" for="flag-[% loo.bit %]">[% loo.flag %]</label>
-                <span class="permissiondesc">[% PROCESS main_permissions name=loo.flag %]</span>
-            [% IF ( loo.sub_perm_loop ) %]
-                <ul id="flag-[% loo.bit %]-children">
-                    [% FOREACH sub_perm_loo IN loo.sub_perm_loop %]
-                        <li>
-			            [% IF ( sub_perm_loo.checked ) %]
-                            <input type="checkbox" class="flag child" id="[% sub_perm_loo.id %]" name="flag" value="[% sub_perm_loo.perm %]" checked="checked" />
-			            [% ELSE %]
-                            <input type="checkbox" class="flag child" id="[% sub_perm_loo.id %]" name="flag" value="[% sub_perm_loo.perm %]" />
-			            [% END %]
-                    <label class="permissioncode" for="[% sub_perm_loo.id %]">[% sub_perm_loo.code %]</label>
-                             <span class="permissiondesc">[% PROCESS sub_permissions name=sub_perm_loo.code %]</span>
-                        </li>
+            <form method="post" action="/cgi-bin/koha/members/member-flags.pl">
+                <input type="hidden" name="csrf_token" value="[% csrf_token %]" />
+                <input type="hidden" name="borrowernumber" id="borrowernumber" value="[% borrowernumber %]" />
+                <input type="hidden" name="set_permissions" value="1" />
+                <h1>Set permissions for [% surname %], [% firstname %]</h1>
+
+                <table id="permissions-table">
+                    <tr data-tt-id="superlibrarian" id="superlibrarian">
+                        <td>
+                            [% IF patron.has_permission( p.code ) %]
+                                <input type="checkbox" name="permission" value="superlibrarian" checked="checked"/>
+                            [% ELSE %]
+                                <input type="checkbox" name="permission" value="superlibrarian"/>
+                            [% END %]
+                        </td>
+                        <td>superlibrarian</td>
+                        <td><span class="permissiondesc">[% PROCESS permissions name='superlibrarian' %]</span>
+                    </tr>
+                    [% FOREACH p IN permissions %]
+                        [% NEXT IF p.code == 'superlibrarian' %]
+                        <tr data-tt-id="[% p.code %]" id="[% p.code %]">
+                            <td>
+                                [% IF patron.has_permission( p.code ) %]
+                                    <input type="checkbox" name="permission" value="[% p.code %]" checked="checked"/>
+                                [% ELSE %]
+                                    <input type="checkbox" name="permission" value="[% p.code %]"/>
+                                [% END %]
+                            </td>
+                            <td>[% p.code %]</td>
+                            <td><span class="permissiondesc">[% PROCESS permissions name=p.code %]</span>
+                        </tr>
+
+                        [% FOREACH s IN p.subpermissions() %]
+                            <tr data-tt-parent-id="[% p.code %]" data-tt-id="[% s.code %]" id="[% s.code %]">
+                                <td>
+                                    [% IF patron.has_permission( s.code ) %]
+                                        <input type="checkbox" name="permission" value="[% s.code %]" checked="checked" data-parent="[% p.code %]"/>
+                                    [% ELSE %]
+                                        <input type="checkbox" name="permission" value="[% s.code %]" data-parent="[% p.code %]"/>
+                                    [% END %]
+                                </td>
+                                <td>[% s.code %]</td>
+                                <td><span class="permissiondesc">[% PROCESS permissions name=s.code %]</span>
+                            </tr>
+                        [% END %]
                     [% END %]
-                </ul>
-                </li>
-            [% ELSE %]
-                </li>
-			[% END %]
-    [% END %]
-        <!-- </ul></li> -->
-    <!-- </ul></li></ul> -->
-    </ul>
+                </table>
 
-<fieldset class="action"><input type="submit" value="Save" /> <a class="cancel" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% patron.borrowernumber %]">Cancel</a></fieldset>
+                <input type="hidden" name="borrowernumber" value="[% borrowernumber %]" />
 
-</form>
-</div>
-</div>
+                <fieldset class="action">
+                    <input type="submit" value="Save" />
+                    <a class="cancel" href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrowernumber %]">Cancel</a>
+                </fieldset>
+            </form>
+        </div>
+    </div>
 
-<div class="yui-b">
-[% INCLUDE 'circ-menu.inc' %]
-</div>
+    <div class="yui-b">
+    [% INCLUDE 'circ-menu.inc' %]
+    </div>
 </div>
 
 [% MACRO jsinclude BLOCK %]

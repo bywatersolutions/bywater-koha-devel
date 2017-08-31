@@ -1,4 +1,4 @@
-[%- BLOCK main_permissions -%]
+[%- BLOCK permissions -%]
     [% SWITCH name %]
     [%- CASE 'superlibrarian' -%]<span>Access to all librarian functions</span>
     [%- CASE 'circulate' -%]<span>Check out and check in items</span>
@@ -22,11 +22,6 @@
     [%- CASE 'clubs' -%]<span>Patron clubs</span>
     [%- CASE 'ill' -%]<span>Create and modify Interlibrary loan requests</span>
     [%- CASE 'self_check' -%]<span>Self check modules</span>
-    [%- END -%]
-[%- END -%]
-
-[%- BLOCK sub_permissions -%]
-  [% SWITCH name %]
     [%- CASE 'circulate_remaining_permissions' -%]<span>Remaining circulation permissions</span>
     [%- CASE 'force_checkout' -%]<span>Force checkout if a limitation exists</span>
     [%- CASE 'manage_restrictions' -%]<span>Manage restrictions for accounts</span>

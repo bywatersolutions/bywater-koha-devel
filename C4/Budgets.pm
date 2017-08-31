@@ -971,8 +971,7 @@ sub CanUserUseBudget {
     return 0 unless ($borrower and $budget);
 
     if (not defined $userflags) {
-        $userflags = C4::Auth::getuserflags($borrower->{flags},
-            $borrower->{userid});
+        $userflags = C4::Auth::getuserflags( { userid => $borrower->{userid} } );
     }
 
     unless ($userflags->{superlibrarian}

@@ -43,6 +43,7 @@ use Koha::DateUtils qw(dt_from_string output_pref);
 use Koha::Acquisition::Currencies;
 use Koha::Patron::Categories;
 use Koha::Patrons;
+use Koha::Patron::Permissions;
 use Koha::Caches;
 use Koha::Config::SysPrefs;
 use Koha::Illrequest::Config;
@@ -414,21 +415,14 @@ if (  C4::Context->preference('WebBasedSelfCheck')
       and C4::Context->preference('AutoSelfCheckAllowed')
 ) {
     my $userid = C4::Context->preference('AutoSelfCheckID');
-    my $all_permissions = C4::Auth::get_user_subpermissions( $userid );
-    my ( $has_self_checkout_perm, $has_other_permissions );
-    while ( my ( $module, $permissions ) = each %$all_permissions ) {
-        if ( $module eq 'self_check' ) {
-            while ( my ( $permission, $flag ) = each %$permissions ) {
-                if ( $permission eq 'self_checkout_module' ) {
-                    $has_self_checkout_perm = 1;
-                } else {
-                    $has_other_permissions = 1;
-                }
-            }
-        } else {
-            $has_other_permissions = 1;
+    my $patron = Koha::Patrons->find( { userid => $userid } );
+    my $has_self_checkout_perm = $patron->has_permission('self_checkout');
+    my $has_other_permissions = Koha::Patron::Permissions->search(
+        {
+            borrowernumber => $patron->id,
+            -not           => { code => 'self_checkout' }
         }
-    }
+    )->count();
     $template->param(
         AutoSelfCheckPatronDoesNotHaveSelfCheckPerm => not ( $has_self_checkout_perm ),
         AutoSelfCheckPatronHasTooManyPerm => $has_other_permissions,
