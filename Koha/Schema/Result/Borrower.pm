@@ -297,11 +297,6 @@ __PACKAGE__->table("borrowers");
   is_nullable: 1
   size: 60
 
-=head2 flags
-
-  data_type: 'integer'
-  is_nullable: 1
-
 =head2 userid
 
   data_type: 'varchar'
@@ -576,8 +571,6 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 1 },
   "password",
   { data_type => "varchar", is_nullable => 1, size => 60 },
-  "flags",
-  { data_type => "integer", is_nullable => 1 },
   "userid",
   { data_type => "varchar", is_nullable => 1, size => 75 },
   "opacnote",
@@ -1378,8 +1371,8 @@ Composing rels: L</aqorder_users> -> ordernumber
 __PACKAGE__->many_to_many("ordernumbers", "aqorder_users", "ordernumber");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2017-05-09 21:24:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7llO928plwtX2Q+I9nQA8A
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2017-08-31 13:59:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:E+j2J4H3hufzoOsEYicHWQ
 
 __PACKAGE__->belongs_to(
     "guarantor",

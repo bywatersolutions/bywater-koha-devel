@@ -23,12 +23,12 @@ __PACKAGE__->table("permissions");
 
 =head1 ACCESSORS
 
-=head2 module_bit
+=head2 parent
 
-  data_type: 'integer'
-  default_value: 0
+  data_type: 'varchar'
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
+  size: 64
 
 =head2 code
 
@@ -46,13 +46,8 @@ __PACKAGE__->table("permissions");
 =cut
 
 __PACKAGE__->add_columns(
-  "module_bit",
-  {
-    data_type      => "integer",
-    default_value  => 0,
-    is_foreign_key => 1,
-    is_nullable    => 0,
-  },
+  "parent",
+  { data_type => "varchar", is_foreign_key => 1, is_nullable => 1, size => 64 },
   "code",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 64 },
   "description",
@@ -63,31 +58,49 @@ __PACKAGE__->add_columns(
 
 =over 4
 
-=item * L</module_bit>
-
 =item * L</code>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("module_bit", "code");
+__PACKAGE__->set_primary_key("code");
 
 =head1 RELATIONS
 
-=head2 module_bit
+=head2 parent
 
 Type: belongs_to
 
-Related object: L<Koha::Schema::Result::Userflag>
+Related object: L<Koha::Schema::Result::Permission>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "module_bit",
-  "Koha::Schema::Result::Userflag",
-  { bit => "module_bit" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  "parent",
+  "Koha::Schema::Result::Permission",
+  { code => "parent" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 permissions
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::Permission>
+
+=cut
+
+__PACKAGE__->has_many(
+  "permissions",
+  "Koha::Schema::Result::Permission",
+  { "foreign.parent" => "self.code" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 user_permissions
@@ -101,16 +114,13 @@ Related object: L<Koha::Schema::Result::UserPermission>
 __PACKAGE__->has_many(
   "user_permissions",
   "Koha::Schema::Result::UserPermission",
-  {
-    "foreign.code"       => "self.code",
-    "foreign.module_bit" => "self.module_bit",
-  },
+  { "foreign.code" => "self.code" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-10-14 20:56:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ut3lzlxoPPoIIwmhJViV1Q
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2017-08-31 13:44:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Et5N6tTWWgkFWcxwGaX4eQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
