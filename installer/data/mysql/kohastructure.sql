@@ -795,6 +795,8 @@ CREATE TABLE `import_biblios` (
   `author` varchar(80) default NULL,
   `isbn` varchar(30) default NULL,
   `issn` varchar(9) default NULL,
+  `lccn` varchar(25) default NULL,
+  `pubdate` smallint(5) default NULL,
   `has_items` tinyint(1) NOT NULL default 0,
   CONSTRAINT `import_biblios_ibfk_1` FOREIGN KEY (`import_record_id`)
              REFERENCES `import_records` (`import_record_id`) ON DELETE CASCADE ON UPDATE CASCADE,
