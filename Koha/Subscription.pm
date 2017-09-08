@@ -125,7 +125,7 @@ sub frequency {
     return Koha::Subscription::Frequency->_new_from_dbic($frequency_rs);
 }
 
-=head3 type
+=head3 get_search_info
 
 =cut
 
@@ -145,6 +145,10 @@ sub get_search_info {
     };
     return $sub_mana_info;
 }
+
+=head3 get_sharable_info
+
+=cut
 
 sub get_sharable_info {
     my $self = shift;
@@ -191,6 +195,11 @@ sub get_sharable_info {
     };
     return $sub_mana_info;
 }
+
+
+=head3 _type
+
+=cut
 
 sub _type {
     return 'Subscription';

@@ -42,7 +42,7 @@ Return search info
 =cut
 
 sub get_search_info {
-    my $self=shift;
+    my $self = shift;
     my $sub_mana_info = { 'query' => shift };
     return $sub_mana_info;
 }
@@ -54,15 +54,15 @@ Return properties that can be shared.
 =cut
 
 sub get_sharable_info {
-    my $self=shift;
-    my $shared_report_id=shift;
-    my $report = Koha::Reports->find($shared_report_id);
-    my $sub_mana_info = {
-        'savedsql' => $report->savedsql,
-        'report_name' => $report->report_name,
-        'notes' => $report->notes,
+    my $self             = shift;
+    my $shared_report_id = shift;
+    my $report           = Koha::Reports->find($shared_report_id);
+    my $sub_mana_info    = {
+        'savedsql'     => $report->savedsql,
+        'report_name'  => $report->report_name,
+        'notes'        => $report->notes,
         'report_group' => $report->report_group,
-        'type' => $report->type,
+        'type'         => $report->type,
     };
     return $sub_mana_info;
 }
@@ -73,17 +73,20 @@ Clear a Mana report to be imported in Koha?
 
 =cut
 
-sub new_from_mana{
+sub new_from_mana {
     my $self = shift;
     my $data = shift;
+
+    $data->{mana_id} = $data->{id};
+
     delete $data->{exportemail};
     delete $data->{kohaversion};
     delete $data->{creationdate};
     delete $data->{lastimport};
-    $data->{mana_id} = $data->{id};
     delete $data->{id};
     delete $data->{nbofusers};
     delete $data->{language};
+
     Koha::Report->new($data)->store;
 }
 
