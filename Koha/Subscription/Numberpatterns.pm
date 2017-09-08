@@ -32,7 +32,7 @@ Koha::SubscriptionNumberpatterns - Koha SubscriptionNumberpattern object set cla
 
 =cut
 
-=head3 uniqeLabel
+=head3 uniqueLabel
 
 =cut
 

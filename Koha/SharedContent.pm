@@ -28,6 +28,18 @@ use C4::Context;
 
 our $MANA_IP = C4::Context->config('mana_config');
 
+=head1 DESCRIPTION
+
+Package for accessing shared content via Mana
+
+=head2 Package Functions
+
+=cut
+
+=head3 manaRequest
+
+=cut
+
 sub manaRequest {
     my $mana_request = shift;
     my $result;
@@ -53,6 +65,10 @@ sub manaRequest {
     return $result ;
 }
 
+=head3 manaIncrementRequest
+
+=cut
+
 sub manaIncrementRequest {
     my $resource = shift;
     my $id       = shift;
@@ -71,6 +87,10 @@ sub manaIncrementRequest {
     return manaRequest($request);
 }
 
+=head3 manaPostRequest
+
+=cut
+
 sub manaPostRequest {
     my $resource = shift;
     my $content  = shift;
@@ -83,6 +103,10 @@ sub manaPostRequest {
     $request->content($json);
     return manaRequest($request);
 }
+
+=head3 manaShareInfos
+
+=cut
 
 sub manaShareInfos{
     my ($query, $loggedinuser, $ressourceid, $ressourcetype) = @_;
@@ -132,6 +156,10 @@ sub manaShareInfos{
     return $result;
 }
 
+=head3 manaGetRequestWithId
+
+=cut
+
 sub manaGetRequestWithId {
     my $resource = shift;
     my $id       = shift;
@@ -141,6 +169,10 @@ sub manaGetRequestWithId {
 
     return manaRequest($request);
 }
+
+=head3 manaGetRequest
+
+=cut
 
 sub manaGetRequest {
     my $resource   = shift;
