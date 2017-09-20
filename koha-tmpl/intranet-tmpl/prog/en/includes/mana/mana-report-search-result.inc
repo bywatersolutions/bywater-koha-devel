@@ -3,6 +3,28 @@
 [% USE AuthorisedValues %]
 [% USE Branches %]
 
+<script type="text/javascript">
+//<![CDATA[
+$(document).ready(function() {
+    $(document).on('click', 'button.mana-use', function() {
+        id = $(this).attr('id');
+        mana_use(id.substr(9));
+    });
+
+    $(document).on('change', 'select.mana-actions', function() {
+        report_id = $(this).attr('id').substr(13);
+        if ($(this).val() == 'other') {
+            $('input#selected_id').val(report_id);
+            $('#comment_box').modal('show');
+        } else {
+            comment_id = $(this).val();
+            mana_increment(comment_id, 'resource_comment', 'nb');
+        }
+    });
+});
+//]]>
+</script>
+
 [% IF statuscode == "200" AND reports %]
     <table id="mana_results_datatable" width=100%>
         <thead>
@@ -45,14 +67,13 @@
 
                     [% UNLESS search_only %]
                         <td>
-                            <button onclick="mana_use([% report.id %])"> <i class="fa fa-inbox"></i> Use</button>
-                            <input hidden type="text" id="selectedcomment">
-                            <select>
+                            <button class="mana-use" id="mana-use-[% report.id %]"><i class="fa fa-inbox"></i> Use</button>
+                            <select class="mana-actions" id="mana-actions-[% report.id %]">
                                 <option selected disabled>Report mistake</option>
                                 [% FOREACH comment IN report.comments %]
-                                    <option class="actionreport1" value="[% comment.id %]" onclick="mana_increment('[% comment.id %]', 'resource_comment', 'nb')"> [% comment.message %] ([% comment.nb %])
+                                    <option value="[% comment.id %]">[% comment.message %] ([% comment.nb %])</option>
                                 [% END %]
-                                    <option data-toggle="modal" onclick="($('#selected_id').val($('.rowid').val()))" data-target="#comment_box"> other
+                                    <option>other</option>
                             </select>
                             <button hidden class="actionreport2" hidden> Cancel</button>
                         </td>

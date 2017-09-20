@@ -118,7 +118,7 @@
     function mana_increment(mana_id, resourcename, fieldvalue, stepvalue = 1){
         $.ajax( {
             type: "POST",
-            url: "/cgi-bin/koha/svc/mana/addvaluetofield",
+            url: "/cgi-bin/koha/svc/mana/increment",
             data: {id: mana_id, field: fieldvalue, resource: resourcename, step: stepvalue},
             datatype: "json",
         }).done( function() {
@@ -153,7 +153,7 @@
         })
         .done( function( result ) {
             $("#mana_search_result .modal-body").html(result);
-            $("#mana_search_result_label").text("Results from Mana Knowledge Base");
+            $("#mana_search_result_label").text(_("Results from Mana Knowledge Base"));
             $("#mana_results_datatable").dataTable($.extend(true, {}, dataTablesDefaults,{
                 "sPaginationType":"four_button",
                 "autoWidth": false,

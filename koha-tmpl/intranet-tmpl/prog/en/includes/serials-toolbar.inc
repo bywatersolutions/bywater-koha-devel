@@ -1,4 +1,43 @@
 [% INCLUDE 'blocking_errors.inc' %]
+<script type="text/javascript">
+    //<![CDATA[
+
+    function confirm_close() {
+        var is_confirmed = confirm(_("Are you sure you want to close this subscription?"));
+        if (is_confirmed) {
+            window.location="subscription-detail.pl?subscriptionid=[% subscriptionid %]&op=close";
+        }
+    }
+    function confirm_reopen() {
+        var is_confirmed = confirm(_("Are you sure you want to reopen this subscription?"));
+        if (is_confirmed) {
+            window.location="subscription-detail.pl?subscriptionid=[% subscriptionid %]&op=reopen";
+        }
+    }
+
+     $(document).ready(function() {
+        $("#deletesub").click(function(){
+            confirm_deletion();
+            return false;
+        });
+        $("#reopen").click(function(){
+            confirm_reopen();
+            return false;
+        });
+        $("#close").click(function(){
+            confirm_close();
+            return false;
+        });
+        $("#renew").click(function(){
+            popup([% subscriptionid %]);
+            return false;
+        })
+        $("#mana-subscription-share").click(function() {
+            window.location="subscription-detail.pl?subscriptionid=[% subscriptionid %]&op=share";
+        });
+     });
+    //]]>
+    </script>
 [% IF subscriptionid and ( CAN_user_serials_edit_subscription || CAN_user_serials_create_subscription || CAN_user_serials_delete_subscription || CAN_user_serials_receive_serials ) %]
     <div id="toolbar" class="btn-toolbar">
         [% IF CAN_user_serials_create_subscription %]
@@ -11,7 +50,7 @@
                 [% IF one_language_enabled==0 or mana_id %]
                     <div class="btn-group"><a data-toggle="modal" data-toggle="tooltip" title="Share the subscription with other librairies. Your email address will be associated to your sharing." data-target="#mana_share_modal" class="btn btn-default btn-sm"><i class="fa fa-share-alt"></i> Share</a></div>
                 [% ELSE %]
-                    <div class="btn-group" data-toggle="tooltip" title="Share the subscription with other libraries. Your email address will be associated to your sharing."><a class="btn btn-default btn-sm" onclick="share()"><i class="fa fa-share-alt"></i> Share</a></div>
+                    <div class="btn-group" id="mana-subscription-share" data-toggle="tooltip" title="Share the subscription with other libraries. Your email address will be associated to your sharing."><a class="btn btn-default btn-sm"><i class="fa fa-share-alt"></i> Share</a></div>
                 [% END %]
             [% END %]
         [% END %]
@@ -161,7 +200,7 @@
                 [% IF one_language_enabled==0 %]
                     <button type="submit" form="mana_share_form" class="btn btn-primary">Share</button>
                 [% ELSE %]
-                    <div class="btn-group"><a class="btn btn-primary" onclick="share()">Share</a></div>
+                    <div class="btn-group" id="mana-subscription-share"><a class="btn btn-primary">Share</a></div>
                 [% END %]
             </div>
         </div>

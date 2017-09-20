@@ -38,5 +38,11 @@ my ( $auth_status, $sessionID ) =
 if ( $auth_status ne "ok" ) {
     exit 0;
 }
-my $result = Koha::SharedContent::manaIncrementRequest($input->param('resource'), $input->param('id'), $input->param('field'), $input->param('step') );
+my $result = Koha::SharedContent::manaIncrementRequest(
+    scalar $input->param('resource'),
+    scalar $input->param('id'),
+    scalar $input->param('field'),
+    scalar $input->param('step')
+);
+
 return $result;

@@ -40,7 +40,10 @@ if ( $auth_status ne "ok" ) {
     exit 0;
 }
 
-my $result = Koha::SharedContent::manaGetRequestWithId($input->param('resource'), $input->param('id') );
+my $result = Koha::SharedContent::manaGetRequestWithId(
+    scalar $input->param('resource'),
+    scalar $input->param('id')
+);
 my $package = "Koha::".ucfirst($input->param('resource'));
 my $resource;
 

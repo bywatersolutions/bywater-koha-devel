@@ -5,7 +5,7 @@ $(document).ready(function(){
         var myemail = $("#email").val()
         $.ajax( {
             type: "POST",
-            url: "/cgi-bin/koha/svc/mana/getToken",
+            url: "/cgi-bin/koha/svc/mana/token",
             data: { lastname: mylastname, firstname: myfirstname, email: myemail},
             dataType: "json",
         })

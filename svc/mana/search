@@ -39,7 +39,11 @@ if ( $auth_status ne "ok" ) {
 }
 
 my $templatename;
-$templatename = "mana/mana-".$input->param( "resource" )."-search-result.tt";
+if ($input->param( "resource" ) eq 'report') {
+    $templatename = "mana/mana-report-search-result.tt";
+} else {
+    $templatename = "mana/mana-subscription-search-result.tt";
+}
 
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {

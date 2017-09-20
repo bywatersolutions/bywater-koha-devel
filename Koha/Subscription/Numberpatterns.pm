@@ -52,6 +52,38 @@ sub uniqueLabel {
     return $label;
 }
 
+=head3 new_or_existing
+
+=cut
+
+sub new_or_existing {
+    my ($self, $params) = @_;
+
+    my $params_np;
+    if ( $params->{'numbering_pattern'} eq 'mana' ) {
+        foreach (qw/numberingmethod label1 add1 every1 whenmorethan1 setto1
+                   numbering1 label2 add2 every2 whenmorethan2 setto2 numbering2
+                   label3 add3 every3 whenmorethan3 setto3 numbering3/) {
+            $params_np->{$_} = $params->{$_} if $params->{$_};
+        }
+
+        my $existing = Koha::Subscription::Numberpatterns->search($params_np)->next();
+
+        if ($existing) {
+            return $existing->id;
+        }
+
+        $params_np->{label} = Koha::Subscription::Numberpatterns->uniqueLabel($params->{'patternname'});
+        $params_np->{description} = $params->{'sndescription'};
+
+
+        my $subscription_np = Koha::Subscription::Numberpattern->new()->set($params_np)->store();
+        return $subscription_np->id;
+    }
+
+    return $params->{'numbering_pattern'};
+}
+
 =head3 type
 
 =cut
