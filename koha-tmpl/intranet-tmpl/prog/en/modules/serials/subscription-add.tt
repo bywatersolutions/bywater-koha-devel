@@ -497,7 +497,7 @@ width: 300px;  /* not enough for IE7 apparently */
                             <fieldset class="action">
                                 <input type="button" id="subscription_add_previous" value="&lt;&lt; Previous" style="float:left;"/>
                                 <input id="testpatternbutton" type="button" value="Test prediction pattern" />
-                                <input type="submit" onclick="removeDisabledAttr()" value="Save subscription" style="float:right;" accesskey="w"/>
+                                <input id="save-subscription" type="submit" value="Save subscription" style="float:right;" accesskey="w"/>
                             </fieldset>
                         </div>
                     </div>

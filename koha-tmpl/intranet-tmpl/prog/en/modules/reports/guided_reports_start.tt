@@ -458,7 +458,7 @@ canned reports and writing custom SQL reports.</p>
                 [% IF one_language_enabled==0 %]
                     <button id="ManaShareButton" type="submit" form="mana_share_form" class="btn btn-primary">Share</button>
                 [% ELSE %]
-                    <div id="ManaShareButton" class="btn-group"><a class="btn btn-primary"'onclick="share()">Share</a></div>
+                    <div id="ManaShareButton" class="btn-group"><a class="btn btn-primary">Share</a></div>
                 [% END %]
             </div>
         </div>
@@ -1171,10 +1171,6 @@ canned reports and writing custom SQL reports.</p>
             }
         }
 
-        function share() {
-            window.location="/cgi-bin/koha/reports/guided_reports.pl?phase=Save";
-        }
-
         $(document).ready(function(){
 
             hide_bar_element();
@@ -1506,6 +1502,10 @@ canned reports and writing custom SQL reports.</p>
             [% END %]
             $(".delete").on("click",function(){
                 return confirmDelete(MSG_CONFIRM_DELETE);
+            });
+
+            $('div#ManaShareButton').click(function() {
+                window.location="/cgi-bin/koha/reports/guided_reports.pl?phase=Share";
             });
         });
 

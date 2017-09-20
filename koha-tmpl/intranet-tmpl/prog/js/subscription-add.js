@@ -393,7 +393,7 @@ function show_page_2() {
 }
 
 function mana_search() {
-    $("#mana_search").html("<p>Mana kb is being asked for your subscription..</p>");
+    $("#mana_search").html("<p>" + _("Mana kb is being asked for your subscription..") + "</p>");
     $("#mana_search").show();
 
     $.ajax({
@@ -404,7 +404,7 @@ function mana_search() {
     })
     .done( function( result ) {
         $("#mana_search_result .modal-body").html(result);
-        $("#mana_search_result_label").text("Results from Mana Knowledge Base");
+        $("#mana_search_result_label").text(_("Results from Mana Knowledge Base"));
         $("#mana_results_datatable").dataTable($.extend(true, {}, dataTablesDefaults, {
             "sPaginationType": "four_button",
             "order":[[4, "desc"], [5, "desc"]],
@@ -419,10 +419,10 @@ function mana_search() {
             ]
         }));
         if( $("#mana_results_datatable").length && $("td.dataTables_empty").length == 0){
-            $("#mana_search").html("<p>Subscription found on Mana Knowledge Base:</p><p> <a style='cursor:pointer' data-toggle='modal' data-target='#mana_search_result'>Quick fill</a></p>");
+            $("#mana_search").html("<p>" + _("Subscription found on Mana Knowledge Base:") + "</p><p> <a style='cursor:pointer' data-toggle='modal' data-target='#mana_search_result'>" + _("Quick fill") + "</a></p>");
         }
         else if ( $("#mana_results_datatable").length ){
-            $("#mana_search").html("<p>No subscription found on Mana Knowledge Base :(</p><p> Please feel free to share you pattern with all others librarians once you are done</p>");
+            $("#mana_search").html("<p>" + _("No subscription found on Mana Knowledge Base :(") + "</p><p>" + _(" Please feel free to share you pattern with all others librarians once you are done") + "</p>");
         }
         else{
             $("#mana_search").html( result );
@@ -455,10 +455,7 @@ function mana_search() {
             mana_increment($("#selectedcomment").val(), 'resource_comment', 'nb', -1);
         });
 
-    }).fail(function(result){
-        console.log( msg );
-        console.log( longmsg );
-    });
+    })
 }
 
 function mana_comment( target_id, manamsg, resource_type ){
@@ -473,7 +470,7 @@ function mana_comment( target_id, manamsg, resource_type ){
 function mana_increment(mana_id, resource, fieldvalue, stepvalue = 1){
     $.ajax( {
         type: "POST",
-        url: "/cgi-bin/koha/svc/mana/addvaluetofield",
+        url: "/cgi-bin/koha/svc/mana/increment",
         data: {id: mana_id, resource: resource, field: fieldvalue, step: stepvalue},
         datatype: "json",
     })
@@ -552,10 +549,6 @@ function mana_use(mana_id){
         numberpatternload();
     }).fail( function( result ){
     });
-}
-
-function removeDisabledAttr() {
-    $('select:disabled').removeAttr('disabled');
 }
 
 $(document).ready(function() {
@@ -698,5 +691,8 @@ $(document).ready(function() {
     $("#testpatternbutton").on("click",function(e){
         e.preventDefault();
         testPredictionPattern();
+    });
+    $('#save-subscription').on("click", function(e){
+        $('select:disabled').removeAttr('disabled');
     });
 });

@@ -33,11 +33,7 @@ use Koha::Acquisition::Bookseller;
 use Date::Calc qw/Today Day_of_Year Week_of_Year Add_Delta_Days/;
 use Carp;
 
-use LWP::UserAgent;
 use Koha::SharedContent;
-use Koha::Patrons;
-use Koha::Subscriptions;
-use Koha::Libraries;
 
 my $query = new CGI;
 my $op = $query->param('op') || q{};
@@ -104,7 +100,7 @@ if ($op eq 'del') {
     }
 }
 elsif ( $op and $op eq "share" ) {
-    my $result = Koha::SharedContent::manaShareInfos($query, $loggedinuser, $subscriptionid, 'subscription');
+    my $result = Koha::SharedContent::manaPostRequest($query->param('mana_language'), $loggedinuser, $subscriptionid, 'subscription');
     $template->param( mana_code => $result->{msg} );
     $subs->{mana_id} = $result->{id};
 }

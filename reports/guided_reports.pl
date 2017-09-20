@@ -183,6 +183,7 @@ elsif ( $phase eq 'Show SQL'){
         'sql'     => $report->savedsql,
         'showsql' => 1,
         'mana_success' => $input->param('mana_success'),
+        'mana_success' => scalar $input->param('mana_success'),
     );
 }
 
@@ -673,7 +674,7 @@ elsif ( $phase eq 'Save Report' ) {
 }
 
 elsif ($phase eq 'Share'){
-    my $result = Koha::SharedContent::manaShareInfos($input, $borrowernumber, $input->param('reportid'), 'report');
+    my $result = Koha::SharedContent::manaPostRequest($input->param('mana_language'), $borrowernumber, scalar $input->param('reportid'), 'report');
     if ( $result ) {
         print $input->redirect("/cgi-bin/koha/reports/guided_reports.pl?phase=Use%20saved&manamsg=".$result->{msg});
     }else{

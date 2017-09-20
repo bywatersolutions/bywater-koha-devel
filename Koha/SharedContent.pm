@@ -52,15 +52,15 @@ sub manaRequest {
         $mana_request->content( to_json($content) );
     }
 
-    my $response  = $userAgent->request($mana_request);
+    my $response = $userAgent->request($mana_request);
 
     eval { $result = from_json( $response->decoded_content, { utf8 => 1} ); };
     $result->{code} = $response->code;
     if ( $@ ){
-        $result->{msg} = $response->{_msg};
+        $result->{msg} = $@;
     }
     if ($response->is_error){
-        $result->{msg} = "An error occurred, mana server returned: ".$result->{msg};
+        $result->{msg} = "An error occurred, mana server returned: " . $response->message;
     }
     return $result ;
 }
@@ -70,21 +70,7 @@ sub manaRequest {
 =cut
 
 sub manaIncrementRequest {
-    my $resource = shift;
-    my $id       = shift;
-    my $field    = shift;
-    my $step     = shift;
-    my $param;
-    $param->{step} = $step || 1;
-    $param->{id} = $id;
-    $param->{resource} = $resource;
-    $param = join '&',
-       map { defined $param->{$_} ? $_ . "=" . $param->{$_} : () }
-           keys %$param;
-    my $url = "$MANA_IP/$resource/$id.json/increment/$field?$param";
-    my $request = HTTP::Request->new( POST => $url );
-
-    return manaRequest($request);
+    return manaRequest(buildRequest('increment', @_));
 }
 
 =head3 manaPostRequest
@@ -92,68 +78,52 @@ sub manaIncrementRequest {
 =cut
 
 sub manaPostRequest {
-    my $resource = shift;
-    my $content  = shift;
+    my ($lang, $loggedinuser, $resourceid, $resourcetype) = @_;
 
-    my $url = "$MANA_IP/$resource.json";
-    my $request = HTTP::Request->new( POST => $url );
+    my $content = prepareSharedData($lang, $loggedinuser, $resourceid, $resourcetype);
 
-    $content->{bulk_import} = 0;
-    my $json = to_json( $content, { utf8 => 1 } );
-    $request->content($json);
-    return manaRequest($request);
+    my $result = manaRequest(buildRequest('post', $resourcetype, $content));
+
+    if ( $result and ($result->{code} eq "200" or $result->{code} eq "201") ) {
+        my $packages = "Koha::".ucfirst($resourcetype)."s";
+        my $resource = $packages->find($resourceid);
+        eval { $resource->set( { mana_id => $result->{id} } )->store };
+    }
+    return $result;
 }
 
-=head3 manaShareInfos
+=head3 prepareSharedData
 
 =cut
 
-sub manaShareInfos{
-    my ($query, $loggedinuser, $ressourceid, $ressourcetype) = @_;
-    my $mana_language;
-    if ( $query->param('mana_language') ) {
-        $mana_language = $query->param('mana_language');
-    }
-    else {
-        my $result = $mana_language = C4::Context->preference('language');
-    }
+sub prepareSharedData {
+    my ($lang, $loggedinuser, $ressourceid, $ressourcetype) = @_;
+    $lang ||= C4::Context->preference('language');
 
     my $mana_email;
     if ( $loggedinuser ne 0 ) {
         my $borrower = Koha::Patrons->find($loggedinuser);
-        if ($borrower){
-            $mana_email = $borrower->email
-              if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
-            $mana_email = $borrower->emailpro
-              if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
-            $mana_email =
-              Koha::Libraries->find( C4::Context->userenv->{'branch'} )->branchemail
-              if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
-        }
+        $mana_email = $borrower->first_valid_email_address
+            || Koha::Libraries->find( C4::Context->userenv->{'branch'} )->branchemail
     }
     $mana_email = C4::Context->preference('KohaAdminEmailAddress')
       if ( ( not defined($mana_email) ) or ( $mana_email eq '' ) );
+
     my %versions = C4::Context::get_versions();
 
     my $mana_info = {
-        language    => $mana_language,
+        language    => $lang,
         kohaversion => $versions{'kohaVersion'},
         exportemail => $mana_email
     };
-    my ($ressource, $ressource_mana_info);
+
+    my $ressource_mana_info;
     my $packages = "Koha::".ucfirst($ressourcetype)."s";
     my $package = "Koha::".ucfirst($ressourcetype);
     $ressource_mana_info = $package->get_sharable_info($ressourceid);
     $ressource_mana_info = { %$ressource_mana_info, %$mana_info };
-    $ressource = $packages->find($ressourceid);
 
-    my $result = Koha::SharedContent::manaPostRequest( $ressourcetype,
-        $ressource_mana_info );
-
-    if ( $result and ($result->{code} eq "200" or $result->{code} eq "201") ) {
-       eval { $ressource->set( { mana_id => $result->{id} } )->store };
-    }
-    return $result;
+    return $ressource_mana_info;
 }
 
 =head3 manaGetRequestWithId
@@ -161,13 +131,7 @@ sub manaShareInfos{
 =cut
 
 sub manaGetRequestWithId {
-    my $resource = shift;
-    my $id       = shift;
-
-    my $url = "$MANA_IP/$resource/$id.json";
-    my $request = HTTP::Request->new( GET => $url );
-
-    return manaRequest($request);
+    return manaRequest(buildRequest('getwithid', @_));
 }
 
 =head3 manaGetRequest
@@ -175,16 +139,62 @@ sub manaGetRequestWithId {
 =cut
 
 sub manaGetRequest {
-    my $resource   = shift;
-    my $parameters = shift;
+    return manaRequest(buildRequest('get', @_));
+}
 
-    $parameters = join '&',
-      map { defined $parameters->{$_} ? $_ . "=" . $parameters->{$_} : () }
-      keys %$parameters;
-    my $url = "$MANA_IP/$resource.json?$parameters";
-    my $request = HTTP::Request->new( GET => $url );
+=head3 buildRequest
 
-    return manaRequest($request);
+=cut
+
+sub buildRequest {
+    my $type = shift;
+    my $resource = shift;
+
+    if ( $type eq 'get' ) {
+        my $params = shift;
+        $params = join '&',
+            map { defined $params->{$_} ? $_ . "=" . $params->{$_} : () }
+            keys %$params;
+        my $url = "$MANA_IP/$resource.json?$params";
+        return HTTP::Request->new( GET => $url );
+    }
+
+    if ( $type eq 'getwithid' ) {
+        my $id = shift;
+
+        my $url = "$MANA_IP/$resource/$id.json";
+        return HTTP::Request->new( GET => $url );
+    }
+
+    if ( $type eq 'post' ) {
+        my $content  = shift;
+
+        my $url = "$MANA_IP/$resource.json";
+        my $request = HTTP::Request->new( POST => $url );
+
+        $content->{bulk_import} = 0;
+        my $json = to_json( $content, { utf8 => 1 } );
+        $request->content($json);
+
+        return $request;
+    }
+
+    if ( $type eq 'increment' ) {
+        my $id       = shift;
+        my $field    = shift;
+        my $step     = shift;
+        my $param;
+
+        $param->{step} = $step || 1;
+        $param->{id} = $id;
+        $param->{resource} = $resource;
+        $param = join '&',
+           map { defined $param->{$_} ? $_ . "=" . $param->{$_} : () }
+               keys %$param;
+        my $url = "$MANA_IP/$resource/$id.json/increment/$field?$param";
+        my $request = HTTP::Request->new( POST => $url );
+
+    }
 }
 
 1;
