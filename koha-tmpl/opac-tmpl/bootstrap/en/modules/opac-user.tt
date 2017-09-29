@@ -740,7 +740,7 @@ Using this account is not recommended because some parts of Koha will not functi
                                                 </td>
                                             [% END # / IF SuspendHoldsOpac %]
                                             <td class="modify">
-                                                [% IF ( RESERVE.is_cancelable ) %]
+                                                [% IF ( ! RESERVE.is_found ) %]
                                                     <form action="/cgi-bin/koha/opac-modrequest.pl" method="post">
                                                     <input type="hidden" name="biblionumber" value="[% RESERVE.biblionumber %]" />
                                                     <input type="hidden" name="reserve_id" value="[% RESERVE.reserve_id %]" />
