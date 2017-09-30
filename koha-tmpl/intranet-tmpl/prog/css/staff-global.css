@@ -368,6 +368,14 @@ fieldset {
     border-radius:5px;
 }
 
+fieldset.standard {
+    background-color:#f4f8f9 !important;
+}
+
+fieldset.contrast {
+    background-color:#F3F3F3 !important;
+}
+
 fieldset.lastchecked {
     margin-bottom : 0;
     border-bottom-width: 0;
