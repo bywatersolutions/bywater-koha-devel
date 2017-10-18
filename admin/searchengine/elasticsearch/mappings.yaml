@@ -2215,6 +2215,7 @@ biblios:
         sort: 1
         suggestible: ''
     type: sum
+    mandatory: 1
   itemnumber:
     label: itemnumber
     mappings:
@@ -4197,6 +4198,7 @@ biblios:
         sort: ~
         suggestible: ''
     type: string
+    mandatory: 1
   title-abbreviated:
     label: title-abbreviated
     mappings:
