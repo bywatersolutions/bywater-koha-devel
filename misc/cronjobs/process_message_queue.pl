@@ -28,6 +28,7 @@ BEGIN {
 use C4::Letters;
 use C4::Log;
 use Getopt::Long;
+use Koha::Notice::Messages;
 
 my $username = undef;
 my $password = undef;
@@ -65,6 +66,10 @@ ENDUSAGE
 die $usage if $help;
 
 cronlogaction();
+
+my $msg = Koha::Notice::Message->new({ message_transport_type => 'email' })->store();
+die("The message_queue table does not appear to be writeable") unless $msg->id;
+$msg->delete();
 
 C4::Letters::SendQueuedMessages(
     {
