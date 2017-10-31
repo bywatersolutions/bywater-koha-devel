@@ -1974,12 +1974,12 @@ available within the slip:
 =cut
 
 sub ReserveSlip {
-    my ($branch, $borrowernumber, $biblionumber) = @_;
+    my ($branch, $borrowernumber, $biblionumber, $itemnumber) = @_;
 
 #   return unless ( C4::Context->boolean_preference('printreserveslips') );
     my $patron = Koha::Patrons->find( $borrowernumber );
 
-    my $hold = Koha::Holds->search({biblionumber => $biblionumber, borrowernumber => $borrowernumber })->next;
+    my $hold = Koha::Holds->search({biblionumber => $biblionumber, borrowernumber => $borrowernumber, itemnumber => $itemnumber })->next;
     return unless $hold;
     my $reserve = $hold->unblessed;
 

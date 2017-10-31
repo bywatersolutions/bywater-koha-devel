@@ -387,7 +387,7 @@ is(
     'item that is captured to fill a hold cannot be deleted',
 );
 
-my $letter = ReserveSlip($branch_1, $requesters{$branch_1}, $bibnum);
+my $letter = ReserveSlip($branch_1, $requesters{$branch_1}, $bibnum, $itemnumber);
 ok(defined($letter), 'can successfully generate hold slip (bug 10949)');
 
 # Tests for bug 9788: Does Koha::Item->current_holds return a future wait?

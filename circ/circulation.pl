@@ -331,6 +331,7 @@ if (@$barcodes) {
     $template_params->{messages} = $messages;
 
     my $item = Koha::Items->find({ barcode => $barcode });
+    $template->param( item => $item );
     my ( $biblio, $mss );
 
     if ( $item ) {
