@@ -171,6 +171,7 @@ $template->param(
     default_bib_view => $default_bib_view,
     orders_grouped => $orders_grouped,
     (uc(C4::Context->preference("marcflavour"))) => 1,
+    mana_comments => $subs->{comments},
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;

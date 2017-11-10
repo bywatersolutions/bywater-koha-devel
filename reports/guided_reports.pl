@@ -184,6 +184,8 @@ elsif ( $phase eq 'Show SQL'){
         'showsql' => 1,
         'mana_success' => $input->param('mana_success'),
         'mana_success' => scalar $input->param('mana_success'),
+        'mana_id' => $report->{mana_id},
+        'mana_comments' => $report->{comments}
     );
 }
 
@@ -202,6 +204,8 @@ elsif ( $phase eq 'Edit SQL'){
         'public' => $report->public,
         'usecache' => $usecache,
         'editsql'    => 1,
+        'mana_id' => $report->{mana_id},
+        'mana_comments' => $report->{comments}
     );
 }
 

@@ -1,4 +1,5 @@
 [% INCLUDE 'blocking_errors.inc' %]
+[% INCLUDE 'mana.inc' %]
 <div id="toolbar" class="btn-toolbar">
     [% IF ( CAN_user_reports_create_reports ) %]
         <div class="btn-group">
@@ -47,6 +48,40 @@
                 <a class="btn btn-default btn-sm" href="/cgi-bin/koha/tools/scheduler.pl?id=[% id | html %]">
                     <i class="fa fa-clock-o"></i> Schedule
                 </a>
+            </div>
+        [% END %]
+
+        [% IF ( mana_id && Koha.Preference('Mana') == 1 ) %]
+            <div class="btn-group">
+                <button class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown"> Report mistake <span class="caret"></span></button>
+                <ul class="dropdown-menu">
+                    [% FOREACH c IN mana_comments %]
+                        <li class="mana-comment" data-id="[% c.id %]">
+                            <a href="#">[% c.message %] ([% c.nb %])</a>
+                        </li>
+                    [% END %]
+                    <li role="separator" class="divider"></li>
+                    <li class="mana-other-comment"><a href="#">Other</a> </li>
+                </ul>
+            </div>
+
+            <div id="mana-comment-box" class="modal" tabindex="-1" role="dialog" aria-labelledby="mana_search_result_label" style="display: none;">
+                <div class="modal-dialog modal-lg" style="width: 30%">
+                    <div class="modal-content" style="">
+                        <div class="modal-header">
+                            <button type="button" id="mana-comment-close" class="closebtn"  aria-hidden="true">×</button>
+                            <h3 id="mana_submit_comment"> Please enter a new commment (max 35 caracters)</h3>
+                        </div>
+                        <div class="modal-body">
+                            <input hidden id="mana-resource" value="report">
+                            <input hidden id="mana-resource-id" value="[% mana_id %]">
+                            <div>
+                                <input type="text" maxlength="35" size="35" id="mana-comment">
+                            </div>
+                            <button id="mana-send-comment"> Comment </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         [% END %]
 
@@ -110,21 +145,6 @@
         });
     });
 
-    $('#search_form').on( "submit", function(event) {
-        event.preventDefault();
-        mana_search($(this).children("#mana_search_field").val());
-    });
-
-    function mana_increment(mana_id, resourcename, fieldvalue, stepvalue = 1){
-        $.ajax( {
-            type: "POST",
-            url: "/cgi-bin/koha/svc/mana/increment",
-            data: {id: mana_id, field: fieldvalue, resource: resourcename, step: stepvalue},
-            datatype: "json",
-        }).done( function() {
-        }).fail( function(){ alert("") });
-    }
-
     function mana_use( mana_id ){
         $.ajax( {
             type:"POST",
@@ -172,13 +192,6 @@
 
             $( "select[class='actionreport1']" ).show();
             $( "button[class='actionreport2']" ).hide();
-            $("#CommentButton").on("click", function(){
-                var resource_type = "report";
-                var target_id = $("#selected_id").val();
-                var manamsg = $("#manamsg").val();
-                mana_comment(target_id, manamsg, resource_type);
-                $("#comment_box").modal("hide");
-            });
 
             $(".showbutton").on("click", function(){
                 $(this).parent().hide();
@@ -207,14 +220,5 @@
             });
         }).fail( function( result ){
         });
-    }
-
-    function mana_comment( target_id, manamsg, resource_type ){
-        $.ajax( {
-            type: "POST",
-            url: "/cgi-bin/koha/svc/mana/share",
-            data: {message: manamsg, resource: resource_type , resource_id: target_id},
-            datatype: "json",
-        })
     }
 </script>

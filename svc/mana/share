@@ -44,7 +44,7 @@ my $content;
 $content->{resource_id} = $input->param("resource_id");
 $content->{resource_type} = $input->param("resource");
 $content->{message} = $input->param("message");
-Koha::SharedContent::manaPostRequest('resource_comment', $content);
+Koha::SharedContent::manaPostRequest('', undef, undef, 'resource_comment', $content);
 my $package = "Koha::".ucfirst($input->param('resource'));
 my $resource;
 my $result;

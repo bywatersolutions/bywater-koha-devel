@@ -428,51 +428,6 @@ function mana_search() {
             $("#mana_search").html( result );
         }
         $("#mana_search").show();
-        $( "select[class='actionreport1']" ).show();
-        $( "button[class='actionreport2']" ).hide();
-
-        $("#CommentButton").on("click", function(){
-            var resource_type = "subscription";
-            var target_id = $("#selected_id").val();
-            var manamsg = $("#manamsg").val();
-            mana_comment(target_id, manamsg, resource_type);
-            $("#comment_box").modal("hide");
-        });
-
-        $("#commentCloseButton").on("click", function(){
-            $("#comment_box").modal("hide");
-        });
-
-        $(".actionreport1").on("click", function(){
-            $("#selectedcomment").val($(this).val());
-            $(this).parent("select").hide();
-            $(this).parent("select").next().show();
-        });
-
-        $(".actionreport2").on("click", function(){
-            $(this).hide();
-            $(this).prev().show();
-            mana_increment($("#selectedcomment").val(), 'resource_comment', 'nb', -1);
-        });
-
-    })
-}
-
-function mana_comment( target_id, manamsg, resource_type ){
-    $.ajax( {
-        type: "POST",
-        url: "/cgi-bin/koha/svc/mana/share",
-        data: {message: manamsg, resource: resource_type , resource_id: target_id},
-        datatype: "json",
-    })
-}
-
-function mana_increment(mana_id, resource, fieldvalue, stepvalue = 1){
-    $.ajax( {
-        type: "POST",
-        url: "/cgi-bin/koha/svc/mana/increment",
-        data: {id: mana_id, resource: resource, field: fieldvalue, step: stepvalue},
-        datatype: "json",
     })
 }
 

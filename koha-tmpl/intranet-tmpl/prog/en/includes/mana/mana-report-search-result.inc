@@ -24,6 +24,7 @@ $(document).ready(function() {
 });
 //]]>
 </script>
+[% INCLUDE 'mana.inc' %]
 
 [% IF statuscode == "200" AND reports %]
     <table id="mana_results_datatable" width=100%>
@@ -68,14 +69,6 @@ $(document).ready(function() {
                     [% UNLESS search_only %]
                         <td>
                             <button class="mana-use" id="mana-use-[% report.id %]"><i class="fa fa-inbox"></i> Use</button>
-                            <select class="mana-actions" id="mana-actions-[% report.id %]">
-                                <option selected disabled>Report mistake</option>
-                                [% FOREACH comment IN report.comments %]
-                                    <option value="[% comment.id %]">[% comment.message %] ([% comment.nb %])</option>
-                                [% END %]
-                                    <option>other</option>
-                            </select>
-                            <button hidden class="actionreport2" hidden> Cancel</button>
                         </td>
                     [% END %]
                   </tr>
@@ -86,21 +79,3 @@ $(document).ready(function() {
 [% ELSE %]
     <h4> [% msg %]  statuscode: [% statuscode %]</h4>
 [% END %]
-
-<div id="comment_box" class="modal" tabindex="-1" role="dialog" aria-labelledby="mana_search_result_label" style="display: none;">
-    <div class="modal-dialog modal-lg" style="width: 30%">
-        <div class="modal-content" style="">
-            <div class="modal-header">
-                <button type="button" id="commentCloseButton" class="closebtn"  aria-hidden="true">×</button>
-                <h3 id="mana_submit_comment"> Please enter a new commment (max 35 caracters)</h3>
-            </div>
-            <div class="modal-body">
-                <form>
-                    <input hidden id="selected_id" value="">
-                    <input type="text" id="manamsg">
-                </form>
-                <button id="CommentButton"> Comment </button>
-            </div>
-        </div>
-    </div>
-</div>
