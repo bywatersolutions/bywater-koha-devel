@@ -78,9 +78,11 @@ sub manaIncrementRequest {
 =cut
 
 sub manaPostRequest {
-    my ($lang, $loggedinuser, $resourceid, $resourcetype) = @_;
+    my ($lang, $loggedinuser, $resourceid, $resourcetype, $content) = @_;
 
-    my $content = prepareSharedData($lang, $loggedinuser, $resourceid, $resourcetype);
+    unless ( $content ) {
+        $content = prepareSharedData($lang, $loggedinuser, $resourceid, $resourcetype);
+    }
 
     my $result = manaRequest(buildRequest('post', $resourcetype, $content));
 
@@ -161,8 +163,12 @@ sub buildRequest {
 
     if ( $type eq 'getwithid' ) {
         my $id = shift;
+        my $params = shift;
+        $params = join '&',
+            map { defined $params->{$_} ? $_ . "=" . $params->{$_} : () }
+            keys %$params;
 
-        my $url = "$MANA_IP/$resource/$id.json";
+        my $url = "$MANA_IP/$resource/$id.json?$params";
         return HTTP::Request->new( GET => $url );
     }
 

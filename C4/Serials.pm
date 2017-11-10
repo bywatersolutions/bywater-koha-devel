@@ -280,6 +280,12 @@ sub GetSubscription {
     });
     $subscription->{additional_fields} = $additional_field_values->{$subscriptionid};
 
+    if ( my $mana_id = $subscription->{mana_id} ) {
+        my $mana_subscription = Koha::SharedContent::manaGetRequestWithId(
+            'subscription', $mana_id, {usecomments => 1});
+        $subscription->{comments} = $mana_subscription->{data}->{comments};
+    }
+
     return $subscription;
 }
 

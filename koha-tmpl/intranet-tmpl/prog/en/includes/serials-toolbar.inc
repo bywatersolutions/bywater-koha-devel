@@ -1,4 +1,5 @@
 [% INCLUDE 'blocking_errors.inc' %]
+[% INCLUDE 'mana.inc' %]
 <script type="text/javascript">
     //<![CDATA[
 
@@ -98,6 +99,40 @@
                     <div class="btn-group"><a id="close" class="btn btn-default btn-sm" href="#"><i class="fa fa-times-circle"></i> Close</a></div>
                 [% END %]
             [% END %]
+        [% END %]
+
+        [% IF ( mana_id && Koha.Preference('Mana') == 1 ) %]
+            <div class="btn-group">
+                <button class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown"> Report mistake <span class="caret"></span></button>
+                <ul class="dropdown-menu">
+                    [% FOREACH c IN mana_comments %]
+                        <li class="mana-comment" data-id="[% c.id %]">
+                            <a href="#">[% c.message %] ([% c.nb %])</a>
+                        </li>
+                    [% END %]
+                    <li role="separator" class="divider"></li>
+                    <li class="mana-other-comment"><a href="#">Other</a> </li>
+                </ul>
+            </div>
+
+            <div id="mana-comment-box" class="modal" tabindex="-1" role="dialog" aria-labelledby="mana_search_result_label" style="display: none;">
+                <div class="modal-dialog modal-lg" style="width: 30%">
+                    <div class="modal-content" style="">
+                        <div class="modal-header">
+                            <button type="button" id="mana-comment-close" class="closebtn"  aria-hidden="true">×</button>
+                            <h3 id="mana_submit_comment"> Please enter a new commment (max 35 caracters)</h3>
+                        </div>
+                        <div class="modal-body">
+                            <input hidden id="mana-resource" value="subscription">
+                            <input hidden id="mana-resource-id" value="[% mana_id %]">
+                            <div>
+                                <input type="text" maxlength="35" size="35" id="mana-comment">
+                            </div>
+                            <button id="mana-send-comment"> Comment </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         [% END %]
     </div>
 [% ELSIF CAN_user_serials_create_subscription %]

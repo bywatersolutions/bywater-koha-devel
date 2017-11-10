@@ -2,24 +2,13 @@
 [% USE Koha %]
 [% USE AuthorisedValues %]
 [% USE Branches %]
-
+[% INCLUDE 'mana.inc' %]
 <script type="text/javascript">
 //<![CDATA[
 $(document).ready(function() {
     $(document).on('click', 'button.mana-use', function() {
         id = $(this).attr('id');
         mana_use(id.substr(9));
-    });
-
-    $(document).on('change', 'select.mana-actions', function() {
-        report_id = $(this).attr('id').substr(13);
-        if ($(this).val() == 'other') {
-            $('input#selected_id').val(report_id);
-            $('#comment_box').modal('show');
-        } else {
-            comment_id = $(this).val();
-            mana_increment(comment_id, 'resource_comment', 'nb');
-        }
     });
 });
 //]]>
