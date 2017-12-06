@@ -1,4 +1,7 @@
 INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+('3MCloudAccountID' , '', '', 'Account ID for 3MCloud integration', 'Free'),
+('3MCloudAccountKey', '', '', 'Account Key for 3MCloud integration','Free'),
+('3MCloudLibraryID' , '', '', 'Library ID for 3MCloud integration', 'Free'),
 ('AcqCreateItem','ordering','ordering|receiving|cataloguing','Define when the item is created : when ordering, when receiving, or in cataloguing module','Choice'),
 ('AcqEnableFiles','0',NULL,'If enabled, allows librarians to upload and attach arbitrary files to invoice records.','YesNo'),
 ('AcqItemSetSubfieldsWhenReceiptIsCancelled','', '','Upon cancelling a receipt, update the items subfields if they were created when placing an order (e.g. o=5|a="bar foo")', 'Free'),

@@ -390,3 +390,20 @@ Enhanced Content:
                 aws: Amazon Web Services
                 gb: Google Books
                 ol: Open Library
+    3M Cloud:
+        -
+            - Include 3M Cloud availability information with the account ID
+            - pref: 3MCloudAccountID
+            - and account key
+            - pref: 3MCloudAccountKey
+            - .
+        -
+            - "Show items from the 3MCloud catalog of library #"
+            - pref: 3MCloudLibraryID
+            - .
+        -
+            - pref: 3MCloudCirculation
+              choices:
+                  yes: Enable
+                  no: "Don't enable"
+            - users to access their 3MCloud circulation history, and circulate items.
