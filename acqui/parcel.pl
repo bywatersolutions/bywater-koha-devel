@@ -142,7 +142,8 @@ for my $order ( @orders ) {
     $line{holds} = 0;
     my @itemnumbers = GetItemnumbersFromOrder( $order->{ordernumber} );
     my $biblio = Koha::Biblios->find( $line{biblionumber} );
-    $line{holds} = $biblio ? $biblio->current_holds->search(
+    $line{total_holds} = $biblio ? $biblio->holds->count : 0;
+    $line{item_holds} = $biblio ? $biblio->current_holds->search(
         {
             itemnumber => { -in => \@itemnumbers },
         }
