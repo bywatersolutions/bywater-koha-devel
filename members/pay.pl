@@ -95,6 +95,7 @@ elsif ( $input->param('confirm_writeoff') ) {
     my $accountlines_id = $input->param('accountlines_id');
     my $amount          = $input->param('amountwrittenoff');
     my $payment_note    = $input->param("payment_note");
+    my $itemno          = $input->param('itemnumber');
 
     my $accountline = Koha::Account::Lines->find( $accountlines_id );
 
@@ -119,6 +120,7 @@ elsif ( $input->param('confirm_writeoff') ) {
                 note       => $payment_note,
                 interface  => C4::Context->interface,
                 library_id => $branch,
+                itemnumber => $itemno,
             }
         );
     }
@@ -218,6 +220,7 @@ sub writeoff_all {
             my $amount          = $input->param("amountoutstanding$value");
             my $accountlines_id = $input->param("accountlines_id$value");
             my $payment_note    = $input->param("payment_note_$value");
+            my $itemno          = $input->param("itemnumber$value");
             Koha::Account->new( { patron_id => $borrowernumber } )->pay(
                 {
                     amount => $amount,
@@ -226,6 +229,7 @@ sub writeoff_all {
                     note   => $payment_note,
                     interface  => C4::Context->interface,
                     library_id => $branch,
+                    itemnumber => $itemno,
                 }
             );
         }

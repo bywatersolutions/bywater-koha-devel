@@ -82,6 +82,7 @@ sub pay {
     my $credit_type   = $params->{credit_type};
     my $offset_type   = $params->{offset_type} || $type eq 'WRITEOFF' ? 'Writeoff' : 'Payment';
     my $cash_register = $params->{cash_register};
+    my $itemnumber    = $params->{itemnumber} || undef;
 
     my $userenv = C4::Context->userenv;
 
@@ -237,6 +238,7 @@ sub pay {
             branchcode        => $library_id,
             register_id       => $cash_register,
             note              => $note,
+            itemnumber        => $itemnumber,
         }
     )->store();
 
