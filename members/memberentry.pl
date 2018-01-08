@@ -159,6 +159,8 @@ if ( $op eq 'modify' or $op eq 'save' or $op eq 'duplicate' ) {
 
     $borrower_data = $patron->unblessed;
     $borrower_data->{category_type} = $patron->category->category_type;
+} else {
+    $patron = Koha::Patron->new;
 }
 my $categorycode  = $input->param('categorycode') || $borrower_data->{'categorycode'};
 my $category_type = $input->param('category_type') || '';
@@ -280,12 +282,17 @@ $newdata{'lang'}    = $input->param('lang')    if defined($input->param('lang'))
 if ( ( defined $newdata{'userid'} && $newdata{'userid'} eq '' ) || $check_BorrowerUnwantedField =~ /userid/ && !defined $data{'userid'} ) {
     if ( ( defined $newdata{'firstname'} ) && ( defined $newdata{'surname'} ) ) {
         # Full page edit, firstname and surname input zones are present
-        $newdata{'userid'} = Generate_Userid( $borrowernumber, $newdata{'firstname'}, $newdata{'surname'} );
+        $patron->firstname($newdata{firstname});
+        $patron->surname($newdata{surname});
+        $newdata{'userid'} = $patron->generate_userid;
     }
     elsif ( ( defined $data{'firstname'} ) && ( defined $data{'surname'} ) ) {
         # Partial page edit (access through "Details"/"Library details" tab), firstname and surname input zones are not used
         # Still, if the userid field is erased, we can create a new userid with available firstname and surname
-        $newdata{'userid'} = Generate_Userid( $borrowernumber, $data{'firstname'}, $data{'surname'} );
+        # FIXME clean thiscode newdata vs data is very confusing
+        $patron->firstname($data{firstname});
+        $patron->surname($data{surname});
+        $newdata{'userid'} = $patron->generate_userid;
     }
     else {
         $newdata{'userid'} = $data{'userid'};
