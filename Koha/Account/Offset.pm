@@ -35,6 +35,34 @@ Account offsets are used to track the changes in account lines
 
 =cut
 
+=head3 debit
+
+Returns the fine or fee associated with this offset.
+
+=cut
+
+sub debit {
+    my ( $self ) = @_;
+
+    $self->{_debit} ||= Koha::Account::Lines->find( $self->debit_id );
+
+    return $self->{_debit};
+}
+
+=head3 credit
+
+Returns the payment or writeoff associated with this offset.
+
+=cut
+
+sub credit {
+    my ( $self ) = @_;
+
+    $self->{_credit} ||= Koha::Account::Lines->find( $self->credit_id );
+
+    return $self->{_credit};
+}
+
 =head3 _type
 
 =cut

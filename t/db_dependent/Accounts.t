@@ -18,7 +18,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 26;
+use Test::More tests => 27;
 use Test::MockModule;
 use Test::Warn;
 
@@ -902,6 +902,42 @@ subtest "Koha::Account::Line::void tests" => sub {
 
     is( $line1->amountoutstanding+0, 10, 'First fee again has amount outstanding of 10' );
     is( $line2->amountoutstanding+0, 20, 'Second fee again has amount outstanding of 20' );
+};
+
+subtest "Koha::Account::Offset tests" => sub {
+
+    plan tests => 2;
+
+    Koha::Account::Lines->delete();
+    Koha::Patrons->delete();
+
+    # Create a borrower
+    my $categorycode = $builder->build({ source => 'Category' })->{ categorycode };
+    my $branchcode   = $builder->build({ source => 'Branch' })->{ branchcode };
+
+    my $borrower = Koha::Patron->new( {
+        cardnumber => 'chelseahall',
+        surname => 'Hall',
+        firstname => 'Chelsea',
+    } );
+    $borrower->categorycode( $categorycode );
+    $borrower->branchcode( $branchcode );
+    $borrower->store;
+
+    my $account = Koha::Account->new({ patron_id => $borrower->id });
+
+    my $line = Koha::Account::Line->new({ borrowernumber => $borrower->borrowernumber, amountoutstanding => 27 })->store();
+
+    my $id = $account->pay(
+        {
+            amount => 13,
+        }
+    );
+
+    my $offset = Koha::Account::Offsets->find( { credit_id => $id } );
+
+    is( $offset->credit->id, $id, 'Got correct credit for account offset' );
+    is( $offset->debit->id, $line->id, 'Got correct debit for account offset' );
 };
 
 1;
