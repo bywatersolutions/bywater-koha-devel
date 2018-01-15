@@ -18,7 +18,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 9;
+use Test::More tests => 10;
 use Test::Warn;
 
 use t::lib::TestBuilder;
@@ -352,6 +352,36 @@ count(h.reservedate) AS 'holds'
     FROM biblio_metadata t1
     LEFT JOIN biblio_metadata t2 USING ( biblionumber )|;
     is( C4::Reports::Guided::convert_sql( $sql ), $expected_converted_sql, "Query with multiple instances of marcxml and biblioitems should have them all replaced");
+};
+
+subtest 'add combine_params column' => sub {
+    plan tests => 3;
+
+    my $id = $builder->build({ source => 'Borrower' })->{ borrowernumber };
+
+    my $new_report_params = {
+        borrowernumber => $id,
+        sql            => "SELECT 'CAT'",
+        name           => "Kitty cat",
+        type           => 1,
+        public         => 0,
+    };
+
+    my $new_report_id = save_report($new_report_params);
+    my $saved_report = get_saved_report($new_report_id);
+    is( $saved_report->{combine_params},0,'When no combine params supplied to new report default is 0');
+
+    $new_report_params->{combine_params} = 1;
+    $new_report_id = save_report($new_report_params);
+    $saved_report = get_saved_report($new_report_id);
+    is( $saved_report->{combine_params},1,'When combine params supplied to new report, it is saved');
+
+    $saved_report->{combine_params} = 0;
+    $saved_report->{sql} = $saved_report->{savedsql}; #because we don't get back the same column name
+    update_sql($new_report_id,$saved_report);
+    $saved_report = get_saved_report($new_report_id);
+    is( $saved_report->{combine_params},0,'When combine params updated it is correctly saved');
+
 };
 
 $schema->storage->txn_rollback;

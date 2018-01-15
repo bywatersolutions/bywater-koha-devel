@@ -104,6 +104,7 @@ elsif ( $phase eq 'Build new' ) {
         'usecache'     => $usecache,
         'cache_expiry' => 300,
         'public'       => '0',
+        'combine_params'       => '0',
     );
 } elsif ( $phase eq 'Use saved' ) {
 
@@ -122,6 +123,7 @@ elsif ( $phase eq 'Build new' ) {
                     notes        => $report->{notes},
                     public       => $report->{public},
                     cache_expiry => $report->{cache_expiry},
+                    combine_params => $report->{combine_params},
                 }
             );
             $template->param( report_converted => $report->{report_name} );
@@ -194,6 +196,7 @@ elsif ( $phase eq 'Edit SQL'){
         'notes'      => $report->{notes},
         'id'         => $id,
         'cache_expiry' => $report->{cache_expiry},
+        'combine_params' => $report->{combine_params},
         'public' => $report->{public},
         'usecache' => $usecache,
         'editsql'    => 1,
@@ -208,6 +211,7 @@ elsif ( $phase eq 'Update SQL'){
     my $subgroup   = $input->param('subgroup');
     my $notes      = $input->param('notes');
     my $cache_expiry = $input->param('cache_expiry');
+    my $combine_params = $input->param('combine_params');
     my $cache_expiry_units = $input->param('cache_expiry_units');
     my $public = $input->param('public');
     my $save_anyway = $input->param('save_anyway');
@@ -259,6 +263,7 @@ elsif ( $phase eq 'Update SQL'){
                 'subgroup' => $subgroup,
                 'notes' => $notes,
                 'public' => $public,
+                'combine_params' => $combine_params,
                 'problematic_authvals' => $problematic_authvals,
                 'warn_authval_problem' => 1,
                 'phase_update' => 1
@@ -274,6 +279,7 @@ elsif ( $phase eq 'Update SQL'){
                     notes => $notes,
                     public => $public,
                     cache_expiry => $cache_expiry,
+                    combine_params => $combine_params,
                 } );
             $template->param(
                 'save_successful'       => 1,
@@ -305,6 +311,7 @@ elsif ($phase eq 'retrieve results') {
 elsif ( $phase eq 'Report on this Area' ) {
     my $cache_expiry_units = $input->param('cache_expiry_units'),
     my $cache_expiry = $input->param('cache_expiry');
+    my $combine_params = $input->param('combine_params');
 
     # we need to handle converting units
     if( $cache_expiry_units eq "minutes" ){
@@ -322,6 +329,7 @@ elsif ( $phase eq 'Report on this Area' ) {
         'build1' => 1,
         'areas'   => get_report_areas(),
         'cache_expiry' => $cache_expiry,
+        'combine_params' => $combine_params,
         'usecache' => $usecache,
         'public' => scalar $input->param('public'),
       );
@@ -332,6 +340,7 @@ elsif ( $phase eq 'Report on this Area' ) {
           'area'   => scalar $input->param('area'),
           'types'  => get_report_types(),
           'cache_expiry' => $cache_expiry,
+          'combine_params' => $combine_params,
           'public' => scalar $input->param('public'),
       );
     }
@@ -348,6 +357,7 @@ elsif ( $phase eq 'Choose this type' ) {
         'type'   => $type,
         columns  => get_columns($area,$input),
         'cache_expiry' => scalar $input->param('cache_expiry'),
+        'combine_params' => scalar $input->param('combine_params'),
         'public' => scalar $input->param('public'),
     );
 }
@@ -372,6 +382,7 @@ elsif ( $phase eq 'Choose these columns' ) {
     if ( $usecache ) {
         $template->param(
             cache_expiry => scalar $input->param('cache_expiry'),
+            combine_params => scalar $input->param('combine_params'),
             cache_expiry_units => scalar $input->param('cache_expiry_units'),
         );
     }
@@ -433,6 +444,7 @@ elsif ( $phase eq 'Choose these criteria' ) {
         'definition'     => $definition,
         'criteriastring' => $query_criteria,
         'public' => scalar $input->param('public'),
+        'combine_params' => scalar $input->param('combine_params'),
     );
     if ( $usecache ) {
         $template->param(
@@ -480,6 +492,7 @@ elsif ( $phase eq 'Choose these operations' ) {
         'totals'         => $totals,
         'definition'     => $definition,
         'cache_expiry' => scalar $input->param('cache_expiry'),
+        'combine_params' => scalar $input->param('combine_params'),
         'public' => scalar $input->param('public'),
     );
 
@@ -533,6 +546,7 @@ elsif ( $phase eq 'Build report' ) {
         'sql'        => $sql,
         'type'       => $type,
         'cache_expiry' => scalar $input->param('cache_expiry'),
+        'combine_params' => scalar $input->param('combine_params'),
         'public' => scalar $input->param('public'),
     );
 }
@@ -548,6 +562,7 @@ elsif ( $phase eq 'Save' ) {
         'sql'  => $sql,
         'type' => $type,
         'cache_expiry' => scalar $input->param('cache_expiry'),
+        'combine_params' => scalar $input->param('combine_params'),
         'public' => scalar $input->param('public'),
         'groups_with_subgroups' => groups_with_subgroups($area), # in case we have a report group that matches area
     );
@@ -563,6 +578,7 @@ elsif ( $phase eq 'Save Report' ) {
     my $type  = $input->param('types');
     my $notes = $input->param('notes');
     my $cache_expiry = $input->param('cache_expiry');
+    my $combine_params = $input->param('combine_params'),
     my $cache_expiry_units = $input->param('cache_expiry_units');
     my $public = $input->param('public');
     my $save_anyway = $input->param('save_anyway');
@@ -601,6 +617,7 @@ elsif ( $phase eq 'Save Report' ) {
             'type'      => $type,
             'notes'     => $notes,
             'cache_expiry' => $cache_expiry,
+            'combine_params' => $combine_params,
             'public'    => $public,
         );
     } else {
@@ -619,6 +636,7 @@ elsif ( $phase eq 'Save Report' ) {
                 'type' => $type,
                 'notes' => $notes,
                 'public' => $public,
+                'combine_params' => $combine_params,
                 'problematic_authvals' => $problematic_authvals,
                 'warn_authval_problem' => 1,
                 'phase_save' => 1
@@ -641,6 +659,7 @@ elsif ( $phase eq 'Save Report' ) {
                     type           => $type,
                     notes          => $notes,
                     cache_expiry   => $cache_expiry,
+                    combine_params => $combine_params,
                     public         => $public,
                 } );
                 logaction( "REPORTS", "ADD", $id, "$name | $sql" ) if C4::Context->preference("ReportsLog");
@@ -659,6 +678,11 @@ elsif ($phase eq 'Run this report'){
     my $offset     = 0;
     my $report_id  = $input->param('reports');
     my @sql_params = $input->multi_param('sql_params');
+    my @param_name = $input->multi_param('param_name');
+    my @param_value = $input->multi_param('param_value');
+    my %lookup;
+    @lookup{@param_name} = @param_value;
+
     # offset algorithm
     if ($input->param('page')) {
         $offset = ($input->param('page') - 1) * $limit;
@@ -669,11 +693,12 @@ elsif ($phase eq 'Run this report'){
         'report_id' => $report_id,
     );
 
-    my ( $sql, $original_sql, $type, $name, $notes );
+    my ( $sql, $original_sql, $type, $name, $notes, $combine_params );
     if (my $report = get_saved_report($report_id)) {
         $sql   = $original_sql = $report->{savedsql};
         $name  = $report->{report_name};
         $notes = $report->{notes};
+        $combine_params = $report->{combine_params};
 
         my @rows = ();
         # if we have at least 1 parameter, and it's not filled, then don't execute but ask for parameters
@@ -682,8 +707,12 @@ elsif ($phase eq 'Run this report'){
             my @split = split /<<|>>/,$sql;
             my @tmpl_parameters;
             my @authval_errors;
+            my %uniq_params;
             for(my $i=0;$i<($#split/2);$i++) {
                 my ($text,$authorised_value) = split /\|/,$split[$i*2+1];
+                if( defined $uniq_params{$text."|".$authorised_value} && $combine_params ){
+                    next;
+                } else { $uniq_params{$text."|".$authorised_value} = "$i"; }
                 my $input;
                 my $labelid;
                 if ( not defined $authorised_value ) {
@@ -783,6 +812,7 @@ elsif ($phase eq 'Run this report'){
                             'auth_val_errors'  => \@authval_errors,
                             'enter_params' => 1,
                             'reports'      => $report_id,
+                            'uniq_params'  => \%uniq_params,
                             );
         } else {
             # OK, we have parameters, or there are none, we run the report
@@ -791,7 +821,8 @@ elsif ($phase eq 'Run this report'){
             my @split = split /<<|>>/,$sql;
             my @tmpl_parameters;
             for(my $i=0;$i<$#split/2;$i++) {
-                my $quoted = $sql_params[$i];
+                my $use_param  = $combine_params ? $lookup{ $split[$i*2+1] } : $i;
+                my $quoted = $sql_params[$use_param];
                 # if there are special regexp chars, we must \ them
                 $split[$i*2+1] =~ s/(\||\?|\.|\*|\(|\)|\%)/\\$1/g;
                 if ($split[$i*2+1] =~ /\|\s*date\s*$/) {
@@ -956,6 +987,7 @@ elsif ( $phase eq 'Create report from SQL' ) {
         'groups_with_subgroups' => groups_with_subgroups($group, $subgroup),
         'public' => '0',
         'cache_expiry' => 300,
+        'combine_params' => 0,
         'usecache' => $usecache,
     );
 }

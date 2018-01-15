@@ -165,6 +165,7 @@ canned reports and writing custom SQL reports.</p>
                     <th class="title-string">Last run</th>
                     <th class="report_public">Public</th>
                     <th class="report_json_url">JSON URL</th>
+                    <th class="combine_params">Combine parameters</th>
                     [% IF (usecache) %] <th>Cache expiry (seconds)</th> [% END %]
                     <th>Saved results</th>
                     [% IF has_obsolete_reports %]<th>Update</th>[% END %]
@@ -207,6 +208,13 @@ canned reports and writing custom SQL reports.</p>
                             <a href="[% OPACBaseURL %]/cgi-bin/koha/svc/report?id=[% savedreport.id | uri %]">[% OPACBaseURL %]/cgi-bin/koha/svc/report?id=[% savedreport.id | html %]</a>
                         [% ELSE %]
                             <a href="/cgi-bin/koha/svc/report?id=[% savedreport.id | uri %]">[% Koha.Preference('staffClientBaseURL') %]/cgi-bin/koha/svc/report?id=[% savedreport.id | html %]</a>
+                        [% END %]
+                        </td>
+                        <td class="combine_params">
+                        [% IF (savedreport.combine_params) %]
+                            Yes
+                        [% ELSE %]
+                            No
                         [% END %]
                         </td>
                         [% IF (usecache) %] <td>[% savedreport.cache_expiry %]</td> [% END %]
@@ -315,6 +323,11 @@ canned reports and writing custom SQL reports.</p>
   <li><label for="public">Report is public:</label><select id="public" name="public"> <option value="0">No (default)</option> <option value="1" selected="selected">Yes</option> </select></li>
 [% ELSE %]
   <li><label for="public">Report is public:</label><select id="public" name="public"> <option value="0" selected="selected">No (default)</option> <option value="1">Yes</option> </select></li>
+[% END %]
+[% IF (combine_params) %]
+  <li><label for="combine_params">Combine parameters:</label><select id="combine_params" name="combine_params"> <option value="0">No (default)</option> <option value="1" selected="selected">Yes</option> </select></li>
+[% ELSE %]
+  <li><label for="combine_params">Combine parameters:</label><select id="combine_params" name="combine_params"> <option value="0" selected="selected">No (default)</option> <option value="1">Yes</option> </select></li>
 [% END %]
 [% IF (usecache) %] <li>
 <label for="cache_expiry">Cache expiry:</label><input type="text" id="cache_expiry" name="cache_expiry" value="[% cache_expiry %]"></input>
@@ -668,6 +681,10 @@ canned reports and writing custom SQL reports.</p>
                     </li>
                 [% END %]
             [% END %]
+            [% FOREACH key IN uniq_params.keys %]
+                <input type="hidden" name="param_name" value="[% key %]">
+                <input type="hidden" name="param_value" value="[% uniq_params.$key %]">
+            [% END %]
             </ol>
         </fieldset>
         <fieldset class="action"><input type="submit" value="Run the report" /></fieldset>
@@ -736,6 +753,11 @@ $(document).ready(function() {
   <li><label for="public">Report is public:</label><select id="public" name="public"> <option value="0">No (default)</option> <option value="1" selected="selected">Yes</option> </select></li>
 [% ELSE %]
   <li><label for="public">Report is public:</label><select id="public" name="public"> <option value="0" selected="selected">No (default)</option> <option value="1">Yes</option> </select></li>
+[% END %]
+[% IF (combine_params) %]
+  <li><label for="combine_params">Combine parameters:</label><select id="combine_params" name="combine_params"> <option value="0">No (default)</option> <option value="1" selected="selected">Yes</option> </select></li>
+[% ELSE %]
+  <li><label for="combine_params">Combine parameters:</label><select id="combine_params" name="combine_params"> <option value="0" selected="selected">No (default)</option> <option value="1">Yes</option> </select></li>
 [% END %]
 [% IF (usecache) %] <li>
 <label for="cache_expiry">Cache expiry:</label><input type="text" id="cache_expiry" name="cache_expiry" value="[% cache_expiry %]"></input>
@@ -825,6 +847,11 @@ Sub report:<select name="subreport">
   <li><label for="public">Report is public:</label><select id="public" name="public"> <option value="0">No (default)</option> <option value="1" selected="selected">Yes</option> </select></li>
 [% ELSE %]
   <li><label for="public">Report is public:</label><select id="public" name="public"> <option value="0" selected="selected">No (default)</option> <option value="1">Yes</option> </select></li>
+[% END %]
+[% IF (combine_params) %]
+  <li><label for="combine_params">Combine parameters:</label><select id="combine_params" name="combine_params"> <option value="0">No (default)</option> <option value="1" selected="selected">Yes</option> </select></li>
+[% ELSE %]
+  <li><label for="combine_params">Combine parameters:</label><select id="combine_params" name="combine_params"> <option value="0" selected="selected">No (default)</option> <option value="1">Yes</option> </select></li>
 [% END %]
 [% IF (usecache) %] <li>
 <label for="cache_expiry">Cache expiry:</label><input type="text" id="cache_expiry" name="cache_expiry" value="[% cache_expiry %]"></input>

@@ -561,11 +561,12 @@ sub save_report {
     my $subgroup = $fields->{subgroup};
     my $cache_expiry = $fields->{cache_expiry} || 300;
     my $public = $fields->{public};
+    my $combine_params = $fields->{combine_params} || 0;
 
     my $dbh = C4::Context->dbh();
     $sql =~ s/(\s*\;\s*)$//;    # removes trailing whitespace and /;/
-    my $query = "INSERT INTO saved_sql (borrowernumber,date_created,last_modified,savedsql,report_name,report_area,report_group,report_subgroup,type,notes,cache_expiry,public)  VALUES (?,now(),now(),?,?,?,?,?,?,?,?,?)";
-    $dbh->do($query, undef, $borrowernumber, $sql, $name, $area, $group, $subgroup, $type, $notes, $cache_expiry, $public);
+    my $query = "INSERT INTO saved_sql (borrowernumber,date_created,last_modified,savedsql,report_name,report_area,report_group,report_subgroup,type,notes,cache_expiry,public,combine_params)  VALUES (?,now(),now(),?,?,?,?,?,?,?,?,?,?)";
+    $dbh->do($query, undef, $borrowernumber, $sql, $name, $area, $group, $subgroup, $type, $notes, $cache_expiry, $public,$combine_params);
 
     my $id = $dbh->selectrow_array("SELECT max(id) FROM saved_sql WHERE borrowernumber=? AND report_name=?", undef,
                                    $borrowernumber, $name);
@@ -582,6 +583,7 @@ sub update_sql {
     my $subgroup = $fields->{subgroup};
     my $cache_expiry = $fields->{cache_expiry};
     my $public = $fields->{public};
+    my $combine_params = $fields->{combine_params};
 
     if( $cache_expiry >= 2592000 ){
       die "Please specify a cache expiry less than 30 days\n";
@@ -589,8 +591,8 @@ sub update_sql {
 
     my $dbh        = C4::Context->dbh();
     $sql =~ s/(\s*\;\s*)$//;    # removes trailing whitespace and /;/
-    my $query = "UPDATE saved_sql SET savedsql = ?, last_modified = now(), report_name = ?, report_group = ?, report_subgroup = ?, notes = ?, cache_expiry = ?, public = ? WHERE id = ? ";
-    $dbh->do($query, undef, $sql, $name, $group, $subgroup, $notes, $cache_expiry, $public, $id );
+    my $query = "UPDATE saved_sql SET savedsql = ?, last_modified = now(), report_name = ?, report_group = ?, report_subgroup = ?, notes = ?, cache_expiry = ?, public = ?, combine_params = ? WHERE id = ? ";
+    $dbh->do($query, undef, $sql, $name, $group, $subgroup, $notes, $cache_expiry, $public, $combine_params, $id );
 }
 
 sub store_results {
