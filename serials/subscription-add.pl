@@ -305,7 +305,7 @@ sub redirect_add_subscription {
         )->store();
         $periodicity = $subscription_freq->id;
     }
-    my $numberpattern = Koha::Subscription::Numberpatterns->new_or_existing($query->Vars);
+    my $numberpattern = Koha::Subscription::Numberpatterns->new_or_existing({ $query->Vars });
 
     my $auser          = $query->param('user');
     my $branchcode     = $query->param('branchcode');
@@ -412,7 +412,7 @@ sub redirect_mod_subscription {
         )->store();
         $periodicity = $subscription_freq->id;
     }
-    my $numberpattern = Koha::Subscription::Numberpatterns->new_or_existing($query->Vars);
+    my $numberpattern = Koha::Subscription::Numberpatterns->new_or_existing({ $query->Vars });
 
     my $subtype = $query->param('subtype');
     my $sublength = $query->param('sublength');

@@ -352,10 +352,12 @@ canned reports and writing custom SQL reports.</p>
                         <p>Your subscription is already linked with a Mana subscription model. Share it if you have made modifications, otherwise it will do nothing.</p>
                     </div>
                 [% END %]
+                <div id="note-error" class="alert alert-danger" role="alert">
+                    Please enter a report name and descriptive note before sharing (minimum 20 characters)
+                </div>
                 [% IF ( languages_loop ) %]
                     [% UNLESS ( one_language_enabled ) %]
-                        <label id="noteerror" type="hidden">Please enter a report name and descriptive note before sharing (minimum 20 characters)</label>
-                        <div id="shared_infos" class="rows">
+                        <div class="shared_infos rows">
                                 <li> <span class="label">Id: </span><div id="shared_id"></div>
                                 </li>
                                 <li> <span class="label">Name: </span><div id="shared_name"></div>
@@ -374,7 +376,7 @@ canned reports and writing custom SQL reports.</p>
                             <form method="post" id="mana_share_form" action="/cgi-bin/koha/reports/guided_reports.pl?phase=Share" class="validated" >
                                 <input type="hidden" name="phase" value="Share">
 
-                                <fieldset>
+                                <fieldset class="shared_infos">
                                     <label for="mana_language">Language:</label>
                                     <select id="mana_language" name="mana_language">
                                         [% FOREACH languages_loo IN languages_loop %]
@@ -434,11 +436,11 @@ canned reports and writing custom SQL reports.</p>
                 [% END %]
             </div>
             <div class="modal-footer">
-                <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+                <button class="btn" id="ManaCloseButton" data-dismiss="modal" aria-hidden="true">Close</button>
                 [% IF one_language_enabled==0 %]
-                    <button id="ManaShareButton" type="submit" form="mana_share_form" class="btn btn-primary">Share</button>
+                    <button id="ManaShareButton" type="submit" form="mana_share_form" class="btn btn-primary shared_infos">Share</button>
                 [% ELSE %]
-                    <div id="ManaShareButton" class="btn-group"><a class="btn btn-primary">Share</a></div>
+                    <div id="ManaShareButton" class="btn-group"><a class="btn btn-primary shared_infos">Share</a></div>
                 [% END %]
             </div>
         </div>
@@ -1070,6 +1072,7 @@ canned reports and writing custom SQL reports.</p>
     [% Asset.js("lib/d3c3/d3.min.js") | $raw %]
     [% Asset.js("lib/d3c3/c3.min.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
+    [% INCLUDE 'mana.inc' %]
     [% IF ( saved1 ) %]
         [% INCLUDE 'datatables.inc' %]
         [% INCLUDE 'columns_settings.inc' %]
@@ -1277,11 +1280,15 @@ canned reports and writing custom SQL reports.</p>
                 window.history.back();
             });
 
+            $(".mana_search_button").on("click",function(){
+                mana_search($("#mana_search_field").val());
+            });
+
             $(".ShareButton").on("click", function(){
+                $("#note-error").hide();
                 if($(this).closest("tr").find(".report_notes").text().length < 20 || $(this).closest("tr").find(".report_name").text().length < 20){
-                    $("#shared_infos").hide();
-                    $("#ManaShareButton").hide();
-                    $("#noterror").show();
+                    $(".shared_infos").hide();
+                    $("#note-error").show();
                 }
                 else{
                     $("#shared_id").html($(this).closest("tr").find(".report_id").text());
@@ -1291,6 +1298,10 @@ canned reports and writing custom SQL reports.</p>
                     $("#shared_group").html($(this).closest("tr").find(".report_group").text());
                     $("#shared_notes").html($(this).closest("tr").find(".report_notes").text());
                 }
+            });
+
+            $("#ManaCloseButton").on("click", function() {
+                $(".shared_infos").show();
             });
 
             $("#addColumn").on("click",function(){
