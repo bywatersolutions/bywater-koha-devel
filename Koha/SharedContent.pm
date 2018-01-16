@@ -178,7 +178,6 @@ sub buildRequest {
         my $url = "$MANA_IP/$resource.json";
         my $request = HTTP::Request->new( POST => $url );
 
-        $content->{bulk_import} = 0;
         my $json = to_json( $content, { utf8 => 1 } );
         $request->content($json);
 

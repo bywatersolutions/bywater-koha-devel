@@ -139,12 +139,6 @@
 [% END %]
 
 <script type="text/javascript">
-    $(document).ready( function(){
-        $(".mana_search_button").on("click",function(){
-            mana_search($("#mana_search_field").val());
-        });
-    });
-
     function mana_use( mana_id ){
         $.ajax( {
             type:"POST",

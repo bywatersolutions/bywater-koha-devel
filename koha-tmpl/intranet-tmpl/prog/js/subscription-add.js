@@ -617,9 +617,9 @@ $(document).ready(function() {
     });
     $("#subscription_add_next").on("click",function(){
         if ( Check_page1() ){
-            [% IF Koha.Preference('Mana') == 1 %]
+            if ( mana_enabled ) {
                 mana_search();
-            [% END %]
+            }
             show_page_2();
         }
     });
