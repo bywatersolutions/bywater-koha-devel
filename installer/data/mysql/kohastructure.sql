@@ -1455,6 +1455,7 @@ CREATE TABLE saved_sql ( -- saved sql reports
     report_area varchar(6) default NULL,
     report_group varchar(80) default NULL,
     report_subgroup varchar(80) default NULL,
+   `combine_params` tinyint(1) NOT NULL DEFAULT 0, -- controls if matching <<name|type>> vars in reports share the same value
    PRIMARY KEY  (`id`),
    KEY sql_area_group_idx (report_group, report_subgroup),
    KEY boridx (`borrowernumber`)
