@@ -73,7 +73,7 @@ sub _new_schema {
     my $tz = $ENV{TZ};
     if ( $db_driver eq 'mysql' ) {
         %encoding_attr = ( mysql_enable_utf8 => 1 );
-        $encoding_query = "set NAMES 'utf8'";
+        $encoding_query = "set NAMES 'utf8mb4'";
         $tz_query = qq(SET time_zone = "$tz") if $tz;
     }
     elsif ( $db_driver eq 'Pg' ) {
