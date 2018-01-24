@@ -10,10 +10,8 @@ $(document).ready(function(){
             dataType: "json",
         })
         .done(function(result){
-            console.log(result.token);
-                $("#pref_ManaToken").val(result.token);
-                $("#pref_ManaToken").trigger("input");
-        }).fail( function( result ){
+            $("#pref_ManaToken").val(result.token);
+            $("#pref_ManaToken").trigger("input");
         });
         return false;
     });
