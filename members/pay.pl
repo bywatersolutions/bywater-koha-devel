@@ -98,7 +98,17 @@ if ($writeoff_all) {
 } elsif ($writeoff_item) {
     my $accountlines_id = $input->param('accountlines_id');
     my $amount       = $input->param('amountwrittenoff');
+    my $amount_outstanding = $input->param('amountoutstanding');
     my $payment_note = $input->param("payment_note");
+
+    if ( $amount > $amount_outstanding ) {
+        $template->param(
+            error_over => 1,
+            error_amount => $amount,
+            error_amount_outstanding => $amount_outstanding,
+        );
+        $amount = $amount_outstanding;
+    }
 
     Koha::Account->new( { patron_id => $borrowernumber } )->pay(
         {

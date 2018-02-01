@@ -66,6 +66,12 @@ function enableCheckboxActions(){
 	<li><a href="/cgi-bin/koha/members/mancredit.pl?borrowernumber=[% borrower.borrowernumber %]" >Create manual credit</a></li>
 </ul>
 <div class="tabs-container">
+    [% IF ( error_over ) %]
+        <div id="error_message" class="dialog alert">
+          The writeoff submitted was more than the value of the fee being written off.
+          The amount of the writeoff has been reduced from [% error_amount | format('%.2f') %] to [% error_amount_outstanding | format('%.2f') %].
+        </div>
+    [% END %]
 
 [% IF ( accounts ) %]
     <form action="/cgi-bin/koha/members/pay.pl" method="post" id="pay-fines-form">
