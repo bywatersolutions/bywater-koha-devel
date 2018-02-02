@@ -602,6 +602,16 @@ Circulation:
                   no: "Don't allow"
             - "holds to expire automatically if they have not been picked by within the time period specified in ReservesMaxPickUpDelay"
         -
+            - pref: ExpireReservesAutoFill
+              choices:
+                  yes: "Do"
+                  no: "Don't"
+            - automatically fill the next hold using the item. If enabled, an email notification will be sent to either the email address defined in ExpireReservesAutoFillEmail, the item's holding library's email address, or the email address defined in KohaAdminEmailAddress in that order.
+        -
+            - Send email notification of the new hold filled with a canceled item to
+            - pref: ExpireReservesAutoFillEmail
+            - . If no address is defined here, the email will be sent to either the item's holding library or the email address defined in KohaAdminEmailAddress in that order.
+        -
             - If using ExpireReservesMaxPickUpDelay, charge a borrower who allows his or her waiting hold to expire a fee of
             - pref: ExpireReservesMaxPickUpDelayCharge
               class: currency

@@ -826,6 +826,7 @@ sub CancelExpiredReserves {
         if ( $hold->found eq 'W' ) {
             $cancel_params->{charge_cancel_fee} = 1;
         }
+        $cancel_params->{autofill} = C4::Context->preference('ExpireReservesAutoFill');
         $hold->cancel( $cancel_params );
     }
 }
@@ -1015,7 +1016,10 @@ sub ModReserveStatus {
 
 =head2 ModReserveAffect
 
-  &ModReserveAffect($itemnumber,$borrowernumber,$diffBranchSend,$reserve_id);
+&ModReserveAffect(
+    $itemnumber, $borrowernumber, $diffBranchSend,
+    $reserve_id, $notify_library
+);
 
 This function affect an item and a status for a given reserve, either fetched directly
 by record_id, or by borrowernumber and itemnumber or biblionumber. If only biblionumber
@@ -1029,7 +1033,7 @@ take care of the waiting status
 =cut
 
 sub ModReserveAffect {
-    my ( $itemnumber, $borrowernumber, $transferToDo, $reserve_id ) = @_;
+    my ( $itemnumber, $borrowernumber, $transferToDo, $reserve_id, $notify_library ) = @_;
     my $dbh = C4::Context->dbh;
 
     # we want to attach $itemnumber to $borrowernumber, find the biblionumber
@@ -1056,7 +1060,7 @@ sub ModReserveAffect {
     $hold->itemnumber($itemnumber);
     $hold->set_waiting($transferToDo);
 
-    _koha_notify_reserve( $hold->reserve_id )
+    _koha_notify_reserve( $hold->reserve_id, $notify_library )
       if ( !$transferToDo && !$already_on_shelf );
 
     _FixPriority( { biblionumber => $biblionumber } );
@@ -1628,6 +1632,8 @@ The following tables are availalbe witin the notice:
 
 sub _koha_notify_reserve {
     my $reserve_id = shift;
+    my $notify_library = shift;
+
     my $hold = Koha::Holds->find($reserve_id);
     my $borrowernumber = $hold->borrowernumber;
 
@@ -1694,6 +1700,37 @@ sub _koha_notify_reserve {
         &$send_notification('print', 'HOLD');
     }
 
+    if ($notify_library) {
+        my $letter = C4::Letters::GetPreparedLetter(
+            module      => 'reserves',
+            letter_code => 'HOLD_CHANGED',
+            branchcode  => $hold->branchcode,
+            substitute  => { today => output_pref( dt_from_string ) },
+            tables      => {
+                'branches'    => $library,
+                'borrowers'   => $patron->unblessed,
+                'biblio'      => $hold->biblionumber,
+                'biblioitems' => $hold->biblionumber,
+                'reserves'    => $hold->unblessed,
+                'items'       => $hold->itemnumber,
+            },
+        );
+
+        my $email =
+             C4::Context->preference('ExpireReservesAutoFillEmail')
+          || $library->{branchemail}
+          || C4::Context->preference('KohaAdminEmailAddress');
+
+        C4::Letters::EnqueueLetter(
+            {
+                letter                 => $letter,
+                borrowernumber         => $borrowernumber,
+                message_transport_type => 'email',
+                from_address           => $email,
+                to_address             => $email,
+            }
+        );
+    }
 }
 
 =head2 _ShiftPriorityByDateAndPriority

@@ -25,6 +25,7 @@ use Data::Dumper qw(Dumper);
 
 use C4::Context qw(preference);
 use C4::Log;
+use C4::Reserves;
 
 use Koha::DateUtils qw(dt_from_string output_pref);
 use Koha::Patrons;
@@ -338,6 +339,9 @@ Cancel a hold:
 
 sub cancel {
     my ( $self, $params ) = @_;
+
+    my $autofill_next = $params->{autofill} && $self->itemnumber && $self->found && $self->found eq 'W';
+
     $self->_result->result_source->schema->txn_do(
         sub {
             $self->cancellationdate(dt_from_string);
@@ -358,6 +362,17 @@ sub cancel {
                 if C4::Context->preference('HoldsLog');
         }
     );
+
+    if ($autofill_next) {
+        my ( undef, $next_hold ) = C4::Reserves::CheckReserves( $self->itemnumber );
+        if ($next_hold) {
+            my $is_transfer = $self->branchcode ne $next_hold->{branchcode};
+
+            ModReserveAffect( $self->itemnumber, $self->borrowernumber, $is_transfer, $next_hold->{reserve_id}, $autofill_next );
+            ModItemTransfer( $self->itemnumber, $self->branchcode, $next_hold->{branchcode} ) if $is_transfer;
+        }
+    }
+
     return $self;
 }
 

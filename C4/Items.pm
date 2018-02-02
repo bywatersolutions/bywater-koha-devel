@@ -295,7 +295,7 @@ sub AddItem {
 
     $item->{'itemnumber'} = $itemnumber;
 
-    ModZebra( $item->{biblionumber}, "specialUpdate", "biblioserver" );
+    C4::Biblio::ModZebra( $item->{biblionumber}, "specialUpdate", "biblioserver" );
 
     logaction( "CATALOGUING", "ADD", $itemnumber, "item" )
       if C4::Context->preference("CataloguingLog");
