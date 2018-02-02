@@ -410,3 +410,13 @@ INSERT IGNORE INTO letter(module, code, branchcode, name, is_html, title, conten
 INSERT IGNORE INTO letter(module, code, branchcode, name, is_html, title, content, message_transport_type, lang) VALUES ('ill', 'ILL_REQUEST_CANCEL', '', 'ILL request cancelled', 0, "Interlibrary loan request cancelled", "The patron for interlibrary loans request [% illrequest.illrequest_id %], with the following details, has requested cancellation of this ILL request:\n\n[% ill_full_metadata %]", 'sms', 'default');
 INSERT IGNORE INTO letter(module, code, branchcode, name, is_html, title, content, message_transport_type, lang) VALUES ('ill', 'ILL_REQUEST_MODIFIED', '', 'ILL request modified', 0, "Interlibrary loan request modified", "The patron for interlibrary loans request [% illrequest.illrequest_id %], with the following details, has modified this ILL request:\n\n[% ill_full_metadata %]", 'sms', 'default');
 INSERT IGNORE INTO letter(module, code, branchcode, name, is_html, title, content, message_transport_type, lang) VALUES ('ill', 'ILL_PARTNER_REQ', '', 'ILL request to partners', 0, "Interlibrary loan request to partners", "Dear Sir/Madam,\n\nWe would like to request an interlibrary loan for a title matching the following description:\n\n[% ill_full_metadata %]\n\nPlease let us know if you are able to supply this to us.\n\nKind Regards\n\n[% branch.branchname %]\n[% branch.branchaddress1 %]\n[% branch.branchaddress2 %]\n[% branch.branchaddress3 %]\n[% branch.branchcity %]\n[% branch.branchstate %]\n[% branch.branchzip %]\n[% branch.branchphone %]\n[% branch.branchillemail %]\n[% branch.branchemail %]", 'sms', 'default');
+
+INSERT INTO letter(module,code,branchcode,name,is_html,title,content,message_transport_type)
+    VALUES ( 'reserves', 'HOLD_CHANGED', '', 'Canceled Hold Available for Different Patron', '0', 'Canceled Hold Available for Different Patron', 'The patron picking up <<biblio.title>> (<<items.barcode>>) has changed to <<borrowers.firstname>> <<borrowers.surname>> (<<borrowers.cardnumber>>).
+
+Please update the hold information for this item.
+
+Title: <<biblio.title>>
+Author: <<biblio.author>>
+Copy: <<items.copynumber>>
+Pickup location: <<branches.branchname>>', 'email');
