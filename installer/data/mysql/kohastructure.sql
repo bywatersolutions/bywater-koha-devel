@@ -4144,6 +4144,8 @@ CREATE TABLE library_groups (
     title VARCHAR(100) NULL DEFAULT NULL,     -- Short description of the goup
     description TEXT NULL DEFAULT NULL,    -- Longer explanation of the group, if necessary
     ft_hide_patron_info tinyint(1) NOT NULL DEFAULT 0, -- Turn on the feature "Hide patron's info" for this group
+    ft_search_groups_opac tinyint(1) NOT NULL DEFAULT 0, -- Use this group for staff side search groups
+    ft_search_groups_staff tinyint(1) NOT NULL DEFAULT 0, -- Use this group for opac side search groups
     created_on DATETIME NOT NULL,          -- Date and time of creation
     updated_on DATETIME NULL DEFAULT NULL, -- Date and time of last
     PRIMARY KEY id ( id ),
