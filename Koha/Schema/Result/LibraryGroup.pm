@@ -59,6 +59,18 @@ __PACKAGE__->table("library_groups");
   default_value: 0
   is_nullable: 0
 
+=head2 ft_search_groups_opac
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 0
+
+=head2 ft_search_groups_staff
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 0
+
 =head2 created_on
 
   data_type: 'datetime'
@@ -85,6 +97,10 @@ __PACKAGE__->add_columns(
   "description",
   { data_type => "text", is_nullable => 1 },
   "ft_hide_patron_info",
+  { data_type => "tinyint", default_value => 0, is_nullable => 0 },
+  "ft_search_groups_opac",
+  { data_type => "tinyint", default_value => 0, is_nullable => 0 },
+  "ft_search_groups_staff",
   { data_type => "tinyint", default_value => 0, is_nullable => 0 },
   "created_on",
   {
@@ -170,8 +186,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-02-02 13:55:34
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1I6F77/TUDVzxGh0IxPkyQ
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-02-07 19:45:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:59EJrp8K9Oph69Zoqnv3YQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
