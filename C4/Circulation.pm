@@ -2557,10 +2557,20 @@ sub MarkIssueReturned {
             $item->last_returned_by( $patron );
         }
 
+        # The reason this is here, and not in Koha::Patron->has_overdues() is
+        # to make sure it will not cause any side effects elsewhere, since this
+        # is only relevant for removal of debarments.
+        my $has_overdue_ignore_unrestricted = 0;
+        if(C4::Context->preference('ODueDebarmentRemovalAllowUnrestricted')) {
+            $has_overdue_ignore_unrestricted = 1;
+        }
+
         # Remove any OVERDUES related debarment if the borrower has no overdues
         if ( C4::Context->preference('AutoRemoveOverduesRestrictions')
           && $patron->debarred
-          && !$patron->has_overdues
+          && !$patron->has_overdues({
+              ignore_unrestricted => $has_overdue_ignore_unrestricted,
+              issue_branch => $issue->{'branchcode'} })
           && @{ GetDebarments({ borrowernumber => $borrowernumber, type => 'OVERDUES' }) }
         ) {
             DelUniqueDebarment({ borrowernumber => $borrowernumber, type => 'OVERDUES' });
