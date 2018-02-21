@@ -48,6 +48,7 @@ use Koha::Acquisition::Bookseller::Contacts;
 use Koha::Acquisition::Orders;
 use Koha::Libraries;
 use Koha::Notice::Templates;
+use Koha::Patrons;
 my $schema = Koha::Database->schema;
 $schema->storage->txn_begin();
 
@@ -64,14 +65,14 @@ my $library = $builder->build({
 });
 my $patron_category = $builder->build({ source => 'Category' })->{categorycode};
 my $date = dt_from_string;
-my $borrowernumber = AddMember(
+my $borrowernumber = Koha::Patron->new({
     firstname    => 'Jane',
     surname      => 'Smith',
     categorycode => $patron_category,
     branchcode   => $library->{branchcode},
     dateofbirth  => $date,
     smsalertnumber => undef,
-);
+})->store->borrowernumber;
 
 my $marc_record = MARC::Record->new;
 my( $biblionumber, $biblioitemnumber ) = AddBiblio( $marc_record, '' );
@@ -505,14 +506,14 @@ $dbh->do(q{INSERT INTO letter (module, code, name, title, content) VALUES ('seri
 my ($serials_count, @serials) = GetSerials($subscriptionid);
 my $serial = $serials[0];
 
-my $borrowernumber = AddMember(
+my $borrowernumber = Koha::Patron->new({
     firstname    => 'John',
     surname      => 'Smith',
     categorycode => $patron_category,
     branchcode   => $library->{branchcode},
     dateofbirth  => $date,
     email        => 'john.smith@test.de',
-);
+})->store->borrowernumber;
 my $alert_id = C4::Letters::addalert($borrowernumber, 'issue', $subscriptionid);
 
 
@@ -646,7 +647,7 @@ subtest 'SendQueuedMessages' => sub {
     is( $@, '', 'SendQueuedMessages should not explode if the patron does not have a sms provider set' );
 
     my $sms_pro = $builder->build_object({ class => 'Koha::SMS::Providers', value => { domain => 'kidclamp.rocks' } });
-    ModMember( borrowernumber => $borrowernumber, smsalertnumber => '5555555555', sms_provider_id => $sms_pro->id() );
+    $patron->set( { smsalertnumber => '5555555555', sms_provider_id => $sms_pro->id() } )->store;
     $message_id = C4::Letters::EnqueueLetter($my_message); #using datas set around line 95 and forward
     C4::Letters::SendQueuedMessages();
     my $sms_message_address = $schema->resultset('MessageQueue')->search({
@@ -713,14 +714,14 @@ subtest 'Test limit parameter for SendQueuedMessages' => sub {
 
     my $dbh = C4::Context->dbh;
 
-    my $borrowernumber = AddMember(
+    my $borrowernumber = Koha::Patron->new({
         firstname    => 'Jane',
         surname      => 'Smith',
         categorycode => $patron_category,
         branchcode   => $library->{branchcode},
         dateofbirth  => $date,
         smsalertnumber => undef,
-    );
+    })->store->borrowernumber;
 
     $dbh->do(q|DELETE FROM message_queue|);
     $my_message = {

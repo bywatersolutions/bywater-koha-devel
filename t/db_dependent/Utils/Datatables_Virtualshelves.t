@@ -21,20 +21,17 @@ use Test::More tests => 13;
 
 use C4::Biblio;
 use C4::Context;
-use C4::Members;
 
 use Koha::Library;
+use Koha::Patrons;
 use Koha::Patron::Categories;
-use Koha::Virtualshelf;
 use Koha::Virtualshelves;
 
 use_ok( "C4::Utils::DataTables::VirtualShelves" );
 
+my $schema = Koha::Database->new->schema;
+$schema->storage->txn_begin;
 my $dbh = C4::Context->dbh;
-
-# Start transaction
-$dbh->{AutoCommit} = 0;
-$dbh->{RaiseError} = 1;
 
 $dbh->do(q|DELETE FROM virtualshelves|);
 
@@ -80,9 +77,9 @@ my %john_smith = (
     userid       => 'john.smith',
 );
 
-$john_doe{borrowernumber} = AddMember( %john_doe );
-$jane_doe{borrowernumber} = AddMember( %jane_doe );
-$john_smith{borrowernumber} = AddMember( %john_smith );
+$john_doe{borrowernumber} = Koha::Patron->new( \%john_doe )->store->borrowernumber;
+$jane_doe{borrowernumber} = Koha::Patron->new( \%jane_doe )->store->borrowernumber;
+$john_smith{borrowernumber} = Koha::Patron->new( \%john_smith )->store->borrowernumber;
 
 my $shelf1 = Koha::Virtualshelf->new(
     {

@@ -25,10 +25,10 @@ use DateTime;
 use C4::Context;
 use C4::Biblio; # AddBiblio
 use C4::Circulation; # AddIssue
-use C4::Members;# AddMember
 use Koha::Database;
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Libraries;
+use Koha::Patrons;
 
 use Scalar::Util qw( isvstring );
 use Try::Tiny;
@@ -238,7 +238,7 @@ subtest 'store() tests' => sub {
     my $patron = Koha::Patron->new({ categorycode => $category_id });
 
     my $print_error = $schema->storage->dbh->{PrintError};
-    $schema->storage->dbh->{PrintError} = 0;
+    $schema->storage->dbh->{PrintError} = 0; # FIXME This does not longer work - because of the transaction in Koha::Patron->store?
     throws_ok
         { $patron->store }
         'Koha::Exceptions::Object::FKConstraint',
@@ -339,8 +339,7 @@ subtest 'unblessed_all_relateds' => sub {
         categorycode => $patron_category->{categorycode},
         branchcode => $library->branchcode,
     };
-    my $borrowernumber = C4::Members::AddMember(%$patron_data);
-    my $patron = Koha::Patrons->find( $borrowernumber );
+    my $patron = Koha::Patron->new($patron_data)->store;
     my ($biblionumber) = AddBiblio( MARC::Record->new, '' );
     my $biblio = Koha::Biblios->find( $biblionumber );
     my $item = $builder->build_object(

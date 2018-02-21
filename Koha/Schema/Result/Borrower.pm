@@ -1403,5 +1403,8 @@ __PACKAGE__->add_columns(
 sub koha_objects_class {
     'Koha::Patrons';
 }
+sub koha_object_class {
+    'Koha::Patron';
+}
 
 1;

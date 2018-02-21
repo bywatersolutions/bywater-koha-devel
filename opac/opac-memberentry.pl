@@ -169,7 +169,7 @@ if ( $action eq 'create' ) {
                 $verification_token = md5_hex( time().{}.rand().{}.$$ );
             }
 
-            $borrower{password}           = Koha::AuthUtils::generate_password unless $borrower{password};
+            $borrower{password}          = Koha::AuthUtils::generate_password unless $borrower{password};
             $borrower{verification_token} = $verification_token;
 
             Koha::Patron::Modification->new( \%borrower )->store();
@@ -207,13 +207,26 @@ if ( $action eq 'create' ) {
             $template->param( OpacPasswordChange =>
                   C4::Context->preference('OpacPasswordChange') );
 
-            my ( $borrowernumber, $password ) = AddMember_Opac(%borrower);
-            C4::Members::Attributes::SetBorrowerAttributes( $borrowernumber, $attributes );
-            C4::Form::MessagingPreferences::handle_form_action($cgi, { borrowernumber => $borrowernumber }, $template, 1, C4::Context->preference('PatronSelfRegistrationDefaultCategory') ) if $borrowernumber && C4::Context->preference('EnhancedMessagingPreferences');
+            $borrower{categorycode}     ||= C4::Context->preference('PatronSelfRegistrationDefaultCategory');
+            $borrower{password}         ||= Koha::AuthUtils::generate_password;
+            my $patron = Koha::Patron->new( \%borrower )->store;
+            if ( $patron ) {
+                C4::Members::Attributes::SetBorrowerAttributes( $patron->borrowernumber, $attributes );
+                if ( C4::Context->preference('EnhancedMessagingPreferences') ) {
+                    C4::Form::MessagingPreferences::handle_form_action(
+                        $cgi,
+                        { borrowernumber => $patron->borrowernumber },
+                        $template,
+                        1,
+                        C4::Context->preference('PatronSelfRegistrationDefaultCategory')
+                    );
+                }
 
-            $template->param( password_cleartext => $password );
-            my $patron = Koha::Patrons->find( $borrowernumber );
-            $template->param( borrower => $patron->unblessed );
+                $template->param( password_cleartext => $patron->plain_text_password );
+                $template->param( borrower => $patron->unblessed );
+            } else {
+                # FIXME Handle possible errors here
+            }
             $template->param(
                 PatronSelfRegistrationAdditionalInstructions =>
                   C4::Context->preference(

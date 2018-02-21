@@ -28,11 +28,9 @@ use JSON;
 use C4::Biblio;
 use C4::Circulation;
 
-use C4::Members;
 use C4::Circulation;
 
 use Koha::Holds;
-use Koha::Patron;
 use Koha::Patrons;
 use Koha::Patron::Categories;
 use Koha::Database;
@@ -395,7 +393,7 @@ subtest 'add_enrolment_fee_if_needed' => sub {
         branchcode   => $library->{branchcode},
     );
 
-    my $borrowernumber = C4::Members::AddMember(%borrower_data);
+    my $borrowernumber = Koha::Patron->new(\%borrower_data)->store->borrowernumber;
     $borrower_data{borrowernumber} = $borrowernumber;
 
     my $patron = Koha::Patrons->find( $borrowernumber );
@@ -404,22 +402,21 @@ subtest 'add_enrolment_fee_if_needed' => sub {
 
     t::lib::Mocks::mock_preference( 'FeeOnChangePatronCategory', 0 );
     $borrower_data{categorycode} = 'J';
-    C4::Members::ModMember(%borrower_data);
+    $patron->set(\%borrower_data)->store;
     $total = $patron->account->balance;
     is( int($total), int($enrolmentfee_K), "Kid growing and become a juvenile, but shouldn't pay for the upgrade " );
 
     $borrower_data{categorycode} = 'K';
-    C4::Members::ModMember(%borrower_data);
+    $patron->set(\%borrower_data)->store;
     t::lib::Mocks::mock_preference( 'FeeOnChangePatronCategory', 1 );
 
     $borrower_data{categorycode} = 'J';
-    C4::Members::ModMember(%borrower_data);
+    $patron->set(\%borrower_data)->store;
     $total = $patron->account->balance;
     is( int($total), int($enrolmentfee_K + $enrolmentfee_J), "Kid growing and become a juvenile, they should pay " . ( $enrolmentfee_K + $enrolmentfee_J ) );
 
     # Check with calling directly Koha::Patron->get_enrolment_fee_if_needed
     $patron->categorycode('YA')->store;
-    my $fee = $patron->add_enrolment_fee_if_needed;
     $total = $patron->account->balance;
     is( int($total),
         int($enrolmentfee_K + $enrolmentfee_J + $enrolmentfee_YA),
@@ -1148,7 +1145,7 @@ subtest 'userid_is_valid' => sub {
     );
 
     my $expected_userid_patron_1 = 'tomasito.none';
-    my $borrowernumber = AddMember(%data);
+    my $borrowernumber = Koha::Patron->new(\%data)->store->borrowernumber;
     my $patron_1       = Koha::Patrons->find($borrowernumber);
     is ( $patron_1->userid, $expected_userid_patron_1, 'The userid generated should be the one we expect' );
 
@@ -1176,7 +1173,7 @@ subtest 'userid_is_valid' => sub {
 
     # Add a new borrower with the same userid but different cardnumber
     $data{cardnumber} = "987654321";
-    my $new_borrowernumber = AddMember(%data);
+    my $new_borrowernumber = Koha::Patron->new(\%data)->store->borrowernumber;
     my $patron_2 = Koha::Patrons->find($new_borrowernumber);
     $patron_2->userid($patron_1->userid);
     is( $patron_2->has_valid_userid,
@@ -1185,10 +1182,10 @@ subtest 'userid_is_valid' => sub {
     my $new_userid = 'a_user_id';
     $data{cardnumber} = "234567890";
     $data{userid}     = 'a_user_id';
-    $borrowernumber   = AddMember(%data);
+    $borrowernumber   = Koha::Patron->new(\%data)->store->borrowernumber;
     my $patron_3 = Koha::Patrons->find($borrowernumber);
     is( $patron_3->userid, $new_userid,
-        'AddMember should insert the given userid' );
+        'Koha::Patron->store should insert the given userid' );
 
     # Cleanup
     $patron_1->delete;
@@ -1216,28 +1213,32 @@ subtest 'generate_userid' => sub {
 
     my $expected_userid_patron_1 = 'tomasito.none';
     my $new_patron = Koha::Patron->new({ firstname => $data{firstname}, surname => $data{surname} } );
-    my $userid = $new_patron->generate_userid;
+    $new_patron->generate_userid;
+    my $userid = $new_patron->userid;
     is( $userid, $expected_userid_patron_1, 'generate_userid should generate the userid we expect' );
-    my $borrowernumber = AddMember(%data);
+    my $borrowernumber = Koha::Patron->new(\%data)->store->borrowernumber;
     my $patron_1 = Koha::Patrons->find($borrowernumber);
     is ( $patron_1->userid, $expected_userid_patron_1, 'The userid generated should be the one we expect' );
 
-    $userid = $new_patron->generate_userid;
+    $new_patron->generate_userid;
+    $userid = $new_patron->userid;
     is( $userid, $expected_userid_patron_1 . '1', 'generate_userid should generate the userid we expect' );
     $data{cardnumber} = '987654321';
-    my $new_borrowernumber = AddMember(%data);
+    my $new_borrowernumber = Koha::Patron->new(\%data)->store->borrowernumber;
     my $patron_2 = Koha::Patrons->find($new_borrowernumber);
     isnt( $patron_2->userid, 'tomasito',
         "Patron with duplicate userid has new userid generated" );
     is( $patron_2->userid, $expected_userid_patron_1 . '1', # TODO we could make that configurable
         "Patron with duplicate userid has new userid generated (1 is appened" );
 
-    $userid = $new_patron->generate_userid;
+    $new_patron->generate_userid;
+    $userid = $new_patron->userid;
     is( $userid, $expected_userid_patron_1 . '2', 'generate_userid should generate the userid we expect' );
 
     $patron_1 = Koha::Patrons->find($borrowernumber);
     $patron_1->userid(undef);
-    $userid = $patron_1->generate_userid;
+    $patron_1->generate_userid;
+    $userid = $patron_1->userid;
     is( $userid, $expected_userid_patron_1, 'generate_userid should generate the userid we expect' );
 
     # Cleanup
@@ -1320,13 +1321,13 @@ subtest 'Log cardnumber change' => sub {
     plan tests => 3;
 
     t::lib::Mocks::mock_preference( 'BorrowersLog', 1 );
-    my $patron = $builder->build( { source => 'Borrower' } );
+    my $patron = $builder->build_object( { class => 'Koha::Patrons' } );
 
-    my $cardnumber = $patron->{cardnumber};
-    $patron->{cardnumber} = 'TESTCARDNUMBER';
-    ModMember(%$patron);
+    my $cardnumber = $patron->cardnumber;
+    $patron->set( { cardnumber => 'TESTCARDNUMBER' });
+    $patron->store;
 
-    my @logs = $schema->resultset('ActionLog')->search( { module => 'MEMBERS', action => 'MODIFY', object => $patron->{borrowernumber} } );
+    my @logs = $schema->resultset('ActionLog')->search( { module => 'MEMBERS', action => 'MODIFY', object => $patron->borrowernumber } );
     my $log_info = from_json( $logs[0]->info );
     is( $log_info->{cardnumber_replaced}->{new_cardnumber}, 'TESTCARDNUMBER', 'Got correct new cardnumber' );
     is( $log_info->{cardnumber_replaced}->{previous_cardnumber}, $cardnumber, 'Got correct old cardnumber' );

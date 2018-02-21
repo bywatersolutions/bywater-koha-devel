@@ -205,7 +205,7 @@ if ( $op eq 'insert' || $op eq 'modify' || $op eq 'save' || $op eq 'duplicate' )
     }
 }
 
-# remove keys from %newdata that ModMember() doesn't like
+# remove keys from %newdata that is not part of patron's attributes
 {
     my @keys_to_delete = (
         qr/^BorrowerMandatoryField$/,
@@ -225,6 +225,8 @@ if ( $op eq 'insert' || $op eq 'modify' || $op eq 'save' || $op eq 'duplicate' )
         qr/^\d+$/,
         qr/^\d+-DAYS/,
         qr/^patron_attr_/,
+        qr/^csrf_token$/,
+        qr/^add_debarment$/, qr/^debarred_expiration$/ # We already dealt with debarments previously
     );
     for my $regexp (@keys_to_delete) {
         for (keys %newdata) {
@@ -284,7 +286,8 @@ if ( ( defined $newdata{'userid'} && $newdata{'userid'} eq '' ) || $check_Borrow
         # Full page edit, firstname and surname input zones are present
         $patron->firstname($newdata{firstname});
         $patron->surname($newdata{surname});
-        $newdata{'userid'} = $patron->generate_userid;
+        $patron->generate_userid;
+        $newdata{'userid'} = $patron->userid;
     }
     elsif ( ( defined $data{'firstname'} ) && ( defined $data{'surname'} ) ) {
         # Partial page edit (access through "Details"/"Library details" tab), firstname and surname input zones are not used
@@ -292,7 +295,8 @@ if ( ( defined $newdata{'userid'} && $newdata{'userid'} eq '' ) || $check_Borrow
         # FIXME clean thiscode newdata vs data is very confusing
         $patron->firstname($data{firstname});
         $patron->surname($data{surname});
-        $newdata{'userid'} = $patron->generate_userid;
+        $patron->generate_userid;
+        $newdata{'userid'} = $patron->userid;
     }
     else {
         $newdata{'userid'} = $data{'userid'};
@@ -425,8 +429,15 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
 	$debug and warn "$op dates: " . join "\t", map {"$_: $newdata{$_}"} qw(dateofbirth dateenrolled dateexpiry);
 	if ($op eq 'insert'){
 		# we know it's not a duplicate borrowernumber or there would already be an error
-        $borrowernumber = &AddMember(%newdata);
-        $newdata{'borrowernumber'} = $borrowernumber;
+        delete $newdata{password2};
+        my $patron = eval { Koha::Patron->new(\%newdata)->store };
+        if ( $@ ) {
+            # FIXME Urgent error handling here, we cannot fail without relevant feedback
+            # Lot of code will need to be removed from this script to handle exceptions raised by Koha::Patron->store
+            warn "Patron creation failed! - $@"; # Maybe we must die instead of just warn
+        } else {
+            $borrowernumber = $patron->borrowernumber;
+        }
 
         # If 'AutoEmailOpacUser' syspref is on, email user their account details from the 'notice' that matches the user's branchcode.
         if ( C4::Context->preference("AutoEmailOpacUser") == 1 && $newdata{'userid'}  && $newdata{'password'}) {
@@ -519,7 +530,12 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
             delete $newdata{'password'};
             delete $newdata{'userid'};
         }
-        &ModMember(%newdata) unless scalar(keys %newdata) <= 1; # bug 4508 - avoid crash if we're not
+
+        my $patron = Koha::Patrons->find( $borrowernumber );
+        $newdata{debarredcomment} = $newdata{debarred_comment};
+        delete $newdata{debarred_comment};
+        delete $newdata{password2};
+        $patron->set(\%newdata)->store if scalar(keys %newdata) > 1; # bug 4508 - avoid crash if we're not
                                                                 # updating any columns in the borrowers table,
                                                                 # which can happen if we're only editing the
                                                                 # patron attributes or messaging preferences sections

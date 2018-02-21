@@ -23,7 +23,6 @@ use Carp;
 
 use C4::Debug;
 use C4::Context;
-use C4::Members qw(AddMember);
 use C4::Members::Attributes;
 use C4::Members::AttributeTypes;
 use C4::Members::Messaging;
@@ -223,7 +222,7 @@ sub checkpw_ldap {
 		return(1, $cardnumber, $local_userid);
         }
     } elsif ($config{replicate}) { # A2, C2
-        $borrowernumber = C4::Members::AddMember(%borrower) or die "AddMember failed";
+        Koha::Patron->new( \%borrower )->store;
         C4::Members::Messaging::SetMessagingPreferencesFromDefaults( { borrowernumber => $borrowernumber, categorycode => $borrower{'categorycode'} } );
    } else {
         return 0;   # B2, D2

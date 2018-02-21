@@ -52,7 +52,7 @@ my $dbh = C4::Context->dbh;
 
 my $builder = t::lib::TestBuilder->new;
 
-my $frameworkcode = q||;
+my $frameworkcode = q//;
 
 # Somewhat arbitrary field chosen for age restriction unit tests. Must be added to db before the framework is cached
 $dbh->do("update marc_subfield_structure set kohafield='biblioitems.agerestriction' where tagfield='521' and tagsubfield='a' and frameworkcode=?", undef, $frameworkcode);
@@ -117,7 +117,7 @@ my %data = (
     branchcode => $branch_1,
 );
 Koha::Patron::Categories->find($category_1)->set({ enrolmentfee => 0})->store;
-my $borrowernumber = AddMember(%data);
+my $borrowernumber = Koha::Patron->new(\%data)->store->borrowernumber;
 my $borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
 my $biblionumber   = $bibnum;
 my $barcode        = $testbarcode;
@@ -169,28 +169,28 @@ t::lib::Mocks::mock_preference( 'ReservesControlBranch', $ReservesControlBranch 
 ### Regression test for bug 10272
 ###
 my %requesters = ();
-$requesters{$branch_1} = AddMember(
+$requesters{$branch_1} = Koha::Patron->new({
     branchcode   => $branch_1,
     categorycode => $category_2,
     surname      => "borrower from $branch_1",
-);
+})->store->borrowernumber;
 for my $i ( 2 .. 5 ) {
-    $requesters{"CPL$i"} = AddMember(
+    $requesters{"CPL$i"} = Koha::Patron->new({
         branchcode   => $branch_1,
         categorycode => $category_2,
         surname      => "borrower $i from $branch_1",
-    );
+    })->store->borrowernumber;
 }
-$requesters{$branch_2} = AddMember(
+$requesters{$branch_2} = Koha::Patron->new({
     branchcode   => $branch_2,
     categorycode => $category_2,
     surname      => "borrower from $branch_2",
-);
-$requesters{$branch_3} = AddMember(
+})->store->borrowernumber;
+$requesters{$branch_3} = Koha::Patron->new({
     branchcode   => $branch_3,
     categorycode => $category_2,
     surname      => "borrower from $branch_3",
-);
+})->store->borrowernumber;
 
 # Configure rules so that $branch_1 allows only $branch_1 patrons
 # to request its items, while $branch_2 will allow its items
@@ -523,13 +523,13 @@ is( C4::Reserves::CanBookBeReserved($borrowernumber, $biblionumber) , 'OK', "Res
 
 #Set the dateofbirth for the Borrower making them "too young".
 $borrower->{dateofbirth} = DateTime->now->add( years => -15 );
-C4::Members::ModMember( borrowernumber => $borrowernumber, dateofbirth => $borrower->{dateofbirth} );
+Koha::Patrons->find( $borrowernumber )->set({ dateofbirth => $borrower->{dateofbirth} })->store;
 
 is( C4::Reserves::CanBookBeReserved($borrowernumber, $biblionumber) , 'ageRestricted', "Reserving a 'PEGI 16' Biblio by a 15 year old borrower fails");
 
 #Set the dateofbirth for the Borrower making them "too old".
 $borrower->{dateofbirth} = DateTime->now->add( years => -30 );
-C4::Members::ModMember( borrowernumber => $borrowernumber, dateofbirth => $borrower->{dateofbirth} );
+Koha::Patrons->find( $borrowernumber )->set({ dateofbirth => $borrower->{dateofbirth} })->store;
 
 is( C4::Reserves::CanBookBeReserved($borrowernumber, $biblionumber) , 'OK', "Reserving a 'PEGI 16' Biblio by a 30 year old borrower succeeds");
        ####

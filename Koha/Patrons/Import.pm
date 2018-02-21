@@ -241,12 +241,15 @@ sub import_patrons {
                 }
             }
 
-            unless ( ModMember(%borrower) ) {
+            my $patron = Koha::Patrons->find( $borrowernumber );
+            eval { $patron->set(\%borrower)->store };
+            if ( $@ ) {
                 $invalid++;
 
                 push(
                     @errors,
                     {
+                        # TODO We can raise a better error
                         name  => 'lastinvalid',
                         value => $borrower{'surname'} . ' / ' . $borrowernumber
                     }
@@ -295,44 +298,42 @@ sub import_patrons {
             );
         }
         else {
-            # FIXME: fixup_cardnumber says to lock table, but the web interface doesn't so this doesn't either.
-            # At least this is closer to AddMember than in members/memberentry.pl
-            if ( !$borrower{'cardnumber'} ) {
-                $borrower{'cardnumber'} = fixup_cardnumber(undef);
-            }
-            if ( $borrowernumber = AddMember(%borrower) ) {
+            my $patron = eval {
+                Koha::Patron->new(\%borrower)->store;
+            };
+            unless ( $@ ) {
 
-                if ( $borrower{debarred} ) {
+                if ( $patron->is_debarred ) {
                     AddDebarment(
                         {
-                            borrowernumber => $borrowernumber,
-                            expiration     => $borrower{debarred},
-                            comment        => $borrower{debarredcomment}
+                            borrowernumber => $patron->borrowernumber,
+                            expiration     => $patron->debarred,
+                            comment        => $patron->debarredcomment,
                         }
                     );
                 }
 
                 if ($extended) {
-                    SetBorrowerAttributes( $borrowernumber, $patron_attributes );
+                    SetBorrowerAttributes( $patron->borrowernumber, $patron_attributes );
                 }
 
                 if ($set_messaging_prefs) {
                     C4::Members::Messaging::SetMessagingPreferencesFromDefaults(
                         {
-                            borrowernumber => $borrowernumber,
-                            categorycode   => $borrower{categorycode}
+                            borrowernumber => $patron->borrowernumber,
+                            categorycode   => $patron->categorycode,
                         }
                     );
                 }
 
                 $imported++;
-                push @imported_borrowers, $borrowernumber; #for patronlist
+                push @imported_borrowers, $patron->borrowernumber; #for patronlist
                 push(
                     @feedback,
                     {
                         feedback => 1,
                         name     => 'lastimported',
-                        value    => $borrower{'surname'} . ' / ' . $borrowernumber
+                        value    => $patron->surname . ' / ' . $patron->borrowernumber,
                     }
                 );
             }
@@ -343,7 +344,7 @@ sub import_patrons {
                     @errors,
                     {
                         name  => 'lastinvalid',
-                        value => $borrower{'surname'} . ' / AddMember',
+                        value => $borrower{'surname'} . ' / Create patron',
                     }
                 );
             }

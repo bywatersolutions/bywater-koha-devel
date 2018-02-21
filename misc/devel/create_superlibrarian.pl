@@ -23,7 +23,6 @@ use Pod::Usage;
 
 use C4::Installer;
 use C4::Context;
-use C4::Members;
 
 use Koha::DateUtils;
 use Koha::Libraries;
@@ -54,7 +53,7 @@ GetOptions(
 
 pod2usage(1) if $help;
 
-AddMember(
+Koha::Patron->new({
     surname      => 'koha',
     userid       => $userid,
     cardnumber   => 42,
@@ -62,7 +61,7 @@ AddMember(
     categorycode => $patron_category->categorycode,
     password     => $password,
     flags        => 1,
-);
+})->store;
 
 =head1 NAME
 

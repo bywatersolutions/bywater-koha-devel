@@ -22,6 +22,8 @@ use Modern::Perl;
 
 use Carp;
 use List::MoreUtils qw( uniq );
+use JSON qw( to_json );
+use Module::Load::Conditional qw( can_load );
 use Text::Unaccent qw( unac_string );
 
 use C4::Context;
@@ -40,6 +42,10 @@ use Koha::Virtualshelves;
 use Koha::Club::Enrollments;
 use Koha::Account;
 
+if ( ! can_load( modules => { 'Koha::NorwegianPatronDB' => undef } ) ) {
+   warn "Unable to load Koha::NorwegianPatronDB";
+}
+
 use base qw(Koha::Object);
 
 =head1 NAME
@@ -51,6 +57,240 @@ Koha::Patron - Koha Patron Object class
 =head2 Class Methods
 
 =cut
+
+=head3 new
+
+=cut
+
+sub new {
+    my ( $class, $params ) = @_;
+
+    return $class->SUPER::new($params);
+}
+
+sub fixup_cardnumber {
+    my ( $self ) = @_;
+    my $max = Koha::Patrons->search({
+        cardnumber => {-regexp => '^-?[0-9]+$'}
+    }, {
+        select => \'CAST(cardnumber AS SIGNED)',
+        as => ['cast_cardnumber']
+    })->_resultset->get_column('cast_cardnumber')->max;
+    $self->cardnumber(($max || 0) +1);
+}
+
+# trim whitespace from data which has some non-whitespace in it.
+# Could be moved to Koha::Object if need to be reused
+sub trim_whitespaces {
+    my( $self ) = @_;
+
+    my $schema  = Koha::Database->new->schema;
+    my @columns = $schema->source($self->_type)->columns;
+
+    for my $column( @columns ) {
+        my $value = $self->$column;
+        if ( defined $value ) {
+            $value =~ s/^\s*|\s*$//g;
+            $self->$column($value);
+        }
+    }
+    return $self;
+}
+
+sub plain_text_password {
+    my ( $self, $password ) = @_;
+    if ( $password ) {
+        $self->{_plain_text_password} = $password;
+        return $self;
+    }
+    return $self->{_plain_text_password}
+        if $self->{_plain_text_password};
+
+    return;
+}
+
+sub store {
+    my ($self) = @_;
+
+    $self->_result->result_source->schema->txn_do(
+        sub {
+            if (
+                C4::Context->preference("autoMemberNum")
+                and ( not defined $self->cardnumber
+                    or $self->cardnumber eq '' )
+              )
+            {
+                # Warning: The caller is responsible for locking the members table in write
+                # mode, to avoid database corruption.
+                # We are in a transaction but the table is not locked
+                $self->fixup_cardnumber;
+            }
+
+            unless( $self->category->in_storage ) {
+                Koha::Exceptions::Object::FKConstraint->throw(
+                    error     => 'Broken FK constraint',
+                    broken_fk => 'categorycode',
+                );
+            }
+
+            $self->trim_whitespaces;
+
+            # We don't want invalid dates in the db (mysql has a bad habit of inserting 0000-00-00)
+            $self->dateofbirth(undef) unless $self->dateofbirth;
+            $self->debarred(undef)    unless $self->debarred;
+
+            # Set default values if not set
+            $self->sms_provider_id(undef) unless $self->sms_provider_id;
+            $self->guarantorid(undef)     unless $self->guarantorid;
+
+            unless ( $self->in_storage ) {    #AddMember
+
+                # Generate a valid userid/login if needed
+                $self->generate_userid
+                  if not $self->userid or not $self->has_valid_userid;
+
+                # Add expiration date if it isn't already there
+                unless ( $self->dateexpiry ) {
+                    $self->dateexpiry( $self->category->get_expiry_date );
+                }
+
+                # Add enrollment date if it isn't already there
+                unless ( $self->dateenrolled ) {
+                    $self->dateenrolled(dt_from_string);
+                }
+
+                # Set the privacy depending on the patron's category
+                my $default_privacy = $self->category->default_privacy || q{};
+                $default_privacy =
+                    $default_privacy eq 'default' ? 1
+                  : $default_privacy eq 'never'   ? 2
+                  : $default_privacy eq 'forever' ? 0
+                  :                                                   undef;
+                $self->privacy($default_privacy);
+
+                unless ( defined $self->privacy_guarantor_checkouts ) {
+                    $self->privacy_guarantor_checkouts(0);
+                }
+
+                # Make a copy of the plain text password for later use
+                $self->plain_text_password( $self->password );
+
+                # Create a disabled account if no password provided
+                $self->password( $self->password
+                    ? Koha::AuthUtils::hash_password( $self->password )
+                    : '!' );
+
+                $self->borrowernumber(undef);
+
+                $self = $self->SUPER::store;
+
+                # If NorwegianPatronDBEnable is enabled, we set syncstatus to something that a
+                # cronjob will use for syncing with NL
+                if (   C4::Context->preference('NorwegianPatronDBEnable')
+                    && C4::Context->preference('NorwegianPatronDBEnable') == 1 )
+                {
+                    Koha::Database->new->schema->resultset('BorrowerSync')
+                      ->create(
+                        {
+                            'borrowernumber' => $self->borrowernumber,
+                            'synctype'       => 'norwegianpatrondb',
+                            'sync'           => 1,
+                            'syncstatus'     => 'new',
+                            'hashed_pin' =>
+                              Koha::NorwegianPatronDB::NLEncryptPIN($self->plain_text_password),
+                        }
+                      );
+                }
+
+                $self->add_enrolment_fee_if_needed;
+
+                logaction( "MEMBERS", "CREATE", $self->borrowernumber, "" )
+                  if C4::Context->preference("BorrowersLog");
+            }
+            else {    #ModMember
+                # test to know if you must update or not the borrower password
+                if ( defined $self->password ) {
+                    if ( $self->password eq '****' or $self->password eq '' ) {
+                        $self->password(undef);
+                    } else {
+                        if ( C4::Context->preference('NorwegianPatronDBEnable') && C4::Context->preference('NorwegianPatronDBEnable') == 1 ) {
+                            # Update the hashed PIN in borrower_sync.hashed_pin, before Koha hashes it
+                            Koha::NorwegianPatronDB::NLUpdateHashedPIN( $self->borrowernumber, $self->password );
+                        }
+                        $self->password(Koha::AuthUtils::hash_password($self->password));
+                    }
+                }
+
+                 # Come from ModMember, but should not be possible (?)
+                $self->dateenrolled(undef) unless $self->dateenrolled;
+                $self->dateexpiry(undef)   unless $self->dateexpiry;
+
+                # FIXME We should not deal with that here, callers have to do this job
+                # Moved from ModMember to prevent regressions
+                unless ( $self->userid ) {
+                    my $stored_userid = $self->get_from_storage->userid;
+                    $self->userid($stored_userid);
+                }
+
+                if ( C4::Context->preference('FeeOnChangePatronCategory')
+                    and $self->category->categorycode ne
+                    $self->get_from_storage->category->categorycode )
+                {
+                    $self->add_enrolment_fee_if_needed;
+                }
+
+                # If NorwegianPatronDBEnable is enabled, we set syncstatus to something that a
+                # cronjob will use for syncing with NL
+                if (   C4::Context->preference('NorwegianPatronDBEnable')
+                    && C4::Context->preference('NorwegianPatronDBEnable') == 1 )
+                {
+                    my $borrowersync = Koha::Database->new->schema->resultset('BorrowerSync')->find({
+                        'synctype'       => 'norwegianpatrondb',
+                        'borrowernumber' => $self->borrowernumber,
+                    });
+                    # Do not set to "edited" if syncstatus is "new". We need to sync as new before
+                    # we can sync as changed. And the "new sync" will pick up all changes since
+                    # the patron was created anyway.
+                    if ( $borrowersync->syncstatus ne 'new' && $borrowersync->syncstatus ne 'delete' ) {
+                        $borrowersync->update( { 'syncstatus' => 'edited' } );
+                    }
+                    # Set the value of 'sync'
+                    # FIXME THIS IS BROKEN # $borrowersync->update( { 'sync' => $data{'sync'} } );
+
+                    # Try to do the live sync
+                    Koha::NorwegianPatronDB::NLSync({ 'borrowernumber' => $self->borrowernumber });
+                }
+
+                my $borrowers_log = C4::Context->preference("BorrowersLog");
+                my $previous_cardnumber = $self->get_from_storage->cardnumber;
+                if ( $borrowers_log && $previous_cardnumber ne $self->cardnumber )
+                {
+                    logaction(
+                        "MEMBERS",
+                        "MODIFY",
+                        $self->borrowernumber,
+                        to_json(
+                            {
+                                cardnumber_replaced => {
+                                    previous_cardnumber => $previous_cardnumber,
+                                    new_cardnumber      => $self->cardnumber,
+                                }
+                            },
+                            { utf8 => 1, pretty => 1 }
+                        )
+                    );
+                }
+
+                logaction( "MEMBERS", "MODIFY", $self->borrowernumber,
+                    "UPDATE (executed w/ arg: " . $self->borrowernumber . ")" )
+                  if $borrowers_log;
+
+                $self = $self->SUPER::store;
+            }
+        }
+    );
+    return $self;
+}
 
 =head3 delete
 
@@ -901,41 +1141,31 @@ sub has_valid_userid {
 =head3 generate_userid
 
 my $patron = Koha::Patron->new( $params );
-my $userid = $patron->generate_userid
+$patron->generate_userid
 
 Generate a userid using the $surname and the $firstname (if there is a value in $firstname).
 
-Return the generate userid ($firstname.$surname if there is a $firstname, or $surname if there is no value in $firstname) plus offset (0 if the $userid is unique, or a higher numeric value if not unique).
-
-# Note: Should we set $self->userid with the generated value?
-# Certainly yes, but we AddMember and ModMember will be rewritten
+Set a generated userid ($firstname.$surname if there is a $firstname, or $surname if there is no value in $firstname) plus offset (0 if the $userid is unique, or a higher numeric value if not unique).
 
 =cut
 
 sub generate_userid {
     my ($self) = @_;
-    my $userid;
     my $offset = 0;
-    my $existing_userid = $self->userid;
     my $firstname = $self->firstname // q{};
     my $surname = $self->surname // q{};
     #The script will "do" the following code and increment the $offset until the generated userid is unique
     do {
       $firstname =~ s/[[:digit:][:space:][:blank:][:punct:][:cntrl:]]//g;
       $surname =~ s/[[:digit:][:space:][:blank:][:punct:][:cntrl:]]//g;
-      $userid = lc(($firstname)? "$firstname.$surname" : $surname);
+      my $userid = lc(($firstname)? "$firstname.$surname" : $surname);
       $userid = unac_string('utf-8',$userid);
       $userid .= $offset unless $offset == 0;
       $self->userid( $userid );
       $offset++;
      } while (! $self->has_valid_userid );
 
-     # Resetting to the previous value as the callers do not expect
-     # this method to modify the userid attribute
-     # This will be done later (move of AddMember and ModMember)
-     $self->userid( $existing_userid );
-
-     return $userid;
+     return $self;
 
 }
 

@@ -17,7 +17,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 51;
+use Test::More tests => 47;
 use Test::MockModule;
 use Test::Exception;
 
@@ -94,12 +94,12 @@ my %data = (
     userid => 'tomasito'
 );
 
-my $addmem=AddMember(%data);
-ok($addmem, "AddMember()");
+my $addmem=Koha::Patron->new(\%data)->store->borrowernumber;
+ok($addmem, "Koha::Patron->store()");
 
-my $member = Koha::Patrons->find( { cardnumber => $CARDNUMBER } )
+my $patron = Koha::Patrons->find( { cardnumber => $CARDNUMBER } )
   or BAIL_OUT("Cannot read member with card $CARDNUMBER");
-$member = $member->unblessed;
+my $member = $patron->unblessed;
 
 ok ( $member->{firstname}    eq $FIRSTNAME    &&
      $member->{surname}      eq $SURNAME      &&
@@ -114,7 +114,7 @@ $member->{firstname} = $CHANGED_FIRSTNAME . q{ };
 $member->{email}     = $EMAIL;
 $member->{phone}     = $PHONE;
 $member->{emailpro}  = $EMAILPRO;
-ModMember(%$member);
+$patron->set($member)->store;
 my $changedmember = Koha::Patrons->find( { cardnumber => $CARDNUMBER } )->unblessed;
 ok ( $changedmember->{firstname} eq $CHANGED_FIRSTNAME &&
      $changedmember->{email}     eq $EMAIL             &&
@@ -151,44 +151,46 @@ is ($checkcardnum, "2", "Card number is too long");
     dateexpiry   => '',
     dateenrolled => '',
 );
-my $borrowernumber = AddMember( %data );
-my $borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
-is( $borrower->{dateofbirth}, undef, 'AddMember should undef dateofbirth if empty string is given');
-is( $borrower->{debarred}, undef, 'AddMember should undef debarred if empty string is given');
-isnt( $borrower->{dateexpiry}, '0000-00-00', 'AddMember should not set dateexpiry to 0000-00-00 if empty string is given');
-isnt( $borrower->{dateenrolled}, '0000-00-00', 'AddMember should not set dateenrolled to 0000-00-00 if empty string is given');
+my $borrowernumber = Koha::Patron->new( \%data )->store->borrowernumber;
+$patron = Koha::Patrons->find( $borrowernumber );
+my $borrower = $patron->unblessed;
+is( $borrower->{dateofbirth}, undef, 'Koha::Patron->store should undef dateofbirth if empty string is given');
+is( $borrower->{debarred}, undef, 'Koha::Patron->store should undef debarred if empty string is given');
+isnt( $borrower->{dateexpiry}, '0000-00-00', 'Koha::Patron->store should not set dateexpiry to 0000-00-00 if empty string is given');
+isnt( $borrower->{dateenrolled}, '0000-00-00', 'Koha::Patron->store should not set dateenrolled to 0000-00-00 if empty string is given');
 
-ModMember( borrowernumber => $borrowernumber, dateofbirth => '', debarred => '', dateexpiry => '', dateenrolled => '' );
+$patron->set({ dateofbirth => '', debarred => '', dateexpiry => '', dateenrolled => '' })->store;
 $borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
-is( $borrower->{dateofbirth}, undef, 'ModMember should undef dateofbirth if empty string is given');
-is( $borrower->{debarred}, undef, 'ModMember should undef debarred if empty string is given');
-isnt( $borrower->{dateexpiry}, '0000-00-00', 'ModMember should not set dateexpiry to 0000-00-00 if empty string is given');
-isnt( $borrower->{dateenrolled}, '0000-00-00', 'ModMember should not set dateenrolled to 0000-00-00 if empty string is given');
+is( $borrower->{dateofbirth}, undef, 'Koha::Patron->store should undef dateofbirth if empty string is given');
+is( $borrower->{debarred}, undef, 'Koha::Patron->store should undef debarred if empty string is given');
+isnt( $borrower->{dateexpiry}, '0000-00-00', 'Koha::Patron->store should not set dateexpiry to 0000-00-00 if empty string is given');
+isnt( $borrower->{dateenrolled}, '0000-00-00', 'Koha::Patron->store should not set dateenrolled to 0000-00-00 if empty string is given');
 
-ModMember( borrowernumber => $borrowernumber, dateofbirth => '1970-01-01', debarred => '2042-01-01', dateexpiry => '9999-12-31', dateenrolled => '2015-09-06' );
+$patron->set({ dateofbirth => '1970-01-01', debarred => '2042-01-01', dateexpiry => '9999-12-31', dateenrolled => '2015-09-06' })->store;
 $borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
-is( $borrower->{dateofbirth}, '1970-01-01', 'ModMember should correctly set dateofbirth if a valid date is given');
-is( $borrower->{debarred}, '2042-01-01', 'ModMember should correctly set debarred if a valid date is given');
-is( $borrower->{dateexpiry}, '9999-12-31', 'ModMember should correctly set dateexpiry if a valid date is given');
-is( $borrower->{dateenrolled}, '2015-09-06', 'ModMember should correctly set dateenrolled if a valid date is given');
+is( $borrower->{dateofbirth}, '1970-01-01', 'Koha::Patron->store should correctly set dateofbirth if a valid date is given');
+is( $borrower->{debarred}, '2042-01-01', 'Koha::Patron->store should correctly set debarred if a valid date is given');
+is( $borrower->{dateexpiry}, '9999-12-31', 'Koha::Patron->store should correctly set dateexpiry if a valid date is given');
+is( $borrower->{dateenrolled}, '2015-09-06', 'Koha::Patron->store should correctly set dateenrolled if a valid date is given');
 
-subtest 'ModMember should not update userid if not true' => sub {
+subtest 'Koha::Patron->store should not update userid if not true' => sub {
     plan tests => 3;
 
     $data{ cardnumber } = "234567890";
     $data{userid} = 'a_user_id';
-    $borrowernumber = AddMember( %data );
-    $borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
+    $borrowernumber = Koha::Patron->new( \%data )->store->borrowernumber;
+    my $patron = Koha::Patrons->find( $borrowernumber );
+    my $borrower = $patron->unblessed;
 
-    ModMember( borrowernumber => $borrowernumber, firstname => 'Tomas', userid => '' );
+    $patron->set( { firstname => 'Tomas', userid => '' } )->store;
     $borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
-    is ( $borrower->{userid}, $data{userid}, 'ModMember should not update the userid with an empty string' );
-    ModMember( borrowernumber => $borrowernumber, firstname => 'Tomas', userid => 0 );
+    is ( $borrower->{userid}, $data{userid}, 'Koha::Patron->store should not update the userid with an empty string' );
+    $patron->set( { firstname => 'Tomas', userid => 0 } )->store;
     $borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
-    is ( $borrower->{userid}, $data{userid}, 'ModMember should not update the userid with an 0');
-    ModMember( borrowernumber => $borrowernumber, firstname => 'Tomas', userid => undef );
+    is ( $borrower->{userid}, $data{userid}, 'Koha::Patron->store should not update the userid with an 0');
+    $patron->set( { firstname => 'Tomas', userid => undef } )->store;
     $borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
-    is ( $borrower->{userid}, $data{userid}, 'ModMember should not update the userid with an undefined value');
+    is ( $borrower->{userid}, $data{userid}, 'Koha::Patron->store should not update the userid with an undefined value');
 };
 
 #Regression tests for bug 10612
@@ -266,13 +268,13 @@ $builder->build({
 # IndependentBranches is off.
 t::lib::Mocks::mock_preference('IndependentBranches', 0);
 
-my $owner = AddMember (categorycode => 'STAFFER', branchcode => $library2->{branchcode} );
+my $owner = Koha::Patron->new({ categorycode => 'STAFFER', branchcode => $library2->{branchcode} })->store->borrowernumber;
 my $list1 = AddPatronList( { name => 'Test List 1', owner => $owner } );
 my @listpatrons = ($bor1inlist, $bor2inlist);
 AddPatronsToList(  { list => $list1, borrowernumbers => \@listpatrons });
 my $patstodel = GetBorrowersToExpunge( {patron_list_id => $list1->patron_list_id() } );
 is( scalar(@$patstodel),0,'No staff deleted from list of all staff');
-ModMember( borrowernumber => $bor2inlist, categorycode => 'CIVILIAN' );
+Koha::Patrons->find($bor2inlist)->set({ categorycode => 'CIVILIAN' })->store;
 $patstodel = GetBorrowersToExpunge( {patron_list_id => $list1->patron_list_id()} );
 ok( scalar(@$patstodel)== 1 && $patstodel->[0]->{'borrowernumber'} eq $bor2inlist,'Staff patron not deleted from list');
 $patstodel = GetBorrowersToExpunge( {branchcode => $library3->{branchcode},patron_list_id => $list1->patron_list_id() } );
@@ -282,8 +284,8 @@ ok( scalar(@$patstodel) == 1 && $patstodel->[0]->{'borrowernumber'} eq $bor2inli
 $patstodel = GetBorrowersToExpunge( {not_borrowed_since => '2016-01-02', patron_list_id => $list1->patron_list_id() } );
 ok( scalar(@$patstodel) == 1 && $patstodel->[0]->{'borrowernumber'} eq $bor2inlist,'Staff patron not deleted by last issue date');
 
-ModMember( borrowernumber => $bor1inlist, categorycode => 'CIVILIAN' );
-ModMember( borrowernumber => $guarantee->{borrowernumber} ,guarantorid=>$bor1inlist );
+Koha::Patrons->find($bor1inlist)->set({ categorycode => 'CIVILIAN' })->store;
+Koha::Patrons->find($guarantee->{borrowernumber})->set({ guarantorid => $bor1inlist })->store;
 
 $patstodel = GetBorrowersToExpunge( {patron_list_id => $list1->patron_list_id()} );
 ok( scalar(@$patstodel)== 1 && $patstodel->[0]->{'borrowernumber'} eq $bor2inlist,'Guarantor patron not deleted from list');
@@ -293,7 +295,7 @@ $patstodel = GetBorrowersToExpunge( {expired_before => '2015-01-02', patron_list
 ok( scalar(@$patstodel) == 1 && $patstodel->[0]->{'borrowernumber'} eq $bor2inlist,'Guarantor patron not deleted by expirationdate and list');
 $patstodel = GetBorrowersToExpunge( {not_borrowed_since => '2016-01-02', patron_list_id => $list1->patron_list_id() } );
 ok( scalar(@$patstodel) == 1 && $patstodel->[0]->{'borrowernumber'} eq $bor2inlist,'Guarantor patron not deleted by last issue date');
-ModMember( borrowernumber => $guarantee->{borrowernumber}, guarantorid=>'' );
+Koha::Patrons->find($guarantee->{borrowernumber})->set({ guarantorid => undef })->store;
 
 $builder->build({
         source => 'Issue',
@@ -341,11 +343,11 @@ isnt( Koha::Patrons->find( $patron2->{borrowernumber} )->lastseen, undef, 'Lasts
 ## Remove all entries with userid='' (should be only 1 max)
 $dbh->do(q|DELETE FROM borrowers WHERE userid = ''|);
 ## And create a patron with a userid=''
-$borrowernumber = AddMember( categorycode => $patron_category->{categorycode}, branchcode => $library2->{branchcode} );
+$borrowernumber = Koha::Patron->new({ categorycode => $patron_category->{categorycode}, branchcode => $library2->{branchcode} })->store->borrowernumber;
 $dbh->do(q|UPDATE borrowers SET userid = '' WHERE borrowernumber = ?|, undef, $borrowernumber);
 # Create another patron and verify the userid has been generated
-$borrowernumber = AddMember( categorycode => $patron_category->{categorycode}, branchcode => $library2->{branchcode} );
-ok( $borrowernumber > 0, 'AddMember should have inserted the patron even if no userid is given' );
+$borrowernumber = Koha::Patron->new({ categorycode => $patron_category->{categorycode}, branchcode => $library2->{branchcode} })->store->borrowernumber;
+ok( $borrowernumber > 0, 'Koha::Patron->store should have inserted the patron even if no userid is given' );
 $borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
 ok( $borrower->{userid},  'A userid should have been generated correctly' );
 
@@ -376,32 +378,9 @@ sub _find_member {
     return $found;
 }
 
-# Regression tests for BZ15343
-my $password="";
-( $borrowernumber, $password ) = AddMember_Opac(surname=>"Dick",firstname=>'Philip',branchcode => $library2->{branchcode});
-is( $password =~ /^[a-zA-Z]{10}$/ , 1, 'Test for autogenerated password if none submitted');
-( $borrowernumber, $password ) = AddMember_Opac(surname=>"Deckard",firstname=>"Rick",password=>"Nexus-6",branchcode => $library2->{branchcode});
-is( $password eq "Nexus-6", 1, 'Test password used if submitted');
-$borrower = Koha::Patrons->find( $borrowernumber )->unblessed;
-my $hashed_up =  Koha::AuthUtils::hash_password("Nexus-6", $borrower->{password});
-is( $borrower->{password} eq $hashed_up, 1, 'Check password hash equals hash of submitted password' );
-
-subtest 'Trivial test for AddMember_Auto' => sub {
-    plan tests => 3;
-    my $members_mock = Test::MockModule->new( 'C4::Members' );
-    $members_mock->mock( 'fixup_cardnumber', sub { 12345; } );
-    my $library = $builder->build({ source => 'Branch' });
-    my $category = $builder->build({ source => 'Category' });
-    my %borr = AddMember_Auto( surname=> 'Dick3', firstname => 'Philip', branchcode => $library->{branchcode}, categorycode => $category->{categorycode}, password => '34567890' );
-    ok( $borr{borrowernumber}, 'Borrower hash contains borrowernumber' );
-    is( $borr{cardnumber}, 12345, 'Borrower hash contains cardnumber' );
-    my $patron = Koha::Patrons->find( $borr{borrowernumber} );
-    isnt( $patron, undef, 'Patron found' );
-};
-
 $schema->storage->txn_rollback;
 
-subtest 'AddMember (invalid categorycode) tests' => sub {
+subtest 'Koha::Patron->store (invalid categorycode) tests' => sub {
     plan tests => 1;
 
     $schema->storage->txn_begin;
@@ -416,8 +395,8 @@ subtest 'AddMember (invalid categorycode) tests' => sub {
     };
 
     throws_ok
-        { AddMember( %{ $patron_data } ); }
-        'Koha::Exceptions::BadParameter',
+        { Koha::Patron->new( $patron_data )->store; }
+        'Koha::Exceptions::Object::FKConstraint',
         'AddMember raises an exception on invalid categorycode';
 
     $schema->storage->txn_rollback;
