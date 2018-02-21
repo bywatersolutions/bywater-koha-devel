@@ -1827,7 +1827,7 @@ subtest 'AddReturn | is_overdue' => sub {
 };
 
 subtest '_FixAccountForLostAndReturned' => sub {
-    plan tests => 2;
+    plan tests => 8;
 
     # Generate test biblio
     my $title  = 'Koha for Dummies';
@@ -1865,6 +1865,64 @@ subtest '_FixAccountForLostAndReturned' => sub {
 
     is( $accountline->amountoutstanding, '0.000000', 'Lost fee has no outstanding amount' );
     is( $accountline->accounttype, 'LR', 'Lost fee now has account type of LR ( Lost Returned )');
+
+    # Tests for only if unpaid
+    ## Unpaid
+    $accountline->delete();
+    $accountline = Koha::Account::Line->new(
+        {
+            borrowernumber => $patron->{borrowernumber},
+            accounttype    => 'L',
+            itemnumber     => $itemnumber,
+            amount => 99.00,
+            amountoutstanding => 99.00,
+        }
+    )->store();
+
+    C4::Circulation::_FixAccountForLostAndReturned( $itemnumber, $patron->{borrowernumber}, undef, 1 );
+
+    $accountline->_result()->discard_changes();
+
+    is( $accountline->amountoutstanding, '0.000000', 'Lost fee has no outstanding amount, with skip_paid = 1 and unpaid' );
+    is( $accountline->accounttype, 'LR', 'Lost fee now has account type of LR ( Lost Returned ), with skip_paid = 1 and unpaid');
+
+    ## Paid
+    $accountline->delete();
+    $accountline = Koha::Account::Line->new(
+        {
+            borrowernumber => $patron->{borrowernumber},
+            accounttype    => 'L',
+            itemnumber     => $itemnumber,
+            amount => 99.00,
+            amountoutstanding => 0.00,
+        }
+    )->store();
+
+    C4::Circulation::_FixAccountForLostAndReturned( $itemnumber, $patron->{borrowernumber}, undef, 1 );
+
+    $accountline->_result()->discard_changes();
+
+    is( $accountline->amountoutstanding, '0.000000', 'Lost fee still has outstanding amount of 0, with skip_paid = 1 and already paid' );
+    is( $accountline->accounttype, 'L', 'Lost fee now has account type of L ( Lost ), with skip_paid = 1 and already paid');
+
+    ## Partially paid
+    $accountline->delete();
+    $accountline = Koha::Account::Line->new(
+        {
+            borrowernumber => $patron->{borrowernumber},
+            accounttype    => 'L',
+            itemnumber     => $itemnumber,
+            amount => 99.00,
+            amountoutstanding => 33.00,
+        }
+    )->store();
+
+    C4::Circulation::_FixAccountForLostAndReturned( $itemnumber, $patron->{borrowernumber}, undef, 1 );
+
+    $accountline->_result()->discard_changes();
+
+    is( $accountline->amountoutstanding, '0.000000', 'Lost fee has no outstanding amount, with skip_paid = 1 and partially paid' );
+    is( $accountline->accounttype, 'LR', 'Lost fee now has account type of L ( Lost ), with skip_paid = 1 and partially paid');
 };
 
 subtest '_FixOverduesOnReturn' => sub {

@@ -130,7 +130,7 @@ subtest 'Koha::RefundLostItemFeeRules::_effective_branch_rule() tests' => sub {
         source => 'RefundLostItemFeeRule',
         value  => {
             branchcode => '*',
-            refund     => 1
+            refund     => 2
         }
     });
     my $specific_rule_false = $builder->build({
@@ -153,7 +153,7 @@ subtest 'Koha::RefundLostItemFeeRules::_effective_branch_rule() tests' => sub {
     # Delete specific rules
     Koha::RefundLostItemFeeRules->find({ branchcode => $specific_rule_false->{ branchcode } })->delete;
     is( Koha::RefundLostItemFeeRules->_effective_branch_rule( $specific_rule_false->{ branchcode } ),
-          1,'No specific rule defined, fallback to global (true)');
+          2,'No specific rule defined, fallback to global (true)');
 
     # Rollback transaction
     $schema->storage->txn_rollback;
@@ -243,7 +243,7 @@ subtest 'Koha::RefundLostItemFeeRules::should_refund() tests' => sub {
     my $specific_rule_true = $builder->build({
         source => 'RefundLostItemFeeRule',
         value  => {
-            refund => 1
+            refund => 2
         }
     });
     # Make sure we have an unused branchcode
@@ -264,7 +264,7 @@ subtest 'Koha::RefundLostItemFeeRules::should_refund() tests' => sub {
 
     t::lib::Mocks::mock_preference( 'RefundLostOnReturnControl', 'CheckinLibrary' );
     is( Koha::RefundLostItemFeeRules->should_refund( $params ),
-          1,'Specific rule is applied (true)');
+          2,'Specific rule is applied (true)');
 
     t::lib::Mocks::mock_preference( 'RefundLostOnReturnControl', 'ItemHomeBranch' );
     is( Koha::RefundLostItemFeeRules->should_refund( $params ),
