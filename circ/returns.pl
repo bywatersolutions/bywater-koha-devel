@@ -161,10 +161,26 @@ if ( $query->param('reserve_id') ) {
         } # FIXME else?
     } else {
         my $diffBranchSend = ($userenv_branch ne $diffBranchReturned) ? $diffBranchReturned : undef;
+
         # diffBranchSend tells ModReserveAffect whether document is expected in this library or not,
         # i.e., whether to apply waiting status
         ModReserveAffect( $itemnumber, $borrowernumber, $diffBranchSend, $reserve_id );
-        ModItemTransfer( $itemnumber, $userenv_branch, $diffBranchSend ) if $diffBranchSend;
+
+        if ( $diffBranchSend ) {
+            ModItemTransfer( $itemnumber, $userenv_branch, $diffBranchSend );
+
+            my $patron = Koha::Patrons->find( $borrowernumber );
+            my $name   = $patron ? $patron->surname . ", " . $patron->title . " " . $patron->firstname : '';
+            $template->param(
+                itemtitle        => $biblio->title,
+                itemnumber       => $item->itemnumber,
+                itembiblionumber => $biblio->biblionumber,
+                iteminfo         => $biblio->author,
+                name             => $name,
+                patron           => $patron,
+                diffbranch       => 1,
+            );
+        }
     }
 }
 
