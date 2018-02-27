@@ -23,7 +23,7 @@ use CGI;
 use C4::Auth;
 use C4::Output;
 use C4::Context;
-use C4::Members qw( GetMember );
+use Koha::Patrons;
 use Koha::Account::Lines;
 
 my $input = new CGI;
@@ -59,8 +59,8 @@ if ($accountline) {
         finesview => 1,
     );
 
-    my $data = GetMember( 'borrowernumber' => $accountline->borrowernumber );
-    $template->param(%$data);
+    my $patron = Koha::Patrons->find( $accountline->borrowernumber );
+    $template->param( patron => $patron );
 }
 
 output_html_with_http_headers $input, $cookie, $template->output;
