@@ -30,6 +30,7 @@ use Modern::Perl;
 use CGI qw ( -utf8 );
 use CGI::Cookie;
 use MARC::File::USMARC;
+use Net::Server::Daemonize qw(daemonize);
 
 # Koha modules used
 use C4::Context;
@@ -118,10 +119,15 @@ if ($completedJobID) {
             print '{"jobID":"' . $jobID . '"}';
             exit 0;
         } elsif (defined $pid) {
+            # Daemonize the child process os the parent will print its output
+            my $pidfile = "/tmp/async$$.pid"; # deamonize requires a pid file even though it is supposed to be optional
+            my @current_user = getpwuid($<);
+            daemonize( $current_user[2], $current_user[3], $pidfile );
+            unlink($pidfile);    # otherwise it doesn't go away
             # child
             # close STDOUT to signal to Apache that
             # we're now running in the background
-            close STDOUT;
+            close STDOUT; # FIXME I think this is no longer necessary
             # close STDERR; # there is no good reason to close STDERR
         } else {
             # fork failed, so exit immediately
