@@ -1,5 +1,4 @@
 [% USE Asset %]
-[% USE Dumper %]
 [% USE Koha %]
 [% USE KohaDates %]
 [% USE Branches %]
