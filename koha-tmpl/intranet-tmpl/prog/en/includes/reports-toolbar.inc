@@ -1,5 +1,4 @@
 [% INCLUDE 'blocking_errors.inc' %]
-[% INCLUDE 'mana.inc' %]
 <div id="toolbar" class="btn-toolbar">
     [% IF ( CAN_user_reports_create_reports ) %]
         <div class="btn-group">

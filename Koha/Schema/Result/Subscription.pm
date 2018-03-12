@@ -271,11 +271,6 @@ __PACKAGE__->table("subscription");
   is_nullable: 1
   size: 10
 
-=head2 mana_id
-
-  data_type: 'integer'
-  is_nullable: 1
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -363,8 +358,6 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 10 },
   "previousitemtype",
   { data_type => "varchar", is_nullable => 1, size => 10 },
-  "mana_id",
-  { data_type => "integer", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
