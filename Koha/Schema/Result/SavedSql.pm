@@ -105,11 +105,6 @@ __PACKAGE__->table("saved_sql");
   is_nullable: 1
   size: 80
 
-=head2 mana_id
-
-  data_type: 'integer'
-  is_nullable: 1
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -153,8 +148,6 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 80 },
   "report_subgroup",
   { data_type => "varchar", is_nullable => 1, size => 80 },
-  "mana_id",
-  { data_type => "integer", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
