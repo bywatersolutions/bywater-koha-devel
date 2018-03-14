@@ -41,6 +41,11 @@ my $borrowers_count = 5;
 
 $dbh->do('DELETE FROM itemtypes');
 $dbh->do('DELETE FROM reserves');
+$dbh->do('DELETE FROM branch_borrower_circ_rules');
+$dbh->do('DELETE FROM default_borrower_circ_rules');
+$dbh->do('DELETE FROM default_branch_circ_rules');
+$dbh->do('DELETE FROM default_circ_rules');
+
 my $insert_sth = $dbh->prepare('INSERT INTO itemtypes (itemtype) VALUES (?)');
 $insert_sth->execute('CAN');
 $insert_sth->execute('CANNOT');

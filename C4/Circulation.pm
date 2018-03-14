@@ -1597,7 +1597,7 @@ sub GetBranchBorrowerCircRule {
     my $rules;
     my $dbh = C4::Context->dbh();
     $rules = $dbh->selectrow_hashref( q|
-        SELECT maxissueqty, maxonsiteissueqty
+        SELECT maxissueqty, maxonsiteissueqty, max_holds
         FROM branch_borrower_circ_rules
         WHERE branchcode = ?
         AND   categorycode = ?
@@ -1606,7 +1606,7 @@ sub GetBranchBorrowerCircRule {
 
     # try same branch, default borrower category
     $rules = $dbh->selectrow_hashref( q|
-        SELECT maxissueqty, maxonsiteissueqty
+        SELECT maxissueqty, maxonsiteissueqty, max_holds
         FROM default_branch_circ_rules
         WHERE branchcode = ?
     |, {}, $branchcode ) ;
@@ -1614,7 +1614,7 @@ sub GetBranchBorrowerCircRule {
 
     # try default branch, same borrower category
     $rules = $dbh->selectrow_hashref( q|
-        SELECT maxissueqty, maxonsiteissueqty
+        SELECT maxissueqty, maxonsiteissueqty, max_holds
         FROM default_borrower_circ_rules
         WHERE categorycode = ?
     |, {}, $categorycode ) ;
@@ -1622,7 +1622,7 @@ sub GetBranchBorrowerCircRule {
 
     # try default branch, default borrower category
     $rules = $dbh->selectrow_hashref( q|
-        SELECT maxissueqty, maxonsiteissueqty
+        SELECT maxissueqty, maxonsiteissueqty, max_holds
         FROM default_circ_rules
     |, {} );
     return $rules if $rules;
@@ -1631,6 +1631,7 @@ sub GetBranchBorrowerCircRule {
     return {
         maxissueqty => undef,
         maxonsiteissueqty => undef,
+        max_holds => undef,
     };
 }
 

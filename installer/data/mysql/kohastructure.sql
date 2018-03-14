@@ -349,7 +349,7 @@ CREATE TABLE `branch_borrower_circ_rules` ( -- includes default circulation rule
   `categorycode` VARCHAR(10) NOT NULL, -- the patron category this rule applies to (categories.categorycode)
   `maxissueqty` int(4) default NULL, -- the maximum number of checkouts this patron category can have at this branch
   `maxonsiteissueqty` int(4) default NULL, -- the maximum number of on-site checkouts this patron category can have at this branch
-  max_holds INT(4) NULL DEFAULT NULL, -- the maximum number of holds a patron may have at a time
+  `max_holds` INT(4) NULL DEFAULT NULL, -- the maximum number of holds a patron may have at a time
   PRIMARY KEY (`categorycode`, `branchcode`),
   CONSTRAINT `branch_borrower_circ_rules_ibfk_1` FOREIGN KEY (`categorycode`) REFERENCES `categories` (`categorycode`)
     ON DELETE CASCADE ON UPDATE CASCADE,
@@ -366,7 +366,7 @@ CREATE TABLE `default_borrower_circ_rules` ( -- default checkout rules found und
   `categorycode` VARCHAR(10) NOT NULL, -- patron category this rul
   `maxissueqty` int(4) default NULL,
   `maxonsiteissueqty` int(4) default NULL,
-  max_holds INT(4) NULL DEFAULT NULL, -- the maximum number of holds a patron may have at a time
+  `max_holds` INT(4) NULL DEFAULT NULL, -- the maximum number of holds a patron may have at a time
   PRIMARY KEY (`categorycode`),
   CONSTRAINT `borrower_borrower_circ_rules_ibfk_1` FOREIGN KEY (`categorycode`) REFERENCES `categories` (`categorycode`)
     ON DELETE CASCADE ON UPDATE CASCADE
@@ -381,6 +381,7 @@ CREATE TABLE `default_branch_circ_rules` (
   `branchcode` VARCHAR(10) NOT NULL,
   `maxissueqty` int(4) default NULL,
   `maxonsiteissueqty` int(4) default NULL,
+  `max_holds` INT(4) NULL DEFAULT NULL, -- the maximum number of holds a patron may have at a time
   `holdallowed` tinyint(1) default NULL,
   hold_fulfillment_policy ENUM('any', 'homebranch', 'holdingbranch') NOT NULL DEFAULT 'any', -- limit trapping of holds by branchcode
   `returnbranch` varchar(15) default NULL,
@@ -398,6 +399,7 @@ CREATE TABLE `default_circ_rules` (
     `singleton` enum('singleton') NOT NULL default 'singleton',
     `maxissueqty` int(4) default NULL,
     `maxonsiteissueqty` int(4) default NULL,
+    `max_holds` INT(4) NULL DEFAULT NULL, -- the maximum number of holds a patron may have at a time
     `holdallowed` int(1) default NULL,
     hold_fulfillment_policy ENUM('any', 'homebranch', 'holdingbranch') NOT NULL DEFAULT 'any', -- limit trapping of holds by branchcode
     `returnbranch` varchar(15) default NULL,

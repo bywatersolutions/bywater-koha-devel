@@ -399,26 +399,15 @@ sub CanItemBeReserved {
     }
 
     # Now we need to check hold limits by patron category
-    my $schema = Koha::Database->new()->schema();
-    my $rule = $schema->resultset('BranchBorrowerCircRule')->find(
-        {
-            branchcode   => $borrower->{branchcode},
-            categorycode => $borrower->{categorycode},
-        }
-    );
-    $rule ||= $schema->resultset('DefaultBorrowerCircRule')->find(
-        {
-            categorycode => $borrower->{categorycode}
-        }
-    );
-    if ( $rule && defined $rule->max_holds ) {
+    my $rule = C4::Circulation::GetBranchBorrowerCircRule( $borrower->{branchcode}, $borrower->{categorycode} );
+    if ( defined $rule->{max_holds} ) {
         my $total_holds_count = Koha::Holds->search(
             {
                 borrowernumber => $borrower->{borrowernumber}
             }
         )->count();
 
-        return 'tooManyReserves' if $total_holds_count >= $rule->max_holds;
+        return 'tooManyReserves' if $total_holds_count >= $rule->{max_holds};
     }
 
     my $circ_control_branch =

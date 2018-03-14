@@ -349,6 +349,7 @@
                     <th>Total current on-site checkouts allowed</th>
                     <th>Hold policy</th>
                     <th>Hold pickup library match</th>
+                    <th>Total holds allowed</th>
                     <th>Return policy</th>
                     <th>Actions</th>
                 </tr>
@@ -414,6 +415,7 @@
                             [% END %]
                         </select>
                     </td>
+                    <td><input type="text" name="max_holds" size="3" value="[% default_max_holds %]"/></td>
                     <td>
                         <select name="returnbranch">
                             [% IF ( default_returnbranch == 'homebranch' ) %]

@@ -206,6 +206,7 @@ elsif ($op eq "set-branch-defaults") {
     my $maxissueqty   = $input->param('maxissueqty');
     my $maxonsiteissueqty = $input->param('maxonsiteissueqty');
     my $holdallowed   = $input->param('holdallowed');
+    my $max_holds   = $input->param('max_holds');
     my $hold_fulfillment_policy = $input->param('hold_fulfillment_policy');
     my $returnbranch  = $input->param('returnbranch');
     $maxissueqty =~ s/\s//g;
@@ -214,39 +215,40 @@ elsif ($op eq "set-branch-defaults") {
     $maxonsiteissueqty = undef if $maxonsiteissueqty !~ /^\d+/;
     $holdallowed =~ s/\s//g;
     $holdallowed = undef if $holdallowed !~ /^\d+/;
-
+    $max_holds =~ s/\s//g;
+    $max_holds = undef if $max_holds !~ /^\d+/;
     if ($branch eq "*") {
         my $sth_search = $dbh->prepare("SELECT count(*) AS total
                                         FROM default_circ_rules");
         my $sth_insert = $dbh->prepare("INSERT INTO default_circ_rules
-                                        (maxissueqty, maxonsiteissueqty, holdallowed, hold_fulfillment_policy, returnbranch)
-                                        VALUES (?, ?, ?, ?, ?)");
+                                        (maxissueqty, maxonsiteissueqty, holdallowed, hold_fulfillment_policy, max_holds, returnbranch)
+                                        VALUES (?, ?, ?, ?, ?, ?)");
         my $sth_update = $dbh->prepare("UPDATE default_circ_rules
-                                        SET maxissueqty = ?, maxonsiteissueqty = ?, holdallowed = ?, hold_fulfillment_policy = ?, returnbranch = ?");
+                                        SET maxissueqty = ?, maxonsiteissueqty = ?, holdallowed = ?, hold_fulfillment_policy = ?, max_holds = ?, returnbranch = ?");
 
         $sth_search->execute();
         my $res = $sth_search->fetchrow_hashref();
         if ($res->{total}) {
-            $sth_update->execute($maxissueqty, $maxonsiteissueqty, $holdallowed, $hold_fulfillment_policy, $returnbranch);
+            $sth_update->execute($maxissueqty, $maxonsiteissueqty, $holdallowed, $hold_fulfillment_policy, $max_holds, $returnbranch);
         } else {
-            $sth_insert->execute($maxissueqty, $maxonsiteissueqty, $holdallowed, $hold_fulfillment_policy, $returnbranch);
+            $sth_insert->execute($maxissueqty, $maxonsiteissueqty, $holdallowed, $hold_fulfillment_policy, $max_holds, $returnbranch);
         }
     } else {
         my $sth_search = $dbh->prepare("SELECT count(*) AS total
                                         FROM default_branch_circ_rules
                                         WHERE branchcode = ?");
         my $sth_insert = $dbh->prepare("INSERT INTO default_branch_circ_rules
-                                        (branchcode, maxissueqty, maxonsiteissueqty, holdallowed, hold_fulfillment_policy, returnbranch)
-                                        VALUES (?, ?, ?, ?, ?, ?)");
+                                        (branchcode, maxissueqty, maxonsiteissueqty, holdallowed, hold_fulfillment_policy, max_holds, returnbranch)
+                                        VALUES (?, ?, ?, ?, ?, ?, ?)");
         my $sth_update = $dbh->prepare("UPDATE default_branch_circ_rules
-                                        SET maxissueqty = ?, maxonsiteissueqty = ?, holdallowed = ?, hold_fulfillment_policy = ?, returnbranch = ?
+                                        SET maxissueqty = ?, maxonsiteissueqty = ?, holdallowed = ?, hold_fulfillment_policy = ?, max_holds = ?, returnbranch = ?
                                         WHERE branchcode = ?");
         $sth_search->execute($branch);
         my $res = $sth_search->fetchrow_hashref();
         if ($res->{total}) {
-            $sth_update->execute($maxissueqty, $maxonsiteissueqty, $holdallowed, $hold_fulfillment_policy, $returnbranch, $branch);
+            $sth_update->execute($maxissueqty, $maxonsiteissueqty, $holdallowed, $hold_fulfillment_policy, $max_holds, $returnbranch, $branch);
         } else {
-            $sth_insert->execute($branch, $maxissueqty, $maxonsiteissueqty, $holdallowed, $hold_fulfillment_policy, $returnbranch);
+            $sth_insert->execute($branch, $maxissueqty, $maxonsiteissueqty, $holdallowed, $hold_fulfillment_policy, $max_holds, $returnbranch);
         }
     }
 }
@@ -364,6 +366,8 @@ elsif ($op eq "add-branch-item") {
     my $holdallowed             = $input->param('holdallowed');
     my $hold_fulfillment_policy = $input->param('hold_fulfillment_policy');
     my $returnbranch            = $input->param('returnbranch');
+    ##FIXME: Should we have max holds here?
+    my $max_holds               = $input->param('max_holds');
 
     $holdallowed =~ s/\s//g;
     $holdallowed = undef if $holdallowed !~ /^\d+/;
@@ -621,6 +625,7 @@ if ($defaults) {
     $template->param( default_holdallowed_same => 1 ) if ( $defaults->{holdallowed} == 1 );
     $template->param( default_holdallowed_any  => 1 ) if ( $defaults->{holdallowed} == 2 );
     $template->param( default_hold_fulfillment_policy => $defaults->{hold_fulfillment_policy} );
+    $template->param( default_max_holds        => $defaults->{max_holds} );
     $template->param( default_maxissueqty      => $defaults->{maxissueqty} );
     $template->param( default_maxonsiteissueqty => $defaults->{maxonsiteissueqty} );
     $template->param( default_returnbranch      => $defaults->{returnbranch} );
