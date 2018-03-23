@@ -267,7 +267,7 @@ if ($findborrower) {
         } elsif ( @$borrowers ) {
             $template->param( borrowers => $borrowers );
         } else {
-            Koha::Statistics->invalid_patron( { patron => $findborrower } );
+            Koha::Statistics->log_invalid_patron( { patron => $findborrower } );
             $query->param( 'findborrower', '' );
             $message = "'$findborrower'";
         }

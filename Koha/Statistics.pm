@@ -35,13 +35,13 @@ Koha::Statistics - Koha Statistic Object set class
 
 =head2 Class Methods
 
-=head3 invalid_patron
+=head3 log_invalid_patron
 
-Koha::Statistics->invalid_patron( { patron => $cardnumber } );
+Koha::Statistics->log_invalid_patron( { patron => $cardnumber } );
 
 =cut
 
-sub invalid_patron {
+sub log_invalid_patron {
     return unless C4::Context->preference('LogInvalidPatrons');
 
     my ( $class, $params ) = @_;
@@ -49,7 +49,7 @@ sub invalid_patron {
     my $patron = $params->{patron};
     croak('Invalid patron passed in!') unless $patron;
 
-    return $class->_invalid_value(
+    return $class->_log_invalid_value(
         {
             type  => 'patron',
             value => $patron
@@ -57,13 +57,13 @@ sub invalid_patron {
     );
 }
 
-=head3 invalid_item
+=head3 log_invalid_item
 
-Koha::Statistics->invalid_item( { item => $barcode } );
+Koha::Statistics->log_invalid_item( { item => $barcode } );
 
 =cut
 
-sub invalid_item {
+sub log_invalid_item {
     return unless C4::Context->preference('LogInvalidItems');
 
     my ( $class, $params ) = @_;
@@ -71,7 +71,7 @@ sub invalid_item {
     my $item = $params->{item};
     croak('Invalid item passed in!') unless $item;
 
-    return $class->_invalid_value(
+    return $class->_log_invalid_value(
         {
             type  => 'item',
             value => $item
@@ -85,7 +85,7 @@ Koha::Statistics->invalid_value( { type => 'patron', value => $patron } );
 
 =cut
 
-sub _invalid_value {
+sub _log_invalid_value {
     my ( $class, $params ) = @_;
 
     my $type  = $params->{type};

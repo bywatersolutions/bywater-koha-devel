@@ -672,7 +672,7 @@ sub CanBookBeIssued {
     my $item = GetItem(undef, $barcode );
     # MANDATORY CHECKS - unless item exists, nothing else matters
     unless ( $item && $item->{barcode} ) {
-        Koha::Statistics->invalid_item( { item => $barcode } );
+        Koha::Statistics->log_invalid_item( { item => $barcode } );
         $issuingimpossible{UNKNOWN_BARCODE} = 1;
     }
     return ( \%issuingimpossible, \%needsconfirmation ) if %issuingimpossible;
@@ -1806,7 +1806,7 @@ sub AddReturn {
     # get information on item
     my $item = GetItem( undef, $barcode );
     unless ($item) {
-        Koha::Statistics->invalid_item( { item => $barcode } );
+        Koha::Statistics->log_invalid_item( { item => $barcode } );
         return ( 0, { BadBarcode => $barcode } );    # no barcode means no item or borrower.  bail out.
     }
 

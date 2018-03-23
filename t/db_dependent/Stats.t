@@ -184,28 +184,28 @@ $context->mock(
         };
     }
 );
-# Test Koha::Statistic->invalid_patron
+# Test Koha::Statistic->log_invalid_patron
 $dbh->do(q{DELETE FROM statistics});
 t::lib::Mocks::mock_preference( "LogInvalidPatrons", 0 );
-Koha::Statistics->invalid_patron( { patron => 'InvalidCardnumber' } );
+Koha::Statistics->log_invalid_patron( { patron => 'InvalidCardnumber' } );
 is( Koha::Statistics->search()->count(), 0, 'No stat line added if system preference LogInvalidPatrons is disabled' );
 
 t::lib::Mocks::mock_preference( "LogInvalidPatrons", 1 );
-Koha::Statistics->invalid_patron( { patron => 'InvalidCardnumber' } );
+Koha::Statistics->log_invalid_patron( { patron => 'InvalidCardnumber' } );
 my $stat = Koha::Statistics->search()->next();
 is( $stat->type, 'invalid_patron', 'Type set to invalid_patron' );
 is( $stat->associatedborrower, '-1', 'Associated library id set correctly' );
 is( $stat->other, 'InvalidCardnumber', 'Invalid cardnumber is set correctly' );
 is( $stat->branch, $branchcode, 'Branchcode is set correctly' );
 
-# Test Koha::Statistic->invalid_item
+# Test Koha::Statistic->log_invalid_item
 $dbh->do(q{DELETE FROM statistics});
 t::lib::Mocks::mock_preference( "LogInvalidItems", 0 );
-Koha::Statistics->invalid_item( { item => 'InvalidBarcode' } );
+Koha::Statistics->log_invalid_item( { item => 'InvalidBarcode' } );
 is( Koha::Statistics->search()->count(), 0, 'No stat line added if system preference LogInvalidItems is disabled' );
 
 t::lib::Mocks::mock_preference( "LogInvalidItems", 1 );
-Koha::Statistics->invalid_item( { item => 'InvalidBarcode' } );
+Koha::Statistics->log_invalid_item( { item => 'InvalidBarcode' } );
 $stat = Koha::Statistics->search()->next();
 is( $stat->type, 'invalid_item', 'Type set to invalid_item' );
 is( $stat->associatedborrower, '-1', 'Associated library id set correctly' );
