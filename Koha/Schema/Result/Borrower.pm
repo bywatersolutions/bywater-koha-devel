@@ -260,36 +260,10 @@ __PACKAGE__->table("borrowers");
   is_nullable: 1
   size: 255
 
-=head2 contactname
-
-  data_type: 'longtext'
-  is_nullable: 1
-
-=head2 contactfirstname
-
-  data_type: 'mediumtext'
-  is_nullable: 1
-
-=head2 contacttitle
-
-  data_type: 'mediumtext'
-  is_nullable: 1
-
-=head2 guarantorid
-
-  data_type: 'integer'
-  is_nullable: 1
-
 =head2 borrowernotes
 
   data_type: 'longtext'
   is_nullable: 1
-
-=head2 relationship
-
-  data_type: 'varchar'
-  is_nullable: 1
-  size: 100
 
 =head2 sex
 
@@ -568,18 +542,8 @@ __PACKAGE__->add_columns(
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
   "debarredcomment",
   { data_type => "varchar", is_nullable => 1, size => 255 },
-  "contactname",
-  { data_type => "longtext", is_nullable => 1 },
-  "contactfirstname",
-  { data_type => "mediumtext", is_nullable => 1 },
-  "contacttitle",
-  { data_type => "mediumtext", is_nullable => 1 },
-  "guarantorid",
-  { data_type => "integer", is_nullable => 1 },
   "borrowernotes",
   { data_type => "longtext", is_nullable => 1 },
-  "relationship",
-  { data_type => "varchar", is_nullable => 1, size => 100 },
   "sex",
   { data_type => "varchar", is_nullable => 1, size => 1 },
   "password",
@@ -1190,6 +1154,36 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 relationships_guarantees
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::Relationship>
+
+=cut
+
+__PACKAGE__->has_many(
+  "relationships_guarantees",
+  "Koha::Schema::Result::Relationship",
+  { "foreign.guarantee_id" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 relationships_guarantors
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::Relationship>
+
+=cut
+
+__PACKAGE__->has_many(
+  "relationships_guarantors",
+  "Koha::Schema::Result::Relationship",
+  { "foreign.guarantor_id" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 reserves
 
 Type: has_many
@@ -1386,8 +1380,8 @@ Composing rels: L</aqorder_users> -> ordernumber
 __PACKAGE__->many_to_many("ordernumbers", "aqorder_users", "ordernumber");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-02-16 17:54:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wM40W+toV8ca5LFwinkHxA
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-03-25 21:32:19
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zQiYI20PSKC7Kub0678iAA
 
 __PACKAGE__->add_columns(
     '+lost' => { is_boolean => 1 },
