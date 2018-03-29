@@ -40,6 +40,8 @@ use Koha::Patrons;
 use Koha::Caches;
 use Koha::Config::SysPrefs;
 use Koha::Illrequest::Config;
+use Koha::UploadedFiles;
+
 use C4::Members::Statistics;
 
 #use Smart::Comments '####';
@@ -217,6 +219,13 @@ if ( ! defined C4::Context->config('upload_path') ) {
         push @xml_config_warnings, {
             error => 'uploadpath_and_opacbaseurl_entry_missing'
         }
+    }
+}
+
+if ( ! defined C4::Context->config('upload_tmp_path') ) {
+    push @xml_config_warnings, {
+        error                    => 'uploadtmppath_entry_missing',
+        effective_upload_tmp_dir => Koha::UploadedFile->temporary_directory
     }
 }
 
