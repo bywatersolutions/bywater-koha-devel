@@ -30,7 +30,6 @@ use C4::Accounts;
 use C4::Koha;
 
 use Koha::Patrons;
-use Koha::Patron::Images;
 use Koha::Patron::Categories;
 use Koha::AuthorisedValues;
 use Koha::Account;
