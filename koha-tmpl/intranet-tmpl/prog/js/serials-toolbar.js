@@ -41,6 +41,6 @@ function popup(subscriptionid) {
         return false;
     });
     $("#mana-subscription-share").click(function() {
-        window.location="subscription-detail.pl?subscriptionid=[% subscriptionid %]&op=share";
+        window.location="subscription-detail.pl?subscriptionid=" + subscriptionid + "&op=share";
     });
  });

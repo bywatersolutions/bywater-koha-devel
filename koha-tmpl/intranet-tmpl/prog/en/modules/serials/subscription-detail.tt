@@ -476,6 +476,7 @@
         var MSG_REOPEN_SUBSCRIPTION = _("Are you sure you want to reopen this subscription?");
         var CONFIRM_DELETE_SUBSCRIPTION = _("Are you sure you want to delete this subscription?");
     </script>
+    [% INCLUDE 'mana.inc' %]
     [% Asset.js("js/serials-toolbar.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("lib/jquery/plugins/treetable/jquery.treetable.js") | $raw %]

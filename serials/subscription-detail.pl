@@ -62,7 +62,6 @@ my ($template, $loggedinuser, $cookie)
                 debug => 1,
                 });
 
-
 my $subs = GetSubscription($subscriptionid);
 
 output_and_exit( $query, $cookie, $template, 'unknown_subscription')
@@ -100,7 +99,8 @@ if ($op eq 'del') {
     }
 }
 elsif ( $op and $op eq "share" ) {
-    my $result = Koha::SharedContent::manaPostRequest($query->param('mana_language'), $loggedinuser, $subscriptionid, 'subscription');
+    my $mana_language = $query->param('mana_language');
+    my $result = Koha::SharedContent::manaPostRequest($mana_language, $loggedinuser, $subscriptionid, 'subscription');
     $template->param( mana_code => $result->{msg} );
     $subs->{mana_id} = $result->{id};
 }
