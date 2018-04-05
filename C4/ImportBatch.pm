@@ -456,7 +456,7 @@ sub BatchStageMarcRecords {
             method => 'to_marc',
             params => { data => $params->{marc_records} }
         }
-    ) if $params->{to_marc_plugin} && @$marc_records;
+    ) if $params->{to_marc_plugin} && $params->{marc_records};
 
     my $marc_type = C4::Context->preference('marcflavour');
     $marc_type .= 'AUTH' if ($marc_type eq 'UNIMARC' && $params->{record_type} eq 'auth');
@@ -466,7 +466,7 @@ sub BatchStageMarcRecords {
     my $num_matched_control_number = 0;
     # FIXME - for now, we're dealing only with bibs
     my $rec_num = 0;
-    foreach my $marc_blob (@$marc_records) {
+    foreach my $marc_blob (@$params->{marc_records}) {
         $marc_blob =~ s/^\s+//g;
         $marc_blob =~ s/\s+$//g;
         next unless $marc_blob;
