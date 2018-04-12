@@ -28,6 +28,8 @@ use t::lib::Mocks;
 use Koha::Account;
 use Koha::Account::Lines;
 use Koha::Account::Offsets;
+use Koha::Notice::Messages;
+use Koha::Notice::Templates;
 use Koha::DateUtils qw( dt_from_string );
 
 BEGIN {
@@ -904,40 +906,52 @@ subtest "Koha::Account::Line::void tests" => sub {
     is( $line2->amountoutstanding+0, 20, 'Second fee again has amount outstanding of 20' );
 };
 
-subtest "Koha::Account::Offset tests" => sub {
+subtest "Payment notice tests" => sub {
 
-    plan tests => 2;
+    plan tests => 6;
 
     Koha::Account::Lines->delete();
     Koha::Patrons->delete();
-
+    Koha::Notice::Messages->delete();
     # Create a borrower
     my $categorycode = $builder->build({ source => 'Category' })->{ categorycode };
     my $branchcode   = $builder->build({ source => 'Branch' })->{ branchcode };
 
-    my $borrower = Koha::Patron->new( {
-        cardnumber => 'chelseahall',
-        surname => 'Hall',
-        firstname => 'Chelsea',
-    } );
-    $borrower->categorycode( $categorycode );
-    $borrower->branchcode( $branchcode );
-    $borrower->store;
+    my $borrower = Koha::Patron->new(
+        {
+            cardnumber   => 'chelseahall',
+            surname      => 'Hall',
+            firstname    => 'Chelsea',
+            email        => 'chelsea@example.com',
+            categorycode => $categorycode,
+            branchcode   => $branchcode,
+        }
+    )->store();
 
     my $account = Koha::Account->new({ patron_id => $borrower->id });
 
     my $line = Koha::Account::Line->new({ borrowernumber => $borrower->borrowernumber, amountoutstanding => 27 })->store();
 
-    my $id = $account->pay(
-        {
-            amount => 13,
-        }
-    );
+    my $letter = Koha::Notice::Templates->find( { code => 'ACCOUNT_PAYMENT' } );
+    $letter->content('[%- USE Price -%]A payment of [% credit.amount * -1 | $Price %] has been applied to your account.');
+    $letter->store();
 
-    my $offset = Koha::Account::Offsets->find( { credit_id => $id } );
+    my $id = $account->pay( { amount => 13 } );
+    my $notice = Koha::Notice::Messages->search()->next();
+    is( $notice->subject, 'Account Payment', 'Notice subject is correct for payment' );
+    is( $notice->letter_code, 'ACCOUNT_PAYMENT', 'Notice letter code is correct for payment' );
+    is( $notice->content, 'A payment of 13.00 has been applied to your account.', 'Notice content is correct for payment' );
+    $notice->delete();
 
-    is( $offset->credit->id, $id, 'Got correct credit for account offset' );
-    is( $offset->debit->id, $line->id, 'Got correct debit for account offset' );
+    $letter = Koha::Notice::Templates->find( { code => 'ACCOUNT_WRITEOFF' } );
+    $letter->content('[%- USE Price -%]A writeoff of [% credit.amount * -1 | $Price %] has been applied to your account.');
+    $letter->store();
+
+    $id = $account->pay( { amount => 14, type => 'writeoff' } );
+    $notice = Koha::Notice::Messages->search()->next();
+    is( $notice->subject, 'Account Writeoff', 'Notice subject is correct for payment' );
+    is( $notice->letter_code, 'ACCOUNT_WRITEOFF', 'Notice letter code is correct for writeoff' );
+    is( $notice->content, 'A writeoff of 14.00 has been applied to your account.', 'Notice content is correct for writeoff' );
 };
 
 1;
