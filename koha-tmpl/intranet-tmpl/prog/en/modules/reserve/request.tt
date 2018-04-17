@@ -169,6 +169,8 @@ function checkMultiHold() {
     }).change(function() {
         var row = $(this).parents("tr:first");
         var value = parseInt($(this).val());
+        var rowsCount = row.parent().children('tr').length - 1;
+        value = value > rowsCount ? rowsCount : value;
         var after = row.parent().find("tr:nth-child("+(value+1)+")");
 
         if (prev_rank_request > value) {
@@ -178,7 +180,7 @@ function checkMultiHold() {
         }
 
         var next_priority = 1;
-        $("select[name=rank-request]").each(function () {
+        row.parent().find("select[name=rank-request]").each(function () {
             $(this).val(next_priority);
             next_priority++;
         });
@@ -759,14 +761,16 @@ function checkMultiHold() {
                             [% SET itemtypes = [] %]
 
                             [% FOREACH h IN biblioloo.reserveloop %]
-                                [% itemtypes.push( h.itemtype ) %]
+                                [% SET hold_itemtype = h.object.item.effective_itemtype || h.itemtype %]
+                                [% itemtypes_all.push( hold_itemtype ) %]
                             [% END %]
                             [% itemtypes = itemtypes.unique %]
 
                             [% FOREACH i IN itemtypes.sort %]
                                 [% SET holds_by_itemtype = [] %]
                                 [% FOREACH h IN biblioloo.reserveloop %]
-                                    [% IF h.itemtype == i %]
+                                    [% SET hold_itemtype = h.object.item.effective_itemtype || h.itemtype %]
+                                    [% IF hold_itemtype == i %]
                                         [% holds_by_itemtype.push( h ) %]
                                     [% END %]
                                 [% END %]
@@ -800,7 +804,8 @@ function checkMultiHold() {
 
                                     [% SET itemtypes = [] %]
                                     [% FOREACH h IN holds_by_branch %]
-                                        [% itemtypes.push( h.itemtype ) %]
+                                        [% SET hold_itemtype = h.object.item.effective_itemtype || h.itemtype %]
+                                        [% itemtypes.push( hold_itemtype ) %]
                                     [% END %]
                                     [% itemtypes = itemtypes.unique %]
 
@@ -814,7 +819,8 @@ function checkMultiHold() {
 
                                             [% SET holds_by_itemtype = [] %]
                                             [% FOREACH h IN holds_by_branch %]
-                                                [% IF h.itemtype == i %]
+                                                [% SET hold_itemtype = h.object.item.effective_itemtype || h.itemtype %]
+                                                [% IF hold_itemtype == i %]
                                                     [% holds_by_itemtype.push( h ) %]
                                                 [% END %]
                                             [% END %]
