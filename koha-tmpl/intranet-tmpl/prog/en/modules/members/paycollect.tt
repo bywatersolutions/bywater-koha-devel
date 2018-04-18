@@ -182,17 +182,6 @@
         <label for="selected_accts_notes">Note: </label>
         <textarea name="selected_accts_notes" id="selected_accts_notes">[% selected_accts_notes %]</textarea>
     </li>
-    [% IF payment_types.count %]
-        <li>
-            <label for="payment_type">Payment type: </label>
-            <select name="payment_type" id="payment_type">
-                <option value=""></option>
-                [% FOREACH pt IN payment_types %]
-                    <option value="[% pt.authorised_value %]">[% pt.lib %]</option>
-                [% END %]
-            </select>
-        </li>
-    [% END %]
     </ol>
     </fieldset>
     <div class="action"><input type="submit" name="submitbutton" value="Confirm" />
