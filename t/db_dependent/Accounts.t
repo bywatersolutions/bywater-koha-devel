@@ -908,7 +908,7 @@ subtest "Koha::Account::Line::void tests" => sub {
 
 subtest "Payment notice tests" => sub {
 
-    plan tests => 6;
+    plan tests => 8;
 
     Koha::Account::Lines->delete();
     Koha::Patrons->delete();
@@ -936,22 +936,32 @@ subtest "Payment notice tests" => sub {
     $letter->content('[%- USE Price -%]A payment of [% credit.amount * -1 | $Price %] has been applied to your account.');
     $letter->store();
 
-    my $id = $account->pay( { amount => 13 } );
+    t::lib::Mocks::mock_preference('UseEmailReceipts', '0');
+
+    my $id = $account->pay( { amount => 1 } );
+    is( Koha::Notice::Messages->search()->count(), 0, 'Notice for payment not sent if UseEmailReceipts is disabled' );
+
+    $id = $account->pay( { amount => 1, type => 'writeoff' } );
+    is( Koha::Notice::Messages->search()->count(), 0, 'Notice for writeoff not sent if UseEmailReceipts is disabled' );
+
+    t::lib::Mocks::mock_preference('UseEmailReceipts', '1');
+
+    $id = $account->pay( { amount => 12 } );
     my $notice = Koha::Notice::Messages->search()->next();
-    is( $notice->subject, 'Account Payment', 'Notice subject is correct for payment' );
+    is( $notice->subject, 'Account payment', 'Notice subject is correct for payment' );
     is( $notice->letter_code, 'ACCOUNT_PAYMENT', 'Notice letter code is correct for payment' );
-    is( $notice->content, 'A payment of 13.00 has been applied to your account.', 'Notice content is correct for payment' );
+    is( $notice->content, 'A payment of 12.00 has been applied to your account.', 'Notice content is correct for payment' );
     $notice->delete();
 
     $letter = Koha::Notice::Templates->find( { code => 'ACCOUNT_WRITEOFF' } );
     $letter->content('[%- USE Price -%]A writeoff of [% credit.amount * -1 | $Price %] has been applied to your account.');
     $letter->store();
 
-    $id = $account->pay( { amount => 14, type => 'writeoff' } );
+    $id = $account->pay( { amount => 13, type => 'writeoff' } );
     $notice = Koha::Notice::Messages->search()->next();
-    is( $notice->subject, 'Account Writeoff', 'Notice subject is correct for payment' );
+    is( $notice->subject, 'Account writeoff', 'Notice subject is correct for payment' );
     is( $notice->letter_code, 'ACCOUNT_WRITEOFF', 'Notice letter code is correct for writeoff' );
-    is( $notice->content, 'A writeoff of 14.00 has been applied to your account.', 'Notice content is correct for writeoff' );
+    is( $notice->content, 'A writeoff of 13.00 has been applied to your account.', 'Notice content is correct for writeoff' );
 };
 
 1;
