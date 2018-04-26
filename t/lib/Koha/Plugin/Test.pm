@@ -78,6 +78,11 @@ sub install {
     return "Koha::Plugin::Test::install";
 }
 
+sub upgrade {
+    my ( $self, $args ) = @_;
+    return "Koha::Plugin::Test::install";
+}
+
 sub uninstall {
     my ( $self, $args ) = @_;
     return "Koha::Plugin::Test::uninstall";
