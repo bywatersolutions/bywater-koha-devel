@@ -95,6 +95,7 @@ C<juv2adult.pl> - Suggests that you read this help. :)
 C<juv2adult.pl> -b=<branchcode> -f=<categorycode> -t=<categorycode>  - Processes a single branch, and updates the patron categories from fromcat to tocat.
 
 C<juv2adult.pl> -f=<categorycode> -t=<categorycode> -v -n - Processes all branches, shows all messages, and reports the patrons who would be affected. Takes no action on the database.
+
 =cut
 
 # These variables are set by command line options.

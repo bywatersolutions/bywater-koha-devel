@@ -154,6 +154,8 @@ sub image {
 
 =head3 library
 
+Returns a Koha::Library object representing the patron's home library.
+
 =cut
 
 sub library {
@@ -969,6 +971,7 @@ my $is_child = $patron->is_child
 Return true if the patron has a category with a type Child (C)
 
 =cut
+
 sub is_child {
     my( $self ) = @_;
     return $self->category->category_type eq 'C' ? 1 : 0;
