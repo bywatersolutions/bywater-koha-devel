@@ -438,6 +438,7 @@ sub AddMember {
       :                                             undef;
 
     $data{'privacy_guarantor_checkouts'} = 0 unless defined( $data{'privacy_guarantor_checkouts'} );
+    $data{'privacy_guarantor_fines'}     = 0 unless defined( $data{'privacy_guarantor_fines'} );
 
     # Make a copy of the plain text password for later use
     my $plain_text_password = $data{'password'};

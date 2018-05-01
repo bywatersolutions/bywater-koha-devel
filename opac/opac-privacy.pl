@@ -45,15 +45,17 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
-my $op                         = $query->param("op");
-my $privacy                    = $query->param("privacy");
+my $op                          = $query->param("op");
+my $privacy                     = $query->param("privacy");
 my $privacy_guarantor_checkouts = $query->param("privacy_guarantor_checkouts");
+my $privacy_guarantor_fines     = $query->param("privacy_guarantor_fines");
 
 if ( $op eq "update_privacy" ) {
     ModMember(
-        borrowernumber             => $borrowernumber,
-        privacy                    => $privacy,
+        borrowernumber              => $borrowernumber,
+        privacy                     => $privacy,
         privacy_guarantor_checkouts => $privacy_guarantor_checkouts,
+        privacy_guarantor_fines     => $privacy_guarantor_fines,
     );
     $template->param( 'privacy_updated' => 1 );
 }

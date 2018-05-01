@@ -323,6 +323,15 @@
         [% END %]
     </li>
 
+    <li>
+        <span class="label">Show fines to guarantor</span>
+        [% IF privacy_guarantor_fines %]
+            Yes
+        [% ELSE %]
+            No
+        [% END %]
+    </li>
+
     [% IF ( patron.sort1 ) %]<li><span class="label">Sort field 1:</span>[% AuthorisedValues.GetByCode('Bsort1', patron.sort1) |html %]</li>[% END %]
     [% IF ( patron.sort2 ) %]<li><span class="label">Sort field 2:</span>[% AuthorisedValues.GetByCode('Bsort2', patron.sort2) |html %]</li>[% END %]
     <li><span class="label">Username: </span>[% patron.userid |html  %]</li>
