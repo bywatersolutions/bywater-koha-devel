@@ -744,7 +744,7 @@ if (C4::Context->preference('EnhancedMessagingPreferences')) {
     $template->param(TalkingTechItivaPhone => C4::Context->preference("TalkingTechItivaPhoneNotification"));
 }
 
-$template->param( "show_guarantor" => ( $category_type =~ /A|I|S|X/ ) ? 1 : 0 ); # associate with step to know where you are
+$template->param( "show_guarantor" => ( $category_type =~ /A|I|S|X/ ) ? 0 : 1 ); # associate with step to know where you are
 $debug and warn "memberentry step: $step";
 $template->param(%data);
 $template->param( "step_$step"  => 1) if $step;	# associate with step to know where u are
