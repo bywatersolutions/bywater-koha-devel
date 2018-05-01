@@ -381,6 +381,12 @@ __PACKAGE__->table("borrowers");
   default_value: 1
   is_nullable: 0
 
+=head2 privacy_guarantor_fines
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 0
+
 =head2 privacy_guarantor_checkouts
 
   data_type: 'tinyint'
@@ -584,6 +590,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "privacy",
   { data_type => "integer", default_value => 1, is_nullable => 0 },
+  "privacy_guarantor_fines",
+  { data_type => "tinyint", default_value => 0, is_nullable => 0 },
   "privacy_guarantor_checkouts",
   { data_type => "tinyint", default_value => 0, is_nullable => 0 },
   "checkprevcheckout",
@@ -1380,8 +1388,8 @@ Composing rels: L</aqorder_users> -> ordernumber
 __PACKAGE__->many_to_many("ordernumbers", "aqorder_users", "ordernumber");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-03-25 21:32:19
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zQiYI20PSKC7Kub0678iAA
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-05-01 17:46:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hldn1CQpN17+009opY26sA
 
 __PACKAGE__->add_columns(
     '+lost' => { is_boolean => 1 },
