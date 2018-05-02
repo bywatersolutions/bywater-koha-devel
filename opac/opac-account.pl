@@ -67,6 +67,33 @@ while ( my $line = $accts->next ) {
     push @accountlines, $accountline;
 }
 
+if ( C4::Context->preference('AllowPatronToSetCheckoutsVisibilityForGuarantor')
+    || C4::Context->preference('AllowStaffToSetCheckoutsVisibilityForGuarantor')
+  )
+{
+    my @relatives;
+
+    # Filter out guarantees that don't want guarantor to see checkouts
+    foreach my $gr ( $patron->guarantee_relationships() ) {
+        my $g = $gr->guarantee;
+        if ( $g->privacy_guarantor_checkouts ) {
+
+            my $relatives_accountlines = Koha::Account::Lines->search(
+                { borrowernumber => $g->borrowernumber },
+                { order_by       => { -desc => 'accountlines_id' } }
+            );
+            push(
+                @relatives,
+                {
+                    patron       => $g,
+                    accountlines => $relatives_accountlines,
+                }
+            );
+        }
+    }
+    $template->param( relatives => \@relatives );
+}
+
 $template->param(
     ACCOUNT_LINES => \@accountlines,
     total         => sprintf( "%.2f", $total ), # FIXME Use TT plugin Price
