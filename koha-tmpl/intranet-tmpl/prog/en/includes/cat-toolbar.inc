@@ -1,3 +1,4 @@
+[% USE Koha %]
 [% INCLUDE 'blocking_errors.inc' %]
 <div id="toolbar" class="btn-toolbar">
 
@@ -55,7 +56,15 @@ CAN_user_serials_create_subscription ) %]
                 [% END %]
             [% END %]
 
-            [% IF ( CAN_user_editcatalogue_edit_items ) %]<li><a href="/cgi-bin/koha/cataloguing/moveitem.pl?biblionumber=[% biblionumber | html %]">Attach item</a></li>[% END %]
+            [% IF ( CAN_user_editcatalogue_edit_items ) %]
+                [% IF Koha.Preference('RecordItemLimit') && count > Koha.Preference('RecordItemLimit') %]
+                    <li class="disabled">
+                        <a id="attachitem" data-toggle="tooltip" data-placement="left" title="[% count | html %] item(s) are attached to this record exceeding the threshold of [% Koha.Preference('RecordItemLimit') | html %] items. You cannot add more items." href="#">Attach item</a>
+                    </li>
+                [% ELSE %]
+                    <li><a href="/cgi-bin/koha/cataloguing/moveitem.pl?biblionumber=[% biblionumber | html %]">Attach item</a></li>
+                [% END %]
+            [% END %]
 
             [% IF ( EasyAnalyticalRecords ) %][% IF ( CAN_user_editcatalogue_edit_items ) %]<li><a href="/cgi-bin/koha/cataloguing/linkitem.pl?biblionumber=[% biblionumber | html %]">Link to host item</a>[% END %][% END %]
             [% IF ( LocalCoverImages || OPACLocalCoverImages) %][% IF ( CAN_user_tools_upload_local_cover_images ) %]<li><a href="/cgi-bin/koha/tools/upload-cover-image.pl?biblionumber=[% biblionumber | html %]&amp;filetype=image">Upload image</a>[% END %][% END %]

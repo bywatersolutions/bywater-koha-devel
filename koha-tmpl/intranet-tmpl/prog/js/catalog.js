@@ -102,7 +102,7 @@ $(document).ready(function() {
         return false;
     });
     $("#export").remove(); // Hide embedded export form if JS menus available
-    $("#deletebiblio").tooltip();
+    $("#deletebiblio,#attachitem").tooltip();
     $("#batchedit-disabled,#batchdelete-disabled,#deleteallitems-disabled")
         .on("click",function(e){
             e.preventDefault();

@@ -47,6 +47,9 @@ Cataloging:
                   no:  "Don't display"
             - buttons on the bib details page to print item spine labels.
         -
+            - If a record has more than
+            - pref: RecordItemLimit
+            - items, don't allow a librarian to add more manually.
     Record Structure:
         -
             - Fill in the default language for field 008 Range 35-37 of MARC21 records (e.g. eng, nor, ger, see <a href="http://www.loc.gov/marc/languages/language_code.html">MARC Code List for Languages</a>)

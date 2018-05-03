@@ -18,6 +18,9 @@
     browser.show();
 
 $(document).ready(function(){
+    [% IF opisadd && Koha.Preference('RecordItemLimit') && item_loop.size > Koha.Preference('RecordItemLimit') %]
+        $("#f fieldset.rows").hide();
+    [% END %]
 
     // Remove the onclick event defined in browser.js,
     // otherwise the deletion confirmation will not work correctly
@@ -119,6 +122,13 @@ function CheckMultipleAdd(f) {
     if (f>99) {
         return confirm(_("You are about to add %s items. Continue?").format(f));
     }
+    [% IF Koha.Preference('RecordItemLimit') %]
+        [% SET max_new_items = Koha.Preference('RecordItemLimit') - item_loop.size %]
+        if (f > [% max_new_items %]) {
+            alert(_("You are exceeding the [% Koha.Preference('RecordItemLimit') %] limit of items per record. You can only add [% max_new_items %] new item(s)."));
+            return false;
+        }
+    [% END %]
 }
 function Dopop(link,i) {
     defaultvalue=document.forms[0].field_value[i].value;
@@ -337,31 +347,41 @@ function confirm_deletion() {
     <input type="hidden" name="itemnumber" value="[% itemnumber | html %]" />
 
 <fieldset class="action">    [% IF ( opisadd ) %]
-    <input type="submit" name="phony_submit" value="phony_submit" id="phony_submit" style="display:none;" onclick="return false;" />
-    <!-- Note : We use here a false submit button because we have several submit buttons and we don't want the user to believe they validated the adding of multiple items
-		when pressing the enter key, while in fact it is the first submit button that is validated, in our case the "add (single) item" button.
-		It is a bit tricky, but necessary in the sake of UI correctness.
-    -->
-    <span id="addsingle">
-        <input type="submit" name="add_submit" value="Add item" onclick="return Check(this.form)" />
-        <input type="submit" name="add_duplicate_submit" value="Add &amp; duplicate" onclick="return Check(this.form)" />
-    </span>
-    <span id="addmultiple">
-        <input type="button" name="add_multiple_copies" id="add_multiple_copies" value="Add multiple copies of this item" />
-    </span>
-    <fieldset id="add_multiple_copies_span">
-        <label for="number_of_copies">Number of copies of this item to add: </label>
-        <input type="text" id="number_of_copies" name="number_of_copies" value="" size="2" />
-        <input type="submit" id="add_multiple_copies_submit" name="add_multiple_copies_submit" value="Add" onclick="javascript:return Check(this.form) && CheckMultipleAdd(this.form.number_of_copies.value);" /> <a href="#" id="cancel_add_multiple" class="cancel">Cancel</a>
-        <div class="hint"><p>The barcode you enter will be incremented for each additional item.</p></div>
-    </fieldset>
+    [% IF Koha.Preference('RecordItemLimit') && item_loop.size > Koha.Preference('RecordItemLimit') %]
+        <div class="dialog alert">
+            [% item_loop.size %] items are attached to this record exceeding the threshold of [% Koha.Preference('RecordItemLimit') %] items. You cannot add more items.
+        </div>
+    [% ELSE %]
+        <input type="submit" name="phony_submit" value="phony_submit" id="phony_submit" style="display:none;" onclick="return false;" />
+        <!-- Note : We use here a false submit button because we have several submit buttons and we don't want the user to believe they validated the adding of multiple items
+            when pressing the enter key, while in fact it is the first submit button that is validated, in our case the "add (single) item" button.
+            It is a bit tricky, but necessary in the sake of UI correctness.
+        -->
+        <span id="addsingle">
+            <input type="submit" name="add_submit" value="Add item" onclick="return Check(this.form)" />
+            <input type="submit" name="add_duplicate_submit" value="Add &amp; duplicate" onclick="return Check(this.form)" />
+        </span>
+        <span id="addmultiple">
+            <input type="button" name="add_multiple_copies" id="add_multiple_copies" value="Add multiple copies of this item" />
+        </span>
+        <fieldset id="add_multiple_copies_span">
+            <label for="number_of_copies">Number of copies of this item to add: </label>
+            <input type="text" id="number_of_copies" name="number_of_copies" value="" size="2" />
+            <input type="submit" id="add_multiple_copies_submit" name="add_multiple_copies_submit" value="Add" onclick="javascript:return Check(this.form) && CheckMultipleAdd(this.form.number_of_copies.value);" /> <a href="#" id="cancel_add_multiple" class="cancel">Cancel</a>
+            <div class="hint"><p>The barcode you enter will be incremented for each additional item.</p></div>
+        </fieldset>
+    [% END %]
 
     [% ELSE %]
     <input type="hidden" name="tag" value="[% itemtagfield | html %]" />
     <input type="hidden" name="subfield" value="[% itemtagsubfield | html %]" />
     <input type="hidden" name="field_value" value="[% itemnumber | html %]" />
     <input type="submit" value="Save changes" onclick="return Check(this.form)">
-    <input type="button" id="addnewitem" value="Add a new item">
+    [% IF Koha.Preference('RecordItemLimit') && item_loop.size > Koha.Preference('RecordItemLimit') %]
+        <input type="button" id="addnewitem" value="Add a new item" disabled="disabled" title="[% item_loop.size %] item(s) are attached to this record exceeding the threshold of [% Koha.Preference('RecordItemLimit') %] items. You cannot add more items.">
+    [% ELSE %]
+        <input type="button" id="addnewitem" value="Add a new item">
+    [% END %]
     <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblionumber | html %]">Cancel</a>
     [% END %]</fieldset>
     
