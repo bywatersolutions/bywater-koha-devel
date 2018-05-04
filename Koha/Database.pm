@@ -53,7 +53,7 @@ sub _new_schema {
 
     my $db_driver = $context->{db_driver};
 
-    my $db_name   = $context->config("database");
+    my $db_name   = $context->config("database_test") || $context->config("database");
     my $db_host   = $context->config("hostname");
     my $db_port   = $context->config("port") || '';
     my $db_user   = $context->config("user");
