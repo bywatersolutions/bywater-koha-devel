@@ -1011,6 +1011,67 @@
             </span>
         </xsl:if>
 
+                <!-- 853 Captions and Pattern data -->
+<!--CUSTOM FOR VATECH - adding  display of 853 854 855 -->
+        <!-- CUSTOM - REMOVING THIS DISPLAY next three stanzas are commented out.
+        <xsl:if test="marc:datafield[@tag=853]">
+            <span class="results_summary holdings_note"><span class="label">Captions and Pattern Information: </span> <br />
+                <xsl:for-each select="marc:datafield[@tag=853]">
+                    <xsl:call-template name="subfieldSelect">
+                        <xsl:with-param name="codes">abcdefghijklmnpuvwxyzot23</xsl:with-param>
+                    </xsl:call-template>
+                    <xsl:choose>
+                        <xsl:when test="position()=last()">
+                           <xsl:text></xsl:text>
+                        </xsl:when>
+                        <xsl:otherwise>
+                           <xsl:text>, </xsl:text>
+                           <br />
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:for-each>
+            </span>
+         </xsl:if>
+        
+        <xsl:if test="marc:datafield[@tag=854]">
+            <span class="results_summary holdings_note"><span class="label">Captions and Pattern Information (Supplements): </span> <br />
+                <xsl:for-each select="marc:datafield[@tag=854]">
+                    <xsl:call-template name="subfieldSelect">
+                        <xsl:with-param name="codes">abcdefghijklmnpuvwxyzot23</xsl:with-param>
+                    </xsl:call-template>
+                    <xsl:choose>
+                        <xsl:when test="position()=last()">
+                           <xsl:text></xsl:text>
+                        </xsl:when>
+                        <xsl:otherwise>
+                           <xsl:text>, </xsl:text>
+                           <br />
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:for-each>
+            </span>
+        </xsl:if> 
+        
+        <xsl:if test="marc:datafield[@tag=855]">
+            <span class="results_summary holdings_note"><span class="label">Captions and Pattern Information (Indexes): </span> <br />
+                <xsl:for-each select="marc:datafield[@tag=855]">
+                    <xsl:call-template name="subfieldSelect">
+                        <xsl:with-param name="codes">abcdefghijklmnpuvwxyzot23</xsl:with-param>
+                    </xsl:call-template>
+                    <xsl:choose>
+                        <xsl:when test="position()=last()">
+                           <xsl:text></xsl:text>
+                        </xsl:when>
+                        <xsl:otherwise>
+                           <xsl:text>, </xsl:text>
+                           <br />
+                        </xsl:otherwise>
+                    </xsl:choose>
+               </xsl:for-each>
+            </span>
+         </xsl:if> 
+        -->
+    
         <!-- 866 textual holdings -->
 <!--CUSTOM FOR VATECH - adding line breaks for display of 866 -->
         <xsl:if test="marc:datafield[@tag=866]">
