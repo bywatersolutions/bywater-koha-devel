@@ -28,6 +28,8 @@ my @ignored = qw(
     .editorconfig
     .gitignore
     .mailmap
+    .proverc
+    .proverc.dist
     LICENSE
     README.md
     README.robots
