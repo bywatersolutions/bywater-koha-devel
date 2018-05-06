@@ -253,6 +253,7 @@
         </xsl:if>
 
         <!-- Analytics -->
+        <!-- CUSTOM for VATECH - removing faux analtyics joy 5/8/2018
         <xsl:if test="$leader7='s'">
         <span class="results_summary analytics"><span class="label">Analytics: </span>
             <a>
@@ -268,7 +269,8 @@
             </a>
         </span>
         </xsl:if>
-
+        -->
+        
         <!-- Volumes of sets and traced series -->
         <xsl:if test="$materialTypeCode='ST' or substring($controlField008,22,1)='m'">
         <span class="results_summary volumes"><span class="label">Volumes: </span>
