@@ -47,7 +47,8 @@ Koha::Virtualshelf - Koha Virtualshelf Object class
 =cut
 
 our $PRIVATE = 1;
-our $PUBLIC = 2;
+our $PUBLIC  = 2;
+our $STAFF   = 3;
 
 sub store {
     my ( $self ) = @_;
@@ -79,6 +80,11 @@ sub is_public {
 sub is_private {
     my ( $self ) = @_;
     return $self->category == $PRIVATE;
+}
+
+sub is_staff {
+    my ( $self ) = @_;
+    return $self->category == $STAFF;
 }
 
 sub is_shelfname_valid {
@@ -243,8 +249,15 @@ sub can_be_deleted {
 
 sub can_be_managed {
     my ( $self, $borrowernumber ) = @_;
+
     return 1
       if $borrowernumber and $self->owner == $borrowernumber;
+
+    my $patron = Koha::Patrons->find( $borrowernumber );
+    my $permissions = C4::Auth::haspermission( $patron->userid, { lists => '*' } );
+    return 1
+      if $borrowernumber and $self->category == 3 and $permissions and $permissions->{lists} == 1;
+
     return 0;
 }
 

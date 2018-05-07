@@ -343,6 +343,9 @@ if ( $op eq 'view' ) {
     }
 }
 
+my $permissions = C4::Auth::haspermission( C4::Context->userenv->{id}, { lists => '*' } );
+my $can_manage_lists = $permissions && ( $permissions->{superlibrarian} == 1 || $permissions->{lists} == 1 );
+
 $template->param(
     op       => $op,
     referer  => $referer,
@@ -351,6 +354,7 @@ $template->param(
     category => $category,
     print    => scalar $query->param('print') || 0,
     csv_profiles => [ Koha::CsvProfiles->search({ type => 'marc', used_for => 'export_records' }) ],
+    can_manage_lists => $can_manage_lists,
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;

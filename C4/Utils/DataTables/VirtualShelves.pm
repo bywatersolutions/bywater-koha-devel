@@ -15,11 +15,29 @@ sub search {
     my $dt_params = $params->{dt_params};
 
     # public is default
-    $type = 2 if not $type or $type != 1;
+    $type = 2 unless $type && ( $type == 1 || $type == 3 );
 
     # If not logged in user, be carreful and set the borrowernumber to 0
     # to prevent private lists lack
     my $loggedinuser = C4::Context->userenv->{'number'} || 0;
+
+    if ( $type == 3 ) {
+        my $permissions =
+          C4::Auth::haspermission( C4::Context->userenv->{id}, { lists => '*' } );
+
+        unless (
+            $permissions
+            && (   $permissions->{superlibrarian} == 1
+                || $permissions->{lists} == 1 )
+          )
+        {
+            return {
+                iTotalRecords        => 0,
+                iTotalDisplayRecords => 0,
+                shelves              => [],
+            };
+        }
+    }
 
     my ($iTotalRecords, $iTotalDisplayRecords);
 
@@ -125,6 +143,7 @@ sub search {
         $shelf->{can_delete_shelf} = $s->can_be_deleted( $loggedinuser );
         $shelf->{is_shared} = $s->is_shared;
     }
+
     return {
         iTotalRecords => $iTotalRecords,
         iTotalDisplayRecords => $iTotalDisplayRecords,

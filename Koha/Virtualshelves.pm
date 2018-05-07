@@ -35,10 +35,6 @@ Koha::Virtualshelf - Koha Virtualshelf Object class
 
 =cut
 
-=head3 type
-
-=cut
-
 sub get_private_shelves {
     my ( $self, $params ) = @_;
     my $page = $params->{page};
@@ -62,7 +58,6 @@ sub get_private_shelves {
     );
 }
 
-
 sub get_public_shelves {
     my ( $self, $params ) = @_;
     my $page = $params->{page};
@@ -71,6 +66,31 @@ sub get_public_shelves {
     $self->search(
         {
             category => 2,
+        },
+        {
+            group_by => 'shelfnumber',
+            order_by => 'shelfname',
+            ( ( $page and $rows ) ? ( page => $page, rows => $rows ) : () ),
+        }
+    );
+}
+
+=head3 get_staff_shelves
+
+    my $shelves = $virtual_shelves->get_staff_shelves( { page => $page, rows => $rowss );
+
+    Returns item lists that are visible to all staff that can manage patron lists
+
+=cut
+
+sub get_staff_shelves {
+    my ( $self, $params ) = @_;
+    my $page = $params->{page};
+    my $rows = $params->{rows};
+
+    $self->search(
+        {
+            category => 3,
         },
         {
             group_by => 'shelfnumber',
@@ -160,9 +180,17 @@ sub get_shelves_containing_record {
     );
 }
 
+=head3 _type
+
+=cut
+
 sub _type {
     return 'Virtualshelve';
 }
+
+=head3 object_class
+
+=cut
 
 sub object_class {
     return 'Koha::Virtualshelf';

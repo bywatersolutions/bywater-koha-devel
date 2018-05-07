@@ -3,7 +3,8 @@
 [% USE Koha %]
 [% USE KohaDates %]
 [% SET PRIVATE = 1 %]
-[% SET PUBLIC = 2 %]
+[% SET PUBLIC  = 2 %]
+[% SET STAFF   = 3 %]
 [% SET footerjs = 1 %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Koha &rsaquo; [% IF op == 'view' %]Lists &rsaquo; Contents of [% shelf.shelfname | html %][% ELSE %]Lists[% END %][% IF op == 'add_form' %] &rsaquo; Create new list[% END %][% IF op == 'edit_form' %] &rsaquo; Edit list [% shelf.shelfname | html %][% END %]</title>
@@ -48,6 +49,12 @@
             <a href="/cgi-bin/koha/virtualshelves/shelves.pl?op=list&amp;category=[% PRIVATE | html %]">Your lists</a>
         [% ELSE %]
             Your lists
+        [% END %]
+    [% ELSIF shelf AND shelf.is_staff %] &rsaquo;
+        [% IF op == 'view' %]
+            <a href="/cgi-bin/koha/virtualshelves/shelves.pl?op=list&amp;category=[% STAFF %]">Staff lists</a>
+        [% ELSE %]
+            Public lists
         [% END %]
     [% ELSIF shelf AND shelf.is_public %] &rsaquo;
         [% IF op == 'view' %]
@@ -306,6 +313,13 @@
                 [% ELSE %]
                     <option value="1">Private</option>
                 [% END %]
+
+                [% IF shelf.is_staff %]
+                    <option value="3" selected="selected">Staff only</option>
+                [% ELSE %]
+                    <option value="3">Staff only</option>
+                [% END %]
+
                 [% IF shelf.is_public %]
                     <option value="2" selected="selected">Public</option>
                 [% ELSE %]
@@ -341,6 +355,9 @@
         <ul>
             <li id="privateshelves_tab" class="active"><a href="#tab_content">Your lists</a></li>
             <li id="publicshelves_tab" class="active"><a href="#tab_content">Public lists</a></li>
+            [% IF can_manage_lists %]
+                <li id="staffshelves_tab" class="active"><a href="#tab_content">[% CAN_user_lists %] Staff lists</a></li>
+            [% END %]
         </ul>
 
         <div id="tab_content">
@@ -449,6 +466,8 @@
             $(document).ready(function(){
                 [% IF category == PUBLIC %]
                     var type = [% PUBLIC | html %];
+                [% ELSIF category == STAFF %]
+                    var type = [% STAFF %];
                 [% ELSE %]
                     var type = [% PRIVATE | html %];
                 [% END %]
@@ -508,7 +527,9 @@
                 dtListResults.fnAddFilters("filter", 750);
 
                 var tabs = $("#tabs").tabs({
-                    [% IF category == PUBLIC %]
+                    [% IF category == STAFF %]
+                        active: 2,
+                    [% ELSIF category == PUBLIC %]
                         active: 1,
                     [% ELSE %]
                         active: 0,
@@ -520,6 +541,9 @@
                             dtListResults.fnDraw();
                         } else if ( active == 1 ) {
                             type = [% PUBLIC | html %];
+                            dtListResults.fnDraw();
+                        } else if ( active == 2 ) {
+                            type = [% STAFF %];
                             dtListResults.fnDraw();
                         }
                     }
