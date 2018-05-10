@@ -71,7 +71,9 @@ KOHA.OverDriveCirculation = new function() {
     var login_link = $('<a href="#">')
         .click(function(e) {
             e.preventDefault();
-            login(window.open());
+            var passwd = prompt("Please enter your password");
+            console.log(passwd);
+            login(passwd);
         })
         .text(_("Login to OverDrive account"));
     var login_div = $('<div class="overdrive-login">').append(login_link);
@@ -192,8 +194,8 @@ KOHA.OverDriveCirculation = new function() {
         });
     }
 
-    function login(w) {
-        svc_ajax('get', { action: "login" }, function(data) {
+    function login(p) {
+        svc_ajax('get', { action: "login", password: p }, function(data) {
             details = null;
             if (data.login_url) {
                 w.location = data.login_url;

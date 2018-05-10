@@ -1758,8 +1758,10 @@ sub get_session {
 # Currently it's only passed from C4::SIP::ILS::Patron::check_password, but
 # not having a userenv defined could cause a crash.
 sub checkpw {
+    warn "Checking pw";
     my ( $dbh, $userid, $password, $query, $type, $no_set_userenv ) = @_;
     $type = 'opac' unless $type;
+
 
     my @return;
     my $patron = Koha::Patrons->find({ userid => $userid });

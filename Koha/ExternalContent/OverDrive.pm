@@ -139,6 +139,24 @@ sub auth_by_code {
     return $self->get_return_page_from_koha_session;
 }
 
+sub auth_by_userid {
+    my $self = shift;
+    my $userid = shift or croak "No user provided";
+    my $password = shift or croak "No password provided";
+    my $website_id = shift or croak "OverDrive Library ID not provided";
+    my $authorization_name = "Koha";
+    warn "and here";
+
+    my ($access_token, $access_token_type, $auth_token)
+      = $self->client->auth_by_user_id($userid, $password, $website_id, $authorization_name);
+    warn "but no htere";
+    $access_token or die "Invalid OverDrive code returned";
+    $self->set_token_in_koha_session($access_token, $access_token_type);
+
+    $self->koha_patron->set({overdrive_auth_token => $auth_token})->store;
+    return $self->get_return_page_from_koha_session;
+}
+
 use constant AUTH_RETURN_HANDLER => "/cgi-bin/koha/external/overdrive/auth.pl";
 sub _return_url {
     my $self = shift;
@@ -205,7 +223,7 @@ sub auth_by_saved_token {
     my $koha_patron = $self->koha_patron;
     if (my $auth_token = $koha_patron->overdrive_auth_token) {
         my ($access_token, $access_token_type, $new_auth_token)
-          = $self->client->auth_by_token($auth_token);
+          = $self->client->make_access_token_request();
         $self->set_token_in_koha_session($access_token, $access_token_type);
         $koha_patron->set({overdrive_auth_token => $new_auth_token})->store;
         return $access_token;

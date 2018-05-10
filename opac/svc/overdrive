@@ -43,7 +43,11 @@ local $@;
 eval {
         {
             $action eq 'login' && do {
-                $data{login_url} = $od->auth_url($page_url);
+                warn "Made it here";
+                my $password = $cgi->param("password") // "" ;
+                warn $password;
+                $od->auth_by_userid($user, $password,C4::Context->preference('OverDriveLibraryID'));
+                $data{login_success} = 1;
                 last;
             };
 
