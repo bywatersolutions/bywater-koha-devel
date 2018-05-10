@@ -1633,7 +1633,8 @@
                 </a>
             </xsl:if>
                 <xsl:choose>
-                    <xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><span class="separator"><xsl:text> | </xsl:text></span></xsl:otherwise>
+                    <!--CUSTOM FOR VATECH - remove trailing period -->
+                    <xsl:when test="position()=last()"><xsl:text></xsl:text></xsl:when><xsl:otherwise><span class="separator"><xsl:text> | </xsl:text></span></xsl:otherwise>
                 </xsl:choose>
             </xsl:for-each>
         </h5>

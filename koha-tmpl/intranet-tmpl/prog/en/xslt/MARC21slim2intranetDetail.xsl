@@ -1608,7 +1608,8 @@
             </xsl:if>
         </a>
         <xsl:choose>
-            <xsl:when test="position()=last()"><xsl:text>.</xsl:text></xsl:when><xsl:otherwise><span class="separator"><xsl:text> | </xsl:text></span></xsl:otherwise>
+ <!--Change . to nothing if the last author -->
+            <xsl:when test="position()=last()"><xsl:text></xsl:text></xsl:when><xsl:otherwise><span class="separator"><xsl:text> | </xsl:text></span></xsl:otherwise>
         </xsl:choose>
         </xsl:for-each>
         </h5>
