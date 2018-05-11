@@ -2076,6 +2076,17 @@ sub getborrowernumber {
     return 0;
 }
 
+=head2 track_login_for_session
+
+  track_login_for_session( $userid, $session );
+
+C<$userid> the userid of the member
+C<$session> the CGI::Session object used to store the session's state.
+
+Wraps the call to $patron->track_login, the method used to update borrowers.lastseen.
+
+=cut
+
 sub track_login_for_session {
     my ( $userid, $session ) = @_;
 
