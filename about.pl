@@ -224,10 +224,11 @@ if ( ! defined C4::Context->config('upload_path') ) {
     }
 }
 
-if ( ! defined C4::Context->config('tmp_path') ) {
+if ( ! C4::Context->config('tmp_path') ) {
+    my $temporary_directory = Koha::UploadedFile->temporary_directory;
     push @xml_config_warnings, {
-        error             => 'tmp_path_entry_missing',
-        effective_tmp_dir => File::Spec->tmpdir
+        error             => 'tmp_path_missing',
+        effective_tmp_dir => $temporary_directory,
     }
 }
 
