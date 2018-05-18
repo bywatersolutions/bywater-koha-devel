@@ -308,6 +308,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 branches_overdrive
+
+Type: might_have
+
+Related object: L<Koha::Schema::Result::BranchesOverdrive>
+
+=cut
+
+__PACKAGE__->might_have(
+  "branches_overdrive",
+  "Koha::Schema::Result::BranchesOverdrive",
+  { "foreign.branchcode" => "self.branchcode" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 branchtransfers_frombranches
 
 Type: has_many
@@ -609,8 +624,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-02-16 17:54:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QOMUFz2EjvAVWCkIpNmvtg
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-05-16 12:32:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:l8vt6BJ+9mPgOSm60CL+hA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
