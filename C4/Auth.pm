@@ -2092,6 +2092,7 @@ sub track_login_for_session {
 
     if ( $userid && $session && !$session->param('tracked_for_session') ) {
         $session->param( 'tracked_for_session', 1 );
+        $session->flush();
 
         # track_login also depends on pref TrackLastPatronActivity
         my $patron = Koha::Patrons->find( { userid => $userid } );
