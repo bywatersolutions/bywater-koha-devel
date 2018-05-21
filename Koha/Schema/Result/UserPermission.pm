@@ -30,13 +30,6 @@ __PACKAGE__->table("user_permissions");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 module_bit
-
-  data_type: 'integer'
-  default_value: 0
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 code
 
   data_type: 'varchar'
@@ -48,13 +41,6 @@ __PACKAGE__->table("user_permissions");
 
 __PACKAGE__->add_columns(
   "borrowernumber",
-  {
-    data_type      => "integer",
-    default_value  => 0,
-    is_foreign_key => 1,
-    is_nullable    => 0,
-  },
-  "module_bit",
   {
     data_type      => "integer",
     default_value  => 0,
@@ -82,7 +68,7 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 permission
+=head2 code
 
 Type: belongs_to
 
@@ -91,20 +77,20 @@ Related object: L<Koha::Schema::Result::Permission>
 =cut
 
 __PACKAGE__->belongs_to(
-  "permission",
+  "code",
   "Koha::Schema::Result::Permission",
-  { code => "code", module_bit => "module_bit" },
+  { code => "code" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
   },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-10-14 20:56:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9dMAYxSmVQ1cVKxmnMiMkg
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-05-21 06:16:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/nqR/oeXcpZfNwY6Uk5ZrQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
