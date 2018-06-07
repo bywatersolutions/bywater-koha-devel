@@ -46,7 +46,7 @@ eval {
                 warn "Made it here";
                 my $password = $cgi->param("password") // "" ;
                 warn $password;
-                $od->auth_by_userid($user, $password,C4::Context->preference('OverDriveLibraryID'));
+                $od->auth_by_userid($user, $password,C4::Context->preference('OverDriveWebsiteID'),C4::Context->preference('OverDriveWebsiteID'));
                 $data{login_success} = 1;
                 last;
             };
