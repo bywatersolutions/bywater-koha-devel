@@ -370,6 +370,10 @@ Enhanced Content:
             - pref: OverDriveWebsiteID
             - .
         -
+            - "Authenticate using OverDrive Authname"
+            - pref: OverDriveAuthName
+            - "(will be used as fallback if individual branch authname not set <a href=\"/cgi-bin/koha/admin/overdrive.pl\">here</a>)."
+        -
             - "Show items from the OverDrive catalog of library #"
             - pref: OverDriveLibraryID
             - .
