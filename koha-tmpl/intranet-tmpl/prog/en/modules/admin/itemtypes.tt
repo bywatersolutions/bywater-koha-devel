@@ -138,7 +138,7 @@ Item types administration
                             [% END %]
                         [% END %]
                     </select>
-                    (Options are defined as the authorized values for the ITEMTYPECAT category)
+                    <span class="hint">Options are defined as the authorized values for the ITEMTYPECAT category.</span>
                 </li>
                 [% IF Koha.Preference('noItemTypeImages') %]
                     <li>
@@ -218,7 +218,7 @@ Item types administration
                     [% ELSE %]
                         <input type="checkbox" id="hideinopac" name="hideinopac" value="1" />
                     [% END %]
-                    (if checked, items of this type will be hidden as filters in OPAC's advanced search)
+                    <span class="hint">If checked, items of this type will be hidden as filters in OPAC's advanced search.</span>
                 </li>
                 <li>
                     <label for="notforloan">Not for loan: </label>
@@ -227,11 +227,22 @@ Item types administration
                         [% ELSE %]
                             <input type="checkbox" id="notforloan" name="notforloan" value="1" />
                         [% END %]
-                      (if checked, no item of this type can be issued. If not checked, every item of this type can be issued unless notforloan is set for a specific item)
+                        <span class="hint">If checked, no item of this type can be issued. If not checked, every item of this type can be issued unless notforloan is set for a specific item.</span>
                 </li>
                 <li>
                     <label for="rentalcharge">Rental charge: </label>
-                    <input type="text" id="rentalcharge" name="rentalcharge" size="10" value="[% itemtype.rentalcharge | html %]" />
+                    <input type="text" id="rentalcharge" name="rentalcharge" size="10" value="[% itemtype.rentalcharge | $Price on_editing => 1 %]" />
+                    <span class="hint">This fee is charged once per checkout/renewal per item</span>
+                </li>
+                <li>
+                    <label for="rentalcharge_daily">Daily rental charge: </label>
+                    <input type="text" id="rentalcharge_daily" name="rentalcharge_daily" size="10" value="[% itemtype.rentalcharge_daily | $Price on_editing => 1 %]" />
+                    <span class="hint">This fee is charged at checkout/renewal time for each day between the checkout/renewal date and due date for loans specified in days.</span>
+                </li>
+                <li>
+                    <label for="rentalcharge_hourly">Hourly rental charge: </label>
+                    <input type="text" id="rentalcharge_hourly" name="rentalcharge_hourly" size="10" value="[% itemtype.rentalcharge_hourly | $Price on_editing => 1 %]" />
+                    <span class="hint">This fee is charged at checkout/renewal time for each hour between the checkout/renewal date and due date for loans specifie in hours.</span>
                 </li>
                 <li>
                     <label for="defaultreplacecost">Default replacement cost: </label>
@@ -330,7 +341,9 @@ Item types administration
             <th>Search category</th>
             <th>Not for loan</th>
             <th>Hide in OPAC</th>
-            <th>Charge</th>
+            <th>Rental charge</th>
+            <th>Daily rental charge</th>
+            <th>Hourly rental charge</th>
             <th>Default replacement cost</th>
             <th>Processing fee (when lost)</th>
             <th>Checkin message</th>
@@ -372,6 +385,17 @@ Item types administration
               [% itemtype.rentalcharge | $Price %]
             [% END %]
             </td>
+            <td>
+            [% UNLESS ( itemtype.notforloan ) %]
+              [% itemtype.rentalcharge_daily | $Price %]
+            [% END %]
+            </td>
+            <td>
+            [% UNLESS ( itemtype.notforloan ) %]
+              [% itemtype.rentalcharge_hourly | $Price %]
+            [% END %]
+            </td>
+
             <td>[% itemtype.defaultreplacecost | $Price %]</td>
             <td>[% itemtype.processfee | $Price %]</td>
             <td>[% itemtype.checkinmsg | html_line_break | $raw %]</td>

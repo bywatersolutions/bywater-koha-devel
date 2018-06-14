@@ -33,7 +33,7 @@ Koha::ItemType - Koha Item type Object class
 
 =head1 API
 
-=head2 Class Methods
+=head2 Class methods
 
 =cut
 
@@ -89,8 +89,6 @@ sub translated_descriptions {
         }
     } @translated_descriptions ];
 }
-
-
 
 =head3 can_be_deleted
 

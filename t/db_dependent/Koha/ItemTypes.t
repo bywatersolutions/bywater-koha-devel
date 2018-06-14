@@ -19,13 +19,18 @@
 
 use Modern::Perl;
 
-use Test::More tests => 24;
 use Data::Dumper;
-use Koha::Database;
+use Test::More tests => 24;
+
 use t::lib::Mocks;
-use Koha::Items;
-use Koha::Biblioitems;
 use t::lib::TestBuilder;
+
+use C4::Calendar;
+use Koha::Biblioitems;
+use Koha::Libraries;
+use Koha::Database;
+use Koha::DateUtils qw(dt_from_string);;
+use Koha::Items;
 
 BEGIN {
     use_ok('Koha::ItemType');
@@ -46,6 +51,8 @@ Koha::ItemType->new(
         summary        => 'summary',
         checkinmsg     => 'checkinmsg',
         checkinmsgtype => 'checkinmsgtype',
+        processfee         => '0.00',
+        defaultreplacecost => '0.00',
     }
 )->store;
 
@@ -58,6 +65,8 @@ Koha::ItemType->new(
         summary        => 'summary',
         checkinmsg     => 'checkinmsg',
         checkinmsgtype => 'checkinmsgtype',
+        processfee         => '0.00',
+        defaultreplacecost => '0.00',
     }
 )->store;
 
@@ -70,6 +79,8 @@ Koha::ItemType->new(
         summary        => 'summary',
         checkinmsg     => 'checkinmsg',
         checkinmsgtype => 'checkinmsgtype',
+        processfee         => '0.00',
+        defaultreplacecost => '0.00',
     }
 )->store;
 
