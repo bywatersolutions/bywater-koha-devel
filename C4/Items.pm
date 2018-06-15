@@ -502,7 +502,7 @@ sub ModItemFromMarc {
 
     my $localitemmarc = MARC::Record->new;
     $localitemmarc->append_fields( $item_marc->field($itemtag) );
-    my $item = &TransformMarcToKoha( $localitemmarc, $frameworkcode, 'items' );
+    my $item = C4::Biblio::TransformMarcToKoha( $localitemmarc, $frameworkcode, 'items' );
     my $default_values = _build_default_values_for_mod_marc();
     foreach my $item_field ( keys %$default_values ) {
         $item->{$item_field} = $default_values->{$item_field}
@@ -607,7 +607,7 @@ sub ModItem {
 
     # request that bib be reindexed so that searching on current
     # item status is possible
-    ModZebra( $biblionumber, "specialUpdate", "biblioserver" );
+    C4::Biblio::ModZebra( $biblionumber, "specialUpdate", "biblioserver" );
 
     logaction( "CATALOGUING", "MODIFY", $itemnumber, "item " . Dumper($item) )
       if $log_action && C4::Context->preference("CataloguingLog");
@@ -684,7 +684,7 @@ sub DelItem {
     # FIXME check the item has no current issues
     my $deleted = _koha_delete_item( $itemnumber );
 
-    ModZebra( $biblionumber, "specialUpdate", "biblioserver" );
+    C4::Biblio::ModZebra( $biblionumber, "specialUpdate", "biblioserver" );
 
     #search item field code
     logaction("CATALOGUING", "DELETE", $itemnumber, "item") if C4::Context->preference("CataloguingLog");
@@ -2194,7 +2194,7 @@ sub _get_unlinked_item_subfields {
     my $original_item_marc = shift;
     my $frameworkcode = shift;
 
-    my $marcstructure = GetMarcStructure(1, $frameworkcode, { unsafe => 1 });
+    my $marcstructure = C4::Biblio::GetMarcStructure(1, $frameworkcode, { unsafe => 1 });
 
     # assume that this record has only one field, and that that
     # field contains only the item information

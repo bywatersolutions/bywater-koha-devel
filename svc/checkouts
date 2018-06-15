@@ -65,6 +65,7 @@ print $input->header( -type => 'text/plain', -charset => 'UTF-8' );
 my @parameters;
 my $sql = '
     SELECT
+        issue_id,
         issuedate,
         date_due,
         date_due < now() as date_due_overdue,
@@ -166,6 +167,7 @@ while ( my $c = $sth->fetchrow_hashref() ) {
     }
     my $checkout = {
         DT_RowId             => $c->{itemnumber} . '-' . $c->{borrowernumber},
+        issue_id             => $c->{issue_id},
         title                => $c->{title},
         author               => $c->{author},
         barcode              => $c->{barcode},

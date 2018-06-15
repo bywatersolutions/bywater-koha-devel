@@ -15,6 +15,7 @@ INSERT IGNORE INTO authorised_value_categories( category_name )
     ('DEPARTMENT'),
     ('TERM'),
     ('ITEMTYPECAT'),
+    ('RETURN_CLAIM_RESOLUTION'),
     ('PAYMENT_TYPE');
 
 INSERT IGNORE INTO authorised_value_categories( category_name )

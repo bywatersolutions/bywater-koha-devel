@@ -426,6 +426,11 @@
         [% END %]
         <li><a id="debarments-tab-link" href="#reldebarments">[% debarments.size %] Restrictions</a></li>
 
+        [% IF Koha.Preference('ClaimsReturnedLostAV') %]
+            [% SET return_claims = patron.return_claims %]
+            <li><a id="return-claims-tab-link" href="#relreturn-claims">[% return_claims.count %] Return claim(s)</a></li>
+        [% END %]
+
         [% SET enrollments = patron.get_club_enrollments(1) %]
         [% SET enrollable  = patron.get_enrollable_clubs(0,1) %]
         [% IF CAN_user_clubs && ( enrollable.count || enrollments.count ) %]
@@ -477,6 +482,10 @@
 [% END %]
 
 [% INCLUDE borrower_debarments.inc %]
+
+[% IF Koha.Preference('ClaimsReturnedLostAV') %]
+    [% INCLUDE borrower_return_claims.inc %]
+[% END %]
 
 <div id="reserves">
 [% IF ( holds_count ) %]
@@ -566,6 +575,9 @@
         var borrowernumber = "[% patron.borrowernumber %]";
         var branchcode = "[% Branches.GetLoggedInBranchcode() %]";
         var exports_enabled = "[% Koha.Preference('ExportCircHistory') %]";
+        var claims_returned_enabled = "[% Koha.Preference('ClaimsReturnedLostAV') %]";
+        var claims_returned_lost_charge = "[% Koha.Preference('ClaimsReturnedLostCharge') %]";
+        var referer = 'moremember';
         var AllowCirculate = [% (CAN_user_circulate_circulate_remaining_permissions)? 1 : 0 %]
         var AllowRenewalLimitOverride = [% (CAN_user_circulate_override_renewals && Koha.Preference('AllowRenewalLimitOverride') )? 1: 0 %];
         var script = "moremember";

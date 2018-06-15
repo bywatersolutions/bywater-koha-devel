@@ -26,7 +26,10 @@ use Text::Unaccent qw( unac_string );
 
 use C4::Context;
 use C4::Log;
+use Koha::Account;
+use Koha::Checkouts::ReturnClaims;
 use Koha::Checkouts;
+use Koha::Club::Enrollments;
 use Koha::Database;
 use Koha::DateUtils;
 use Koha::Holds;
@@ -36,10 +39,8 @@ use Koha::Patron::HouseboundProfile;
 use Koha::Patron::HouseboundRole;
 use Koha::Patron::Images;
 use Koha::Patrons;
-use Koha::Virtualshelves;
-use Koha::Club::Enrollments;
-use Koha::Account;
 use Koha::Subscription::Routinglists;
+use Koha::Virtualshelves;
 
 use base qw(Koha::Object);
 
@@ -1030,6 +1031,22 @@ sub generate_userid {
 
      return $userid;
 
+}
+
+=head3 return_claims
+
+my $return_claims = $patron->return_claims
+
+Returns a Koha::Checkouts::ReturnClaims object.
+
+=cut
+
+sub return_claims {
+    my ( $self ) = @_;
+
+    my $rs = Koha::Checkouts::ReturnClaims->search( { borrowernumber => $self->id } );
+
+    return $rs;
 }
 
 =head2 Internal methods

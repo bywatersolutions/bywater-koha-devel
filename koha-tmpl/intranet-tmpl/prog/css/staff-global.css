@@ -1000,6 +1000,11 @@ input.alert {
 	border-color: #900;
 }
 
+select.alert {
+	background-color : #FFFF99;
+	border-color: #900;
+}
+
 ol.bibliodetails {
 	float: left;
 	margin : 0 0 1em 1em;

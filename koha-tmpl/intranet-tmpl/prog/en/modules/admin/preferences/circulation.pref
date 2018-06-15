@@ -478,6 +478,24 @@ Circulation:
             - his/her auto renewals.
     Checkin Policy:
         -
+            - Set the lost status for <i>Claims returned</i> to
+            - pref: ClaimsReturnedLostAV
+            - ( Set to a value for the LOST authorised value category )
+        -
+            - At checkout, alert the librarian that the patron has return claims if the patron has more than
+            - pref: ClaimsReturnedAlertThreshold
+            - pref: ClaimsReturnedAlertType
+              choices:
+                  all: "total claims"
+                  unresolved: "unresolved claims"
+        -
+            - pref: ClaimsReturnedLostCharge
+              choices:
+                  ask: "Ask librarian if patron should be charged"
+                  charge: "Charge"
+                  no_charge: "Don't charge"
+            - a lost fee for an item that has been marked "claims returned"
+        -
             - pref: BlockReturnOfWithdrawnItems
               choices:
                   yes: Block

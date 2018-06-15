@@ -46,6 +46,7 @@ use Koha::Biblioitems;
 use Koha::DateUtils;
 use Koha::Calendar;
 use Koha::Checkouts;
+use Koha::Checkouts::ReturnClaims;
 use Koha::IssuingRules;
 use Koha::Items;
 use Koha::Patrons;
@@ -1711,7 +1712,7 @@ sub GetBranchItemRule {
 =head2 AddReturn
 
   ($doreturn, $messages, $iteminformation, $borrower) =
-      &AddReturn( $barcode, $branch [,$exemptfine] [,$dropbox] [,$returndate] );
+      &AddReturn( $barcode, $branch [,$exemptfine] [,$dropbox] [,$returndate], [, { claims_returned_resolution => $resolution } ] );
 
 Returns a book.
 
@@ -1788,7 +1789,7 @@ patron who last borrowed the book.
 =cut
 
 sub AddReturn {
-    my ( $barcode, $branch, $exemptfine, $dropbox, $return_date, $dropboxdate ) = @_;
+    my ( $barcode, $branch, $exemptfine, $dropbox, $return_date, $dropboxdate, $params ) = @_;
 
     if ($branch and not Koha::Libraries->find($branch)) {
         warn "AddReturn error: branch '$branch' not found.  Reverting to " . C4::Context->userenv->{'branch'};
@@ -1809,6 +1810,19 @@ sub AddReturn {
 
     my $itemnumber = $item->{ itemnumber };
     my $itemtype = $item->{itype}; # GetItem called effective_itemtype
+
+    my $claim = Koha::Checkouts::ReturnClaims->find(
+        {
+            itemnumber => $itemnumber,
+            resolution => undef,
+        }
+    );
+    if ( $claim && $params->{claims_returned_resolution} ) {
+        $claim->resolve( { resolution => $params->{claims_returned_resolution} } );
+    } elsif ( $claim ) {
+        $doreturn = 0;
+        $messages->{ClaimsReturned} = $claim;
+    }
 
     my $issue  = Koha::Checkouts->find( { itemnumber => $itemnumber } );
     if ( $issue ) {

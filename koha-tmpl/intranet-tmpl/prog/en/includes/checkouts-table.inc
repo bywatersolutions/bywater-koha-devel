@@ -6,7 +6,7 @@
                 <a id="issues-table-load-now-button" href="#" class="btn btn-default"><i class="fa fa-book"></i> Show checkouts</a>
             </p>
         </div>
-        <form name="issues" action="/cgi-bin/koha/tools/export.pl" method="post" class="checkboxed">
+        <form name="issues" action="/cgi-bin/koha/tools/export.pl" method="post" class="checkboxed" id="checkouts-table-form">
             <table id="issues-table" style="width: 100% !Important;">
                 <thead>
                     <tr>
@@ -27,6 +27,7 @@
                         <th scope="col">Renew <p class="column-tool"><a href="#" id="CheckAllRenewals">select all</a> | <a href="#" id="UncheckAllRenewals">none</a></p></th>
                         <th scope="col">Check in <p class="column-tool"><a href="#" id="CheckAllCheckins">select all</a> | <a href="#" id="UncheckAllCheckins">none</a></p></th>
                         <th scope="col">Export <p class="column-tool"><a href="#" id="CheckAllExports">select all</a> | <a href="#" id="UncheckAllExports">none</a></p></th>
+                        <th scope="col">Claims returned <p class="column-tool"><a href="#" id="CheckAllClaimsReturned">select all</a> | <a href="#" id="UncheckAllClaimsReturned">none</a></p></th>
                     </tr>
                 </thead>
                 [% INCLUDE 'checkouts-table-footer.inc' %]
@@ -43,9 +44,15 @@
                             <input type="checkbox" name="override_limit" id="override_limit" value="1" />
                         [% END %]
                     [% END %]
+
                     [% IF ( CAN_user_circulate_circulate_remaining_permissions ) %]
                         <button class="btn btn-default" id="RenewCheckinChecked"><i class="fa fa-check"></i> Renew or check in selected items</button>
                         <button class="btn btn-default" id="RenewAll"><i class="fa fa-book"></i> Renew all</button>
+                    [% END %]
+
+                    [% IF Koha.Preference('ClaimsReturnedLostAV') %]
+                            <button class="btn btn-default" id="MarkClaimsReturnedSubmit"><i class="fa fa-question-circle"></i> Mark <i>claims returned</i></button>
+                        </fieldset>
                     [% END %]
                 </fieldset>
 
@@ -81,3 +88,48 @@
         <p>Patron has nothing checked out.</p>
     [% END %]
 </div>
+
+<div class="modal" id="claims-returned-modal" tabindex="-1" role="dialog" aria-labelledby="itemSearchFallbackLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form id="claims-returned-modal-form" action="/cgi-bin/koha/circ/claims-returned.pl">
+                <input type="hidden" name="borrowernumber" value="[% patron.id %]" />
+                <input type="hidden" name="destination" value="[% destination %]" />
+
+                <div class="modal-header">
+                    <button type="button" class="closebtn" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h3 id="claims-returned-modal-label"><h3>Claim return</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="claims-returned-modal-form-notes">Notes</label>
+                        <textarea id="claims-returned-modal-form-notes" name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+                    [% IF Koha.Preference('ClaimsReturnedLostCharge') == 'ask' %]
+                      <div class="form-group">
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="charge" id="claims-returned-modal-form-charge" value="charge" checked>
+                                <span>Charge lost fee</span>
+                            </label>
+                        </div>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="charge" id="claims-returned-modal-form-charge" value="no_charge">
+                                <span>Don't charge lost fee</span>
+                            </label>
+                        </div>
+                      </div>
+                    [% ELSE %]
+                        <input id="claims-returned-modal-form-charge" type="hidden" name="charge" value="[% Koha.Preference('ClaimsReturnedLostCharge') %]" />
+                    [% END %]
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default claim-returned" type="submit"><i class="fa fa-check"></i> Claim returned</button>
+                    <button class="btn btn-default claim-returned cancel" href="#" data-dismiss="modal" aria-hidden="true"><i class="fa fa-times"></i> Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

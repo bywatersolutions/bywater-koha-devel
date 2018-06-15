@@ -523,6 +523,12 @@
             [% IF errmsgloo.data_corrupted %]
                 <p class="problem">The item has not been checked in due to a configuration issue in your system. You must ask an administrator to take a look at the <a href="/cgi-bin/koha/about.pl#sysinfo">about page</a> and search for the "data problems" section</p>
             [% END %]
+
+            [% IF errmsgloo.claims_returned %]
+                <p class="problem">
+                    This item was claimed to be returned by a patron. Please select a resolution and submit to check in the item.
+                </p>
+            [% END %]
         [% END %]
     </div>
 [% END %]
@@ -552,14 +558,25 @@
     <div class="yui-u first">
             <fieldset>
 	<legend>Check in</legend>
-            <label for="barcode">Enter item barcode: </label>
-			[% IF ( exemptfine ) %]
-			<input name="barcode" id="barcode" size="14" class="focus alert"/>
-			[% ELSIF ( dropboxmode ) %]
-			<input name="barcode" id="barcode" size="14" class="focus alert"/>
-			[% ELSE %]
-			<input name="barcode" id="barcode" size="14" class="focus"/>
-			[% END %]
+            [% IF errmsgloo.claims_returned %]
+                <input type="hidden" name="barcode" id="barcode" value="[% errmsgloo.claims_returned.item.barcode %]" />
+                [% SET resolutions = AuthorisedValues.GetAuthValueDropbox('RETURN_CLAIM_RESOLUTION') %]
+                <select name="resolution" id="resolution" class="focus alert">
+                    [% FOREACH res IN resolutions %]
+                        <option value="[% res.authorised_value %]">[% res.lib %]</option>
+                    [% END %]
+                </select>
+            [% ELSE %]
+                <label for="barcode">Enter item barcode: </label>
+
+                [% IF ( exemptfine ) %]
+                    <input name="barcode" id="barcode" size="14" class="focus alert"/>
+                [% ELSIF ( dropboxmode ) %]
+                    <input name="barcode" id="barcode" size="14" class="focus alert"/>
+                [% ELSE %]
+                    <input name="barcode" id="barcode" size="14" class="focus"/>
+                [% END %]
+            [% END %]
             <input type="submit" class="submit" value="Submit" />
 
             [% IF Koha.Preference('SpecifyReturnDate') %]

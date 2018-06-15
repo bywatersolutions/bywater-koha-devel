@@ -93,7 +93,15 @@
             <li><span class="label">Current renewals:</span> [% ITEM_DAT.renewals %]&nbsp;</li>
             [% IF itemlostloop %]
                 <li><span class="label">Lost status:</span>
-                    [% IF ( CAN_user_circulate ) %]
+                    [% SET ClaimsReturnedLostAV = Koha.Preference('ClaimsReturnedLostAV') %]
+                    [% IF ClaimsReturnedLostAV && ITEM_DAT.itemlost == ClaimsReturnedLostAV %]
+                        [% FOREACH itemlostloo IN itemlostloop %]
+                            [% IF itemlostloo.authorised_value == ClaimsReturnedLostAV %]
+                                [% itemlostloo.lib %]
+                            [% END %]
+                        [% END %]
+                        <span class="hint">Item is a <i>return claim</i>, to modify go to patron details.</span>
+                    [% ELSIF ( CAN_user_circulate ) %]
                         <form action="updateitem.pl" method="post">
                         <input type="hidden" name="biblionumber" value="[% ITEM_DAT.biblionumber %]" />
                         <input type="hidden" name="biblioitemnumber" value="[% ITEM_DAT.biblioitemnumber %]" />
@@ -104,7 +112,11 @@
                             [% IF itemlostloo.authorised_value == ITEM_DAT.itemlost %]
                                     <option value="[% itemlostloo.authorised_value %]" selected="selected">[% itemlostloo.lib %]</option>
                             [% ELSE %]
-                                    <option value="[% itemlostloo.authorised_value %]">[% itemlostloo.lib %]</option>
+                                    [% IF ClaimsReturnedLostAV && itemlostloo.authorised_value == ClaimsReturnedLostAV %]
+                                        <option value="[% itemlostloo.authorised_value %]" disabled="disabled">[% itemlostloo.lib %]</option>
+                                    [% ELSE %]
+                                        <option value="[% itemlostloo.authorised_value %]">[% itemlostloo.lib %]</option>
+                                    [% END %]
                             [% END %]
                         [% END %]
                         </select>

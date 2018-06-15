@@ -287,6 +287,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 return_claims
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ReturnClaim>
+
+=cut
+
+__PACKAGE__->has_many(
+  "return_claims",
+  "Koha::Schema::Result::ReturnClaim",
+  { "foreign.biblionumber" => "self.biblionumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 reviews
 
 Type: has_many
@@ -348,7 +363,7 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-02-16 17:54:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bUv00JjY09Hj2Zj4klqyxA
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-06-18 14:37:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:guvr98ZlETZubqlUsCRddQ
 
 1;

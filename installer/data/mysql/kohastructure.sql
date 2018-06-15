@@ -4193,6 +4193,30 @@ CREATE TABLE `oauth_access_tokens` (
     PRIMARY KEY (`access_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Table structure for table 'return_claims'
+--
+
+DROP TABLE IF EXISTS `return_claims`;
+CREATE TABLE `return_claims` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `borrowernumber` int(11) DEFAULT NULL,
+  `issue_id` int(11) DEFAULT NULL,
+  `itemnumber` int(11) DEFAULT NULL,
+  `biblionumber` int(11) DEFAULT NULL,
+  `notes` text,
+  `resolution` varchar(80) DEFAULT NULL,
+  `created_on` TIMESTAMP NULL,
+  `updated_on` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `borrowernumber` (`borrowernumber`),
+  KEY `itemnumber` (`itemnumber`),
+  KEY `biblionumber` (`biblionumber`),
+  CONSTRAINT `return_claims_ibfk_3` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `return_claims_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `return_claims_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

@@ -191,6 +191,7 @@ my $issue;
 my $itemnumber;
 my $barcode     = $query->param('barcode');
 my $exemptfine  = $query->param('exemptfine');
+my $claims_returned_resolution = $query->param('resolution');
 if (
   $exemptfine &&
   !C4::Auth::haspermission(C4::Context->userenv->{'id'}, {'updatecharges' => 'writeoff'})
@@ -304,7 +305,7 @@ if ($barcode) {
 
     # do the return
     ( $returned, $messages, $issue, $borrower ) =
-      AddReturn( $barcode, $userenv_branch, $exemptfine, $dropboxmode, $return_date_override, $dropboxdate );
+      AddReturn( $barcode, $userenv_branch, $exemptfine, $dropboxmode, $return_date_override, $dropboxdate, { claims_returned_resolution => $claims_returned_resolution } );
 
     if ($returned) {
         my $time_now = DateTime->now( time_zone => C4::Context->tz )->truncate( to => 'minute');
@@ -507,6 +508,9 @@ foreach my $code ( keys %$messages ) {
     }
     elsif ( $code eq 'DataCorrupted' ) {
         $err{data_corrupted} = 1;
+    }
+    elsif ( $code eq 'ClaimsReturned' ) {
+        $err{claims_returned} = $messages->{ClaimsReturned};;
     }
     else {
         die "Unknown error code $code";    # note we need all the (empty) elsif's above, or we die.

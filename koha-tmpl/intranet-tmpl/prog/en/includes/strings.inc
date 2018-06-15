@@ -2,6 +2,8 @@
 //<![CDATA[
     var CIRCULATION_RETURNED = _("Checked in");
     var CIRCULATION_NOT_RETURNED = _("Unable to check in");
+    var CLAIMS_RETURNED_NONE_SELECTED = _("You must select one or more items to mark as 'claims returned'");
+    var CLAIMS_RETURNED_CHARGE_QUESTION = _("Charge the patron? Select OK to charge patron, Cancel to not charge.");
     var NOT_RENEWABLE_OVERDUE = _("Not allowed: overdue");
     var NOT_RENEWABLE_RESTRICTION = _("Not allowed: patron restricted");
     var CIRCULATION_RENEWED_DUE = _("Renewed, due:");

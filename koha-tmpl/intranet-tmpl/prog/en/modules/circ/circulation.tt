@@ -6,6 +6,7 @@
 [% USE ColumnsSettings %]
 [% USE ItemTypes %]
 [% USE Price %]
+[% USE scalar %]
 [% USE AuthorisedValues %]
 [% SET footerjs = 1 %]
 [% INCLUDE 'doc-head-open.inc' %]
@@ -295,6 +296,19 @@
 [% END %]
 </div></div>
 [% END %] <!-- NEEDSCONFIRMATION -->
+
+[% IF Koha.Preference('ClaimsReturnedAlertThreshold') %]
+    [% SET claims_to_count = patron.return_claims %]
+    [% IF Koha.Preference('ClaimsReturnedAlertType') == 'unresolved' %]
+        [% SET claims_to_count = claims_to_count.unresolved %]
+    [% END %]
+
+    [% IF claims_to_count.count >= Koha.Preference('ClaimsReturnedAlertThreshold') %]
+        <div id="claims-returned-over-threshold" class="dialog alert audio-alert-warning">
+            Patron has [% claims_to_count.count %] <a class="return-claims-tab-link" href="#relreturn-claims" onclick="$('#return-claims-tab-link').click()">return claims</a>.
+        </div>
+    [% END %]
+[% END %]
 
         [% IF ( IMPOSSIBLE ) %]
 
@@ -826,6 +840,11 @@ No patron matched <span class="ex">[% message | html %]</span>
 
     <li><a id="debarments-tab-link" href="#reldebarments">[% debarments.count %] Restrictions</a></li>
 
+    [% IF Koha.Preference('ClaimsReturnedLostAV') %]
+        [% SET return_claims = patron.return_claims %]
+        <li><a id="return-claims-tab-link" href="#relreturn-claims">[% return_claims.count %] Return claims</a></li>
+    [% END %]
+
     [% SET enrollments = patron.get_club_enrollments(1) %]
     [% SET enrollable  = patron.get_enrollable_clubs(0,1) %]
     [% IF CAN_user_clubs && ( enrollable.count || enrollments.count ) %]
@@ -872,6 +891,10 @@ No patron matched <span class="ex">[% message | html %]</span>
 [% END %]
 
 [% INCLUDE borrower_debarments.inc %]
+
+[% IF Koha.Preference('ClaimsReturnedLostAV') %]
+    [% INCLUDE borrower_return_claims.inc %]
+[% END %]
 
 <div id="reserves">
 [% IF ( holds_count ) %]
@@ -992,6 +1015,9 @@ No patron matched <span class="ex">[% message | html %]</span>
         var borrowernumber = "[% patron.borrowernumber %]";
         var branchcode = "[% branch %]";
         var exports_enabled = "[% Koha.Preference('ExportCircHistory') %]";
+        var claims_returned_enabled = "[% Koha.Preference('ClaimsReturnedLostAV') %]";
+        var claims_returned_lost_charge = "[% Koha.Preference('ClaimsReturnedLostCharge') %]";
+        var destination = '[% destination %]';
         var AllowRenewalLimitOverride = [% (CAN_user_circulate_override_renewals && Koha.Preference('AllowRenewalLimitOverride') )? 1: 0 %];
         var AllowCirculate = [% (CAN_user_circulate_circulate_remaining_permissions)? 1 : 0 %];
         var script = "circulation";

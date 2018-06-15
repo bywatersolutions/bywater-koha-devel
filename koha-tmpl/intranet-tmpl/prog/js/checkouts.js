@@ -24,6 +24,62 @@ $(document).ready(function() {
         return false;
     });
 
+    $("#CheckAllClaimsReturned").on("click",function(){
+        $("#UncheckAllCheckins").click();
+        $(".claims-returned:visible").prop("checked", true);
+        return false;
+    });
+    $("#UncheckAllClaimsReturned").on("click",function(){
+        $(".claims-returned:visible").prop("checked", false);
+        return false;
+    });
+
+    let block_mark_claims_returned_submit = true;
+    $("#MarkClaimsReturnedSubmit").on("click",function(e){
+        e.preventDefault();
+
+        if ( $(".claims-returned:checked").length == 0 ) {
+            alert( CLAIMS_RETURNED_NONE_SELECTED );
+            return false;
+        }
+
+        // In case form is modified before submitting
+        $('#claims-returned-modal-form-destination').remove();
+        $('.claims-returned-modal-form-issue-id').remove();
+
+        $('<input>').attr({
+            id: 'claims-returned-modal-form-destination',
+            type: 'hidden',
+            name: 'destination',
+            value: destination
+        }).appendTo('#claims-returned-modal-form');
+
+        $(".claims-returned:checked").each(function() {
+            $('<input>').attr({
+                class: 'claims-returned-modal-form-issue-id',
+                type: 'hidden',
+                name: 'issue_id',
+                value: $(this).val()
+            }).appendTo('#claims-returned-modal-form');
+        });
+
+        $('#claims-returned-modal').modal();
+        $('#claims-returned-modal-form-notes').focus();
+    });
+
+    $("#claims-returned-modal-form-submit").on('click', function(e) {
+        $('#claims-returned-modal-form').submit();
+    });
+
+    $(".return-claim-notes-edit").on('click', function(e) {
+        e.preventDefault();
+
+        $('#claims-returned-notes-modal-form-notes').val( $(this).data('claim-note') );
+        $('#claims-returned-notes-modal-form-id').val( $(this).data('claim-id') );
+        $('#claims-returned-notes-modal').modal();
+        $('#claims-returned-notes-modal-form-notes').focus();
+    });
+
     // Don't allow both return and renew checkboxes to be checked
     $(document).on("change", '.renew', function(){
         if ( $(this).is(":checked") ) {
@@ -448,6 +504,13 @@ $(document).ready(function() {
 
                         s += "<input type='checkbox' class='export' id='export_" + oObj.biblionumber + "' name='biblionumbers' value='" + oObj.biblionumber + "' />";
                         return s;
+                    }
+                },
+                {
+                    "bVisible": exports_enabled != "" ? true : false,
+                    "bSortable": false,
+                    "mDataProp": function ( oObj ) {
+                        return "<input type='checkbox' class='claims-returned' id='claims_returned_" + oObj.issue_id + "' name='issue_id' value='" + oObj.issue_id +"'></input>";
                     }
                 }
             ],

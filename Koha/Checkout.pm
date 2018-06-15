@@ -21,9 +21,14 @@ package Koha::Checkout;
 use Modern::Perl;
 
 use Carp;
-
-use Koha::Database;
 use DateTime;
+
+use C4::Circulation qw(MarkIssueReturned);
+use C4::Items qw(ModItem);
+use C4::Accounts qw(chargelostitem);
+
+use Koha::Checkouts::ReturnClaims;
+use Koha::Database;
 use Koha::DateUtils;
 use Koha::Items;
 
@@ -86,6 +91,49 @@ sub patron {
     my ( $self ) = @_;
     my $patron_rs = $self->_result->borrower;
     return Koha::Patron->_new_from_dbic( $patron_rs );
+}
+
+=head3 claim_returned
+
+my $return_claim = $issue->claim_returned();
+
+Marks an open checkout as having the patron claiming
+to have returned the item.
+
+=cut
+
+sub claim_returned {
+    my ( $self, $params ) = @_;
+
+    my $charge = $params->{charge};
+    my $notes = $params->{notes};
+
+    my $lost_value = C4::Context->preference('ClaimsReturnedLostAV');
+
+    my $patron = $self->patron;
+    my $item = $self->item;
+    my $biblio = $item->biblio;
+
+    my $title = $biblio->title;
+    my $barcode = $item->barcode;
+
+    C4::Items::ModItem( { itemlost => $lost_value }, undef, $self->itemnumber );
+    C4::Circulation::MarkIssueReturned( $patron->id, $item->id, undef, undef, $patron->privacy );
+    C4::Accounts::chargelostitem( $patron->id, $item->id, $item->replacementprice, "Claims returned: $title $barcode" )
+        if $charge eq 'charge';
+
+    my $claim = Koha::Checkouts::ReturnClaim->new(
+        {
+            borrowernumber => $patron->id,
+            issue_id       => $self->id,
+            itemnumber     => $item->id,
+            biblionumber   => $biblio->id,
+            notes          => $notes,
+            created_on     => dt_from_string,
+        }
+    )->store();
+
+    return $claim;
 }
 
 =head3 type

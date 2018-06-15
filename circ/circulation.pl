@@ -56,6 +56,7 @@ use Koha::Patron::Messages;
 use Koha::SearchEngine;
 use Koha::SearchEngine::Search;
 use Koha::Patron::Modifications;
+use Koha::Checkouts::ReturnClaims;
 
 use Date::Calc qw(
   Today

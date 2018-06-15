@@ -12,10 +12,11 @@ INSERT INTO authorised_values (category, authorised_value, lib, lib_opac) VALUES
 INSERT INTO authorised_values (category, authorised_value, lib, lib_opac) VALUES ('SUGGEST_FORMAT', 'DVD', 'DVD', 'DVD');
 
 -- availability statuses
-INSERT INTO `authorised_values`  (category, authorised_value, lib) VALUES ('LOST','2','Long Overdue (Lost)');
-INSERT INTO `authorised_values` (category, authorised_value, lib) VALUES ('LOST','1','Lost');
-INSERT INTO `authorised_values`  (category, authorised_value, lib ) VALUES ('LOST','3','Lost and Paid For');
-INSERT INTO `authorised_values`  (category, authorised_value, lib )VALUES ('LOST','4','Missing');
+INSERT INTO `authorised_values` (category, authorised_value, lib)  VALUES ('LOST','1','Lost');
+INSERT INTO `authorised_values` (category, authorised_value, lib)  VALUES ('LOST','2','Long Overdue (Lost)');
+INSERT INTO `authorised_values` (category, authorised_value, lib ) VALUES ('LOST','3','Lost and Paid For');
+INSERT INTO `authorised_values` (category, authorised_value, lib ) VALUES ('LOST','4','Missing');
+INSERT INTO `authorised_values` (category, authorised_value, lib ) VALUES ('LOST','5','Claims returned');
 
 -- damaged status of an item
 INSERT INTO `authorised_values` (category, authorised_value, lib) VALUES ('DAMAGED','1','Damaged');
@@ -83,3 +84,7 @@ INSERT INTO authorised_values (category, authorised_value, lib) VALUES ('SIP_MED
 INSERT INTO authorised_values (category, authorised_value, lib) VALUES ('ORDER_CANCELLATION_REASON', 0, 'No reason provided');
 INSERT INTO authorised_values (category, authorised_value, lib) VALUES ('ORDER_CANCELLATION_REASON', 1, 'Out of stock');
 INSERT INTO authorised_values (category, authorised_value, lib) VALUES ('ORDER_CANCELLATION_REASON', 2, 'Restocking');
+
+-- claims returned resolutions
+INSERT INTO authorised_values ( category, authorised_value, lib ) VALUES ( 'RETURN_CLAIM_RESOLUTION', 'RETURNED_BY_PATRON', 'Returned by patron' );
+INSERT INTO authorised_values ( category, authorised_value, lib ) VALUES ( 'RETURN_CLAIM_RESOLUTION', 'FOUND_IN_LIBRARY', 'Found in library' );
