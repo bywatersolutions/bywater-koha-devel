@@ -216,7 +216,7 @@ sub GetNewsToDisplay {
     $sth->execute($lang,$branch);
     my @results;
     while ( my $row = $sth->fetchrow_hashref ){
-        $row->{newdate} = output_pref({ dt => dt_from_string( $row->{newdate} ), dateonly => 1 });
+        $row->{newdate} = output_pref({ dt => dt_from_string( $row->{newdate}, 'iso' ), dateonly => 1 });
         push @results, $row;
     }
     return \@results;
