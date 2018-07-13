@@ -72,15 +72,39 @@ sub store {
     return $self->SUPER::store( $self );
 }
 
+=head3 is_public
+
+  my $bool = $shelf->is_public;
+
+  Returns true if shelf has been made public.
+
+=cut
+
 sub is_public {
     my ( $self ) = @_;
     return $self->category == $PUBLIC;
 }
 
+=head3 is_private
+
+  my $bool = $shelf->is_private;
+
+  Returns true if shelf is a private shelf.
+
+=cut
+
 sub is_private {
     my ( $self ) = @_;
     return $self->category == $PRIVATE;
 }
+
+=head3 is_staff
+
+  my $bool = $shelf->is_staff;
+
+  Returns true if shelf is available to staff only.
+
+=cut
 
 sub is_staff {
     my ( $self ) = @_;
