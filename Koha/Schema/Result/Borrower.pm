@@ -275,11 +275,6 @@ __PACKAGE__->table("borrowers");
   data_type: 'mediumtext'
   is_nullable: 1
 
-=head2 guarantorid
-
-  data_type: 'integer'
-  is_nullable: 1
-
 =head2 borrowernotes
 
   data_type: 'longtext'
@@ -574,8 +569,6 @@ __PACKAGE__->add_columns(
   { data_type => "mediumtext", is_nullable => 1 },
   "contacttitle",
   { data_type => "mediumtext", is_nullable => 1 },
-  "guarantorid",
-  { data_type => "integer", is_nullable => 1 },
   "borrowernotes",
   { data_type => "longtext", is_nullable => 1 },
   "relationship",
@@ -857,6 +850,36 @@ __PACKAGE__->has_many(
   "borrower_message_preferences",
   "Koha::Schema::Result::BorrowerMessagePreference",
   { "foreign.borrowernumber" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 borrower_relationships_guarantees
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::BorrowerRelationship>
+
+=cut
+
+__PACKAGE__->has_many(
+  "borrower_relationships_guarantees",
+  "Koha::Schema::Result::BorrowerRelationship",
+  { "foreign.guarantee_id" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 borrower_relationships_guarantors
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::BorrowerRelationship>
+
+=cut
+
+__PACKAGE__->has_many(
+  "borrower_relationships_guarantors",
+  "Koha::Schema::Result::BorrowerRelationship",
+  { "foreign.guarantor_id" => "self.borrowernumber" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -1416,8 +1439,8 @@ Composing rels: L</aqorder_users> -> ordernumber
 __PACKAGE__->many_to_many("ordernumbers", "aqorder_users", "ordernumber");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-07-06 14:12:40
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LaQWPXzF1Amzt8fgEEyHdg
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2018-07-18 13:21:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5PfG8Glz4h6UlJjRK0Hh1g
 
 __PACKAGE__->add_columns(
     '+lost' => { is_boolean => 1 },
