@@ -10,6 +10,7 @@ if( CheckVersion( $DBversion ) ) {
         ) ENGINE = INNODB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci |);
     $dbh->do("INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES ('OverDriveAuthname', '', 'Authname for OverDrive Patron Authentication, will be used as fallback if individual branch authname not set', NULL, 'Free');");
     $dbh->do("INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES ('OverDriveWebsiteID','', 'WebsiteID provided by OverDrive', NULL, 'Free');");
+    $dbh->do("INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type) VALUES ('OverDrivePasswordRequired','', 'Does the library require passwords for OverDrive SIP authentication', NULL, 'Free');");
     SetVersion( $DBversion );
     print "Upgrade to $DBversion done (Bug XXXXX - Add overdrive patron auth method)\n";
 }

@@ -142,14 +142,15 @@ sub auth_by_code {
 sub auth_by_userid {
     my $self = shift;
     my $userid = shift or croak "No user provided";
-    my $password = shift or croak "No password provided";
+    my $password = shift;
+    croak "No password provided" unless ($password || !C4::Context->preference("OverDrivePasswordRequired"));
     my $website_id = shift or croak "OverDrive Library ID not provided";
     my $authorization_name = "bywater";
     warn "and here";
     warn "user $userid and pass: $password and website:$website_id";
 
     my ($access_token, $access_token_type, $auth_token)
-      = $self->client->auth_by_user_id($userid, undef, $website_id, $authorization_name);
+      = $self->client->auth_by_user_id($userid, $password, $website_id, $authorization_name);
     warn "but no htere";
     $access_token or die "Invalid OverDrive code returned";
     $self->set_token_in_koha_session($access_token, $access_token_type);
