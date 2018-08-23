@@ -34,11 +34,11 @@ Package for accessing shared content via Mana
 
 =cut
 
-=head3 manaRequest
+=head3 process_request
 
 =cut
 
-sub manaRequest {
+sub process_request {
     my $mana_request = shift;
     my $result;
     $mana_request->content_type('application/json');
@@ -63,26 +63,26 @@ sub manaRequest {
     return $result ;
 }
 
-=head3 manaIncrementRequest
+=head3 increment_entity_value
 
 =cut
 
-sub manaIncrementRequest {
-    return manaRequest(buildRequest('increment', @_));
+sub increment_entity_value {
+    return process_request(build_request('increment', @_));
 }
 
-=head3 manaPostRequest
+=head3 send_entity
 
 =cut
 
-sub manaPostRequest {
+sub send_entity {
     my ($lang, $loggedinuser, $resourceid, $resourcetype, $content) = @_;
 
     unless ( $content ) {
-        $content = prepareSharedData($lang, $loggedinuser, $resourceid, $resourcetype);
+        $content = prepare_entity_data($lang, $loggedinuser, $resourceid, $resourcetype);
     }
 
-    my $result = manaRequest(buildRequest('post', $resourcetype, $content));
+    my $result = process_request(build_request('post', $resourcetype, $content));
 
     if ( $result and ($result->{code} eq "200" or $result->{code} eq "201") ) {
         my $packages = "Koha::".ucfirst($resourcetype)."s";
@@ -92,11 +92,11 @@ sub manaPostRequest {
     return $result;
 }
 
-=head3 prepareSharedData
+=head3 prepare_entity_data
 
 =cut
 
-sub prepareSharedData {
+sub prepare_entity_data {
     my ($lang, $loggedinuser, $ressourceid, $ressourcetype) = @_;
     $lang ||= C4::Context->preference('language');
 
@@ -126,30 +126,30 @@ sub prepareSharedData {
     return $ressource_mana_info;
 }
 
-=head3 manaGetRequestWithId
+=head3 get_entity_by_id
 
 =cut
 
-sub manaGetRequestWithId {
-    return manaRequest(buildRequest('getwithid', @_));
+sub get_entity_by_id {
+    return process_request(build_request('getwithid', @_));
 }
 
-=head3 manaGetRequest
+=head3 search_entities
 
 =cut
 
-sub manaGetRequest {
-    return manaRequest(buildRequest('get', @_));
+sub search_entities {
+    return process_request(build_request('get', @_));
 }
 
-=head3 buildRequest
+=head3 build_request
 
 =cut
 
-sub buildRequest {
+sub build_request {
     my $type = shift;
     my $resource = shift;
-    my $mana_url = manaUrl();
+    my $mana_url = get_sharing_url();
 
     if ( $type eq 'get' ) {
         my $params = shift;
@@ -201,11 +201,11 @@ sub buildRequest {
     }
 }
 
-=head3 manaUrl
+=head3 get_sharing_url
 
 =cut
 
-sub manaUrl {
+sub get_sharing_url {
     return C4::Context->config('mana_config');
 }
 

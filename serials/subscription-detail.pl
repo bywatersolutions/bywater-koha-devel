@@ -100,7 +100,7 @@ if ($op eq 'del') {
 }
 elsif ( $op and $op eq "share" ) {
     my $mana_language = $query->param('mana_language');
-    my $result = Koha::SharedContent::manaPostRequest($mana_language, $loggedinuser, $subscriptionid, 'subscription');
+    my $result = Koha::SharedContent::send_entity($mana_language, $loggedinuser, $subscriptionid, 'subscription');
     $template->param( mana_code => $result->{msg} );
     $subs->{mana_id} = $result->{id};
 }

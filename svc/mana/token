@@ -50,6 +50,6 @@ $content->{ lastname }= $input->param("lastname");
 $content->{ email }= $input->param("email");
 my $json = to_json( $content, { utf8 => 1 } );
 $request->content($json);
-my $result = Koha::SharedContent::manaRequest($request);
+my $result = Koha::SharedContent::process_request($request);
 
 print(to_json($result));

@@ -678,7 +678,7 @@ elsif ( $phase eq 'Save Report' ) {
 }
 
 elsif ($phase eq 'Share'){
-    my $result = Koha::SharedContent::manaPostRequest($input->param('mana_language'), $borrowernumber, scalar $input->param('reportid'), 'report');
+    my $result = Koha::SharedContent::send_entity($input->param('mana_language'), $borrowernumber, scalar $input->param('reportid'), 'report');
     if ( $result ) {
         print $input->redirect("/cgi-bin/koha/reports/guided_reports.pl?phase=Use%20saved&manamsg=".$result->{msg});
     }else{

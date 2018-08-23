@@ -38,7 +38,7 @@ my ( $auth_status, $sessionID ) =
 if ( $auth_status ne "ok" ) {
     exit 0;
 }
-my $result = Koha::SharedContent::manaIncrementRequest(
+my $result = Koha::SharedContent::increment_entity_value(
     scalar $input->param('resource'),
     scalar $input->param('id'),
     scalar $input->param('field'),

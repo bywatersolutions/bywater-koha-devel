@@ -40,7 +40,7 @@ if ( $auth_status ne "ok" ) {
     exit 0;
 }
 
-my $result = Koha::SharedContent::manaGetRequestWithId(
+my $result = Koha::SharedContent::get_entity_by_id(
     scalar $input->param('resource'),
     scalar $input->param('id')
 );

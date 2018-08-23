@@ -99,7 +99,7 @@ my @subscriptions;
 my $mana_statuscode;
 if ($searched){
     if ($mana) {
-        my $result = Koha::SharedContent::manaGetRequest("subscription",{
+        my $result = Koha::SharedContent::search_entities("subscription",{
             title        => $title,
             issn         => $ISSN,
             ean          => $EAN,
