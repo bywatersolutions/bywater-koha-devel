@@ -31,7 +31,6 @@ use t::lib::TestBuilder;
 
 my $schema = Koha::Database->new->schema;
 $schema->storage->txn_begin;
-my $builder = t::lib::TestBuilder->new;
 
 use_ok('Koha::Subscription');
 
@@ -148,12 +147,11 @@ is( $sub_1->{numberpattern},
 
 my $ref = {
     'title'           => $biblio_1->{title},
-    'notes'           => $sub_1->{notes},
     'sfdescription'   => $sub_freq_1->{description},
-    'displayorder'    => $sub_freq_1->{displayorder},
     'unit'            => $sub_freq_1->{unit},
     'unitsperissue'   => $sub_freq_1->{unitsperissue},
     'issuesperunit'   => $sub_freq_1->{issuesperunit},
+    'label'           => $sub_np_1->{label},
     'sndescription'   => $sub_np_1->{description},
     'numberingmethod' => $sub_np_1->{numberingmethod},
     'label1'          => $sub_np_1->{label1},
@@ -179,7 +177,7 @@ my $ref = {
     'publishercode'   => $bi_1->{publishercode}
 };
 
-is_deeply( Koha::Subscription::get_sharable_info( $sub_1->{subscriptionid} ),
+is_deeply( Koha::Subscription->get_sharable_info( $sub_1->{subscriptionid} ),
     $ref, "get_sharable_info function is ok" );
 
 >>>>>>> Bug 17047 subscriptions management with Mana-KB

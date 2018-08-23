@@ -26,8 +26,6 @@ use Koha::Serials;
 use Koha::Reports;
 use C4::Context;
 
-our $MANA_IP = C4::Context->config('mana_config');
-
 =head1 DESCRIPTION
 
 Package for accessing shared content via Mana
@@ -151,13 +149,14 @@ sub manaGetRequest {
 sub buildRequest {
     my $type = shift;
     my $resource = shift;
+    my $mana_url = manaUrl();
 
     if ( $type eq 'get' ) {
         my $params = shift;
         $params = join '&',
             map { defined $params->{$_} ? $_ . "=" . $params->{$_} : () }
             keys %$params;
-        my $url = "$MANA_IP/$resource.json?$params";
+        my $url = "$mana_url/$resource.json?$params";
         return HTTP::Request->new( GET => $url );
     }
 
@@ -168,14 +167,14 @@ sub buildRequest {
             map { defined $params->{$_} ? $_ . "=" . $params->{$_} : () }
             keys %$params;
 
-        my $url = "$MANA_IP/$resource/$id.json?$params";
+        my $url = "$mana_url/$resource/$id.json?$params";
         return HTTP::Request->new( GET => $url );
     }
 
     if ( $type eq 'post' ) {
         my $content  = shift;
 
-        my $url = "$MANA_IP/$resource.json";
+        my $url = "$mana_url/$resource.json";
         my $request = HTTP::Request->new( POST => $url );
 
         my $json = to_json( $content, { utf8 => 1 } );
@@ -196,10 +195,18 @@ sub buildRequest {
         $param = join '&',
            map { defined $param->{$_} ? $_ . "=" . $param->{$_} : () }
                keys %$param;
-        my $url = "$MANA_IP/$resource/$id.json/increment/$field?$param";
+        my $url = "$mana_url/$resource/$id.json/increment/$field?$param";
         my $request = HTTP::Request->new( POST => $url );
 
     }
+}
+
+=head3 manaUrl
+
+=cut
+
+sub manaUrl {
+    return C4::Context->config('mana_config');
 }
 
 1;
