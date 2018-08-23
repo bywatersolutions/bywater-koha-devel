@@ -35,6 +35,7 @@ use Koha::DateUtils;
 use Koha::Serial;
 use Koha::Subscriptions;
 use Koha::Subscription::Histories;
+use Koha::SharedContent;
 
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 

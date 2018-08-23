@@ -23,7 +23,7 @@ use t::lib::TestBuilder;
 use t::lib::Mocks;
 use Test::MockModule;
 use Test::MockObject;
-use Test::More tests => 43;
+use Test::More tests => 44;
 use Koha::Database;
 use Koha::Patrons;
 use Koha::Subscriptions;
@@ -41,7 +41,10 @@ my $want_error = 0;
 my $post_request = 0;
 my $query = {};
 
-$Koha::SharedContent::MANA_IP = 'https://foo.bar';
+t::lib::Mocks::mock_config( 'mana_config', 'https://foo.bar');
+
+is(Koha::SharedContent::manaUrl(), 'https://foo.bar', 'Mana URL');
+
 my $result = Koha::SharedContent::manaGetRequest('report', $query);
 ok($result->{msg} =~ /Can\'t connect to foo.bar:443$/, 'Unable to connect');
 is($result->{code}, 500, 'Code is 500');
