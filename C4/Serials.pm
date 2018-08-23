@@ -282,7 +282,7 @@ sub GetSubscription {
     $subscription->{additional_fields} = $additional_field_values->{$subscriptionid};
 
     if ( my $mana_id = $subscription->{mana_id} ) {
-        my $mana_subscription = Koha::SharedContent::manaGetRequestWithId(
+        my $mana_subscription = Koha::SharedContent::get_entity_by_id(
             'subscription', $mana_id, {usecomments => 1});
         $subscription->{comments} = $mana_subscription->{data}->{comments};
     }

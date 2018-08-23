@@ -43,9 +43,9 @@ my $query = {};
 
 t::lib::Mocks::mock_config( 'mana_config', 'https://foo.bar');
 
-is(Koha::SharedContent::manaUrl(), 'https://foo.bar', 'Mana URL');
+is(Koha::SharedContent::get_sharing_url(), 'https://foo.bar', 'Mana URL');
 
-my $result = Koha::SharedContent::manaGetRequest('report', $query);
+my $result = Koha::SharedContent::search_entities('report', $query);
 ok($result->{msg} =~ /Can\'t connect to foo.bar:443$/, 'Unable to connect');
 is($result->{code}, 500, 'Code is 500');
 
@@ -56,17 +56,17 @@ $ua->mock('request', sub {
 
 $want_error = 1;
 $query = {query => 'foo', usecomments => 1};
-$result = Koha::SharedContent::manaGetRequest('report', $query);
+$result = Koha::SharedContent::search_entities('report', $query);
 ok($result->{msg} =~ /^Error thrown by decoded_content/, 'Error in decoded_content');
 is($result->{code}, 500, 'Code is 500');
 
 $want_error = 0;
 $query = {title => 'foo', usecomments => 1};
-$result = Koha::SharedContent::manaGetRequest('subscription', $query);
-is($result->{code}, 200, 'manaGetRequest success');
+$result = Koha::SharedContent::search_entities('subscription', $query);
+is($result->{code}, 200, 'search_entities success');
 
-$result = Koha::SharedContent::manaGetRequestWithId('subscription', 23);
-is($result->{code}, 200, 'manaGetRequestWithId success');
+$result = Koha::SharedContent::get_entity_by_id('subscription', 23);
+is($result->{code}, 200, 'get_entity_by_id success');
 
 my $params = {
     title => 'The English historical review',
@@ -76,7 +76,7 @@ my $params = {
 };
 
 # Search a subscription.
-my $request = Koha::SharedContent::buildRequest('get', 'subscription', $params);
+my $request = Koha::SharedContent::build_request('get', 'subscription', $params);
 is($request->method, 'GET', 'Get subscription - Method is get');
 
 my %query = $request->uri->query_form;
@@ -88,7 +88,7 @@ is($query{publishercode}, 'Longman', 'Check publisher');
 is($request->uri->path, '/subscription.json', 'Path is subscription');
 
 # Get a report by id.
-$request = Koha::SharedContent::buildRequest('getwithid', 'report', 26);
+$request = Koha::SharedContent::build_request('getwithid', 'report', 26);
 is($request->method, 'GET', 'Get with id - Method is get');
 
 is($request->uri->path, '/report/26.json', 'Path is report/26.json');
@@ -105,7 +105,7 @@ my $content = {
     'type' => undef
 };
 
-$request = Koha::SharedContent::buildRequest('post', 'report', $content);
+$request = Koha::SharedContent::build_request('post', 'report', $content);
 is($request->method, 'POST', 'Share report - Method is post');
 
 is($request->uri->path, '/report.json', 'Path is report.json');
@@ -163,13 +163,13 @@ C4::Context->set_userenv(0,0,0,
 t::lib::Mocks::mock_preference('language', 'en');
 
 $post_request = 1;
-$result = Koha::SharedContent::manaPostRequest('en', $loggedinuser->{borrowernumber}, $subscription->{subscriptionid}, 'subscription');
-is($result->{code}, 200, 'manaPostRequest success');
+$result = Koha::SharedContent::send_entity('en', $loggedinuser->{borrowernumber}, $subscription->{subscriptionid}, 'subscription');
+is($result->{code}, 200, 'send_entity success');
 
 my $s = Koha::Subscriptions->find($subscription->{subscriptionid});
 is($s->mana_id, 5, 'Mana id is set');
 
-my $data = Koha::SharedContent::prepareSharedData(
+my $data = Koha::SharedContent::prepare_entity_data(
     '',
     $loggedinuser->{borrowernumber},
     $subscription->{subscriptionid},
@@ -235,7 +235,7 @@ sub mock_response {
 }
 
 # Increment request.
-$request = Koha::SharedContent::buildRequest('increment',
+$request = Koha::SharedContent::build_request('increment',
                                              'subscription',
                                              12,
                                              'foo');

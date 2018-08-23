@@ -345,7 +345,7 @@ sub redirect_add_subscription {
     my $mana_id;
     if ( $query->param('mana_id') ne "" ) {
         $mana_id = $query->param('mana_id');
-        Koha::SharedContent::manaIncrementRequest("subscription",$mana_id, "nbofusers");
+        Koha::SharedContent::increment_entity_value("subscription",$mana_id, "nbofusers");
     }
 
     my $startdate      = output_pref( { str => scalar $query->param('startdate'),      dateonly => 1, dateformat => 'iso' } );
@@ -370,7 +370,7 @@ sub redirect_add_subscription {
         $skip_serialseq, $itemtype, $previousitemtype, $mana_id
     );
     if ( (C4::Context->preference('Mana')) and ( grep { $_ eq "subscription" } split(/,/, C4::Context->preference('AutoShareWithMana'))) ){
-        my $result = Koha::SharedContent::manaPostRequest( $query->param('mana_language'), $loggedinuser, $subscriptionid, 'subscription');
+        my $result = Koha::SharedContent::send_entity( $query->param('mana_language') || '', $loggedinuser, $subscriptionid, 'subscription');
         $template->param( mana_msg => $result->{msg} );
     }
     my $additional_fields = Koha::AdditionalField->all( { tablename => 'subscription' } );
@@ -443,7 +443,7 @@ sub redirect_mod_subscription {
     my $mana_id;
     if ( defined( $query->param('mana_id') ) ) {
         $mana_id = $query->param('mana_id');
-        Koha::SharedContent::manaIncrementRequest("subscription",$mana_id, "nbofusers");
+        Koha::SharedContent::increment_entity_value("subscription",$mana_id, "nbofusers");
     }
     else {
         $mana_id = undef;

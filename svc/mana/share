@@ -44,12 +44,12 @@ my $content;
 $content->{resource_id} = $input->param("resource_id");
 $content->{resource_type} = $input->param("resource");
 $content->{message} = $input->param("message");
-Koha::SharedContent::manaPostRequest('', undef, undef, 'resource_comment', $content);
+Koha::SharedContent::send_entity('', undef, undef, 'resource_comment', $content);
 my $package = "Koha::".ucfirst($input->param('resource'));
 my $resource;
 my $result;
 eval{
-    $result = Koha::SharedContent::manaGetRequestWithId(
+    $result = Koha::SharedContent::get_entity_by_id(
         scalar $input->param('resource'),
         scalar $input->param('id')
     );
