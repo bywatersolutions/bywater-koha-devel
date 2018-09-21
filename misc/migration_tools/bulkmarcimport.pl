@@ -489,7 +489,7 @@ RECORD: while (  ) {
             # Work on a clone so that if there are real errors, we can maybe
             # fix them up later.
 			my $clone_record = $record->clone();
-            C4::Biblio::_strip_item_fields($clone_record, '');
+            C4::Biblio::_strip_item_fields($clone_record);
             # This sets the marc fields if there was an error, and also calls
             # defer_marc_save.
             ModBiblioMarc( $clone_record, $biblionumber, $framework );

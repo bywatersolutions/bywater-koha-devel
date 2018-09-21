@@ -34,7 +34,7 @@ use Koha::AuthorisedValues;
 use t::lib::Mocks;
 use t::lib::TestBuilder;
 
-use Test::More tests => 15;
+use Test::More tests => 18;
 
 use Test::Warn;
 
@@ -717,7 +717,7 @@ subtest 'C4::Items::_build_default_values_for_mod_marc' => sub {
     Koha::MarcSubfieldStructure->new({ frameworkcode => '', tagfield => '952', tagsubfield => '9', kohafield => 'items.itemnumber' })->store;
     Koha::MarcSubfieldStructure->new({ frameworkcode => '', tagfield => '952', tagsubfield => 'p', kohafield => 'items.barcode' })->store;
     Koha::MarcSubfieldStructure->new({ frameworkcode => '', tagfield => '952', tagsubfield => 'y', kohafield => 'items.itype' })->store;
-    Koha::Caches->get_instance->clear_from_cache( "MarcSubfieldStructure-" );
+    Koha::Caches->get_instance()->flush_all();
 
     my $itemtype = $builder->build({ source => 'Itemtype' })->{itemtype};
 
@@ -758,9 +758,7 @@ subtest 'C4::Items::_build_default_values_for_mod_marc' => sub {
     Koha::MarcSubfieldStructures->search({ frameworkcode => '', tagfield => '952', tagsubfield => 'p' })->delete;
 
     # And make sure the caches are cleared
-    my $cache = Koha::Caches->get_instance();
-    $cache->clear_from_cache("default_value_for_mod_marc-");
-    $cache->clear_from_cache("MarcSubfieldStructure-");
+    Koha::Caches->get_instance()->flush_all();
 
     # Update the MARC field with another value
     $item_record->delete_fields( $barcode_field );
@@ -775,8 +773,7 @@ subtest 'C4::Items::_build_default_values_for_mod_marc' => sub {
     $item = Koha::Items->find($item_itemnumber);
     is ( $item->barcode, $a_barcode, 'items.barcode is not mapped anymore, so the DB column has not been updated' );
 
-    $cache->clear_from_cache("default_value_for_mod_marc-");
-    $cache->clear_from_cache( "MarcSubfieldStructure-" );
+    Koha::Caches->get_instance()->flush_all();
     $schema->storage->txn_rollback;
 };
 
@@ -994,4 +991,154 @@ subtest 'Split subfields in Item2Marc (Bug 21774)' => sub {
     is( $subs[1], 'B', 'Second subfield matches' );
 
     $schema->storage->txn_rollback;
+};
+
+subtest 'tests for GetMarcItem' => sub {
+    plan tests => 1;
+    $schema->storage->txn_begin;
+
+    my $builder  = t::lib::TestBuilder->new;
+    my $library  = $builder->build({ source => 'Branch', });
+    my $itemtype = $builder->build({ source => 'Itemtype', });
+    my $biblio   = $builder->build({
+        source => 'Biblio',
+        value=>{
+            frameworkcode => "",
+        }
+    });
+    my $biblioitem = $builder->build({
+        source => 'Biblioitem',
+        value => { biblionumber => $biblio->{biblionumber} },
+    });
+    my $item1 = $builder->build_object({
+        class => 'Koha::Items',
+        value => {
+            biblionumber     => $biblio->{biblionumber},
+            biblioitemnumber => $biblioitem->{biblioitemnumber},
+            itype            => $itemtype->{itype},
+            homebranch       => $library->{branchcode},
+            barcode          => undef,
+            restricted       => 1,
+            itemcallnumber   => "",
+            cn_sort          => "",
+            itype            => 'itemtype'
+        }
+    });
+    my $get_itemnumber = $item1->itemnumber;
+    my $item1_marc = C4::Items::GetMarcItem( $biblio->{biblionumber}, $item1->itemnumber );
+    my (undef, undef, $itemnumber2 ) = AddItemFromMarc( $item1_marc, $biblio->{biblionumber} );
+    my $item2_marc = C4::Items::GetMarcItem( $biblio->{biblionumber}, $itemnumber2 );
+    my ($itemtag, $item_num_subfield )=C4::Biblio::GetMarcFromKohaField("items.itemnumber"); #get itemnumber tag
+    $item1_marc->field($itemtag)->delete_subfield(code => $item_num_subfield); #and remove it
+    $item2_marc->field($itemtag)->delete_subfield(code => $item_num_subfield); #because it won't match
+    is_deeply( $item1_marc, $item2_marc, "The Marc should match if the items are the same");
+    $schema->storage->txn_rollback;
+};
+
+subtest 'tests for GetMarcItemFields' => sub {
+    plan tests => 5;
+    $schema->storage->txn_begin;
+
+    #Setup the information we need
+    my $builder  = t::lib::TestBuilder->new;
+    my $library  = $builder->build({ source => 'Branch', });
+    my $itemtype = $builder->build({ source => 'Itemtype', });
+    my $biblio   = $builder->build({
+        source => 'Biblio',
+        value=>{
+            frameworkcode => "",
+        }
+    });
+    my $biblioitem = $builder->build({
+        source => 'Biblioitem',
+        value => { biblionumber => $biblio->{biblionumber} },
+    });
+    my @items;
+    my $item1 = $builder->build_object({
+        class => 'Koha::Items',
+        value => {
+            biblionumber     => $biblio->{biblionumber},
+            biblioitemnumber => $biblioitem->{biblioitemnumber},
+            itype            => $itemtype->{itemtype},
+            homebranch       => $library->{branchcode},
+            barcode          => undef,
+            restricted       => 1,
+            itemcallnumber   => "",
+            cn_sort          => "",
+            withdrawn        => 0,
+        }
+    });
+    push @items, Koha::Items->find( $item1->itemnumber )->unblessed;
+    my $item2 = $builder->build_object({
+        class => 'Koha::Items',
+        value => {
+            biblionumber     => $biblio->{biblionumber},
+            biblioitemnumber => $biblioitem->{biblioitemnumber},
+            itype            => $itemtype->{itemtype},
+            homebranch       => $library->{branchcode},
+            barcode          => undef,
+            restricted       => 1,
+            itemcallnumber   => "",
+            cn_sort          => "",
+            withdrawn        => 0,
+        }
+    });
+    push @items, Koha::Items->find( $item2->itemnumber )->unblessed;
+    my $item3 = $builder->build_object({
+        class => 'Koha::Items',
+        value => {
+            biblionumber     => $biblio->{biblionumber},
+            biblioitemnumber => $biblioitem->{biblioitemnumber},
+            itype            => $itemtype->{itemtype},
+            homebranch       => $library->{branchcode},
+            barcode          => undef,
+            restricted       => 1,
+            itemcallnumber   => "",
+            cn_sort          => "",
+            withdrawn        => 1,
+        }
+    });
+    push @items, Koha::Items->find( $item3->itemnumber )->unblessed;
+
+    #Get the marc for our items individually for comparison later
+    my $item1_marc = C4::Items::GetMarcItem( $biblio->{biblionumber}, $item1->itemnumber );
+    my $item2_marc = C4::Items::GetMarcItem( $biblio->{biblionumber}, $item2->itemnumber );
+    my $item3_marc = C4::Items::GetMarcItem( $biblio->{biblionumber}, $item3->itemnumber );
+    my ($itemtag, $item_num_subfield ) = C4::Biblio::GetMarcFromKohaField("items.itemnumber"); #get itemnumber tag
+    $item1_marc->field($itemtag)->delete_subfield(code => $item_num_subfield); #and remove it
+    $item2_marc->field($itemtag)->delete_subfield(code => $item_num_subfield); #because it won't match
+
+    #Testing with hidden items
+    my $opachiddenitems = "withdrawn: [1]\n";
+    my $hidingrules = YAML::Load($opachiddenitems);
+    my $marc_items = C4::Items::GetMarcItemFields( $biblio->{biblionumber}, [], $hidingrules );
+    @$marc_items[0]->delete_subfield(code => $item_num_subfield);
+    @$marc_items[1]->delete_subfield(code => $item_num_subfield);
+    is(scalar @$marc_items, 2, "We should not get a hidden item");
+    is_deeply( $item1_marc->field($itemtag), @$marc_items[0], "We should get the first item");
+    is_deeply( $item2_marc->field($itemtag), @$marc_items[1], "We should also get the second item");
+
+    #Testing with specified items
+    $marc_items = C4::Items::GetMarcItemFields( $biblio->{biblionumber}, [ $item3->itemnumber ], undef );
+    is(scalar @$marc_items,1,"We should only get the specifically requested item");
+    is_deeply( $item3_marc->field($itemtag), @$marc_items[0], "We should get the third item when explicitly requested");
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'tests for UseHidingRulesWithBorrowerCategory' => sub {
+    plan tests => 6;
+
+    t::lib::Mocks::mock_preference('OpacHiddenItemsExceptions', '');
+
+    is(C4::Items::UseHidingRulesWithBorrowerCategory('PT'), 1, 'Hiding rules used for category PT');
+    is(C4::Items::UseHidingRulesWithBorrowerCategory('S'), 1, 'Hiding rules used for category S');
+
+    t::lib::Mocks::mock_preference('OpacHiddenItemsExceptions', 'S|L');
+
+    is(C4::Items::UseHidingRulesWithBorrowerCategory('PT'), 1, 'Hiding rules used for category PT');
+    is(C4::Items::UseHidingRulesWithBorrowerCategory('S'), 0, 'Hiding rules ignored for category S');
+    is(C4::Items::UseHidingRulesWithBorrowerCategory('L'), 0, 'Hiding rules ignored for category L');
+
+    is(C4::Items::UseHidingRulesWithBorrowerCategory(), 1, 'Hiding rules used for unspecified category');
 };

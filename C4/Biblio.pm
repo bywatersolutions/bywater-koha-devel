@@ -291,7 +291,7 @@ sub ModBiblio {
 
     $frameworkcode = "" if !$frameworkcode || $frameworkcode eq "Default"; # XXX
 
-    _strip_item_fields($record, $frameworkcode);
+    _strip_item_fields($record);
 
     # update biblionumber and biblioitemnumber in MARC
     # FIXME - this is assuming a 1 to 1 relationship between
@@ -325,7 +325,7 @@ sub ModBiblio {
 
 =head2 _strip_item_fields
 
-  _strip_item_fields($record, $frameworkcode)
+  _strip_item_fields($record)
 
 Utility routine to remove item tags from a
 MARC bib.
@@ -334,9 +334,8 @@ MARC bib.
 
 sub _strip_item_fields {
     my $record = shift;
-    my $frameworkcode = shift;
     # get the items before and append them to the biblio before updating the record, atm we just have the biblio
-    my ( $itemtag, $itemsubfield ) = GetMarcFromKohaField( "items.itemnumber", $frameworkcode );
+    my ( $itemtag, $itemsubfield ) = GetMarcFromKohaField( "items.itemnumber" );
 
     # delete any item fields from incoming record to avoid
     # duplication or incorrect data - use AddItem() or ModItem()
@@ -2791,7 +2790,7 @@ override if necessary.
 
 sub EmbedItemsInMarcBiblio {
     my ($params) = @_;
-    my ($marc, $biblionumber, $itemnumbers, $opac, $borcat);
+    my ($marc, $biblionumber, $itemnumbers, $use_hidingrules, $borcat);
     $marc = $params->{marc_record};
     if ( !$marc ) {
         carp 'EmbedItemsInMarcBiblio: No MARC record passed';
@@ -2799,53 +2798,33 @@ sub EmbedItemsInMarcBiblio {
     }
     $biblionumber = $params->{biblionumber};
     $itemnumbers = $params->{item_numbers};
-    $opac = $params->{opac};
+    $use_hidingrules = $params->{opac};
     $borcat = $params->{borcat} // q{};
 
     $itemnumbers = [] unless defined $itemnumbers;
 
-    my $frameworkcode = GetFrameworkCode($biblionumber);
-    _strip_item_fields($marc, $frameworkcode);
+    _strip_item_fields($marc);
 
-    # ... and embed the current items
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT itemnumber FROM items WHERE biblionumber = ?");
-    $sth->execute($biblionumber);
-    my ( $itemtag, $itemsubfield ) = GetMarcFromKohaField( "items.itemnumber", $frameworkcode );
+    my $hidingrules = {};
+    if ($use_hidingrules && $borcat && !UseHidingRulesWithBorrowerCategory($borcat)) {
+        # don't hide anything from this borrower category
+        $use_hidingrules = 0;
+    }
 
-    my @item_fields; # Array holding the actual MARC data for items to be included.
-    my @items;       # Array holding items which are both in the list (sitenumbers)
-                     # and on this biblionumber
-
-    # Flag indicating if there is potential hiding.
-    my $opachiddenitems = $opac
-      && ( C4::Context->preference('OpacHiddenItems') !~ /^\s*$/ );
-
-    require C4::Items;
-    while ( my ($itemnumber) = $sth->fetchrow_array ) {
-        next if @$itemnumbers and not grep { $_ == $itemnumber } @$itemnumbers;
-        my $item;
-        if ( $opachiddenitems ) {
-            $item = Koha::Items->find($itemnumber);
-            $item = $item ? $item->unblessed : undef;
+    my $yaml = $use_hidingrules ? C4::Context->preference('OpacHiddenItems') : '';
+    if ( $yaml =~ /\S/ ) {
+        $yaml = "$yaml\n\n"; # YAML is anal on ending \n. Surplus does not hurt
+        eval {
+            $hidingrules = YAML::Load($yaml);
+        };
+        if ($@) {
+            carp "Unable to parse OpacHiddenItems syspref : $@";
         }
-        push @items, { itemnumber => $itemnumber, item => $item };
     }
-    my @items2pass = map { $_->{item} } @items;
-    my @hiddenitems =
-      $opachiddenitems
-      ? C4::Items::GetHiddenItemnumbers({
-            items  => \@items2pass,
-            borcat => $borcat })
-      : ();
-    # Convert to a hash for quick searching
-    my %hiddenitems = map { $_ => 1 } @hiddenitems;
-    foreach my $itemnumber ( map { $_->{itemnumber} } @items ) {
-        next if $hiddenitems{$itemnumber};
-        my $item_marc = C4::Items::GetMarcItem( $biblionumber, $itemnumber );
-        push @item_fields, $item_marc->field($itemtag);
-    }
-    $marc->append_fields(@item_fields);
+
+    my $item_fields = C4::Items::GetMarcItemFields( $biblionumber, $itemnumbers, $hidingrules );
+
+    $marc->append_fields(@$item_fields) if ( @$item_fields );
 }
 
 =head1 INTERNAL FUNCTIONS

@@ -43,6 +43,7 @@ BEGIN {
         GetHostItemsInfo
         get_hostitemnumbers_of
         GetHiddenItemnumbers
+        UseHidingRulesWithBorrowerCategory
         ItemSafeToDelete
         DelItemCheck
         MoveItemFromBiblio
@@ -1206,15 +1207,13 @@ to be excluded
 sub GetHiddenItemnumbers {
     my $params = shift;
     my $items = $params->{items};
-    if (my $exceptions = C4::Context->preference('OpacHiddenItemsExceptions') and $params->{'borcat'}){
-        foreach my $except (split(/\|/, $exceptions)){
-            if ($params->{'borcat'} eq $except){
-                return; # we don't hide anything for this borrower category
-            }
-        }
-    }
-    my @resultitems;
 
+    if ($params->{'borcat'} && !UseHidingRulesWithBorrowerCategory($params->{'borcat'})) {
+        # Don't hide anything from this borrower category
+        return;
+    }
+
+    my @resultitems;
     my $yaml = C4::Context->preference('OpacHiddenItems');
     return () if (! $yaml =~ /\S/ );
     $yaml = "$yaml\n\n"; # YAML is anal on ending \n. Surplus does not hurt
@@ -1255,6 +1254,27 @@ sub GetHiddenItemnumbers {
         }
     }
     return @resultitems;
+}
+
+=head2 UseHidingRulesWithBorrowerCategory
+
+    if (UseHidingRulesWithBorrowerCategory($category}) { ... }
+
+Checks if item hiding rules should be used with the given borrower category.
+
+=cut
+
+sub UseHidingRulesWithBorrowerCategory {
+    my ($borcat) = @_;
+
+    if ($borcat && (my $exceptions = C4::Context->preference('OpacHiddenItemsExceptions'))) {
+        foreach my $except (split(/\|/, $exceptions)) {
+            if ($borcat eq $except) {
+                return 0;
+            }
+        }
+    }
+    return 1;
 }
 
 =head1 LIMITED USE FUNCTIONS
@@ -1322,6 +1342,70 @@ sub Item2Marc {
     }
 	return $itemmarc;
 }
+
+=head2 GetMarcItemFields
+
+    my @marc_fields = GetMarcItemFields($biblionumber);
+
+Returns an array of MARC::Record objects of the items for the biblio.
+
+=cut
+
+sub GetMarcItemFields {
+    my ( $biblionumber, $itemnumbers, $hidingrules ) = @_;
+
+    my $params = {
+        biblionumber => $biblionumber
+    };
+    if (@$itemnumbers) {
+        my @itemnumberlist;
+        foreach my $itemnumber (@$itemnumbers) {
+            push @itemnumberlist, {itemnumber => $itemnumber};
+        }
+        $params->{-or} = \@itemnumberlist;
+    }
+    my $items = Koha::Items->search($params);
+    my @item_fields;
+    my ($itemtag, $itemsubfield) = GetMarcFromKohaField('items.itemnumber');
+
+    ITEMLOOP: while ( my $item = $items->next() ) {
+
+        my $item_unblessed = $item->unblessed;
+        $item_unblessed->{itype} = $item->effective_itemtype() unless $item_unblessed->{itype};
+
+        # Check hiding rules
+        if (defined $hidingrules) {
+            foreach my $field (keys %$hidingrules) {
+                my $val = $item_unblessed->{$field};
+                $val = '' unless defined $val;
+
+                # If the results matches the values in the hiding rules, skip the item
+                if (any { $val eq $_ } @{$hidingrules->{$field}}) {
+                    next ITEMLOOP;
+                }
+            }
+        }
+
+        my $mungeditem = {
+            map {
+                defined($item_unblessed->{$_}) && $item_unblessed->{$_} ne '' ? ("items.$_" => $item_unblessed->{$_}) : ()
+            } keys %{ $item_unblessed }
+        };
+        my $itemmarc = TransformKohaToMarc($mungeditem);
+
+        my $unlinked_item_subfields = _parse_unlinked_item_subfields_from_xml($mungeditem->{'items.more_subfields_xml'});
+        if (defined $unlinked_item_subfields and $#$unlinked_item_subfields > -1) {
+            foreach my $field ($itemmarc->field($itemtag)){
+                $field->add_subfields(@$unlinked_item_subfields);
+            }
+        }
+
+        push @item_fields, $itemmarc->field($itemtag);
+    }
+
+    return \@item_fields;
+}
+
 
 =head1 PRIVATE FUNCTIONS AND VARIABLES
 
@@ -1459,10 +1543,11 @@ sub _do_column_fixes_for_mod {
         (not defined $item->{'withdrawn'} or $item->{'withdrawn'} eq '')) {
         $item->{'withdrawn'} = 0;
     }
-    if (exists $item->{location}
-        and $item->{location} ne 'CART'
-        and $item->{location} ne 'PROC'
-        and not $item->{permanent_location}
+    if (exists $item->{'location'}
+        and defined $item->{'location'}
+        and $item->{'location'} ne 'CART'
+        and $item->{'location'} ne 'PROC'
+        and (not defined $item->{'permanent_location'} or not $item->{'permanent_location'})
     ) {
         $item->{'permanent_location'} = $item->{'location'};
     }
@@ -2117,7 +2202,7 @@ sub _SearchItems_build_where_fragment {
         push @columns, Koha::Database->new()->schema()->resultset('Biblioitem')->result_source->columns;
         my @operators = qw(= != > < >= <= like);
         my $field = $filter->{field};
-        if ( (0 < grep /^$field$/, @columns) or (substr($field, 0, 5) eq 'marc:') ) {
+        if ( defined $field and ((0 < grep /^$field$/, @columns) or (substr($field, 0, 5) eq 'marc:')) ) {
             my $op = $filter->{operator};
             my $query = $filter->{query};
 
