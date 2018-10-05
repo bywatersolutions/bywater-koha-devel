@@ -270,11 +270,13 @@ $.widget.bridge('uitooltip', $.ui.tooltip);
 </script>
 [% END %]
 
-[% IF (RecordedBooksEnabled) %]
-  var SPINNER_THROBBER = "[% interface | $raw  %]/lib/jquery/plugins/themes/classic/throbber.gif";
+[% IF (RecordedBooksEnabled or RecordedBooksCirculation) %]
+<script>
+  var SPINNER_THROBBER = "[% interface %]/lib/jquery/plugins/themes/classic/throbber.gif";
+</script>
 [% END %]
 
-[% Asset.js("lib/jquery/plugins/jquery.cookie.min.js") | $raw %]
+[% Asset.js("lib/jquery/plugins/jquery.cookie.min.js") %]
 <script>
 $(document).ready(function() {
     if($('#searchsubmit').length) {

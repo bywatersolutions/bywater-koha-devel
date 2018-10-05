@@ -1,11 +1,10 @@
-[% USE raw %]
 [% USE Asset %]
 [% USE Koha %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>[% IF ( LibraryNameTitle ) %][% LibraryNameTitle %][% ELSE %]Koha online[% END %] catalog &rsaquo; RecordedBooks search for '[% q | html %]'</title>
 [% INCLUDE 'doc-head-close.inc' %]
 [% BLOCK cssinclude %]
-[% Asset.css("css/jquery.rating.css") | $raw %]
+[% Asset.css("css/jquery.rating.css") %]
 <style>
 .actions a.addtocart {
     display: inline;
