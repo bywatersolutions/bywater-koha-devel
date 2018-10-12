@@ -1982,54 +1982,219 @@ subtest 'AddReturn | is_overdue' => sub {
 };
 
 subtest '_FixAccountForLostAndReturned' => sub {
-    plan tests => 2;
+
+    plan tests => 36;
+
+    my $processfee_amount = 20.00;
+    my $item_type         = $builder->build_object(
+        {   class => 'Koha::ItemTypes',
+            value => {
+                notforloan         => undef,
+                rentalcharge       => 0,
+                defaultreplacecost => undef,
+                processfee         => $processfee_amount
+            }
+        }
+    );
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
 
     # Generate test biblio
-    my $title  = 'Koha for Dummies';
-    my ( $biblionumber, $biblioitemnumber ) = add_biblio($title, 'Hall, Daria');
+    my $title = 'Koha for Dummies';
+    my ( $biblionumber, $biblioitemnumber ) = add_biblio( $title, 'Hall, Daria' );
 
-    my $barcode = 'KD123456789';
-    my $branchcode  = $library2->{branchcode};
+    my $barcode_1          = 'KD123456789';
+    my $replacement_amount = 99.00;
 
-    my ( $item_bibnum, $item_bibitemnum, $itemnumber ) = AddItem(
-        {
-            homebranch       => $branchcode,
-            holdingbranch    => $branchcode,
-            barcode          => $barcode,
-            replacementprice => 99.00,
-            itype            => $itemtype
+    my ( undef, undef, $item_1_id ) = AddItem(
+        {   homebranch       => $library->branchcode,
+            holdingbranch    => $library->branchcode,
+            barcode          => $barcode_1,
+            replacementprice => $replacement_amount,
+            itype            => $item_type->itemtype
         },
         $biblionumber
     );
 
-    my $patron = $builder->build( { source => 'Borrower' } );
+    ##
+    ## Tests with write off
+    ##
 
-    Koha::Account::Line->new(
-        {
-            borrowernumber => $patron->{borrowernumber},
-            accounttype    => 'F',
-            itemnumber     => $itemnumber,
-            amount => 10.00,
-            amountoutstanding => 10.00,
+    my $patron_1 = $builder->build_object( { class => 'Koha::Patrons' } );
+    AddIssue( $patron_1->unblessed, $barcode_1 );
+    t::lib::Mocks::mock_preference( 'WhenLostChargeReplacementFee', 1 );
+    t::lib::Mocks::mock_preference( 'WhenLostForgiveFine',          0 );
+
+    # Simulate item marked as lost
+    ModItem( { itemlost => 3 }, $biblionumber, $item_1_id );
+    LostItem( $item_1_id, 1 );
+
+    my $processing_fee_lines_1 = Koha::Account::Lines->search(
+        { borrowernumber => $patron_1->id, itemnumber => $item_1_id, accounttype => 'PF' } );
+    is( $processing_fee_lines_1->count, 1, 'Only one processing fee produced' );
+    my $processing_fee_line_1 = $processing_fee_lines_1->next;
+    is( $processing_fee_line_1->amount + 0.00,
+        $processfee_amount, 'The right PF amount is generated' );
+    is( $processing_fee_line_1->amountoutstanding + 0.00,
+        $processfee_amount, 'The right PF amountoutstanding is generated' );
+
+    my $lost_fee_lines_1 = Koha::Account::Lines->search(
+        { borrowernumber => $patron_1->id, itemnumber => $item_1_id, accounttype => 'L' } );
+    is( $lost_fee_lines_1->count, 1, 'Only one lost item fee produced' );
+    my $lost_fee_line_1 = $lost_fee_lines_1->next;
+    is( $lost_fee_line_1->amount + 0.00, $replacement_amount, 'The right L amount is generated' );
+    is( $lost_fee_line_1->amountoutstanding + 0.00,
+        $replacement_amount, 'The right L amountountstanding is generated' );
+
+    my $account_1 = $patron_1->account;
+    my $debts_1   = $account_1->outstanding_debits;
+
+    # Write off the debt
+    my $credit_1 = $account_1->add_credit(
+        {   amount => $account_1->balance,
+            type   => 'writeoff'
         }
-    )->store();
+    );
+    $credit_1->apply( { debits => $debts_1, offset_type => 'Writeoff' } );
 
-    my $accountline = Koha::Account::Line->new(
-        {
-            borrowernumber => $patron->{borrowernumber},
-            accounttype    => 'L',
-            itemnumber     => $itemnumber,
-            amount => 99.00,
-            amountoutstanding => 99.00,
+    my $credit_return_1_id = C4::Circulation::_FixAccountForLostAndReturned( $item_1_id, $patron_1->id );
+    my $credit_return_1 = Koha::Account::Lines->find($credit_return_1_id);
+
+    is( $credit_return_1->accounttype, 'CR', 'An account line of type CR is added' );
+    is( $credit_return_1->amount + 0.00, 0.00, 'The account has amount of 0' );
+    is( $credit_return_1->amountoutstanding + 0.00, 0.00, 'The account has amountoutstanding of 0' );
+
+    $lost_fee_line_1->discard_changes;
+    is( $lost_fee_line_1->amountoutstanding + 0.00, 0.00, 'Lost fee has no outstanding amount' );
+    is( $lost_fee_line_1->accounttype, 'LR',
+        'Lost fee now has account type of LR ( Lost Returned )' );
+
+    is( $patron_1->account->balance, -0, 'The patron balance is 0, everything was written off' );
+
+    ##
+    ## Tests with payment
+    ##
+
+    my $patron_2  = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $barcode_2 = 'KD123456790';
+
+    t::lib::Mocks::mock_preference( 'WhenLostChargeReplacementFee', 1 );
+    t::lib::Mocks::mock_preference( 'WhenLostForgiveFine',          0 );
+
+    my ( undef, undef, $item_2_id ) = AddItem(
+        {   homebranch       => $library->branchcode,
+            holdingbranch    => $library->branchcode,
+            barcode          => $barcode_2,
+            replacementprice => $replacement_amount,
+            itype            => $item_type->itemtype
+        },
+        $biblionumber
+    );
+
+    AddIssue( $patron_2->unblessed, $barcode_2 );
+    t::lib::Mocks::mock_preference( 'WhenLostChargeReplacementFee', 1 );
+    t::lib::Mocks::mock_preference( 'WhenLostForgiveFine',          0 );
+
+    # Simulate item marked as lost
+    ModItem( { itemlost => 1 }, $biblionumber, $item_2_id );
+    LostItem( $item_2_id, 1 );
+
+    my $processing_fee_lines_2 = Koha::Account::Lines->search(
+        { borrowernumber => $patron_2->id, itemnumber => $item_2_id, accounttype => 'PF' } );
+    is( $processing_fee_lines_2->count, 1, 'Only one processing fee produced' );
+    my $processing_fee_line_2 = $processing_fee_lines_2->next;
+    is( $processing_fee_line_2->amount + 0.00,
+        $processfee_amount, 'The right PF amount is generated' );
+    is( $processing_fee_line_2->amountoutstanding + 0.00,
+        $processfee_amount, 'The right PF amountoutstanding is generated' );
+
+    my $lost_fee_lines_2 = Koha::Account::Lines->search(
+        { borrowernumber => $patron_2->id, itemnumber => $item_2_id, accounttype => 'L' } );
+    is( $lost_fee_lines_2->count, 1, 'Only one lost item fee produced' );
+    my $lost_fee_line_2 = $lost_fee_lines_2->next;
+    is( $lost_fee_line_2->amount + 0.00, $replacement_amount, 'The right L amount is generated' );
+    is( $lost_fee_line_2->amountoutstanding + 0.00,
+        $replacement_amount, 'The right L amountountstanding is generated' );
+
+    my $account_2 = $patron_2->account;
+    my $debts_2   = $account_2->outstanding_debits;
+
+    # Write off the debt
+    my $credit_2 = $account_2->add_credit(
+        {   amount => $account_2->balance,
+            type   => 'payment'
         }
-    )->store();
+    );
+    $credit_2->apply( { debits => $debts_2, offset_type => 'Payment' } );
 
-    C4::Circulation::_FixAccountForLostAndReturned( $itemnumber, $patron->{borrowernumber} );
+    my $credit_return_2_id = C4::Circulation::_FixAccountForLostAndReturned( $item_2_id, $patron_2->id );
+    my $credit_return_2 = Koha::Account::Lines->find($credit_return_2_id);
 
-    $accountline->_result()->discard_changes();
+    is( $credit_return_2->accounttype, 'CR', 'An account line of type CR is added' );
+    is( $credit_return_2->amount + 0.00, -99.00, 'The account has an amount of -99' );
+    is( $credit_return_2->amountoutstanding + 0.00, -99.00, 'The account has an amountoutstanding of -99' );
 
-    is( $accountline->amountoutstanding, '0.000000', 'Lost fee has no outstanding amount' );
-    is( $accountline->accounttype, 'LR', 'Lost fee now has account type of LR ( Lost Returned )');
+    $lost_fee_line_2->discard_changes;
+    is( $lost_fee_line_2->amountoutstanding + 0.00, 0.00, 'Lost fee has no outstanding amount' );
+    is( $lost_fee_line_2->accounttype, 'LR',
+        'Lost fee now has account type of LR ( Lost Returned )' );
+
+    is( $patron_2->account->balance, -99, 'The patron balance is -99, a credit that equals the lost fee payment' );
+
+    ##
+    ## Test without write-off or payment
+    ##
+
+    my $patron_3  = $builder->build_object({ class => 'Koha::Patrons' });
+    my $barcode_3 = 'KD123456791';
+
+    t::lib::Mocks::mock_preference( 'WhenLostChargeReplacementFee', 1 );
+    t::lib::Mocks::mock_preference( 'WhenLostForgiveFine',          0 );
+
+    my ( undef, undef, $item_3_id ) = AddItem(
+        {   homebranch       => $library->branchcode,
+            holdingbranch    => $library->branchcode,
+            barcode          => $barcode_3,
+            replacementprice => $replacement_amount,
+            itype            => $item_type->itemtype
+        },
+        $biblionumber
+    );
+
+    AddIssue( $patron_3->unblessed, $barcode_3 );
+    # Simulate item marked as lost
+    ModItem( { itemlost => 3 }, $biblionumber, $item_3_id );
+    LostItem( $item_3_id, 1 );
+
+    my $processing_fee_lines_3 = Koha::Account::Lines->search(
+        { borrowernumber => $patron_3->id, itemnumber => $item_3_id, accounttype => 'PF' } );
+    is( $processing_fee_lines_3->count, 1, 'Only one processing fee produced' );
+    my $processing_fee_line_3 = $processing_fee_lines_3->next;
+    is( $processing_fee_line_3->amount + 0.00,
+        $processfee_amount, 'The right PF amount is generated' );
+    is( $processing_fee_line_3->amountoutstanding + 0.00,
+        $processfee_amount, 'The right PF amountoutstanding is generated' );
+
+    my $lost_fee_lines_3 = Koha::Account::Lines->search(
+        { borrowernumber => $patron_3->id, itemnumber => $item_3_id, accounttype => 'L' } );
+    is( $lost_fee_lines_3->count, 1, 'Only one lost item fee produced' );
+    my $lost_fee_line_3 = $lost_fee_lines_3->next;
+    is( $lost_fee_line_3->amount + 0.00, $replacement_amount, 'The right L amount is generated' );
+    is( $lost_fee_line_3->amountoutstanding + 0.00,
+        $replacement_amount, 'The right L amountountstanding is generated' );
+
+    my $credit_return_3_id = C4::Circulation::_FixAccountForLostAndReturned( $item_3_id, $patron_3->id );
+    my $credit_return_3 = Koha::Account::Lines->find($credit_return_3_id);
+
+    is( $credit_return_3->accounttype, 'CR', 'An account line of type CR is added' );
+    is( $credit_return_3->amount * -1, 99.00, 'The account line of type CR has amount of 99' );
+    is( $credit_return_3->amountoutstanding + 0.00, 0.00, 'The account line of type CR has amountoutstanding of 0' );
+
+    $lost_fee_line_3->discard_changes;
+    is( $lost_fee_line_3->amountoutstanding + 0.00, 0.00, 'Lost fee has no outstanding amount' );
+    is( $lost_fee_line_3->accounttype, 'LR',
+        'Lost fee now has account type of LR ( Lost Returned )' );
+
+    is( $patron_3->account->balance, 20, 'The patron balance is 20, still owes the processing fee' );
 };
 
 subtest '_FixOverduesOnReturn' => sub {
