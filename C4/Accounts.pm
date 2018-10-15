@@ -310,6 +310,23 @@ sub manualinvoice {
     return 0;
 }
 
+=head2 getcharges
+
+  my @charges = getcharges( $borrowernumber, $timestamp, $accountno );
+
+Find all the charges for a given borrower number and account number.
+
+B<$borrowernumber> -- Borrower number to look for in accountlines.
+
+B<$timestamp> -- Unused parameter.
+
+B<$accountno> -- Account number to look for in accountlines.
+
+Returns an array of hash references from accountlines which match the
+criteria.
+
+=cut
+
 sub getcharges {
     my ( $borrowerno, $timestamp, $accountno ) = @_;
     my $dbh        = C4::Context->dbh;
