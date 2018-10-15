@@ -41,7 +41,6 @@ BEGIN {
       &getnextacctno
       &getcharges
       &chargelostitem
-      &ReversePayment
       &purge_zero_balance_fees
     );
 }
@@ -326,52 +325,6 @@ sub getcharges {
         push @results,$data;
     }
     return (@results);
-}
-
-#FIXME: ReversePayment should be replaced with a Void Payment feature
-sub ReversePayment {
-    my ($accountlines_id) = @_;
-    my $dbh = C4::Context->dbh;
-
-    my $accountline        = Koha::Account::Lines->find($accountlines_id);
-    my $amount_outstanding = $accountline->amountoutstanding;
-
-    my $new_amountoutstanding =
-      $amount_outstanding <= 0 ? $accountline->amount * -1 : 0;
-
-    $accountline->description( $accountline->description . " Reversed -" );
-    $accountline->amountoutstanding($new_amountoutstanding);
-    $accountline->store();
-
-    my $account_offset = Koha::Account::Offset->new(
-        {
-            credit_id => $accountline->id,
-            type      => 'Reverse Payment',
-            amount    => $amount_outstanding - $new_amountoutstanding,
-        }
-    )->store();
-
-    if ( C4::Context->preference("FinesLog") ) {
-        my $manager_id = 0;
-        $manager_id = C4::Context->userenv->{'number'} if C4::Context->userenv;
-
-        logaction(
-            "FINES", 'MODIFY',
-            $accountline->borrowernumber,
-            Dumper(
-                {
-                    action                => 'reverse_fee_payment',
-                    borrowernumber        => $accountline->borrowernumber,
-                    old_amountoutstanding => $amount_outstanding,
-                    new_amountoutstanding => $new_amountoutstanding,
-                    ,
-                    accountlines_id => $accountline->id,
-                    accountno       => $accountline->accountno,
-                    manager_id      => $manager_id,
-                }
-            )
-        );
-    }
 }
 
 =head2 purge_zero_balance_fees
