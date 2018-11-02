@@ -15898,7 +15898,7 @@ if( CheckVersion( $DBversion ) ) {
                 value="batchmod,moredetail,cronjob,additem"
             WHERE variable="MarkLostItemsAsReturned"
         });
-    } else {
+    } elsif ( $original_value eq '0' || $original_value eq "" ) {
         $dbh->do(q{
             UPDATE systempreferences
             SET type="multiple",
