@@ -55,8 +55,8 @@
                 <button class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown"> Report mistake <span class="caret"></span></button>
                 <ul class="dropdown-menu">
                     [% FOREACH c IN mana_comments %]
-                        <li class="mana-comment" data-id="[% c.id %]">
-                            <a href="#">[% c.message %] ([% c.nb %])</a>
+                        <li class="mana-comment" data-id="[% c.id | $raw %]">
+                            <a href="#">[% c.message | html %] ([% c.nb | html %])</a>
                         </li>
                     [% END %]
                     <li role="separator" class="divider"></li>
@@ -73,7 +73,7 @@
                         </div>
                         <div class="modal-body">
                             <input hidden id="mana-resource" value="report">
-                            <input hidden id="mana-resource-id" value="[% mana_id %]">
+                            <input hidden id="mana-resource-id" value="[% mana_id | $raw %]">
                             <div>
                                 <input type="text" maxlength="35" size="35" id="mana-comment">
                             </div>
