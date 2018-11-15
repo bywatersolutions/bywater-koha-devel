@@ -163,6 +163,20 @@ my $yet_another_item = $builder->build({
         lost => 0,
     },
 });
+
+Koha::CirculationRules->search()->delete();
+Koha::CirculationRules->set_rules(
+    {
+        branchcode   => $branch->{branchcode},
+        categorycode => '*',
+        itemtype     => '*',
+        rules        => {
+            maxissueqty       => 0,
+            maxonsiteissueqty => 0,
+        }
+    }
+);
+
 ( $impossible, undef, undef, undef ) = C4::Circulation::CanBookBeIssued( $patron, $yet_another_item->{barcode} );
 is( $impossible->{TOO_MANY}, 'TOO_MANY_CHECKOUTS', 'Not a specific case, $delta should not be incremented' );
 

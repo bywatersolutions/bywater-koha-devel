@@ -405,6 +405,8 @@ sub TooMany {
         }
     );
 
+    warn "RULE VALUE: " . $maxissueqty_rule->rule_value if (defined($maxissueqty_rule) and defined($maxissueqty_rule->rule_value));
+    warn "NO RULE FOUND!" unless $maxissueqty_rule;
 
     # if a rule is found and has a loan limit set, count
     # how many loans the patron already has that meet that
@@ -473,6 +475,7 @@ sub TooMany {
         my $max_checkouts_allowed = $maxissueqty_rule ? $maxissueqty_rule->rule_value : 0;
         my $max_onsite_checkouts_allowed = $maxonsiteissueqty_rule ? $maxonsiteissueqty_rule->rule_value : 0;
 
+        warn "COUNT: $checkout_count";
         if ( $onsite_checkout and defined $max_onsite_checkouts_allowed ) {
             if ( $onsite_checkout_count >= $max_onsite_checkouts_allowed )  {
                 return {
