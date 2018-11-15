@@ -286,21 +286,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 branch_borrower_circ_rules
-
-Type: has_many
-
-Related object: L<Koha::Schema::Result::BranchBorrowerCircRule>
-
-=cut
-
-__PACKAGE__->has_many(
-  "branch_borrower_circ_rules",
-  "Koha::Schema::Result::BranchBorrowerCircRule",
-  { "foreign.branchcode" => "self.branchcode" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 branch_item_rules
 
 Type: has_many
@@ -662,8 +647,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-10-09 15:50:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0yMUX1UukdV7eMol06JXTQ
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2018-11-15 18:12:17
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LjxpO2C/KZBIxzlnWzY1Tg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
