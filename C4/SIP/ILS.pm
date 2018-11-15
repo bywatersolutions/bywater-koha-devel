@@ -219,6 +219,8 @@ sub checkin {
     if( !$circ->ok && $circ->alert_type && $circ->alert_type == 98 ) { # data corruption
         $circ->screen_msg("Checkin failed: data problem");
         syslog( "LOG_WARNING", "Problem with issue_id in issues and old_issues; check the about page" );
+    } elsif( !$circ->ok && $circ->alert_type && $circ->alert_type == 99 ) { # withdrawn cannot be returned
+        $circ->screen_msg("Checkin failed: item withdrawn");
     } elsif( !$item->{patron} ) {
         if( $checked_in_ok ) { # Mark checkin ok although book not checked out
             $circ->ok( 1 );
