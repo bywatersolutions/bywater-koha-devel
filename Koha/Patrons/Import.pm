@@ -207,6 +207,7 @@ sub import_patrons {
             and exists $borrower{userid}
             and $borrower{userid}
             and not Koha::Patron->new( { userid => $borrower{userid} } )->has_valid_userid
+            and ( (!$borrowernumber) || (Koha::Patrons->find($borrowernumber)->userid ne $borrower{userid}) )
         ) {
             push @errors, { duplicate_userid => 1, userid => $borrower{userid} };
             $invalid++;
