@@ -32,6 +32,7 @@ is( C4::SMS->driver(), $driver, 'driver returns the SMSSendDriver correctly' );
 
 t::lib::Mocks::mock_preference('SMSSendUsername', 'username');
 t::lib::Mocks::mock_preference('SMSSendPassword', 'pwd');
+t::lib::Mocks::mock_preference('SMSSendFrom', '1234567890');
 
 my $send_sms = C4::SMS->send_sms();
 is( $send_sms, undef, 'send_sms without arguments returns undef' );

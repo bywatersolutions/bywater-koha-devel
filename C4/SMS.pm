@@ -113,6 +113,7 @@ sub send_sms {
             $driver,
             _login    => C4::Context->preference('SMSSendUsername'),
             _password => C4::Context->preference('SMSSendPassword'),
+            _from     => C4::Context->preference('SMSSendFrom'),
             %args,
         );
 
