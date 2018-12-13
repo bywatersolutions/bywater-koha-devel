@@ -1,1 +1,1 @@
-INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type`) VALUES  ('SMSSendFrom', '', '', '"From" number used to send SMS messages', 'Free');
+INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type`) VALUES  ('SMSSendParams', '', '70|10', 'Additional parameters to be passed to the provider (as a JSON object)', 'Textarea');

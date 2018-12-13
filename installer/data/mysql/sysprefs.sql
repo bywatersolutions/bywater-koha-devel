@@ -530,7 +530,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('SMSSendDriver','','','Sets which SMS::Send driver is used to send SMS messages.','free'),
 ('SMSSendPassword', '', '', 'Password used to send SMS messages', 'free'),
 ('SMSSendUsername', '', '', 'Username/Login used to send SMS messages', 'free'),
-('SMSSendFrom', '', '', '"From" number used to send SMS messages', 'free'),
+('SMSSendParams', '', '70|10', 'Additional parameter to be passed to the provider (as a JSON object)', 'Textarea'),
 ('SocialNetworks','0','','Enable/Disable social networks links in opac detail pages','YesNo'),
 ('SpecifyDueDate','1','','Define whether to display \"Specify Due Date\" form in Circulation','YesNo'),
 ('SpecifyReturnDate',1,'','Define whether to display \"Specify Return Date\" form in Circulation','YesNo'),

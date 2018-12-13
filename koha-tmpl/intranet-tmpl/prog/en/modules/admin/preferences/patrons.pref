@@ -142,8 +142,10 @@ Patrons:
          - ". Override from address with"
          - pref: EmailSMSSendDriverFromAddress
          - "for emails sent using \"Email\" send driver."
-         - "Define a number from which SMS messages will be sent"
-         - pref: SMSSendFrom
+         - "Provide additional parameters to be passed to the SMS provider (as a JSON object)"
+         - pref: SMSSendParams
+           type: textarea
+           class: code
      -
          - pref: uppercasesurnames
            choices:

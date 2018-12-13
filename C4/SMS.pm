@@ -55,6 +55,7 @@ use warnings;
 
 use C4::Context;
 use File::Spec;
+use JSON qw( decode_json );
 
 
 
@@ -107,13 +108,25 @@ sub send_sms {
         %args = map { q{_} . $_ => $conf->{$_} } keys %$conf;
     }
 
+    my $params_to_send = {
+        _login    => C4::Context->preference('SMSSendUsername'),
+        _password => C4::Context->preference('SMSSendPassword'),
+    };
+    # We may need to pass arbitrary additional parameters specified in
+    # SMSSendParams syspref
+    my $additional_params = C4::Context->preference('SMSSendParams');
+    if ($additional_params && length $additional_params > 0) {
+        my $decoded = decode_json($additional_params);
+        if ($decoded) {
+            $params_to_send = { %$params_to_send, %$decoded };
+        }
+    }
+
     eval {
         # Create a sender
         $sender = SMS::Send->new(
             $driver,
-            _login    => C4::Context->preference('SMSSendUsername'),
-            _password => C4::Context->preference('SMSSendPassword'),
-            _from     => C4::Context->preference('SMSSendFrom'),
+            %{$params_to_send},
             %args,
         );
 
