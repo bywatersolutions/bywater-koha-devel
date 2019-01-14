@@ -2,6 +2,7 @@
 [% USE Koha %]
 [% USE AuthorisedValues %]
 [% USE Branches %]
+[% USE raw %]
 
 <script type="text/javascript">
 //<![CDATA[
