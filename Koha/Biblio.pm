@@ -61,6 +61,27 @@ sub store {
     return $self->SUPER::store;
 }
 
+=head3 marc
+
+my @marc = $biblio->marc($params);
+
+Returns a MARC::Record object for a record.
+
+This method accepts the same paramters as C4::Biblio::GetMarcBiblio,
+but does not require the 'biblionumber' parameter.
+
+=cut
+
+sub marc {
+    my ( $self, $params ) = @_;
+
+    $params->{biblionumber} = $self->id;
+
+    my $marc = C4::Biblio::GetMarcBiblio($params);
+
+    return $marc;
+}
+
 =head3 subtitles
 
 my @subtitles = $biblio->subtitles();
