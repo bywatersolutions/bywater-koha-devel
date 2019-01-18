@@ -232,11 +232,19 @@
                                                 </optgroup>
                                                 <optgroup label="Groups">
                                                     [% FOREACH lsg IN LibrarySearchGroups %]
-                                                        [% IF lsg.id == opac_name %]
-                                                            <option selected="selected" value="multibranchlimit-[% lsg.id | html %]">[% lsg.title | html %]</option>
+                                                        [% IF lsg.libraries %]
+                                                            [% SET groups = lsg %]
                                                         [% ELSE %]
-                                                            <option value="multibranchlimit-[% lsg.id | html %]">[% lsg.title | html %]</option>
-                                                        [% END # / bc.selected %]
+                                                            [% SET groups = lsg.children %]
+                                                        [% END %]
+
+                                                        [% FOREACH g IN groups %]
+                                                            [% IF g.id == opac_name %]
+                                                                <option selected="selected" value="multibranchlimit-[% g.id | html %]">[% g.title | html %]</option>
+                                                            [% ELSE %]
+                                                                <option value="multibranchlimit-[% g.id | html %]">[% g.title | html %]</option>
+                                                            [% END # / bc.selected %]
+                                                        [% END %]
                                                     [% END %]
                                                 </optgroup>
                                             [% END # / BranchCategoriesLoop %]
