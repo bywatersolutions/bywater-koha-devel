@@ -2360,7 +2360,7 @@ subtest '_FixAccountForLostAndReturned' => sub {
 };
 
 subtest '_FixOverduesOnReturn' => sub {
-    plan tests => 10;
+    plan tests => 11;
 
     # Generate test biblio
     my $title  = 'Koha for Dummies';
@@ -2391,6 +2391,7 @@ subtest '_FixOverduesOnReturn' => sub {
             amount => 99.00,
             amountoutstanding => 99.00,
             lastincrement => 9.00,
+            date => '1981-06-10',
         }
     )->store();
 
@@ -2419,6 +2420,7 @@ subtest '_FixOverduesOnReturn' => sub {
     is( $accountline->accounttype, 'FFOR', 'Open fine ( account type FU ) has been set to fine forgiven ( account type FFOR )');
     is( ref $offset, "Koha::Account::Offset", "Found matching offset for fine reduction via forgiveness" );
     is( $offset->amount, '-99.000000', "Amount of offset is correct" );
+    is( $accountline->date, output_pref({ dt => dt_from_string, dateformat => 'iso', dateonly => 1 }), 'Accountline date is updated correctly' );
 
     ## Run again, with dropbox mode enabled
     $accountline->set(

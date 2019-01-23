@@ -2343,6 +2343,7 @@ sub _FixOverduesOnReturn {
 
         $accountline->accounttype('FFOR');
         $accountline->amountoutstanding(0);
+        $accountline->date( dt_from_string() );
 
         Koha::Account::Offset->new(
             {
