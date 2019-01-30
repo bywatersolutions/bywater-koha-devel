@@ -41,7 +41,7 @@ __PACKAGE__->table("itemtypes");
   is_nullable: 1
   size: [28,6]
 
-=head2 rental_charge_daily
+=head2 rentalcharge_daily
 
   data_type: 'decimal'
   is_nullable: 1
@@ -115,7 +115,7 @@ __PACKAGE__->add_columns(
   { data_type => "longtext", is_nullable => 1 },
   "rentalcharge",
   { data_type => "decimal", is_nullable => 1, size => [28, 6] },
-  "rental_charge_daily",
+  "rentalcharge_daily",
   { data_type => "decimal", is_nullable => 1, size => [28, 6] },
   "defaultreplacecost",
   { data_type => "decimal", is_nullable => 1, size => [28, 6] },
