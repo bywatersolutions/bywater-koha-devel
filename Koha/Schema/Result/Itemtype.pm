@@ -47,6 +47,12 @@ __PACKAGE__->table("itemtypes");
   is_nullable: 1
   size: [28,6]
 
+=head2 rentalcharge_hourly
+
+  data_type: 'decimal'
+  is_nullable: 1
+  size: [28,6]
+
 =head2 defaultreplacecost
 
   data_type: 'decimal'
@@ -116,6 +122,8 @@ __PACKAGE__->add_columns(
   "rentalcharge",
   { data_type => "decimal", is_nullable => 1, size => [28, 6] },
   "rentalcharge_daily",
+  { data_type => "decimal", is_nullable => 1, size => [28, 6] },
+  "rentalcharge_hourly",
   { data_type => "decimal", is_nullable => 1, size => [28, 6] },
   "defaultreplacecost",
   { data_type => "decimal", is_nullable => 1, size => [28, 6] },
@@ -234,8 +242,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2018-10-25 12:41:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Iyb9JKB8gdyZPtZloHVxSQ
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-01-31 11:59:27
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:gYBgGWpeUyFuyzfBNIEKCQ
 
 # Use the ItemtypeLocalization view to create the join on localization
 our $LANGUAGE;
