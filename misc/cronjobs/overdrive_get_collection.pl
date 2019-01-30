@@ -36,7 +36,7 @@ pod2usage(1) if $help;
 pod2usage( -verbose => 2 ) if $man;
 
 use Koha::SearchEngine;
-use Koha::SearchEngine::ElasticSearch::Indexer;
+use Koha::SearchEngine::Elasticsearch::Indexer;
 use C4::Context;
 
 use Data::Dumper;
@@ -48,7 +48,7 @@ my $fixes = ['copy_field(id,Local-number)','move_field(_id,es_id)'];
 
 
 # create an indexer object
-my $indexer = Koha::SearchEngine::ElasticSearch::Indexer->new(
+my $indexer = Koha::SearchEngine::Elasticsearch::Indexer->new(
     { index => $Koha::SearchEngine::BIBLIOS_INDEX } );
 
 unless ( $indexer->store ) {
@@ -86,6 +86,9 @@ $search_params{'limit'} = 20;
 
 $results = $od_client->native_search( \%search_params );
 
+$verbose && print "Total records found: ".$results->{totalItems}."\n";
+
+#warn Data::Dumper::Dumper( $results );
 # set up our importer to import in the JSON files
 # Overdrive paginates, so we need to deal with that
 
@@ -93,11 +96,13 @@ $results = $od_client->native_search( \%search_params );
 my $json = to_json($results->{products} );
 my $importer =
   Catmandu->importer( 'JSON', file => \$json, fix => $fixes );
-   $importer->each(sub {
-              my $item = shift;
-              my $stored = $indexer->store->bag->add($item);
-              $indexer->store->bag->commit;
-                          });
+    $importer->each(sub {
+        my $item = shift;
+        $item->{recordSource} = 'OverDrive';
+        warn Data::Dumper::Dumper( $item );
+        my $stored = $indexer->store->bag->add($item);
+        $indexer->store->bag->commit;
+    });
 
 if ( $results->{pages} ){
     foreach ( 2 .. $results->{pages} ) {

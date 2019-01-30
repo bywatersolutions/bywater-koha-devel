@@ -2,6 +2,29 @@ if ( typeof KOHA == "undefined" || !KOHA ) {
     var KOHA = {};
 }
 
+function od_fetch_availability( prod, $tr ) {
+    var $availability_summary = $( '<span class="results_summary availability"></span>' );
+    $tr.find( '.mediatype' ).after( $availability_summary );
+    $availability_summary.html( '<span class="label">' + _("Availability:") + ' </span> ' + _("Loading...") );
+
+    KOHA.OverDrive.Get(
+        prod.links.availability.href,
+        {},
+        function ( data ) {
+            if ( data.error ) return;
+
+            $availability_summary.html( '<span class="label">' + _("Availability:") + ' </span> ' + '<span class="available"><b>' + _("Items available:") + ' </b>' +  data.copiesAvailable + " " + _("out of") + ' ' + data.copiesOwned + '</span>' );
+
+            if ( data.numberOfHolds ) {
+                $availability_summary.find( '.available' ).append( ', ' + _("waiting holds:") + ' <strong>' + data.numberOfHolds + '</strong>' );
+            }
+            $tr.find( '.info' ).each(function() {
+                KOHA.OverDriveCirculation.add_actions(this, data.id, data.copiesAvailable);
+            });
+        }
+    );
+}
+
 KOHA.OverDrive = ( function() {
     var proxy_base_url = '/cgi-bin/koha/svc/overdrive_proxy';
     var library_base_url = 'http://api.overdrive.com/v1/libraries/';
@@ -19,7 +42,7 @@ KOHA.OverDrive = ( function() {
                         callback( {error: xhr.responseText || true} );
                     }
                 },
-                success: callback
+                success: function( xhr ){ callback( xhr ) }
             } );
         },
         GetCollectionURL: function( library_id, callback ) {
@@ -265,8 +288,8 @@ KOHA.OverDriveCirculation = new function() {
 
     function display_actions(el, id, copies_available) {
         $(el).empty();
+        console.log( is_logged_in() );
         if (is_logged_in()) {
-
             var item = item_is_checked_out(id);
             if (item) {
                 var expires = new Date(item.expires);
@@ -371,7 +394,12 @@ KOHA.OverDriveCirculation = new function() {
                 }) );
             }
             return item;
+        } else {
+                $(el).append("<p>Sign in to checkout</p>");
+                console.log('not signed ini');
+            return item;
         }
+            
     }
 
     function ajax_button(label, on_click) {
@@ -443,6 +471,7 @@ KOHA.OverDriveCirculation = new function() {
     this.is_logged_in = is_logged_in;
 
     this.add_actions = function(el, id, copies_available) {
+        console.log(el);
         var actions = $('<span class="actions">');
         display_actions(actions, id, copies_available);
         $('<div id="action_'+id+'" class="actions-menu">')

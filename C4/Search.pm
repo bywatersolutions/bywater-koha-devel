@@ -1855,7 +1855,7 @@ sub searchResults {
     my ( $search_context, $searchdesc, $hits, $results_per_page, $offset, $scan, $marcresults ) = @_;
     my $dbh = C4::Context->dbh;
     my @newresults;
-
+warn "Okay so far";
     require C4::Items;
 
     $search_context->{'interface'} = 'opac' if !$search_context->{'interface'} || $search_context->{'interface'} ne 'intranet';
