@@ -1,5 +1,6 @@
 [% USE Koha %]
 [% USE Branches %]
+[% Use Categories %]
 [% SET OpacLangSelectorMode = Koha.Preference('OpacLangSelectorMode') %]
 <div id="wrap">
     <div id="header-region" class="noprint">
@@ -327,7 +328,7 @@
                             [% Koha.Preference( 'OpacLoginInstructions' ) %]
                         </div>
                     [% END %]
-                    [% IF Koha.Preference('OpacPasswordChange') && Koha.Preference('OpacResetPassword') %]
+                    [% IF Koha.Preference('OpacPasswordChange') && Categories.can_any_reset_password %]
                         <div id="forgotpassword-modal" class="forgotpassword">
                             <p><a href="/cgi-bin/koha/opac-password-recovery.pl">Forgot your password?</a></p>
                         </div>

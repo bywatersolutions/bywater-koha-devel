@@ -224,6 +224,38 @@ sub get_expiry_date {
     }
 }
 
+=head3 effective_reset_password
+
+Returns if patrons in this category can reset their password. If set in $self->reset_password
+or, if undef, falls back to the OpacResetPassword system preference.
+
+=cut
+
+sub effective_reset_password {
+    my ($self) = @_;
+
+    return ( defined $self->reset_password )
+        ? $self->reset_password
+        : C4::Context->preference('OpacResetPassword');
+}
+
+=head3 effective_change_password
+
+Returns if patrons in this category can change their password. If set in $self->change_password
+or, if undef, falls back to the OpacPasswordChange system preference.
+
+=cut
+
+sub effective_change_password {
+    my ($self) = @_;
+
+    return ( defined $self->change_password )
+        ? $self->change_password
+        : C4::Context->preference('OpacPasswordChange');
+}
+
+=head2 Internal methods
+
 =head3 type
 
 =cut

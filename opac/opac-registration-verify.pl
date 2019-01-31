@@ -56,8 +56,6 @@ if (
         }
     );
 
-    $template->param(
-        OpacPasswordChange => C4::Context->preference('OpacPasswordChange') );
 
     my $borrower = $m->unblessed();
 
@@ -70,7 +68,7 @@ if (
 
         $template->param( password_cleartext => $password );
         my $patron = Koha::Patrons->find( $borrowernumber );
-        $template->param( borrower => $patron->unblessed );
+        $template->param( borrower => $patron );
         $template->param(
             PatronSelfRegistrationAdditionalInstructions =>
               C4::Context->preference(

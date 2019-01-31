@@ -50,7 +50,7 @@
                         </div>
                     [% END # /IF Error_messages %]
 
-                    [% IF ( OpacPasswordChange ) %]
+                    [% IF logged_in_user.category.effective_change_password %]
                         [% IF ( Ask_data ) %]
 
                             <form action="/cgi-bin/koha/opac-passwd.pl" name="mainform" id="mainform" method="post" autocomplete="off">
@@ -65,7 +65,7 @@
                         [% END # /IF Ask_data %]
                     [% ELSE %]
                         <div class="alert">You can't change your password.</div>
-                    [% END # /IF OpacPasswordChange %]
+                    [% END # /IF logged_in_user.category.effective_change_password %]
 
                     [% IF ( password_updated ) %]
                         <div class="alert alert-success">

@@ -1,5 +1,6 @@
 [% USE Koha %]
 [% USE Branches %]
+[% USE Categories %]
 [% USE Price %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>[% IF ( LibraryNameTitle ) %][% LibraryNameTitle %][% ELSE %]Koha online[% END %] catalog</title>
@@ -128,7 +129,7 @@
                                                 [% Koha.Preference( 'OpacLoginInstructions' ) %]
                                             </div>
                                         [% END %]
-                                        [% IF Koha.Preference('OpacPasswordChange') && Koha.Preference('OpacResetPassword') %]
+                                        [% IF Koha.Preference('OpacPasswordChange') && Categories.can_any_reset_password %]
                                             <div id="forgotpassword-main" class="forgotpassword">
                                                 <p><a href="/cgi-bin/koha/opac-password-recovery.pl">Forgot your password?</a></p>
                                             </div>

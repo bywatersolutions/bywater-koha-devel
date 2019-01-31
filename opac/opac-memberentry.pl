@@ -204,9 +204,6 @@ if ( $action eq 'create' ) {
                 }
             );
 
-            $template->param( OpacPasswordChange =>
-                  C4::Context->preference('OpacPasswordChange') );
-
             my ( $borrowernumber, $password ) = AddMember_Opac(%borrower);
             C4::Members::Attributes::SetBorrowerAttributes( $borrowernumber, $attributes );
             C4::Form::MessagingPreferences::handle_form_action($cgi, { borrowernumber => $borrowernumber }, $template, 1, C4::Context->preference('PatronSelfRegistrationDefaultCategory') ) if $borrowernumber && C4::Context->preference('EnhancedMessagingPreferences');

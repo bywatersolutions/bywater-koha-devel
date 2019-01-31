@@ -45,8 +45,7 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 );
 
 my $patron = Koha::Patrons->find( $borrowernumber );
-if ( C4::Context->preference("OpacPasswordChange") ) {
-    my $sth =  $dbh->prepare("UPDATE borrowers SET password = ? WHERE borrowernumber=?");
+if ( $patron->category->effective_change_password ) {
     if (   $query->param('Oldkey')
         && $query->param('Newkey')
         && $query->param('Confirm') )
