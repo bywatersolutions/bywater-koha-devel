@@ -2886,8 +2886,7 @@ sub AddRenewal {
     my $patron = Koha::Patrons->find( $borrowernumber ) or return; # FIXME Should do more than just return
     my $patron_unblessed = $patron->unblessed;
 
-    my $library = Koha::Libraries->find( $branch );
-
+    my $circ_library = Koha::Libraries->find( _GetCircControlBranch($item, $patron_unblessed) );
 
     if ( C4::Context->preference('CalculateFinesOnReturn') && $issue->is_overdue ) {
         _CalculateAndUpdateFine( { issue => $issue, item => $item, borrower => $patron_unblessed } );
@@ -2906,11 +2905,10 @@ sub AddRenewal {
         $datedue =  CalcDateDue($datedue, $itemtype, _GetCircControlBranch($item, $patron_unblessed), $patron_unblessed, 'is a renewal');
     }
 
-
     my $fees = Koha::Charges::Fees->new(
         {
             patron    => $patron,
-            library   => $library,
+            library   => $circ_library,
             item      => $item_object,
             to_date   => dt_from_string( $datedue ),
         }
