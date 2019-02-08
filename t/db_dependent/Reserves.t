@@ -17,7 +17,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 58;
+use Test::More tests => 59;
 use Test::MockModule;
 use Test::Warn;
 
@@ -518,6 +518,20 @@ is( C4::Reserves::CanBookBeReserved($borrowernumber, $biblionumber)->{status} , 
 $item = GetItem($itemnumber);
 
 ok( C4::Reserves::IsAvailableForItemLevelRequest($item, $borrower), "Reserving a book on item level" );
+
+my $pickup_branch = $builder->build({ source => 'Branch' })->{ branchcode };
+t::lib::Mocks::mock_preference( 'UseBranchTransferLimits',  '1' );
+t::lib::Mocks::mock_preference( 'BranchTransferLimitsType', 'itemtype' );
+my ($item_object) = Koha::Biblios->find($biblionumber)->items;
+my $limit = Koha::Item::Transfer::Limit->new(
+    {
+        toBranch   => $pickup_branch,
+        fromBranch => $item_object->holdingbranch,
+        itemtype   => $item_object->effective_itemtype,
+    }
+)->store();
+is( C4::Reserves::IsAvailableForItemLevelRequest($item, $borrower, $pickup_branch), 0, "Item level request not available due to transfer limit" );
+t::lib::Mocks::mock_preference( 'UseBranchTransferLimits',  '0' );
 
 # tests for MoveReserve in relation to ConfirmFutureHolds (BZ 14526)
 #   hold from A pos 1, today, no fut holds: MoveReserve should fill it
