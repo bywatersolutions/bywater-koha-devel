@@ -1,6 +1,6 @@
-package Koha::Checkouts::ReturnClaim;
+#!/usr/bin/perl
 
-# Copyright ByWater Solutions 2019
+# Copyright 2019 ByWater Solutions
 #
 # This file is part of Koha.
 #
@@ -19,47 +19,35 @@ package Koha::Checkouts::ReturnClaim;
 
 use Modern::Perl;
 
-use base qw(Koha::Object);
+use CGI;
+use JSON qw(to_json);
 
-use Koha::Checkouts;
-use Koha::Old::Checkouts;
+use C4::Auth qw(check_cookie_auth);
+use C4::Context;
+use Koha::Checkouts::ReturnClaims;
+use Koha::DateUtils;
 
-=head1 NAME
+my $input = new CGI;
 
-Koha::Checkouts::ReturnClaim - Koha ReturnClaim object class
+my ( $auth_status, $sessionID ) =
+  check_cookie_auth( $input->cookie('CGISESSID'),
+    { circulate => 'circulate_remaining_permissions' } );
 
-=head1 API
-
-=head2 Class Methods
-
-=cut
-
-=head3 checkout
-
-=cut
-
-sub checkout {
-    my ( $self ) = @_;
-
-    my $issue = $self->_result->issue;
-    return Koha::Checkout->_new_from_dbic( $issue ) if $issue;
-
-    my $old_issue = $self->_result->old_issue;
-    return Koha::Old::Checkout->_new_from_dbic( $old_issue ) if $old_issue;
+if ( $auth_status ne "ok" ) {
+    exit 0;
 }
 
-=head3 _type
+binmode STDOUT, ":encoding(UTF-8)";
+print $input->header( -type => 'text/plain', -charset => 'UTF-8' );
 
-=cut
+my $id = $input->param('id');
 
-sub _type {
-    return 'ReturnClaim';
-}
+my $return_claim = Koha::Checkouts::ReturnClaims->find($id);
+my $success = $return_claim ? $return_claim->delete() : 0;
 
-=head1 AUTHOR
+my $data = {
+    id      => $id,
+    success => $success,
+};
 
-Kyle M Hall <kyle@bywatersolutions.com>
-
-=cut
-
-1;
+print to_json($data);

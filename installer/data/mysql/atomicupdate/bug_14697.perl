@@ -30,7 +30,7 @@ if( CheckVersion( $DBversion ) ) {
     }
 
     $dbh->do(q{
-        INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+        INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
         ('ClaimReturnedChargeFee', 'ask', 'ask|charge|no_charge', 'Controls whether or not a lost item fee is charged for return claims', 'Choice'),
         ('ClaimReturnedLostValue', '', '', 'Sets the LOST AV value that represents "Claims returned" as a lost value', 'Free'),
         ('ClaimReturnedWarningThreshold', '', '', 'Sets the number of return claims past which the librarian will be warned the patron has many return claims', 'Integer');

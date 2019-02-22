@@ -21,9 +21,10 @@ package Koha::Checkout;
 use Modern::Perl;
 
 use Carp;
-
-use Koha::Database;
 use DateTime;
+
+use Koha::Checkouts::ReturnClaims;
+use Koha::Database;
 use Koha::DateUtils;
 use Koha::Items;
 
@@ -86,6 +87,45 @@ sub patron {
     my ( $self ) = @_;
     my $patron_rs = $self->_result->borrower;
     return Koha::Patron->_new_from_dbic( $patron_rs );
+}
+
+=head3 claim_returned
+
+my $return_claim = $checkout->claim_returned();
+
+=cut
+
+sub claim_returned {
+    my ( $self, $params ) = @_;
+
+    my $notes           = $params->{notes};
+    my $charge_lost_fee = $params->{charge_lost_fee};
+
+    my $claim = Koha::Checkouts::ReturnClaims->find( { issue_id => $self->id } );
+    $claim ||= Koha::Checkouts::ReturnClaims->find( { old_issue_id => $self->id } );
+
+    $claim ||= Koha::Checkouts::ReturnClaim->new(
+        {
+            issue_id       => $self->id,
+            itemnumber     => $self->itemnumber,
+            borrowernumber => $self->borrowernumber,
+            notes          => $notes,
+            created_on     => dt_from_string,
+            created_by     => C4::Context->userenv->{number},
+        }
+    )->store();
+
+    my $ClaimReturnedLostValue = C4::Context->preference('ClaimReturnedLostValue');
+    C4::Items::ModItem( { itemlost => $ClaimReturnedLostValue }, undef, $self->itemnumber );
+
+    my $ClaimReturnedChargeFee = C4::Context->preference('ClaimReturnedChargeFee');
+    $charge_lost_fee =
+        $ClaimReturnedChargeFee eq 'charge'    ? 1
+      : $ClaimReturnedChargeFee eq 'no_charge' ? 0
+      :   $charge_lost_fee;    # $ClaimReturnedChargeFee eq 'ask'
+    C4::Circulation::LostItem( $self->itemnumber, 'claim_returned' ) if $charge_lost_fee;
+
+    return $claim;
 }
 
 =head3 type

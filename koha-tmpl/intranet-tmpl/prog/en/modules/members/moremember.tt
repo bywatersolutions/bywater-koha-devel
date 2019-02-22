@@ -852,6 +852,9 @@
     [% Asset.js("js/messaging-preference-form.js") | $raw %]
     <script>
         /* Set some variable needed in circulation.js */
+        var ClaimReturnedLostValue = "[% Koha.Preference('ClaimReturnedLostValue') | html %]";
+        var ClaimReturnedChargeFee = "[% Koha.Preference('ClaimReturnedChargeFee') | html %]";
+        var ClaimReturnedWarningThreshold = "[% Koha.Preference('ClaimReturnedWarningThreshold') | html %]";
         var interface = "[% interface | html %]";
         var theme = "[% theme | html %]";
         var borrowernumber = "[% patron.borrowernumber | html %]";

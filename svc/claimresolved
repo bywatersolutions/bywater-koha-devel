@@ -1,0 +1,70 @@
+#!/usr/bin/perl
+
+# Copyright 2019 ByWater Solutions
+#
+# This file is part of Koha.
+#
+# Koha is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
+#
+# Koha is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with Koha; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+use Modern::Perl;
+
+use CGI;
+use JSON qw(to_json);
+
+use C4::Auth qw(check_cookie_auth);
+use C4::Context;
+use Koha::Checkouts::ReturnClaims;
+use Koha::DateUtils;
+
+my $input = new CGI;
+
+my ( $auth_status, $sessionID ) =
+  check_cookie_auth( $input->cookie('CGISESSID'),
+    { circulate => 'circulate_remaining_permissions' } );
+
+if ( $auth_status ne "ok" ) {
+    exit 0;
+}
+
+binmode STDOUT, ":encoding(UTF-8)";
+print $input->header( -type => 'text/plain', -charset => 'UTF-8' );
+
+my $id         = $input->param('id');
+my $resolution = $input->param('resolution');
+
+my $return_claim = Koha::Checkouts::ReturnClaims->find($id);
+
+$return_claim->resolution($resolution);
+$return_claim->resolved_on( dt_from_string() );
+$return_claim->resolved_by( C4::Context->userenv->{number} );
+$return_claim->store();
+
+my $data = $return_claim ? $return_claim->unblessed : undef;
+
+my $c_dt = dt_from_string( $data->{created_on} );
+my $u_dt = dt_from_string( $data->{updated_on} );
+my $r_dt = dt_from_string( $data->{resolved_on} );
+
+$data->{created_on_formatted} = output_pref( { dt => $c_dt } )
+  if $data->{created_on};
+$data->{updated_on_formatted} = output_pref( { dt => $u_dt } )
+  if $data->{updated_on};
+$data->{resolved_on_formatted} = output_pref( { dt => $r_dt } )
+  if $data->{resolved_on};
+
+$data->{created_on}  = $c_dt->iso8601;
+$data->{updated_on}  = $u_dt->iso8601;
+$data->{resolved_on} = $r_dt->iso8601;
+
+print to_json($data);

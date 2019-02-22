@@ -37,6 +37,30 @@ Koha::Checkouts::ReturnClaims - Koha ReturnClaim object set class
 
 =cut
 
+=head3 unresolved
+
+=cut
+
+sub unresolved {
+    my ($self) = @_;
+
+    my $results = $self->_resultset()->search_rs( { resolved_on => undef } );
+
+    return Koha::Checkouts::ReturnClaims->_new_from_dbic( $results );
+}
+
+=head3 resolved
+
+=cut
+
+sub resolved {
+    my ($self) = @_;
+
+    my $results = $self->_resultset()->search_rs( { resolved_on => { '!=' => undef } } );
+
+    return Koha::Checkouts::ReturnClaims->_new_from_dbic( $results );
+}
+
 =head3 type
 
 =cut

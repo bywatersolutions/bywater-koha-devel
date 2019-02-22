@@ -268,7 +268,9 @@ $(document).ready(function() {
 
                         due = "<span id='date_due_" + oObj.itemnumber + "' class='date_due'>" + due + "</span>";
 
-                        if ( oObj.lost ) {
+                        if ( oObj.lost && oObj.claims_returned ) {
+                            due += "<span class='lost claims_returned'>" + oObj.lost.escapeHtml() + "</span>";
+                        } else if ( oObj.lost ) {
                             due += "<span class='lost'>" + oObj.lost.escapeHtml() + "</span>";
                         }
 
@@ -534,6 +536,20 @@ $(document).ready(function() {
                         } else {
                             return "<input type='checkbox' class='checkin' id='checkin_" + oObj.itemnumber + "' name='checkin' value='" + oObj.itemnumber +"'></input>";
                         }
+                    }
+                },
+                {
+                    "bVisible": ClaimReturnedLostValue ? true : false,
+                    "bSortable": false,
+                    "mDataProp": function ( oObj ) {
+                        let content = "";
+
+                        if ( oObj.return_claim_id ) {
+                          content = `<span class="badge">${oObj.return_claim_created_on_formatted}</span>`;
+                        } else {
+                          content = `<a class="btn btn-default btn-xs claim-returned-btn" data-itemnumber="${oObj.itemnumber}"><i class="fa fa-exclamation-circle"></i> ${RETURN_CLAIMED_MAKE}</a>`;
+                        }
+                        return content;
                     }
                 },
                 {
@@ -804,4 +820,244 @@ $(document).ready(function() {
             }
         } ).prop('checked', false);
     }
+
+    // Handle return claims
+    $(document).on("click", '.claim-returned-btn', function(e){
+        e.preventDefault();
+        itemnumber = $(this).data('itemnumber');
+
+        $('#claims-returned-itemnumber').val(itemnumber);
+        $('#claims-returned-notes').val("");
+        $('#claims-returned-charge-lost-fee').attr('checked', false)
+        $('#claims-returned-modal').modal()
+    });
+    $(document).on("click", '#claims-returned-modal-btn-submit', function(e){
+        let itemnumber = $('#claims-returned-itemnumber').val();
+        let notes = $('#claims-returned-notes').val();
+        let fee = $('#claims-returned-charge-lost-fee').attr('checked') ? 1 : 0;
+
+        $('#claims-returned-modal').modal('hide')
+
+        $(`.claim-returned-btn[data-itemnumber='${itemnumber}']`).replaceWith(`<img id='return_claim_spinner_${itemnumber}' src='${interface}/${theme}/img/spinner-small.gif' />`);
+
+        params = {
+            itemnumber: itemnumber,
+            notes: notes,
+            charge_lost_fee: fee ? 1 : 0,
+        };
+
+        $.post( "/cgi-bin/koha/svc/claimreturned", params, function( data ) {
+
+            id = "#return_claim_spinner_" + data.itemnumber;
+
+            let content = "";
+            if ( data.id ) {
+            console.log(data);
+                content = `<span class="badge">${data.created_on_formatted}</span>`;
+                $(id).parent().parent().addClass('ok');
+            } else {
+                content = RETURN_CLAIMED_FAILURE;
+                $(id).parent().parent().addClass('warn');
+            }
+
+            $(id).replaceWith( content );
+
+            refreshReturnClaimsTable();
+        }, "json")
+
+    });
+
+
+    // Don't load return claims table unless it is clicked on
+    var returnClaimsTable;
+    $("#return-claims-tab").click( function() {
+        refreshReturnClaimsTable();
+    });
+
+    function refreshReturnClaimsTable(){
+        loadReturnClaimsTable();
+        $("#return-claims-table").DataTable().ajax.reload();
+    }
+    function loadReturnClaimsTable() {
+        if ( ! returnClaimsTable ) {
+            returnClaimsTable = $("#return-claims-table").dataTable({
+                "bAutoWidth": false,
+                "sDom": "rt",
+                "aaSorting": [],
+                "aoColumns": [
+                    {
+                        "mDataProp": "id",
+                        "bVisible": false,
+                    },
+                    {
+                        "mDataProp": function ( oObj ) {
+                              let title = `<a class="return-claim-title strong" href="/cgi-bin/koha/circ/request-rcticle.pl?biblionumber=[% rc.checkout.item.biblionumber | html %]">
+                                  ${oObj.title}
+                                  ${oObj.enumchron || ""}
+                              </a>`;
+                              if ( oObj.author ) {
+                                title += `by ${oObj.author}`;
+                              }
+                              title += `<a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=${oObj.biblionumber}&itemnumber=${oObj.itemnumber}">${oObj.barcode}</a>`;
+
+                              return title;
+                        }
+                    },
+                    {
+                        "sClass": "return-claim-notes-td",
+                        "mDataProp": function ( oObj ) {
+                            return `
+                                <span id="return-claim-notes-static-${oObj.id}" class="return-claim-notes" data-return-claim-id="${oObj.id}">${oObj.notes}</span>
+                                <i style="float:right" class="fa fa-pencil-square-o" title="Double click to edit"></i>
+                            `;
+                        }
+                    },
+                    {
+                        "mDataProp": "created_on",
+                    },
+                    {
+                        "mDataProp": "updated_on",
+                    },
+                    {
+                        "mDataProp": function ( oObj ) {
+                            if ( ! oObj.resolution ) return "";
+
+                            let desc = `<strong>${oObj.resolution_data.lib}</strong> on <i>${oObj.resolved_on_formatted}</i>`;
+                            if (oObj.resolved_by_data) desc += ` by <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=${oObj.resolved_by_data.borrowernumber}">${oObj.resolved_by_data.firstname || ""} ${oObj.resolved_by_data.surname || ""}</a>`;
+                            return desc;
+                        }
+                    },
+                    {
+                        "mDataProp": function ( oObj ) {
+                            let delete_html = oObj.resolved_on
+                                ? `<li><a href="#" class="return-claim-tools-delete" data-return-claim-id="${oObj.id}"><i class="fa fa-trash"></i> Delete</a></li>`
+                                : "";
+                            let resolve_html = ! oObj.resolution
+                                ? `<li><a href="#" class="return-claim-tools-resolve" data-return-claim-id="${oObj.id}"><i class="fa fa-check-square"></i> Resolve</a></li>`
+                                : "";
+
+                            return `
+                                <div class="btn-group">
+                                  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Actions <span class="caret"></span>
+                                  </button>
+                                  <ul class="dropdown-menu">
+                                    <li><a href="#" class="return-claim-tools-editnotes" data-return-claim-id="${oObj.id}"><i class="fa fa-edit"></i> Edit notes</a></li>
+                                    ${resolve_html}
+                                    ${delete_html}
+                                  </ul>
+                                </div>
+                            `;
+                        }
+                    },
+                ],
+                "bPaginate": false,
+                "bProcessing": true,
+                "bServerSide": false,
+                "sAjaxSource": '/cgi-bin/koha/svc/return_claims',
+                "fnServerData": function ( sSource, aoData, fnCallback ) {
+                    aoData.push( { "name": "borrowernumber", "value": borrowernumber } );
+
+                    $.getJSON( sSource, aoData, function (json) {
+                        let resolved = json.resolved;
+                        let unresolved = json.unresolved;
+
+                        $('#return-claims-count-resolved').text(resolved);
+                        $('#return-claims-count-unresolved').text(unresolved);
+
+                        fnCallback(json)
+                    } );
+                },
+            });
+        }
+    }
+
+    $('body').on('click', '.return-claim-tools-editnotes', function() {
+        let id = $(this).data('return-claim-id');
+        $(`#return-claim-notes-static-${id}`).parent().dblclick();
+    });
+    $('body').on('dblclick', '.return-claim-notes-td', function() {
+        let elt = $(this).children('.return-claim-notes');
+        let id = elt.data('return-claim-id');
+        if ( $(`#return-claim-notes-editor-textarea-${id}`).length == 0 ) {
+            let note = elt.text();
+            let editor = `
+                <span id="return-claim-notes-editor-${id}">
+                    <textarea id="return-claim-notes-editor-textarea-${id}">${note}</textarea>
+                    <br/>
+                    <a class="btn btn-default btn-xs claim-returned-notes-editor-submit" data-return-claim-id="${id}"><i class="fa fa-save"></i> Update</a>
+                    <a class="claim-returned-notes-editor-cancel" data-return-claim-id="${id}" href="#">Cancel</a>
+                </span>
+            `;
+            elt.hide();
+            $(editor).insertAfter( elt );
+        }
+    });
+
+    $('body').on('click', '.claim-returned-notes-editor-submit', function(){
+        let id = $(this).data('return-claim-id');
+        let notes = $(`#return-claim-notes-editor-textarea-${id}`).val();
+
+        let params = {
+            'id': id,
+            'notes': notes
+        };
+
+        $(this).parent().remove();
+
+        $.post( "/cgi-bin/koha/svc/claimreturned-edit-notes", params, function( data ) {
+            let notes = $(`#return-claim-notes-static-${id}`);
+            notes.text(data.notes);
+            notes.show();
+        }, "json")
+    });
+
+    $('body').on('click', '.claim-returned-notes-editor-cancel', function(){
+        let id = $(this).data('return-claim-id');
+        $(this).parent().remove();
+        $(`#return-claim-notes-static-${id}`).show();
+    });
+
+    // Hanld return claim deletion
+    $('body').on('click', '.return-claim-tools-delete', function() {
+        let confirmed = confirm(CONFIRM_DELETE_RETURN_CLAIM);
+        if ( confirmed ) {
+            let id = $(this).data('return-claim-id');
+
+            $.post( "/cgi-bin/koha/svc/claimdeleted", { id: id }, function( data ) {
+                refreshReturnClaimsTable();
+            }, "json")
+        }
+    });
+
+    // Handle return claim resolution
+    $('body').on('click', '.return-claim-tools-resolve', function() {
+        let id = $(this).data('return-claim-id');
+
+        $('#claims-returned-resolved-modal-id').val(id);
+        $('#claims-returned-resolved-modal').modal()
+    });
+
+    $(document).on('click', '#claims-returned-resolved-modal-btn-submit', function(e) {
+        let resolution = $('#claims-returned-resolved-modal-resolved-code').val();
+        let claim_id = $('#claims-returned-resolved-modal-id').val();
+
+        $('#claims-returned-resolved-modal-btn-submit-spinner').show();
+        $('#claims-returned-resolved-modal-btn-submit-icon').hide();
+
+        params = {
+          id: claim_id,
+          resolution: resolution,
+        };
+
+        $.post( "/cgi-bin/koha/svc/claimresolved", params, function( data ) {
+            $('#claims-returned-resolved-modal-btn-submit-spinner').hide();
+            $('#claims-returned-resolved-modal-btn-submit-icon').show();
+            $('#claims-returned-resolved-modal').modal('hide')
+
+            refreshReturnClaimsTable();
+        }, "json")
+
+    });
+
  });
