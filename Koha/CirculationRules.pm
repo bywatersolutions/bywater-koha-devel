@@ -55,6 +55,15 @@ sub get_effective_rule {
         $v = undef if $v and $v eq '*';
     }
 
+    my $minimum_itemtype_rule;
+    $minimum_itemtype_rule = $self->_get_minimum_itemtype_rule({
+        rule_name => $rule_name,
+        categorycode => $categorycode,
+        itemtypes    => $itemtype,
+        branchcode   => $branchcode
+    }) if ( ref $itemtype eq 'ARRAY' );
+    return $minimum_itemtype_rule if defined $minimum_itemtype_rule;
+
     my $search_params;
     $search_params->{rule_name} = $rule_name;
 
@@ -72,6 +81,37 @@ sub get_effective_rule {
         }
     )->single;
 
+    return $rule;
+}
+
+=head3 _get_minimum_itemtype_rule
+
+ItemTypes can now have a parent defined, in this case we should return the minimum value for some
+rules. Will be called internally only by get_effective_rule in the case that multiple itemtypes are passed.
+
+=cut
+
+sub _get_minimum_itemtype_rule {
+    my ( $self, $params ) = @_;
+    my $rule_name    = $params->{rule_name};
+    my $categorycode = $params->{categorycode};
+    my $itemtypes    = $params->{itemtypes};
+    my $branchcode   = $params->{branchcode};
+    my $search_params;
+    $search_params->{rule_name} = $rule_name;
+    $search_params->{categorycode} = defined $categorycode ? [ $categorycode, undef ] : undef;
+    $search_params->{itemtype}     = $itemtypes;
+    $search_params->{branchcode}   = defined $branchcode   ? [ $branchcode,   undef ] : undef;
+    my $rule = $self->search(
+        $search_params,
+        {
+            order_by => [
+		{ -desc => [ 'branchcode', 'categorycode' ] },
+		{ -asc  => [ 'rule_value' ] }
+	    ],
+            rows => 1,
+        }
+    )->single;
     return $rule;
 }
 

@@ -96,7 +96,7 @@ Item types administration
     [% IF itemtype %]
         <h3>Modify item type</h3>
     [% ELSE %]
-        <h3>Add item type</h3>
+        ]<h3>Add item type</h3>
     [% END %]
     <form action="/cgi-bin/koha/admin/itemtypes.pl" name="Aform" method="post" id="itemtypeentry">
         <input type="hidden" name="op" value="add_validate" />
@@ -114,6 +114,26 @@ Item types administration
                         <input type="text" id="itemtype" name="itemtype" size="10" maxlength="10" required="required" /> <span class="required">Required</span>
                     </li>
                 [% END %]
+                <li>
+                    <label for="parent_type">Parent item type: </label>
+                    [% IF !is_a_parent && parent_types %]
+                    <select name="parent_type" id="parent_type">
+                        [% FOREACH pt IN parent_types %]
+                            [% IF parent_type == pt.itemtype %]
+                                <option value="[% pt.itemtype %]" selected="selected">[% pt.description %]</option>
+                            [% ELSE %]
+                                <option value="[% pt.itemtype %]">[% pt.description %]</option>
+                            [% END %]
+                        [% END %]
+                    </select>
+                    [% ELSIF is_a_parent %]
+                    <input type="text" id="parent_type" value="[% parent_type %]" name="parent_type" size="10" maxlength="10" disabled/>
+                    <p>Is a parent to another type, cannot have a parent</p>
+                    [% ELSE %]
+                    <input type="text" id="parent_type" value="[% parent_type %]" name="parent_type" size="10" maxlength="10" disabled/>
+                    <p>No available parent types</p>
+                    [% END %]
+                </li>
                 <li>
                     <label for="description" class="required">Description: </label>
                     <input type="text" id="description" name="description" size="48" value="[% itemtype.description | html %]" required="required" /> <span class="required">Required</span>
@@ -336,6 +356,7 @@ Item types administration
           <thead>
             [% UNLESS Koha.Preference('noItemTypeImages') %]<th>Image</th>[% END %]
             <th>Code</th>
+            <th>Parent code</th>
             <th>Description</th>
             <th>Search category</th>
             <th>Not for loan</th>
@@ -360,6 +381,9 @@ Item types administration
               <a href="/cgi-bin/koha/admin/itemtypes.pl?op=add_form&amp;itemtype=[% itemtype.itemtype | uri %]">
                 [% itemtype.itemtype | html %]
               </a>
+            </td>
+            <td>
+                [% itemtype.parent_type %]
             </td>
             <td>
                 [% IF itemtype.translated_descriptions.size %]
