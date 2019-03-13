@@ -30,6 +30,13 @@ __PACKAGE__->table("itemtypes");
   is_nullable: 0
   size: 10
 
+=head2 parent_type
+
+  data_type: 'varchar'
+  is_foreign_key: 1
+  is_nullable: 1
+  size: 10
+
 =head2 description
 
   data_type: 'longtext'
@@ -117,6 +124,8 @@ __PACKAGE__->table("itemtypes");
 __PACKAGE__->add_columns(
   "itemtype",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 10 },
+  "parent_type",
+  { data_type => "varchar", is_foreign_key => 1, is_nullable => 1, size => 10 },
   "description",
   { data_type => "longtext", is_nullable => 1 },
   "rentalcharge",
@@ -211,6 +220,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 itemtypes
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::Itemtype>
+
+=cut
+
+__PACKAGE__->has_many(
+  "itemtypes",
+  "Koha::Schema::Result::Itemtype",
+  { "foreign.parent_type" => "self.itemtype" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 old_reserves
 
 Type: has_many
@@ -224,6 +248,26 @@ __PACKAGE__->has_many(
   "Koha::Schema::Result::OldReserve",
   { "foreign.itemtype" => "self.itemtype" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 parent_type
+
+Type: belongs_to
+
+Related object: L<Koha::Schema::Result::Itemtype>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "parent_type",
+  "Koha::Schema::Result::Itemtype",
+  { itemtype => "parent_type" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 reserves
@@ -242,8 +286,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-03-07 17:30:46
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CDIOU6LmF7suaujk1NQOeg
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2019-03-13 00:35:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Gg6idjbhkKwVaD4yhYF+Kw
 
 # Use the ItemtypeLocalization view to create the join on localization
 our $LANGUAGE;
