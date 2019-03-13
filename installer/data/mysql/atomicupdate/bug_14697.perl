@@ -6,7 +6,6 @@ if( CheckVersion( $DBversion ) ) {
                 id int(11) auto_increment,
                 itemnumber int(11) NOT NULL,
                 issue_id int(11) NULL DEFAULT NULL,
-                old_issue_id int(11) NULL DEFAULT NULL,
                 borrowernumber int(11) NOT NULL,
                 notes MEDIUMTEXT DEFAULT NULL,
                 created_on TIMESTAMP NULL,
@@ -18,8 +17,7 @@ if( CheckVersion( $DBversion ) ) {
                 resolved_by int(11) NULL DEFAULT NULL,
                 PRIMARY KEY (`id`),
                 KEY `itemnumber` (`itemnumber`),
-                CONSTRAINT `rc_issues_ibfk` FOREIGN KEY (`issue_id`) REFERENCES `issues` (`issue_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-                CONSTRAINT `rc_old_issues_ibfk` FOREIGN KEY (`old_issue_id`) REFERENCES `issues` (`issue_id`) ON DELETE SET NULL ON UPDATE CASCADE,
+                UNIQUE( issue_id ),
                 CONSTRAINT `rc_items_ibfk` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `rc_borrowers_ibfk` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `rc_created_by_ibfk` FOREIGN KEY (`created_by`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE CASCADE,
@@ -30,7 +28,7 @@ if( CheckVersion( $DBversion ) ) {
     }
 
     $dbh->do(q{
-        INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+        INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
         ('ClaimReturnedChargeFee', 'ask', 'ask|charge|no_charge', 'Controls whether or not a lost item fee is charged for return claims', 'Choice'),
         ('ClaimReturnedLostValue', '', '', 'Sets the LOST AV value that represents "Claims returned" as a lost value', 'Free'),
         ('ClaimReturnedWarningThreshold', '', '', 'Sets the number of return claims past which the librarian will be warned the patron has many return claims', 'Integer');
