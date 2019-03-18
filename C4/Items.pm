@@ -1296,6 +1296,8 @@ sub PrepareItemrecordDisplay {
     my $itemrecord;
     if ($itemnum) {
         $itemrecord = C4::Items::GetMarcItem( $bibnum, $itemnum );
+    }elsif ($defaultvalues && $defaultvalues->{'itemrecord'} ) {
+        $itemrecord = $defaultvalues->{'itemrecord'};
     }
     my @loop_data;
 

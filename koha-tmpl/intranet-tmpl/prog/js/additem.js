@@ -11,7 +11,7 @@ function addItem( node, unique_item_fields ) {
     }
     if ( $("#items_list table").find('tr[idblock="' + index + '"]').length == 0 ) {
         if ( current_qty < max_qty ) {
-            if ( current_qty < max_qty - 1 )
+            if ( current_qty < max_qty - 1 && $('#outeritemblock > div:visible').length == 1 )
                 cloneItemBlock(index, unique_item_fields);
             addItemInList(index, unique_item_fields);
             $("#" + index).find("input[name='buttonPlus']").val( __("Update item") );

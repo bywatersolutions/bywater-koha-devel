@@ -321,6 +321,19 @@ if ( not $ordernumber or $biblionumber ) {
     }
 }
 
+my $usebreedingid = $input->param('use_breedingid');
+if ( $usebreedingid ) {
+    my $item_list = staged_items_field( $usebreedingid );
+    $listprice = $item_list->{'price'};
+    $budget_id = $item_list->{'budget_id'};
+    $data->{replacementprice} = $item_list->{'replacementprice'};
+    $data->{'sort1'} = $item_list->{'sort1'};
+    $data->{'sort2'} = $item_list->{'sort2'};
+    $data->{'discount'} = $item_list->{'discount'};
+    $data->{quantity}       = $item_list->{quantity};
+    $template->param( item_list => $item_list->{'iteminfos'} );
+}
+
 $template->param( catalog_details => \@catalog_details, );
 
 my $suggestion;
@@ -607,4 +620,189 @@ sub Load_Duplicate {
   );
 
   output_html_with_http_headers $input, $cookie, $template->output;
+}
+
+sub staged_items_field {
+    my ($breedingid) = @_;
+    my %cellrecord = ();
+
+    my ($marcrecord, $encoding) = MARCfindbreeding($breedingid);
+    die("Could not find the selected record in the reservoir, bailing") unless $marcrecord;
+
+    my $infos = get_infos_syspref('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2', 'replacementprice']);
+    my $price = $infos->{price};
+    my $replacementprice = $infos->{replacementprice};
+    my $quantity = $infos->{quantity};
+    my $budget_code = $infos->{budget_code};
+    my $discount = $infos->{discount};
+    my $sort1 = $infos->{sort1};
+    my $sort2 = $infos->{sort2};
+    my $budget_id;
+    if($budget_code) {
+        my $biblio_budget = GetBudgetByCode($budget_code);
+        if($biblio_budget) {
+            $budget_id = $biblio_budget->{budget_id};
+        }
+    }
+    # Items
+    my @itemlist = ();
+    my $all_items_quantity = 0;
+    my $alliteminfos = get_infos_syspref_on_item('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
+    if ($alliteminfos != -1) {
+        foreach my $iteminfos (@$alliteminfos) {
+            my %itemrecord=(
+                'homebranch' => _trim( $iteminfos->{homebranch} ),
+                'holdingbranch' => _trim( $iteminfos->{holdingbranch} ),
+                'itype' => _trim( $iteminfos->{itype} ),
+                'itemnotes_nonpublic' => $iteminfos->{nonpublic_note},
+                'itemnotes' => $iteminfos->{public_note},
+                'location' => _trim( $iteminfos->{loc} ),
+                'ccode' => _trim( $iteminfos->{ccode} ),
+                'notforloan' => _trim( $iteminfos->{notforloan} ),
+                'uri' => $iteminfos->{uri},
+                'copynumber' => $iteminfos->{copyno},
+                'price' => $iteminfos->{price},
+                'replacementprice' => $iteminfos->{replacementprice},
+                'itemcallnumber' => $iteminfos->{itemcallnumber},
+            );
+
+            my $item_quantity = $iteminfos->{quantity} || 1;
+
+            for (my $i = 0; $i < $item_quantity; $i++) {
+                my %defaultvalues=(
+                    'itemrecord'=> C4::Items::Item2Marc( \%itemrecord),
+                    'branchcode'=>_trim($iteminfos->{homebranch})
+                );
+                $all_items_quantity++;
+                my $itemprocessed = PrepareItemrecordDisplay('', '', \%defaultvalues , 'ACQ');
+                push @itemlist, $itemprocessed->{'iteminformation'};
+            }
+        }
+        $cellrecord{'iteminfos'} = \@itemlist;
+    } else {
+        $cellrecord{'item_error'} = 1;
+    }
+    $cellrecord{price} = $price || '';
+    $cellrecord{replacementprice} = $replacementprice || '';
+    $cellrecord{quantity} = $quantity || '';
+    $cellrecord{budget_id} = $budget_id || '';
+    $cellrecord{discount} = $discount || '';
+    $cellrecord{sort1} = $sort1 || '';
+    $cellrecord{sort2} = $sort2 || '';
+    unless ($alliteminfos == -1 && scalar(@$alliteminfos) == 0) {
+        $cellrecord{quantity} = $all_items_quantity;
+    }
+
+    return (\%cellrecord);
+}
+
+sub get_infos_syspref {
+    my ($syspref_name, $record, $field_list) = @_;
+    my $syspref = C4::Context->preference($syspref_name);
+    $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
+    my $yaml = eval {
+        YAML::Load($syspref);
+    };
+    if ( $@ ) {
+        warn "Unable to parse $syspref syspref : $@";
+        return ();
+    }
+    my $r;
+    for my $field_name ( @$field_list ) {
+        next unless exists $yaml->{$field_name};
+        my @fields = split /\|/, $yaml->{$field_name};
+        for my $field ( @fields ) {
+            my ( $f, $sf ) = split /\$/, $field;
+            next unless $f and $sf;
+            if ( my $v = $record->subfield( $f, $sf ) ) {
+                $r->{$field_name} = $v;
+            }
+            last if $yaml->{$field};
+        }
+    }
+    return $r;
+}
+
+sub equal_number_of_fields {
+    my ($tags_list, $record) = @_;
+    my $tag_fields_count;
+    for my $tag (@$tags_list) {
+        my @fields = $record->field($tag);
+        $tag_fields_count->{$tag} = scalar @fields;
+    }
+
+    my $tags_count;
+    foreach my $key ( keys %$tag_fields_count ) {
+        if ( $tag_fields_count->{$key} > 0 ) { # Having 0 of a field is ok
+            $tags_count //= $tag_fields_count->{$key}; # Start with the count from the first occurrence
+            return -1 if $tag_fields_count->{$key} != $tags_count; # All counts of various fields should be equal if they exist
+        }
+    }
+
+    return $tags_count;
+}
+
+sub get_infos_syspref_on_item {
+    my ($syspref_name, $record, $field_list) = @_;
+    my $syspref = C4::Context->preference($syspref_name);
+    $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
+    my $yaml = eval {
+        YAML::Load($syspref);
+    };
+    if ( $@ ) {
+        warn "Unable to parse $syspref syspref : $@";
+        return ();
+    }
+    my @result;
+    my @tags_list;
+
+    # Check tags in syspref definition
+    for my $field_name ( @$field_list ) {
+        next unless exists $yaml->{$field_name};
+        my @fields = split /\|/, $yaml->{$field_name};
+        for my $field ( @fields ) {
+            my ( $f, $sf ) = split /\$/, $field;
+            next unless $f and $sf;
+            push @tags_list, $f;
+        }
+    }
+    @tags_list = List::MoreUtils::uniq(@tags_list);
+
+    my $tags_count = equal_number_of_fields(\@tags_list, $record);
+    # Return if the number of these fields in the record is not the same.
+    return -1 if $tags_count == -1;
+
+    # Gather the fields
+    my $fields_hash;
+    foreach my $tag (@tags_list) {
+        my @tmp_fields;
+        foreach my $field ($record->field($tag)) {
+            push @tmp_fields, $field;
+        }
+        $fields_hash->{$tag} = \@tmp_fields;
+    }
+
+    for (my $i = 0; $i < $tags_count; $i++) {
+        my $r;
+        for my $field_name ( @$field_list ) {
+            next unless exists $yaml->{$field_name};
+            my @fields = split /\|/, $yaml->{$field_name};
+            for my $field ( @fields ) {
+                my ( $f, $sf ) = split /\$/, $field;
+                next unless $f and $sf;
+                my $v = $fields_hash->{$f}[$i] ? $fields_hash->{$f}[$i]->subfield( $sf ) : undef;
+                $r->{$field_name} = $v if (defined $v);
+                last if $yaml->{$field};
+            }
+        }
+        push @result, $r;
+    }
+    return \@result;
+}
+
+sub _trim {
+    return $_[0] unless $_[0];
+    $_[0] =~ s/^\s+//;
+    $_[0] =~ s/\s+$//;
+    $_[0];
 }

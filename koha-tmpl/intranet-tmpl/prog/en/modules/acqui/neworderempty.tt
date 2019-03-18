@@ -5,6 +5,11 @@
 [% USE Price %]
 [% USE ItemTypes %]
 [% SET footerjs = 1 %]
+
+[% IF item_list %]
+    [% SET footerjs = 0 %]
+[% END %]
+
 [% INCLUDE 'doc-head-open.inc' %]
 <title>[% IF ( ordernumber ) %]Modify order details (line #[% ordernumber | html %])[% ELSE %]New order[% END %] &rsaquo; Basket [% basketno | html %] &rsaquo; Acquisitions &rsaquo; Koha</title>
 [% INCLUDE 'doc-head-close.inc' %]
@@ -322,7 +327,59 @@
               <div class="dialog message">The autoBarcode system preference is set to [% Koha.Preference('autoBarcode') | html %] and items with blank barcodes will have barcodes generated upon save to database</div>
           [% END %]
 
-          <div id="outeritemblock"></div>
+          <div id="outeritemblock">
+              [% FOREACH item IN item_list %]
+                [% SET itemID = loop.count %]
+                <div id="itemblock[% itemID | html %]" >
+                    <ol>
+                        [% FOREACH iteminfo IN item %]
+                            [% IF ( iteminfo.hidden ) %]
+                                <li style="[% iteminfo.hidden | html %];">
+                            [% ELSE %]
+                                <li>
+                            [% END %]
+                            <div class="subfield_line" id="subfield[% iteminfo.serialid | html %][% iteminfo.countitems | html %][% iteminfo.subfield | html %][% iteminfo.random | html %]">
+                                [% IF (iteminfo.mandatory) %]
+                                    <label class="required">[% iteminfo.subfield | html %] - [% iteminfo.marc_lib | $raw %]</label>
+                                [% ELSE %]
+                                    <label>[% iteminfo.subfield | html %] - [% iteminfo.marc_lib | $raw %]</label>
+                                [% END %]
+                                [% IF ( iteminfo.marc_value.type == 'select' ) %]
+                                    <select name="field_value" size="1">
+                                        [% FOREACH value IN iteminfo.marc_value.values %]
+                                            [% IF ( value == iteminfo.marc_value.default ) %]
+                                                <option value="[% value | html %]" selected="selected">[% iteminfo.marc_value.labels.$value | html %]</option>
+                                            [% ELSE %]
+                                                <option value="[% value | html %]">[% iteminfo.marc_value.labels.$value | html %]</option>
+                                            [% END %]
+                                        [% END %]
+                                    </select>
+                                [% ELSE %]
+                                    [% iteminfo.marc_value | $raw %]
+                                [% END %]
+                                <input type="hidden" name="itemid" value="[% itemID | html %]" />
+                                <input type="hidden" name="kohafield" value="[% iteminfo.kohafield | html %]" />
+                                <input type="hidden" name="tag" value="[% iteminfo.tag | html %]" />
+                                <input type="hidden" name="subfield" value="[% iteminfo.subfield | html %]" />
+                                <input type="hidden" name="mandatory" value="[% iteminfo.mandatory | html %]" />
+                                [% IF (iteminfo.mandatory) %] <span class="required">Required</span>[% END %]
+                            </div>
+                                </li>
+                        [% END %]
+                    </ol>
+                    <fieldset class="action">
+                        <input class="addItemControl" name="buttonPlus" style="cursor:pointer; margin:0 1em;" onclick="addItem(this,'[% UniqueItemFields | html %]')" value="Add item" type="button">
+                        <input class="addItemControl cancel" name="buttonClear" style="cursor:pointer;" onclick="clearItemBlock(this)" value="Clear" type="button">
+                        <input class="addItemControl" name="buttonPlusMulti" onclick="javascript:this.nextElementSibling.style.display='inline'; return false;" style="cursor:pointer; margin:0 1em;" value="Add multiple items" type="button">
+                        <span id="add_multiple_copies" style="display:none">
+                            <input class="addItemControl" id="multiValue" name="multiValue" placeholder="Number of items to add" type="number">
+                            <input class="addItemControl" name="buttonAddMulti&quot;" style="cursor:pointer; margin:0 1em;" onclick="checkCount( this ,'[% UniqueItemFields | html %]')" value="Add" type="button">
+                            <div class="dialog message">NOTE: Fields listed in the 'UniqueItemsFields' system preference will not be copied</div>
+                        </span>
+                    </fieldset>
+                </div>
+            [% END %]
+          </div>
 
       </fieldset>
       [% END %][%# | html UNLESS subscriptionid %]
@@ -630,7 +687,12 @@
         }
 
         $(document).ready(function(){
-            [% IF AcqCreateItemOrdering and not basket.is_standing %]
+            var events = $('#outeritemblock > div').filter(function () {
+                var el = BindPluginEvents(this.innerHTML);
+                return el;
+            });
+
+            [% IF AcqCreateItemOrdering and not basket.is_standing and not item_list %]
                 cloneItemBlock(0, '[% UniqueItemFields | html %]');
             [% END %]
 
@@ -727,6 +789,9 @@
     </script>
 [% END %]
 
+[% UNLESS ( footerjs ) %]
+    [% jsinclude | $raw # Parse the page template's JavaScript block if necessary %]
+[% END %]
 [% INCLUDE 'intranet-bottom.inc' %]
 
 [% BLOCK display_subfield %]
