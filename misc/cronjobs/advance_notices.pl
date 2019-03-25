@@ -285,6 +285,7 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
 
             ## Get branch info for borrowers home library.
             foreach my $transport ( keys %{$borrower_preferences->{'transports'}} ) {
+                next if $transport eq 'phone';
                 my $letter = parse_letter( { letter_code    => $letter_type,
                                       borrowernumber => $upcoming->{'borrowernumber'},
                                       branchcode     => $upcoming->{'branchcode'},
@@ -323,6 +324,7 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
 
             ## Get branch info for borrowers home library.
             foreach my $transport ( keys %{$borrower_preferences->{'transports'}} ) {
+                next if $transport eq 'phone';
                 my $letter = parse_letter( { letter_code    => $letter_type,
                                       borrowernumber => $upcoming->{'borrowernumber'},
                                       branchcode     => $upcoming->{'branchcode'},
@@ -566,6 +568,7 @@ sub send_digests {
         }
 
         foreach my $transport ( keys %{ $borrower_preferences->{'transports'} } ) {
+            next if $transport eq 'phone';
             my $letter = parse_letter(
                 {
                     letter_code    => $params->{letter_code},
