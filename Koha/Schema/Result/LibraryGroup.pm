@@ -59,6 +59,12 @@ __PACKAGE__->table("library_groups");
   default_value: 0
   is_nullable: 0
 
+=head2 ft_limit_item_editing
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 0
+
 =head2 ft_search_groups_opac
 
   data_type: 'tinyint'
@@ -98,6 +104,8 @@ __PACKAGE__->add_columns(
   "description",
   { data_type => "mediumtext", is_nullable => 1 },
   "ft_hide_patron_info",
+  { data_type => "tinyint", default_value => 0, is_nullable => 0 },
+  "ft_limit_item_editing",
   { data_type => "tinyint", default_value => 0, is_nullable => 0 },
   "ft_search_groups_opac",
   { data_type => "tinyint", default_value => 0, is_nullable => 0 },
@@ -202,8 +210,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2018-02-16 17:54:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8hvTh2lWoG/MpfSdq4kx5Q
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-03-27 17:44:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:m6cApjNi+56tM7JmFU+eMQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
