@@ -27,6 +27,7 @@
 
 [%- BLOCK sub_permissions -%]
   [% SWITCH name %]
+    [%- CASE 'edit_any_item' -%]<span>Edit any item. If not set the logged in user can only edit items whose home library matches the logged in library.</span>
     [%- CASE 'circulate_remaining_permissions' -%]<span>Remaining circulation permissions</span>
     [%- CASE 'force_checkout' -%]<span>Force checkout if a limitation exists</span>
     [%- CASE 'manage_restrictions' -%]<span>Manage restrictions for accounts</span>
