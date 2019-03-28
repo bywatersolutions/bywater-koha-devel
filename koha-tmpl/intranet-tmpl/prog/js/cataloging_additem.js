@@ -21,6 +21,9 @@ $(document).ready(function(){
             var rowid = $(this).parent().attr("id");
             var num_rowid = rowid.replace("row","");
             $(".linktools").remove();
+            if ($(this).hasClass("nomod")) {
+                consol.log("IS NO MOD");
+            }
             var edit_link = $('<a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&frameworkcode=' + frameworkcode + '&biblionumber=' + biblionumber + '&itemnumber=' + num_rowid + '&searchid=' + searchid + '#edititem"></a>');
             $(edit_link).text( LABEL_EDIT_ITEM );
             var delete_link = $('<a href="/cgi-bin/koha/cataloguing/additem.pl?op=delitem&frameworkcode=' + frameworkcode + '&biblionumber=' + biblionumber + '&itemnumber=' + num_rowid + '&searchid=' + searchid + '"></a>');
