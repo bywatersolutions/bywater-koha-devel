@@ -245,7 +245,7 @@
         </thead>
         <tbody>
             [% FOREACH item IN items %]
-                [% SET can_be_edited = ! ( Koha.Preference('IndependentBranches') && ! logged_in_user && item.homebranch != Branches.GetLoggedInBranchcode() ) %]
+                [% SET can_be_edited = !item.nomod && !( Koha.Preference('IndependentBranches') && ! logged_in_user && item.homebranch != Branches.GetLoggedInBranchcode() ) %]
 
                 <tr>
                     [% IF checkboxes_edit %]

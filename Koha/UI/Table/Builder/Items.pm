@@ -72,6 +72,8 @@ Use it with:
 sub build_table {
     my ( $self, $params ) = @_;
 
+    my $patron = $self->params;
+
     my $items = Koha::Items->search( { itemnumber => $self->{itemnumbers} } );
 
     my @items;
@@ -84,6 +86,7 @@ sub build_table {
             holds          => $item->biblio->holds->count,
             item_holds     => $item->holds->count,
             is_checked_out => $item->checkout || 0,
+            nomod          => $patron ? 0 : $patron->can_edit_item($item),
         };
         push @items, $item_info;
     }
