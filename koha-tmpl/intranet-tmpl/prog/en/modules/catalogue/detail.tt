@@ -350,7 +350,9 @@
                 <tr>
                 [% IF (StaffDetailItemSelection) %]
                     <td style="text-align:center;vertical-align:middle">
-                        <input type="checkbox" value="[% item.itemnumber | html %]" name="itemnumber" />
+                        [% UNLESS item.cannot_be_edited %]
+                            <input type="checkbox" value="[% item.itemnumber | html %]" name="itemnumber" />
+                        [% END %]
                     </td>
                 [% END %]
                     [% IF Koha.Preference('LocalCoverImages') && ( tab == 'holdings' && itemloop_has_images || tab == 'otherholdings' && otheritemloop_has_images ) %]

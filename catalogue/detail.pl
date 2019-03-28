@@ -389,13 +389,7 @@ foreach my $item (@items) {
         $item->{'course_reserves'} = GetItemCourseReservesInfo( itemnumber => $item->{'itemnumber'} );
     }
 
-    if ( C4::Context->preference('IndependentBranches') ) {
-        my $userenv = C4::Context->userenv();
-        if ( not C4::Context->IsSuperLibrarian()
-            and $userenv->{branch} ne $item->{homebranch} ) {
-            $item->{cannot_be_edited} = 1;
-        }
-    }
+    $item->{cannot_be_edited} = !$patron->can_edit_item( $item_object );
 
     if ( C4::Context->preference("LocalCoverImages") == 1 ) {
         $item->{cover_images} = $item_object->cover_images;

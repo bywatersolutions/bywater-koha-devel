@@ -84,7 +84,8 @@ my ($template, $loggedinuser, $cookie)
 $template->param( searchid => scalar $input->param('searchid'), );
 
 # Does the user have a restricted item edition permission?
-my $uid = $loggedinuser ? Koha::Patrons->find( $loggedinuser )->userid : undef;
+my $patron = Koha::Patrons->find( $loggedinuser );
+my $uid = $loggedinuser ? $patron->userid : undef;
 my $restrictededition = $uid ? haspermission($uid,  {'tools' => 'items_batchmod_restricted'}) : undef;
 # In case user is a superlibrarian, edition is not restricted
 $restrictededition = 0 if ($restrictededition != 0 && C4::Context->IsSuperLibrarian());
@@ -641,21 +642,17 @@ sub BuildItemsData{
     my (  $itemtagfield,   $itemtagsubfield) = &GetMarcFromKohaField( "items.itemnumber" );
     my ($branchtagfield, $branchtagsubfield) = &GetMarcFromKohaField( "items.homebranch" );
 		foreach my $itemnumber (@itemnumbers){
-            my $itemdata = Koha::Items->find($itemnumber);
-            next unless $itemdata; # Should have been tested earlier, but just in case...
-            $itemdata = $itemdata->unblessed;
+            my $item = Koha::Items->find($itemnumber);
+            next unless $item; # Should have been tested earlier, but just in case...
+            my $itemdata = $item->unblessed;
 			my $itemmarc=Item2Marc($itemdata);
 			my %this_row;
 			foreach my $field (grep {$_->tag() eq $itemtagfield} $itemmarc->fields()) {
 				# loop through each subfield
 				my $itembranchcode=$field->subfield($branchtagsubfield);
-                if ($itembranchcode && C4::Context->preference("IndependentBranches")) {
-						#verifying rights
-						my $userenv = C4::Context->userenv();
-                        unless (C4::Context->IsSuperLibrarian() or (($userenv->{'branch'} eq $itembranchcode))){
-								$this_row{'nomod'}=1;
-						}
-				}
+                if ($itembranchcode) {
+                    $this_row{'nomod'} = !$patron->can_edit_item($item);
+                }
 				my $tag=$field->tag();
 				foreach my $subfield ($field->subfields) {
 					my ($subfcode,$subfvalue)=@$subfield;

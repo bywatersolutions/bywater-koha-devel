@@ -445,7 +445,8 @@ my ($template, $loggedinuser, $cookie)
 
 
 # Does the user have a restricted item editing permission?
-my $uid = Koha::Patrons->find( $loggedinuser )->userid;
+my $patron = Koha::Patrons->find( $loggedinuser );
+my $uid = $patron->userid;
 my $restrictededition = $uid ? haspermission($uid,  {'editcatalogue' => 'edit_items_restricted'}) : undef;
 # In case user is a superlibrarian, editing is not restricted
 $restrictededition = 0 if ($restrictededition != 0 &&  C4::Context->IsSuperLibrarian());
@@ -863,13 +864,17 @@ foreach my $field (@fields) {
 						|| $subfieldvalue;
         }
 
-        if (($field->tag eq $branchtagfield) && ($subfieldcode eq $branchtagsubfield) && C4::Context->preference("IndependentBranches")) {
+        if (   $subfieldvalue
+            && ( $field->tag eq $branchtagfield )
+            && ( $subfieldcode eq $branchtagsubfield ) )
+        {
             #verifying rights
-            my $userenv = C4::Context->userenv();
-            unless (C4::Context->IsSuperLibrarian() or (($userenv->{'branch'} eq $subfieldvalue))){
+            unless ( $patron->can_edit_item($subfieldvalue) ) {
+                warn "NOMOD";
                 $this_row{'nomod'} = 1;
             }
         }
+
         $this_row{itemnumber} = $subfieldvalue if ($field->tag() eq $itemtagfield && $subfieldcode eq $itemtagsubfield);
 
         if ( C4::Context->preference('EasyAnalyticalRecords') ) {
