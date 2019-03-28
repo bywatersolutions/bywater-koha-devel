@@ -381,7 +381,9 @@
                 <tr>
                 [% IF (StaffDetailItemSelection) %]
                     <td style="text-align:center;vertical-align:middle">
-                        <input type="checkbox" value="[% item.itemnumber | html %]" name="itemnumber" />
+                        [% UNLESS item.cannot_be_edited %]
+                            <input type="checkbox" value="[% item.itemnumber | html %]" name="itemnumber" />
+                        [% END %]
                     </td>
                 [% END %]
                     [% IF ( item_level_itypes ) %]

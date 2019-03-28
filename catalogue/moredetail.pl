@@ -175,13 +175,8 @@ foreach my $item (@items){
         $item->{status_advisory} = 1;
     }
 
-    if (C4::Context->preference("IndependentBranches")) {
-        #verifying rights
-        my $userenv = C4::Context->userenv();
-        unless (C4::Context->IsSuperLibrarian() or ($userenv->{'branch'} eq $item->{'homebranch'})) {
-                $item->{'nomod'}=1;
-        }
-    }
+    $item->{nomod} = !$patron->can_edit_item( $item );
+
     if ($item->{'datedue'}) {
         $item->{'issue'}= 1;
     } else {
