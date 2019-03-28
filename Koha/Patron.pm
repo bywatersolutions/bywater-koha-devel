@@ -1512,7 +1512,7 @@ sub can_see_patrons_from {
 
 =head3 libraries_where_can_see_patrons
 
-my $libraries = $patron-libraries_where_can_see_patrons;
+my $libraries = $patron->libraries_where_can_see_patrons;
 
 Return the list of branchcodes(!) of libraries the patron is allowed to see other patron's infos.
 The branchcodes are arbitrarily returned sorted.
@@ -1561,7 +1561,7 @@ sub can_edit_item {
 
     return 1 if C4::Context->IsSuperLibrarian();
 
-    if ( C4::Context->preference('IndependentBranches') ) {
+    if ( $userenv && C4::Context->preference('IndependentBranches') ) {
         return $userenv->{branch} eq $branchcode;
     }
 
@@ -1669,35 +1669,11 @@ sub can_log_into {
    return $can;
 }
 
-=head3 libraries_where_can_see_patrons
-
-my $libraries = $patron-libraries_where_can_see_patrons;
-
-Return the list of branchcodes(!) of libraries the patron is allowed to see other patron's infos.
-The branchcodes are arbitrarily returned sorted.
-We are supposing here that the object is related to the logged in patron (use of C4::Context::only_my_library)
-
-An empty array means no restriction, the patron can see patron's infos from any libraries.
-
-=cut
-
-sub libraries_where_can_see_patrons {
-    my ($self) = @_;
-
-    return $self->libraries_where_can_see_things(
-        {
-            permission    => 'borrowers',
-            subpermission => 'view_borrower_infos_from_any_libraries',
-            group_feature => 'ft_hide_patron_info',
-        }
-    );
-}
-
 =head3 libraries_where_can_see_things
 
 my $libraries = $thing-libraries_where_can_see_things;
 
-Returns a list of libraries where an aribitarary action is allowd to be taken by the logged in librarian
+Returns a list of libraries where an aribitarary action is allowed to be taken by the logged in librarian
 against an object based on some branchcode related to the object ( patron branchcode, item homebranch, etc ).
 
 We are supposing here that the object is related to the logged in librarian (use of C4::Context::only_my_library)
