@@ -48,6 +48,7 @@ if ( $action eq 'add' ) {
     my $description = $cgi->param('description') || undef;
     my $branchcode  = $cgi->param('branchcode')  || undef;
     my $ft_hide_patron_info    = $cgi->param('ft_hide_patron_info')    || 0;
+    my $ft_limit_item_editing  = $cgi->param('ft_limit_item_editing')  || 0;
     my $ft_search_groups_opac  = $cgi->param('ft_search_groups_opac')  || 0;
     my $ft_search_groups_staff = $cgi->param('ft_search_groups_staff') || 0;
 
@@ -61,6 +62,7 @@ if ( $action eq 'add' ) {
                 title       => $title,
                 description => $description,
                 ft_hide_patron_info    => $ft_hide_patron_info,
+                ft_limit_item_editing  => $ft_limit_item_editing,
                 ft_search_groups_opac  => $ft_search_groups_opac,
                 ft_search_groups_staff => $ft_search_groups_staff,
                 branchcode  => $branchcode,
@@ -75,6 +77,7 @@ elsif ( $action eq 'edit' ) {
     my $title       = $cgi->param('title')       || undef;
     my $description = $cgi->param('description') || undef;
     my $ft_hide_patron_info    = $cgi->param('ft_hide_patron_info')    || 0;
+    my $ft_limit_item_editing  = $cgi->param('ft_limit_item_editing')  || 0;
     my $ft_search_groups_opac  = $cgi->param('ft_search_groups_opac')  || 0;
     my $ft_search_groups_staff = $cgi->param('ft_search_groups_staff') || 0;
 
@@ -86,6 +89,7 @@ elsif ( $action eq 'edit' ) {
                 title       => $title,
                 description => $description,
                 ft_hide_patron_info      => $ft_hide_patron_info,
+                ft_limit_item_editing    => $ft_limit_item_editing,
                 ft_search_groups_opac    => $ft_search_groups_opac,
                 ft_search_groups_staff   => $ft_search_groups_staff,
             }
