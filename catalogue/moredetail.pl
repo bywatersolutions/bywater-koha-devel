@@ -219,6 +219,9 @@ foreach my $item (@items){
                 $item->{'nomod'}=1;
         }
     }
+
+    $item->{nomod} = !$patron->can_edit_item( $item );
+
     if ($item->{'datedue'}) {
         $item->{'issue'}= 1;
     } else {

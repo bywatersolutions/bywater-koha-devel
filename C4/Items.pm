@@ -1731,9 +1731,7 @@ sub ItemSafeToDelete {
         $status = "book_on_loan";
     }
     elsif ( defined C4::Context->userenv
-        and !C4::Context->IsSuperLibrarian()
-        and C4::Context->preference("IndependentBranches")
-        and ( C4::Context->userenv->{branch} ne $item->homebranch ) )
+         and !Koha::Patrons->find( C4::Context->userenv->{number} )->can_edit_item( $item ) )
     {
         $status = "not_same_branch";
     }
