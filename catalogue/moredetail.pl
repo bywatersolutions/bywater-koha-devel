@@ -228,13 +228,8 @@ foreach my $item (@items){
         }
     }
 
-    if (C4::Context->preference("IndependentBranches")) {
-        #verifying rights
-        my $userenv = C4::Context->userenv();
-        unless (C4::Context->IsSuperLibrarian() or ($userenv->{'branch'} eq $item->homebranch)) {
-                $item_info->{'nomod'}=1;
-        }
-    }
+    $item_data->{nomod} = !$patron->can_edit_item( $item );
+
     push @item_data, $item_info;
 }
 
