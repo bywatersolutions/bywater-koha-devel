@@ -17,7 +17,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 19;
+use Test::More tests => 20;
 use Test::Exception;
 use Test::Warn;
 use DateTime;
@@ -815,6 +815,25 @@ subtest 'prefetch_whitelist() tests' => sub {
         'Koha::Acquisition::Order',
         'Guessed the object class correctly'
     );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'new_from_hashref' => sub {
+    plan tests => 1;
+
+    $schema->storage->txn_begin;
+
+    my $categorycode = $builder->build({ source => 'Category' })->{categorycode};
+    my $branchcode = $builder->build({ source => 'Branch' })->{branchcode};
+
+    my $patron1 = Koha::Patron->new({categorycode => $categorycode, branchcode => $branchcode })->store;
+
+    my $hashref = $patron1->unblessed;
+
+    my $patron2 = Koha::Patron->_new_from_hashref( $hashref );
+
+    is( $patron1->id, $patron2->id, "Borrowernumbers match using new_from_hashref");
 
     $schema->storage->txn_rollback;
 };

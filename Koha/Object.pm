@@ -107,6 +107,20 @@ sub _new_from_dbic {
 
 }
 
+=head3 Koha::Object->_new_from_hashref();
+
+my $object = Koha::Object->_new_from_hashref($hashref_row);
+
+=cut
+
+sub _new_from_hashref {
+    my ( $class, $hashref ) = @_;
+
+    my $result = Koha::Database->new->schema->resultset( $class->_type )->new( $hashref );
+
+    $class->_new_from_dbic( $result );
+}
+
 =head3 $object->store();
 
 Saves the object in storage.
