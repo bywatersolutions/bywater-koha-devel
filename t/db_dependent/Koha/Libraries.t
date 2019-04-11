@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 use C4::Biblio;
 use C4::Context;
@@ -34,6 +34,8 @@ use Koha::Database;
 
 use t::lib::Mocks;
 use t::lib::TestBuilder;
+
+use_ok('Koha::Template::Plugin::Branches');
 
 my $schema = Koha::Database->new->schema;
 $schema->storage->txn_begin;
@@ -115,7 +117,7 @@ subtest 'pickup_locations' => sub {
     my $itemtype = $biblio->itemtype;
 
     subtest 'UseBranchTransferLimits = OFF' => sub {
-        plan tests => 5;
+        plan tests => 10;
 
         t::lib::Mocks::mock_preference('UseBranchTransferLimits', 0);
         t::lib::Mocks::mock_preference('BranchTransferLimitsType', 'itemtype');
@@ -148,6 +150,28 @@ subtest 'pickup_locations' => sub {
         $pickup = Koha::Libraries->pickup_locations({ biblio => $bibnum });
         is(@{$pickup}, $total_pickup, '...as well as when '
            .'BranchTransferLimitsType = ccode');
+
+        # Test TT plugin
+        $pickup = Koha::Template::Plugin::Branches::pickup_locations({ biblio => $bibnum });
+        is(C4::Context->preference('UseBranchTransferLimits'), 0, 'Given system '
+           .'preference UseBranchTransferLimits is switched OFF,');
+        is(@{$pickup}, $total_pickup, 'Then the total number of pickup locations '
+           .'equal number of libraries with pickup_location => 1');
+
+        t::lib::Mocks::mock_preference('BranchTransferLimitsType', 'itemtype');
+        t::lib::Mocks::mock_preference('item-level_itypes', 1);
+        $pickup = Koha::Template::Plugin::Branches::pickup_locations({ biblio => $bibnum });
+        is(@{$pickup}, $total_pickup, '...when '
+           .'BranchTransferLimitsType = itemtype and item-level_itypes = 1');
+        t::lib::Mocks::mock_preference('item-level_itypes', 0);
+        $pickup = Koha::Template::Plugin::Branches::pickup_locations({ biblio => $bibnum });
+        is(@{$pickup}, $total_pickup, '...as well as when '
+           .'BranchTransferLimitsType = itemtype and item-level_itypes = 0');
+        t::lib::Mocks::mock_preference('BranchTransferLimitsType', 'ccode');
+        $pickup = Koha::Template::Plugin::Branches::pickup_locations({ biblio => $bibnum });
+        is(@{$pickup}, $total_pickup, '...as well as when '
+           .'BranchTransferLimitsType = ccode');
+
         t::lib::Mocks::mock_preference('item-level_itypes', 1);
     };
 
