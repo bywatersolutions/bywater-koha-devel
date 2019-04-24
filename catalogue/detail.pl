@@ -372,7 +372,7 @@ foreach my $item (@items) {
         $item->{'course_reserves'} = GetItemCourseReservesInfo( itemnumber => $item->{'itemnumber'} );
     }
 
-    $item->{cannot_be_edited} = !$patron->can_edit_item( $item_object );
+    $item->{can_be_edited} = !$patron->can_edit_item( $item_object );
 
     if ($currentbranch and $currentbranch ne "NO_LIBRARY_SET"
     and C4::Context->preference('SeparateHoldings')) {
