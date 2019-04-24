@@ -870,7 +870,6 @@ foreach my $field (@fields) {
         {
             #verifying rights
             unless ( $patron->can_edit_item($subfieldvalue) ) {
-                warn "NOMOD";
                 $this_row{'nomod'} = 1;
             }
         }

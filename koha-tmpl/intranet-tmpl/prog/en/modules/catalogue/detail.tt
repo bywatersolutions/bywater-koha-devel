@@ -350,7 +350,7 @@
                 <tr>
                 [% IF (StaffDetailItemSelection) %]
                     <td style="text-align:center;vertical-align:middle">
-                        [% UNLESS item.cannot_be_edited %]
+                        [% IF item.can_be_edited %]
                             <input type="checkbox" value="[% item.itemnumber | html %]" name="itemnumber" />
                         [% END %]
                     </td>
