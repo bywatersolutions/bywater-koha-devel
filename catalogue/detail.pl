@@ -391,7 +391,7 @@ foreach my $item (@items) {
         $item->{'course_reserves'} = GetItemCourseReservesInfo( itemnumber => $item->{'itemnumber'} );
     }
 
-    $item->{cannot_be_edited} = !$patron->can_edit_item( $item_object );
+    $item->{can_be_edited} = !$patron->can_edit_item( $item_object );
 
     if ( C4::Context->preference("LocalCoverImages") == 1 ) {
         $item->{cover_images} = $item_object->cover_images;

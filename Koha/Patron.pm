@@ -1360,7 +1360,7 @@ sub can_see_patrons_from {
 
 =head3 libraries_where_can_see_patrons
 
-my $libraries = $patron-libraries_where_can_see_patrons;
+my $libraries = $patron->libraries_where_can_see_patrons;
 
 Return the list of branchcodes(!) of libraries the patron is allowed to see other patron's infos.
 The branchcodes are arbitrarily returned sorted.
