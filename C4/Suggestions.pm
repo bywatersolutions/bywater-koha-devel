@@ -503,30 +503,32 @@ sub ModSuggestion {
         # fetch the entire updated suggestion so that we can populate the letter
         my $full_suggestion = GetSuggestion( $suggestion->{suggestionid} );
         my $patron = Koha::Patrons->find( $full_suggestion->{suggestedby} );
-        if (
-            my $letter = C4::Letters::GetPreparedLetter(
-                module      => 'suggestions',
-                letter_code => $full_suggestion->{STATUS},
-                branchcode  => $full_suggestion->{branchcode},
-                lang        => $patron->lang,
-                tables      => {
-                    'branches'    => $full_suggestion->{branchcode},
-                    'borrowers'   => $full_suggestion->{suggestedby},
-                    'suggestions' => $full_suggestion,
-                    'biblio'      => $full_suggestion->{biblionumber},
-                },
-            )
-          )
-        {
-            C4::Letters::EnqueueLetter(
-                {
-                    letter         => $letter,
-                    borrowernumber => $full_suggestion->{suggestedby},
-                    suggestionid   => $full_suggestion->{suggestionid},
-                    LibraryName    => C4::Context->preference("LibraryName"),
-                    message_transport_type => 'email',
-                }
-            ) or warn "can't enqueue letter $letter";
+        if ($patron) {
+            if (
+                my $letter = C4::Letters::GetPreparedLetter(
+                    module      => 'suggestions',
+                    letter_code => $full_suggestion->{STATUS},
+                    branchcode  => $full_suggestion->{branchcode},
+                    lang        => $patron->lang,
+                    tables      => {
+                        'branches'    => $full_suggestion->{branchcode},
+                        'borrowers'   => $full_suggestion->{suggestedby},
+                        'suggestions' => $full_suggestion,
+                        'biblio'      => $full_suggestion->{biblionumber},
+                    },
+                )
+              )
+            {
+                C4::Letters::EnqueueLetter(
+                    {
+                        letter         => $letter,
+                        borrowernumber => $full_suggestion->{suggestedby},
+                        suggestionid   => $full_suggestion->{suggestionid},
+                        LibraryName => C4::Context->preference("LibraryName"),
+                        message_transport_type => 'email',
+                    }
+                ) or warn "can't enqueue letter $letter";
+            }
         }
     }
     return $status_update_table;
