@@ -419,6 +419,13 @@ my ($template, $loggedinuser, $cookie)
 
 # Does the user have a restricted item editing permission?
 my $patron = Koha::Patrons->find( $loggedinuser );
+
+my $item = $itemnumber ? Koha::Items->find( $itemnumber ) : undef;
+if ( $item && !$patron->can_edit_item( $item ) ) {
+    print $input->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber");
+    exit;
+}
+
 my $uid = $patron->userid;
 my $restrictededition = $uid ? haspermission($uid,  {'editcatalogue' => 'edit_items_restricted'}) : undef;
 # In case user is a superlibrarian, editing is not restricted
@@ -727,7 +734,6 @@ if ($op eq "additem") {
     if ($exist_itemnumber && $exist_itemnumber != $itemnumber) {
         push @errors,"barcode_not_unique";
     } else {
-        my $item = Koha::Items->find($itemnumber );
         my $newitem = ModItemFromMarc($itemtosave, $biblionumber, $itemnumber);
         $itemnumber = q{};
         my $olditemlost = $item->itemlost;
@@ -837,10 +843,10 @@ foreach my $field (@fields) {
 
         if ( C4::Context->preference('EasyAnalyticalRecords') ) {
             foreach my $hostitemnumber (@hostitemnumbers) {
-                my $item = Koha::Items->find( $hostitemnumber );
+                my $hostitem = Koha::Items->find( $hostitemnumber );
                 if ($this_row{itemnumber} eq $hostitemnumber) {
                     $this_row{hostitemflag} = 1;
-                    $this_row{hostbiblionumber}= $item->biblio->biblionumber;
+                    $this_row{hostbiblionumber}= $hostitem->biblio->biblionumber;
                     last;
                 }
             }
@@ -939,8 +945,6 @@ foreach my $tag ( keys %{$tagslib}){
   }
 }
 @loop_data = sort {$a->{subfield} cmp $b->{subfield} } @loop_data;
-
-my $item = Koha::Items->find($itemnumber); # We certainly want to fetch it earlier
 
 # what's the next op ? it's what we are not in : an add if we're editing, otherwise, and edit.
 $template->param(
