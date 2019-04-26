@@ -126,6 +126,13 @@ my ($template, $loggedinuser, $cookie)
 
 # Does the user have a restricted item editing permission?
 my $patron = Koha::Patrons->find( $loggedinuser );
+
+my $item = $itemnumber ? Koha::Items->find( $itemnumber ) : undef;
+if ( $item && !$patron->can_edit_item( $item ) ) {
+    print $input->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber");
+    exit;
+}
+
 my $uid = $patron->userid;
 my $restrictededition = $uid ? haspermission($uid,  {'editcatalogue' => 'edit_items_restricted'}) : undef;
 # In case user is a superlibrarian, editing is not restricted
@@ -468,7 +475,14 @@ if ($op eq "additem") {
         push @errors,"barcode_not_unique";
         $current_item = $item->unblessed; # Restore edit form for the same item
     } else {
+<<<<<<< HEAD
         my $newitemlost = $item->itemlost;
+=======
+        my $newitem = ModItemFromMarc($itemtosave, $biblionumber, $itemnumber);
+        $itemnumber = q{};
+        my $olditemlost = $item->itemlost;
+        my $newitemlost = $newitem->{itemlost};
+>>>>>>> 5b37193b6fe (Bug 20256: (QA follow-up) Redirect to record details page if user cannot edit this item)
         if ( $newitemlost && $newitemlost ge '1' && !$olditemlost ) {
             LostItem( $item->itemnumber, 'additem' );
         }
