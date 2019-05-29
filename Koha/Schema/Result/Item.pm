@@ -671,6 +671,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 return_claims
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ReturnClaim>
+
+=cut
+
+__PACKAGE__->has_many(
+  "return_claims",
+  "Koha::Schema::Result::ReturnClaim",
+  { "foreign.itemnumber" => "self.itemnumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 serialitem
 
 Type: might_have
@@ -717,8 +732,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-05-14 18:14:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wDXcErUYqg0aoQkzz3P5vg
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-05-29 12:48:35
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:F7VcpjQ0VHbcfcbKKSQezA
 
 __PACKAGE__->belongs_to( biblioitem => "Koha::Schema::Result::Biblioitem", "biblioitemnumber" );
 

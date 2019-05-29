@@ -1288,6 +1288,66 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 return_claims_borrowernumbers
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ReturnClaim>
+
+=cut
+
+__PACKAGE__->has_many(
+  "return_claims_borrowernumbers",
+  "Koha::Schema::Result::ReturnClaim",
+  { "foreign.borrowernumber" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 return_claims_created_by
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ReturnClaim>
+
+=cut
+
+__PACKAGE__->has_many(
+  "return_claims_created_by",
+  "Koha::Schema::Result::ReturnClaim",
+  { "foreign.created_by" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 return_claims_resolved_by
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ReturnClaim>
+
+=cut
+
+__PACKAGE__->has_many(
+  "return_claims_resolved_by",
+  "Koha::Schema::Result::ReturnClaim",
+  { "foreign.resolved_by" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 return_claims_updated_by
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ReturnClaim>
+
+=cut
+
+__PACKAGE__->has_many(
+  "return_claims_updated_by",
+  "Koha::Schema::Result::ReturnClaim",
+  { "foreign.updated_by" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 reviews
 
 Type: has_many
@@ -1529,8 +1589,8 @@ Composing rels: L</aqorder_users> -> ordernumber
 __PACKAGE__->many_to_many("ordernumbers", "aqorder_users", "ordernumber");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-04-25 10:08:38
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3qd/l8OkObSn8gTKTsHrkA
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-05-29 12:48:34
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:aqVG3Zq0Uh6RdCRyVJPVeQ
 
 __PACKAGE__->belongs_to(
     "guarantor",

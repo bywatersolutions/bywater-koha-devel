@@ -248,9 +248,39 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 return_claims_issues
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-04-10 19:55:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PUF5X7X9K44BC0d43Rat7w
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ReturnClaim>
+
+=cut
+
+__PACKAGE__->has_many(
+  "return_claims_issues",
+  "Koha::Schema::Result::ReturnClaim",
+  { "foreign.issue_id" => "self.issue_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 return_claims_old_issues
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ReturnClaim>
+
+=cut
+
+__PACKAGE__->has_many(
+  "return_claims_old_issues",
+  "Koha::Schema::Result::ReturnClaim",
+  { "foreign.old_issue_id" => "self.issue_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-05-29 12:48:34
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ao5NNc2hmb6X8KT/ATU45g
 
 __PACKAGE__->add_columns(
     '+auto_renew'      => { is_boolean => 1 },
