@@ -47,6 +47,8 @@ sub do_checkin {
     my $self = shift;
     my $branch = shift;
     my $return_date = shift;
+    my $checked_in_ok = shift;
+
     if (!$branch) {
         $branch = 'SIP2';
     }
@@ -66,6 +68,12 @@ sub do_checkin {
 
     $debug and warn "do_checkin() calling AddReturn($barcode, $branch)";
     my ($return, $messages, $issue, $borrower) = AddReturn($barcode, $branch, undef, undef, $return_date);
+
+    if ( $checked_in_ok ) {
+        delete $messages->{NotIssued};
+        delete $messages->{LocalUse};
+        $return = 1 unless keys %$messages;
+    }
 
     # biblionumber, biblioitemnumber, itemnumber
     # borrowernumber, reservedate, branchcode
@@ -115,7 +123,10 @@ sub do_checkin {
         $self->{item}->hold_patron_id( $messages->{ResFound}->{borrowernumber} );
         $self->{item}->destination_loc( $messages->{ResFound}->{branchcode} );
     }
-    $self->alert(defined $self->alert_type);  # alert_type could be "00", hypothetically
+    # ignoring messages: NotIssued, WasLost, WasTransfered
+
+    $self->alert( !$return || defined $self->alert_type );
+
     $self->ok($return);
 
     return { messages => $messages };

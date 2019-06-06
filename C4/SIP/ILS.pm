@@ -207,7 +207,7 @@ sub checkin {
 
     my $data;
     if ($item) {
-        $data = $circ->do_checkin( $current_loc, $return_date );
+        $data = $circ->do_checkin( $current_loc, $return_date, $checked_in_ok );
     }
     else {
         $circ->alert(1);
@@ -223,7 +223,6 @@ sub checkin {
     } elsif( !$item->{patron} && !$data->{messages}->{withdrawn} ) {
         if( $checked_in_ok ) { # Mark checkin ok although book not checked out
             $circ->ok( 1 );
-            $circ->alert( 0 );
             syslog("LOG_DEBUG", "C4::SIP::ILS::Checkin - using checked_in_ok");
         } else {
             $circ->screen_msg("Item not checked out");
