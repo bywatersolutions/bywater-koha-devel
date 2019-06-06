@@ -1746,7 +1746,8 @@ CREATE TABLE `issues` ( -- information related to check outs or issues
   KEY `branchcode_idx` (`branchcode`),
   KEY `bordate` (`borrowernumber`,`timestamp`),
   CONSTRAINT `issues_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT `issues_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT `issues_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `issues_ibfk_3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -1776,10 +1777,9 @@ CREATE TABLE `old_issues` ( -- lists items that were checked out and have been r
   KEY `old_issuesitemidx` (`itemnumber`),
   KEY `branchcode_idx` (`branchcode`),
   KEY `old_bordate` (`borrowernumber`,`timestamp`),
-  CONSTRAINT `old_issues_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`)
-    ON DELETE SET NULL ON UPDATE SET NULL,
-  CONSTRAINT `old_issues_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`)
-    ON DELETE SET NULL ON UPDATE SET NULL
+  CONSTRAINT `old_issues_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE SET NULL,
+  CONSTRAINT `old_issues_ibfk_2` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE SET NULL ON UPDATE SET NULL,
+  CONSTRAINT `old_issues_ibfk_3` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
