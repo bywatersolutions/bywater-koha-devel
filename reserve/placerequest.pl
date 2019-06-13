@@ -88,16 +88,23 @@ if ( $type eq 'str8' && $borrower ) {
             }
         }
 
+        my $can_override = C4::Context->preference('AllowHoldPolicyOverride');
         if ( defined $checkitem && $checkitem ne '' ) {
+
             my $item = Koha::Items->find($checkitem);
+
             if ( $item->biblionumber ne $biblionumber ) {
                 $biblionumber = $item->biblionumber;
             }
-            if ( CanItemBeReserved($borrower->{'borrowernumber'}, $item->itemnumber, $branch)->{status} eq 'OK' ) {
+
+            my $can_item_be_reserved = canItemBeReserved($borrower->{'borrowernumber'}, $item->itemnumber, $branch)->{status};
+
+            if ( $can_item_be_reserved ne 'itemAlreadyOnHold' ) {
                 AddReserve( $branch, $borrower->{'borrowernumber'},
                     $biblionumber, \@realbi, $rank[0], $startdate, $expirationdate, $notes, $title,
                     $checkitem, $found, $itemtype );
             }
+
         } elsif ($multi_hold) {
             my $bibinfo = $bibinfos{$biblionumber};
             if ( CanBookBeReserved($borrower->{'borrowernumber'}, $biblionumber)->{status} eq 'OK' ) {
