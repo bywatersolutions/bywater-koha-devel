@@ -2951,8 +2951,30 @@ sub AddRenewal {
         DelUniqueDebarment({ borrowernumber => $borrowernumber, type => 'OVERDUES' });
     }
 
-    unless ( C4::Context->interface eq 'opac' ) { #if from opac we are obeying OpacRenewalBranch as calculated in opac-renew.pl
-        $branch = C4::Context->userenv ? C4::Context->userenv->{branch} : $branch;
+    # If from opac we are obeying OpacRenewalBranch as calculated in opac-renew.pl
+    if ( C4::Context->interface eq 'opac' ) {
+        my $renewalbranch = C4::Context->preference('OpacRenewalBranch');
+        if ( $renewalbranch eq 'itemhomebranch' ) {
+            my $item = Koha::Items->find($itemnumber);
+            $branch = $item->homebranch;
+        }
+        elsif ( $renewalbranch eq 'patronhomebranch' ) {
+            $branch = Koha::Patrons->find( $borrowernumber )->branchcode;
+        }
+        elsif ( $renewalbranch eq 'checkoutbranch' ) {
+            my $issue = GetOpenIssue($itemnumber); # FIXME Should not be $item->checkout?
+            $branch = $issue->{'branchcode'};
+        }
+        elsif ( $renewalbranch eq 'NULL' ) {
+            $branch = '';
+        }
+        else {
+            $branch = 'OPACRenew';
+        }
+    }
+    else {
+        $branch =
+          C4::Context->userenv ? C4::Context->userenv->{branch} : $branch;
     }
 
     # Add the renewal to stats
