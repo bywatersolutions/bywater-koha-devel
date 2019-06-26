@@ -23,10 +23,10 @@ use DateTime::Duration;
 use t::lib::Mocks;
 use t::lib::TestBuilder;
 
-use C4::Circulation;
-use C4::Items;
 use C4::Biblio;
+use C4::Circulation;
 use C4::Context;
+use C4::Items;
 use C4::Reserves;
 use Koha::Checkouts;
 use Koha::Database;
@@ -243,25 +243,118 @@ like(
 my $stat = $dbh->selectrow_hashref("SELECT * FROM statistics WHERE type = 'renew' AND borrowernumber = ? AND itemnumber = ? AND branch = ?", undef, $borrower_id1, $item_id1, $branchcode_3 );
 ok( $stat, "Bug 17781 - 'Improper branchcode set during renewal' still fixed" );
 
-$se->mock( 'interface', sub {return 'opac'});
+subtest 'Show that AddRenewal respects OpacRenewalBranch and interface' => sub {
+    plan tests => 5;
 
-#Let's do an opac renewal - whatever branchcode we send should be used
-my $opac_renew_issue = $builder->build({
-    source=>"Issue",
-    value=>{
-        date_due => '2017-01-01',
-        branch => $branchcode_1,
-        itype => $itemtype,
-        borrowernumber => $borrower_id1
-    }
-});
+    $se->mock( 'interface', sub { return 'opac' } );
 
-my $datedue4 = AddRenewal( $opac_renew_issue->{borrowernumber}, $opac_renew_issue->{itemnumber}, "Stavromula", $datedue1, $daysago10 );
+    t::lib::Mocks::mock_preference( 'OpacRenewalBranch', 'OPACRenew' );
+    my $opac_renew_issue = $builder->build(
+        {
+            source => "Issue",
+            value  => {
+                date_due       => '2017-01-01',
+                returndate     => undef,
+                branch         => $branchcode_1,
+                itype          => $itemtype,
+                borrowernumber => $borrower_id1
+            }
+        }
+    );
+    AddRenewal(
+        $opac_renew_issue->{borrowernumber},
+        $opac_renew_issue->{itemnumber},
+        "Stavromula", $datedue1, $daysago10
+    );
+    my $stat = $schema->resultset('Statistic')->search({ itemnumber => $opac_renew_issue->{itemnumber}})->next;
+    is( $stat->branch, "OPACRenew", "OpacRenewalBranch is respected for OpacRenewalBranch = OPACRenew" );
 
-$stat = $dbh->selectrow_hashref("SELECT * FROM statistics WHERE type = 'renew' AND borrowernumber = ? AND itemnumber = ? AND branch = ?", undef,  $opac_renew_issue->{borrowernumber},  $opac_renew_issue->{itemnumber}, "Stavromula" );
-ok( $stat, "Bug 18572 - 'Bug 18572 - OpacRenewalBranch is now respected" );
+    t::lib::Mocks::mock_preference( 'OpacRenewalBranch', 'checkoutbranch' );
+    $opac_renew_issue = $builder->build(
+        {
+            source => "Issue",
+            value  => {
+                date_due       => '2017-01-01',
+                returndate     => undef,
+                branch         => $branchcode_1,
+                itype          => $itemtype,
+                borrowernumber => $borrower_id1
+            }
+        }
+    );
+    AddRenewal(
+        $opac_renew_issue->{borrowernumber},
+        $opac_renew_issue->{itemnumber},
+        "Stavromula", $datedue1, $daysago10
+    );
+    $stat = $schema->resultset('Statistic')->search({ itemnumber => $opac_renew_issue->{itemnumber}})->next;
+    is( $stat->branch, $opac_renew_issue->{branchcode}, "OpacRenewalBranch is respected for OpacRenewalBranch = checkoutbranch" );
 
+    t::lib::Mocks::mock_preference( 'OpacRenewalBranch', 'patronhomebranch' );
+    $opac_renew_issue = $builder->build(
+        {
+            source => "Issue",
+            value  => {
+                date_due       => '2017-01-01',
+                returndate     => undef,
+                branch         => $branchcode_1,
+                itype          => $itemtype,
+                borrowernumber => $borrower_id1
+            }
+        }
+    );
+    AddRenewal(
+        $opac_renew_issue->{borrowernumber},
+        $opac_renew_issue->{itemnumber},
+        "Stavromula", $datedue1, $daysago10
+    );
+    $stat = $schema->resultset('Statistic')->search({ itemnumber => $opac_renew_issue->{itemnumber}})->next;
+    my $patron = Koha::Patrons->find( $borrower_id1 );
+    is( $stat->branch, $patron->branchcode, "OpacRenewalBranch is respected for OpacRenewalBranch = patronhomebranch" );
 
+    t::lib::Mocks::mock_preference( 'OpacRenewalBranch', 'itemhomebranch' );
+    $opac_renew_issue = $builder->build(
+        {
+            source => "Issue",
+            value  => {
+                date_due       => '2017-01-01',
+                returndate     => undef,
+                branch         => $branchcode_1,
+                itype          => $itemtype,
+                borrowernumber => $borrower_id1
+            }
+        }
+    );
+    AddRenewal(
+        $opac_renew_issue->{borrowernumber},
+        $opac_renew_issue->{itemnumber},
+        "Stavromula", $datedue1, $daysago10
+    );
+    $stat = $schema->resultset('Statistic')->search({ itemnumber => $opac_renew_issue->{itemnumber}})->next;
+    my $item = Koha::Items->find( $opac_renew_issue->{itemnumber} );
+    is( $stat->branch, $item->homebranch, "OpacRenewalBranch is respected for OpacRenewalBranch = itemhomebranch" );
+
+    t::lib::Mocks::mock_preference( 'OpacRenewalBranch', 'NULL' );
+    $opac_renew_issue = $builder->build(
+        {
+            source => "Issue",
+            value  => {
+                date_due       => '2017-01-01',
+                returndate     => undef,
+                branch         => $branchcode_1,
+                itype          => $itemtype,
+                borrowernumber => $borrower_id1
+            }
+        }
+    );
+    AddRenewal(
+        $opac_renew_issue->{borrowernumber},
+        $opac_renew_issue->{itemnumber},
+        "Stavromula", $datedue1, $daysago10
+    );
+    $stat = $schema->resultset('Statistic')->search({ itemnumber => $opac_renew_issue->{itemnumber}})->next;
+    is( $stat->branch, "", "OpacRenewalBranch is respected for OpacRenewalBranch = NULL" );
+};
 
 #Test GetBiblioIssues
 is( GetBiblioIssues(), undef, "GetBiblio Issues without parameters" );
