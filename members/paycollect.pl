@@ -36,8 +36,9 @@ use Koha::Token;
 
 my $input = CGI->new();
 
-my $writeoff_individual       = $input->param('writeoff_individual');
-my $type                      = scalar $input->param('type') || 'payment';
+my $payment_id          = $input->param('payment_id');
+my $writeoff_individual = $input->param('writeoff_individual');
+my $type                = scalar $input->param('type') || 'payment';
 
 my $updatecharges_permissions = ($writeoff_individual || $type eq 'writeoff') ? 'writeoff' : 'remaining_permissions';
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
@@ -121,7 +122,7 @@ if ( $total_paid and $total_paid ne '0.00' ) {
 
         if ($pay_individual) {
             my $line = Koha::Account::Lines->find($accountlines_id);
-            $account->pay(
+            $payment_id = $account->pay(
                 {
                     lines        => [$line],
                     amount       => $total_paid,
@@ -132,7 +133,7 @@ if ( $total_paid and $total_paid ne '0.00' ) {
                 }
             );
             print $input->redirect(
-                "/cgi-bin/koha/members/pay.pl?borrowernumber=$borrowernumber");
+                "/cgi-bin/koha/members/pay.pl?borrowernumber=$borrowernumber&payment_id=$payment_id");
         } else {
             if ($select) {
                 if ( $select =~ /^([\d,]*).*/ ) {
@@ -150,7 +151,15 @@ if ( $total_paid and $total_paid ne '0.00' ) {
                     { order_by => 'date' }
                 );
 
+<<<<<<< HEAD
                 $account->pay(
+=======
+                $payment_id = Koha::Account->new(
+                    {
+                        patron_id => $borrowernumber,
+                    }
+                  )->pay(
+>>>>>>> Bug 23228: Add option to automatically display payment receipt for printing after making a payment
                     {
                         type         => $type,
                         amount       => $total_paid,
@@ -164,7 +173,11 @@ if ( $total_paid and $total_paid ne '0.00' ) {
             }
             else {
                 my $note = $input->param('selected_accts_notes');
+<<<<<<< HEAD
                 $account->pay(
+=======
+                $payment_id = Koha::Account->new( { patron_id => $borrowernumber } )->pay(
+>>>>>>> Bug 23228: Add option to automatically display payment receipt for printing after making a payment
                     {
                         amount       => $total_paid,
                         library_id   => $library_id,
@@ -175,7 +188,7 @@ if ( $total_paid and $total_paid ne '0.00' ) {
                 );
             }
 
-            print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
+            print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber&payment_id=$payment_id");
         }
     }
 } else {
@@ -189,12 +202,14 @@ if ( $input->param('error_over') ) {
 }
 
 $template->param(
+    payment_id => $payment_id,
+
     type           => $type,
     borrowernumber => $borrowernumber,    # some templates require global
-    patron        => $patron,
-    total         => $total_due,
+    patron         => $patron,
+    total          => $total_due,
 
-    csrf_token => Koha::Token->new->generate_csrf({ session_id => scalar $input->cookie('CGISESSID') }),
+    csrf_token => Koha::Token->new->generate_csrf( { session_id => scalar $input->cookie('CGISESSID') } ),
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;
