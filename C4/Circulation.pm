@@ -2972,9 +2972,8 @@ sub AddRenewal {
             $branch = 'OPACRenew';
         }
     }
-    else {
-        $branch =
-          C4::Context->userenv ? C4::Context->userenv->{branch} : $branch;
+    elsif ( !$branch && C4::Context->userenv ) {
+        $branch = C4::Context->userenv->{branch};
     }
 
     # Add the renewal to stats
