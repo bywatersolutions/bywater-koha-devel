@@ -100,6 +100,9 @@ sub claim_returned {
 
     my $notes           = $params->{notes};
     my $charge_lost_fee = $params->{charge_lost_fee};
+    my $created_by      = $params->{created_by};
+
+    $created_by ||= C4::Context->userenv->{number} if C4::Context->userenv;
 
     my $claim = Koha::Checkouts::ReturnClaims->find( { issue_id => $self->id } );
     $claim ||= Koha::Checkouts::ReturnClaims->find( { old_issue_id => $self->id } );
@@ -111,7 +114,7 @@ sub claim_returned {
             borrowernumber => $self->borrowernumber,
             notes          => $notes,
             created_on     => dt_from_string,
-            created_by     => C4::Context->userenv->{number},
+            created_by     => $created_by,
         }
     )->store();
 

@@ -70,5 +70,8 @@
   },
   "/public/patrons/{patron_id}/password": {
     "$ref": "paths/public_patrons.json#/~1public~1patrons~1{patron_id}~1password"
+  },
+  "/return_claims/claim/{item_id}/": {
+    "$ref": "paths/return_claims.json#/~1return_claims~1claim~1{item_id}"
   }
 }

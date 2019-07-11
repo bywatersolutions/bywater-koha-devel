@@ -834,19 +834,19 @@ $(document).ready(function() {
     $(document).on("click", '#claims-returned-modal-btn-submit', function(e){
         let itemnumber = $('#claims-returned-itemnumber').val();
         let notes = $('#claims-returned-notes').val();
-        let fee = $('#claims-returned-charge-lost-fee').attr('checked') ? 1 : 0;
+        let fee = $('#claims-returned-charge-lost-fee').attr('checked') ? true : false;
 
         $('#claims-returned-modal').modal('hide')
 
         $(`.claim-returned-btn[data-itemnumber='${itemnumber}']`).replaceWith(`<img id='return_claim_spinner_${itemnumber}' src='${interface}/${theme}/img/spinner-small.gif' />`);
 
         params = {
-            itemnumber: itemnumber,
             notes: notes,
-            charge_lost_fee: fee ? 1 : 0,
+            charge_lost_fee: fee,
+            created_by: $.cookie("lastborrowernumber")
         };
 
-        $.post( "/cgi-bin/koha/svc/claimreturned", params, function( data ) {
+        $.post( `/api/v1/return_claims/claim/${itemnumber}`, JSON.stringify(params), function( data ) {
 
             id = "#return_claim_spinner_" + data.itemnumber;
 

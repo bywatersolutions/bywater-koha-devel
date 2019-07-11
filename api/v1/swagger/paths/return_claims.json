@@ -1,0 +1,98 @@
+{
+  "/return_claims/claim/{item_id}": {
+    "post": {
+      "x-mojo-to": "ReturnClaims#claim_returned",
+      "operationId": "claimReturned",
+      "tags": [
+        "claims",
+        "returned",
+        "return",
+        "claim"
+      ],
+      "parameters": [
+        {
+          "name": "item_id",
+          "in": "path",
+          "required": true,
+          "description": "Itemnumber of item to claim as returned",
+          "type": "integer"
+        },
+        {
+          "name": "body",
+          "in": "body",
+          "description": "A JSON object containing fields to modify",
+          "required": true,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "notes": {
+                "description": "Notes about this return claim",
+                "type": "string"
+              },
+              "created_by": {
+                "description": "User id for the librarian submitting this claim",
+                "type": "string"
+              },
+              "charge_lost_fee": {
+                "description": "Charge a lost fee if true and Koha is set to allow a choice. Ignored otherwise.",
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "Created claim",
+          "schema": {
+            "$ref": "../definitions.json#/return_claim"
+          }
+        },
+        "400": {
+          "description": "Bad request",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "401": {
+          "description": "Authentication required",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "403": {
+          "description": "Access forbidden",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "404": {
+          "description": "Checkout not found",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "500": {
+          "description": "Internal server error",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "503": {
+          "description": "Under maintenance",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        }
+      },
+      "x-koha-authorization": {
+        "permissions": {
+          "circulate": "circulate_remaining_permissions"
+        }
+      }
+    }
+  }
+}
