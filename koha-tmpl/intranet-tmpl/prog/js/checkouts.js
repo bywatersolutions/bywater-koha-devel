@@ -1030,9 +1030,13 @@ $(document).ready(function() {
         if ( confirmed ) {
             let id = $(this).data('return-claim-id');
 
-            $.post( "/cgi-bin/koha/svc/claimdeleted", { id: id }, function( data ) {
-                refreshReturnClaimsTable();
-            }, "json")
+            $.ajax({
+                url: `/api/v1/return_claims/${id}`,
+                type: 'DELETE',
+                success: function( data ) {
+                    refreshReturnClaimsTable();
+                }
+            });
         }
     });
 

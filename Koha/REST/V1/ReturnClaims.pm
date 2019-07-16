@@ -126,4 +126,24 @@ sub update_notes {
     return $c->render( openapi => $data, status => 200 );
 }
 
+sub delete_claim {
+    my $c     = shift->openapi->valid_input or return;
+    my $input = $c->validation->output;
+
+    my $id         = $input->{claim_id};
+
+    my $claim = Koha::Checkouts::ReturnClaims->find($id);
+
+    return $c->render(
+        openapi => { error => "Not found - Claim not found" },
+        status  => 404
+    ) unless $claim;
+
+    $claim->delete();
+
+    my $data = $claim->unblessed;
+
+    return $c->render( openapi => $data, status => 200 );
+}
+
 1;

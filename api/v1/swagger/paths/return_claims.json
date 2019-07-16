@@ -187,5 +187,79 @@
         }
       }
     }
+  },
+  "/return_claims/{claim_id}": {
+    "delete": {
+      "x-mojo-to": "ReturnClaims#delete_claim",
+      "operationId": "deletedClaim",
+      "tags": [
+        "claims",
+        "returned",
+        "return",
+        "claim",
+        "delete"
+      ],
+      "parameters": [
+        {
+          "name": "claim_id",
+          "in": "path",
+          "required": true,
+          "description": "Unique identifier for the claim to be deleted",
+          "type": "integer"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "Claim deleted",
+          "schema": {
+            "$ref": "../definitions.json#/return_claim"
+          }
+        },
+        "400": {
+          "description": "Bad request",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "401": {
+          "description": "Authentication required",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "403": {
+          "description": "Access forbidden",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "404": {
+          "description": "Claim not found",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "500": {
+          "description": "Internal server error",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "503": {
+          "description": "Under maintenance",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        }
+      },
+      "x-koha-authorization": {
+        "permissions": {
+          "circulate": "circulate_remaining_permissions"
+        }
+      }
+    }
   }
 }
