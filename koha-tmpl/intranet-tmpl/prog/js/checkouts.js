@@ -999,17 +999,23 @@ $(document).ready(function() {
         let notes = $(`#return-claim-notes-editor-textarea-${id}`).val();
 
         let params = {
-            'id': id,
-            'notes': notes
+            notes: notes,
+            updated_by: $.cookie("lastborrowernumber")
         };
 
         $(this).parent().remove();
 
-        $.post( "/cgi-bin/koha/svc/claimreturned-edit-notes", params, function( data ) {
-            let notes = $(`#return-claim-notes-static-${id}`);
-            notes.text(data.notes);
-            notes.show();
-        }, "json")
+        $.ajax({
+            url: `/api/v1/return_claims/${id}/notes`,
+            type: 'PUT',
+            data: JSON.stringify(params),
+            success: function( data ) {
+                let notes = $(`#return-claim-notes-static-${id}`);
+                notes.text(data.notes);
+                notes.show();
+            },
+            contentType: "json"
+        });
     });
 
     $('body').on('click', '.claim-returned-notes-editor-cancel', function(){

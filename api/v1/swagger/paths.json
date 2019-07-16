@@ -73,5 +73,8 @@
   },
   "/return_claims/claim/{item_id}/": {
     "$ref": "paths/return_claims.json#/~1return_claims~1claim~1{item_id}"
+  },
+  "/return_claims/{claim_id}/notes": {
+    "$ref": "paths/return_claims.json#/~1return_claims~1{claim_id}~1notes"
   }
 }

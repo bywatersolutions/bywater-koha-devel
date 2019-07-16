@@ -84,4 +84,46 @@ sub claim_returned {
     return $c->render( openapi => $data, status => 200 );
 }
 
+sub update_notes {
+    my $c     = shift->openapi->valid_input or return;
+    my $input = $c->validation->output;
+    my $body  = $c->validation->param('body');
+
+    my $id         = $input->{claim_id};
+    my $updated_by = $body->{updated_by};
+    my $notes      = $body->{notes};
+
+    $updated_by ||=
+      C4::Context->userenv ? C4::Context->userenv->{number} : undef;
+
+    my $claim = Koha::Checkouts::ReturnClaims->find($id);
+
+    return $c->render(
+        openapi => { error => "Not found - Claim not found" },
+        status  => 404
+    ) unless $claim;
+
+    $claim->set(
+        {
+            notes      => $notes,
+            updated_by => $updated_by,
+            updated_on => dt_from_string(),
+        }
+    );
+    $claim->store();
+
+    my $data = $claim->unblessed;
+
+    my $c_dt = dt_from_string( $data->{created_on} );
+    my $u_dt = dt_from_string( $data->{updated_on} );
+
+    $data->{created_on_formatted} = output_pref( { dt => $c_dt } );
+    $data->{updated_on_formatted} = output_pref( { dt => $u_dt } );
+
+    $data->{created_on} = $c_dt->iso8601;
+    $data->{updated_on} = $u_dt->iso8601;
+
+    return $c->render( openapi => $data, status => 200 );
+}
+
 1;
