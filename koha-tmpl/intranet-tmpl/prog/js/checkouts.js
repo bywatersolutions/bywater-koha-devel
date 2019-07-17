@@ -1050,23 +1050,29 @@ $(document).ready(function() {
 
     $(document).on('click', '#claims-returned-resolved-modal-btn-submit', function(e) {
         let resolution = $('#claims-returned-resolved-modal-resolved-code').val();
-        let claim_id = $('#claims-returned-resolved-modal-id').val();
+        let id = $('#claims-returned-resolved-modal-id').val();
 
         $('#claims-returned-resolved-modal-btn-submit-spinner').show();
         $('#claims-returned-resolved-modal-btn-submit-icon').hide();
 
         params = {
-          id: claim_id,
           resolution: resolution,
+          updated_by: $.cookie("lastborrowernumber"),
         };
 
-        $.post( "/cgi-bin/koha/svc/claimresolved", params, function( data ) {
-            $('#claims-returned-resolved-modal-btn-submit-spinner').hide();
-            $('#claims-returned-resolved-modal-btn-submit-icon').show();
-            $('#claims-returned-resolved-modal').modal('hide')
+        $.ajax({
+            url: `/api/v1/return_claims/${id}/resolve`,
+            type: 'PUT',
+            data: JSON.stringify(params),
+            success: function( data ) {
+                $('#claims-returned-resolved-modal-btn-submit-spinner').hide();
+                $('#claims-returned-resolved-modal-btn-submit-icon').show();
+                $('#claims-returned-resolved-modal').modal('hide')
 
-            refreshReturnClaimsTable();
-        }, "json")
+                refreshReturnClaimsTable();
+            },
+            contentType: "json"
+        });
 
     });
 

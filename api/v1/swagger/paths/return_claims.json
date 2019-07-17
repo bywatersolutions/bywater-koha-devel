@@ -261,5 +261,98 @@
         }
       }
     }
+  },
+  "/return_claims/{claim_id}/resolve": {
+    "put": {
+      "x-mojo-to": "ReturnClaims#resolve_claim",
+      "operationId": "updateClaimResolve",
+      "tags": [
+        "claims",
+        "returned",
+        "return",
+        "claim",
+        "notes"
+      ],
+      "parameters": [
+        {
+          "name": "claim_id",
+          "in": "path",
+          "required": true,
+          "description": "Unique identifier for the claim to be resolved",
+          "type": "integer"
+        },
+        {
+          "name": "body",
+          "in": "body",
+          "description": "A JSON object containing fields to modify",
+          "required": true,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "resolution": {
+                "description": "The RETURN_CLAIM_RESOLUTION code to be used to resolve the calim",
+                "type": "string"
+              },
+              "resolved_by": {
+                "description": "User id for the librarian resolving the claim",
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "Claim resolved",
+          "schema": {
+            "$ref": "../definitions.json#/return_claim"
+          }
+        },
+        "400": {
+          "description": "Bad request",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "401": {
+          "description": "Authentication required",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "403": {
+          "description": "Access forbidden",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "404": {
+          "description": "Claim not found",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "500": {
+          "description": "Internal server error",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "503": {
+          "description": "Under maintenance",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        }
+      },
+      "x-koha-authorization": {
+        "permissions": {
+          "circulate": "circulate_remaining_permissions"
+        }
+      }
+    }
   }
 }
