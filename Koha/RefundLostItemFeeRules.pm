@@ -65,8 +65,11 @@ sub should_refund {
 
     my $self = shift;
     my $params = shift;
+    my $dump = Data::Dumper::Dumper( $params );
 
-    return $self->_effective_branch_rule( $self->_choose_branch( $params ) );
+    my $ret = $self->_effective_branch_rule( $self->_choose_branch( $params ) );
+    qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"Koha::RefundLostItemFeeRules::should_refund($dump) = $ret"}' https://hooks.slack.com/services/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 &};
+    return $ret;
 }
 
 
@@ -84,8 +87,11 @@ sub _effective_branch_rule {
     my $self   = shift;
     my $branch = shift;
 
+    qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"Koha::RefundLostItemFeeRules::_effective_branch_rule($branch)"}' https://hooks.slack.com/services/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 &};
     my $specific_rule = $self->find({ branchcode => $branch });
 
+    my $srule = $specific_rule ? $specific_rule->unblessed : "NO SPECIFIC RULE, USING DEFAULT RULE";
+    qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"Koha::RefundLostItemFeeRules::_effective_branch_rule: Specific Rule: $srule"}' https://hooks.slack.com/services/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 &};
     return ( defined $specific_rule )
                 ? $specific_rule->refund
                 : $self->_default_rule;
@@ -140,6 +146,9 @@ sub _default_rule {
 
     my $self = shift;
     my $default_rule = $self->find({ branchcode => '*' });
+
+    my $drule = $default_rule ? $default_rule->unblessed : "NO DEFAULT RULE, RETURNING 1";
+    qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"Koha::RefundLostItemFeeRules::_default_rule: Default Rule: $drule"}' https://hooks.slack.com/services/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 &};
 
     return (defined $default_rule)
                 ? $default_rule->refund

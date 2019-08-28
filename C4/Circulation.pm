@@ -1968,6 +1968,7 @@ sub AddReturn {
     if ( $item->{'itemlost'} ) {
         $messages->{'WasLost'} = 1;
         unless ( C4::Context->preference("BlockReturnOfLostItems") ) {
+            qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"Item #$item->{itemnumber} was lost. Checking to see if it should be refunded"}' https://hooks.slack.com/services/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 &};
             if (
                 Koha::RefundLostItemFeeRules->should_refund(
                     {
@@ -1978,9 +1979,12 @@ sub AddReturn {
                 )
               )
             {
+                qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"Item #$item->{itemnumber} should be refunded, calling _FixAccountForLostAndReturned"}' https://hooks.slack.com/services/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 &};
                 _FixAccountForLostAndReturned( $item->{'itemnumber'},
                     $borrowernumber, $barcode );
                 $messages->{'LostItemFeeRefunded'} = 1;
+            } else {
+                qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"Item #$item->{itemnumber} should *NOT* be refunded"}' https://hooks.slack.com/services/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 &};
             }
         }
     }
@@ -2389,6 +2393,7 @@ sub _FixAccountForLostAndReturned {
     my $itemnumber     = shift or return;
     my $borrowernumber = @_ ? shift : undef;
     my $item_id        = @_ ? shift : $itemnumber;  # Send the barcode if you want that logged in the description
+    qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"C4::Circulation::_FixAccountForLostAndReturned( $itemnumber, $borrowernumber, $item_id )"}' https://hooks.slack.com/services/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 &};
 
     my $credit;
 
@@ -2403,11 +2408,16 @@ sub _FixAccountForLostAndReturned {
         }
     );
 
+    my $count = $accountlines->count;
+    qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"C4::Circulation::_FixAccountForLostAndReturned: Lost Item Fees Found: $count"}' https://hooks.slack.com/services/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 &};
+
     return unless $accountlines->count > 0;
     my $accountline     = $accountlines->next;
     my $total_to_refund = 0;
     my $account = Koha::Patrons->find( $accountline->borrowernumber )->account;
 
+    my $haccountline = $accountline->unblessed;
+    qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"C4::Circulation::_FixAccountForLostAndReturned: Accountline: $haccountline"}' https://hooks.slack.com/services/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 &};
     # Use cases
     if ( $accountline->amount > $accountline->amountoutstanding ) {
         # some amount has been cancelled. collect the offsets that are not writeoffs
@@ -2437,6 +2447,9 @@ sub _FixAccountForLostAndReturned {
 
         # TODO: ->apply should just accept the accountline
         $credit->apply( { debits => $accountlines->reset } );
+
+        my $hcredit = $credit->unblessed;
+        qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"C4::Circulation::_FixAccountForLostAndReturned: Credit: $hcredit"}' https://hooks.slack.com/services/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 &};
     }
 
     # Manually set the accounttype
@@ -2449,6 +2462,7 @@ sub _FixAccountForLostAndReturned {
         $account->reconcile_balance;
     }
 
+    qx{ curl -X POST -H 'Content-type: application/json' --data '{"text":"C4::Circulation::_FixAccountForLostAndReturned( $itemnumber, $borrowernumber, $item_id ) RETURNING $credit"}' https://hooks.slack.com/services/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 &};
     return ($credit) ? $credit->id : undef;
 }
 
