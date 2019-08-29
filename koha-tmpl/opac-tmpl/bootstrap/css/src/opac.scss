@@ -2558,6 +2558,14 @@ button.closebtn {
     color: #990033;
 }
 
+.ItemSummary .LabelCallNumber::before {
+    content: "[";
+}
+
+.ItemSummary .CallNumber::after {
+    content: "]";
+}
+
 .waiting,
 .intransit,
 .notforloan,
