@@ -435,22 +435,26 @@ subtest 'PUT /holds/{hold_id}/priority tests' => sub {
 	t::lib::Mocks::mock_preference( 'HoldsLog',      0 );
 	t::lib::Mocks::mock_preference( 'RESTBasicAuth', 1 );
 
+    my $biblionumber3 = create_biblio('RESTful Web APIs');
+    my $item3 = create_item($biblionumber2, 'TEST000002');
+    my $itemnumber3 = $item2->{itemnumber};
+
 	my $hold_1 = $builder->build_object(
 		{
 			class => 'Koha::Holds',
-			value => { suspend => 0, suspend_until => undef, waitingdate => undef, priority => 1 }
+			value => { biblionumber => $biblionumber3, suspend => 0, suspend_until => undef, waitingdate => undef, priority => 1 }
 		}
 	);
 	my $hold_2 = $builder->build_object(
 		{
 			class => 'Koha::Holds',
-			value => { suspend => 0, suspend_until => undef, waitingdate => undef, priority => 2 }
+			value => { biblionumber => $biblionumber3,suspend => 0, suspend_until => undef, waitingdate => undef, priority => 2 }
 		}
 	);
 	my $hold_3 = $builder->build_object(
 		{
 			class => 'Koha::Holds',
-			value => { suspend => 0, suspend_until => undef, waitingdate => undef, priority => 3 }
+			value => { biblionumber => $biblionumber3, suspend => 0, suspend_until => undef, waitingdate => undef, priority => 3 }
 		}
 	);
 
