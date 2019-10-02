@@ -279,6 +279,16 @@
             Use the advanced cataloging editor (requires edit_catalogue)
         </span>
         <span class="permissioncode">([% name | html %])</span>
+    [%- CASE 'create_public_macros' -%]
+        <span class="sub_permission create_public_macros_subpermission">
+            Create public macros (requires advanced_editor)
+        </span>
+        <span class="permissioncode">([% name | html %])</span>
+    [%- CASE 'delete_public_macros' -%]
+        <span class="sub_permission delete_public_macros_subpermission">
+            Delete public macros (requires advanced_editor)
+        </span>
+        <span class="permissioncode">([% name | html %])</span>
     [%- CASE 'edit_items' -%]
         <span class="sub_permission edit_items_subpermission">
             Edit items
