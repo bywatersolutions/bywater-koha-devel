@@ -38,13 +38,6 @@ __PACKAGE__->table("return_claims");
 =head2 issue_id
 
   data_type: 'integer'
-  is_foreign_key: 1
-  is_nullable: 1
-
-=head2 old_issue_id
-
-  data_type: 'integer'
-  is_foreign_key: 1
   is_nullable: 1
 
 =head2 borrowernumber
@@ -108,9 +101,7 @@ __PACKAGE__->add_columns(
   "itemnumber",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "issue_id",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
-  "old_issue_id",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
+  { data_type => "integer", is_nullable => 1 },
   "borrowernumber",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "notes",
@@ -155,6 +146,20 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<issue_id>
+
+=over 4
+
+=item * L</issue_id>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("issue_id", ["issue_id"]);
+
 =head1 RELATIONS
 
 =head2 borrowernumber
@@ -192,26 +197,6 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 issue
-
-Type: belongs_to
-
-Related object: L<Koha::Schema::Result::Issue>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "issue",
-  "Koha::Schema::Result::Issue",
-  { issue_id => "issue_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "SET NULL",
-    on_update     => "CASCADE",
-  },
-);
-
 =head2 itemnumber
 
 Type: belongs_to
@@ -225,26 +210,6 @@ __PACKAGE__->belongs_to(
   "Koha::Schema::Result::Item",
   { itemnumber => "itemnumber" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 old_issue
-
-Type: belongs_to
-
-Related object: L<Koha::Schema::Result::Issue>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "old_issue",
-  "Koha::Schema::Result::Issue",
-  { issue_id => "old_issue_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "SET NULL",
-    on_update     => "CASCADE",
-  },
 );
 
 =head2 resolved_by
@@ -288,8 +253,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-06-21 10:21:06
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MTy2jl5ksdYfSIpYr7q1yg
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-10-24 18:12:09
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ojrbFpQoVSmUMFJdNb6wTw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
