@@ -327,8 +327,7 @@ sub buildKohaItemsNamespace {
              (defined $transfertwhen && $transfertwhen ne '') || $item->{itemnotforloan} || (defined $reservestatus && $reservestatus eq "Waiting") || $item->{has_pending_hold} ){
             if ( $item->{notforloan} ) {
                     $status = "reallynotforloan";
-                    $substatus = $descs{$item->{notforloan}} || '';
-                    $substatus = $substatus->{opac_description} if $substatus;
+                    $substatus = exists $descs{$item->{notforloan}} ? $descs{$item->{notforloan}}->{opac_description} : "Not for loan_$item->{notforloan}";
             }
             if ( $item->{itype} && $itemtypes->{ $item->{itype} }->{notforloan} && $itemtypes->{ $item->{itype} }->{notforloan} == 1 ) {
                 $status = "reference";
