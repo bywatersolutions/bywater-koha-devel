@@ -196,3 +196,26 @@ subtest 'is_superlibrarian() tests' => sub {
 
     $schema->storage->txn_rollback;
 };
+
+subtest 'is_superlibrarian() tests' => sub {
+
+    plan tests => 2;
+
+    $schema->storage->txn_begin;
+
+    my $patron = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => {
+                flags => 16
+            }
+        }
+    );
+
+    ok( !$patron->is_superlibrarian, 'Patron is not a superlibrarian and the method returns the correct value' );
+
+    $patron->flags(1)->store->discard_changes;
+    ok( $patron->is_superlibrarian, 'Patron is a superlibrarian and the method returns the correct value' );
+
+    $schema->storage->txn_rollback;
+};
