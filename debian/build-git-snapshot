@@ -141,7 +141,7 @@ sub build_package {
 
     my $pdebuildopts = $buildresult ? "--buildresult $buildresult" : "";
     my $pdebuildbasetgz = $basetgz ? "-- --use-network yes --basetgz /var/cache/pbuilder/" . $basetgz . ".tgz" : "";
-    sys_command_output_screen( "pdebuild $pdebuildbasetgz $pdebuildopts" );
+    sys_command_output_screen( "DEB_BUILD_OPTIONS=nocheck pdebuild $pdebuildbasetgz $pdebuildopts" );
 }
 
 everything_is_committed() or die "cannot build: uncommited changes";

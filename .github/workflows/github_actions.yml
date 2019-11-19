@@ -1,0 +1,766 @@
+name: CI
+on:
+    push:
+        branches:
+            - "**"
+        tags-ignore:
+            - "**"
+jobs:
+    is-a-mark:
+        if: "contains(github.event.head_commit.message, ' - Set bwsbranch to')"
+        name: Check for mark
+        runs-on: ubuntu-latest
+        steps:
+            - name: Print commit message
+              run: |
+                  echo "Commit Message:: ${{ github.event.head_commit.message }}"
+
+    has-ncip-version:
+        name: Has a matching NCIP server version
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export additional variables
+              id: extracted_variables
+              run: |
+                  # Export VERSION as Koha major and minor e.g. 18.11, 20.05, etc.. TODO: Make this into a js based github action.
+                  export FULL_VERSION="$(cat Koha.pm | grep '$VERSION =')" && export FULL_VERSION=${FULL_VERSION%\"*} && export FULL_VERSION=${FULL_VERSION##*\"} && echo $FULL_VERSION
+                  IFS='.' read -ra VER_PARTS <<< "$FULL_VERSION"
+                  KOHA_MAJOR=${VER_PARTS[0]}
+                  KOHA_MINOR=${VER_PARTS[1]}
+                  MAJOR_MINOR_VERSION="${KOHA_MAJOR}.${KOHA_MINOR}"
+                  echo "MAJOR_MINOR_VERSION: $MAJOR_MINOR_VERSION"
+                  echo ::set-output name=MAJOR_MINOR_VERSION::$MAJOR_MINOR_VERSION
+
+            - name: Check to see if there is a matching NCIP server tag on Docker Hub
+              run: |
+                  curl --silent "https://registry.hub.docker.com/v2/repositories/bywater/koha-ncip-server/tags?page_size=1000" | jq -r ".results[].name" | sort --version-sort | grep "v${{ steps.extracted_variables.outputs.MAJOR_MINOR_VERSION }}-latest"
+
+    unit-test:
+        if: github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security'
+        name: Run unit tests
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export additional variables needed by koha-testing-docker
+              run: |
+                  export LOCAL_USER_ID="$(id -u)" # Needed for koha-testing-docker
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "BRANCH: $KOHA_BRANCH"
+                  export SYNC_REPO=.
+                  echo "LOCAL_USER_ID=$LOCAL_USER_ID" >> $GITHUB_ENV
+                  echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
+                  echo "SYNC_REPO=$SYNC_REPO" >> $GITHUB_ENV
+                  echo "RUN_TESTS_AND_EXIT=yes" >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=23.11" >> $GITHUB_ENV
+
+            - name: Set up koha-testing-docker
+              run: |
+                  sudo sysctl -w vm.max_map_count=262144
+                  wget -O docker-compose.yml https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/docker-compose.yml
+                  wget -O docker-compose.es7.yml https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/docker-compose.es7.yml
+                  mkdir -p env
+                  wget -O env/defaults.env https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/env/defaults.env
+                  cp env/defaults.env .env
+                  pwd
+                  ls -alh
+
+            - name: Show files
+              run: |
+                  pwd
+                  ls -alh
+
+            - name: Pull docker images
+              run: |
+                  docker compose -f docker-compose.es7.yml -f docker-compose.yml pull
+
+            #    - name: Setup Debug Session
+            #      uses: csexton/debugger-action@master
+
+            - name: Create kohanet
+              run: |
+                  docker network create kohanet
+
+            - name: Run tests
+              run: |
+                  docker compose -f docker-compose.es7.yml -f docker-compose.yml -p koha up --abort-on-container-exit --no-color
+                  cat $GITHUB_WORKSPACE/testing.success
+
+            - name: Post test cleanup
+              run: |
+                  docker-compose down
+                  docker rm -f $(docker ps -a -f "name=koha_" -q)
+                  docker volume prune -f
+                  docker image  prune -f
+                  rm docker-compose.yml
+                  rm -rf env .env
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow # selectable (default: repo,message)
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
+              if: always() # Pick up events even if the job fails or is canceled.
+
+    release-notes: # This container checks out the branch on it's own, so no need for the GitHub checkout action
+        if: github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-security'
+        name: Build release notes
+        needs: [unit-test, is-a-mark]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Export additional variables needed by bywater-koha-custom-rebaser
+              run: |
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "KOHA_BRANCH: $KOHA_BRANCH"
+                  echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
+
+            - name: Run kylemhall/bywater-koha-release-notes-generator
+              run: |
+                  echo "BRANCH: $KOHA_BRANCH"
+                  docker run --env DEBUG=1 --env UPLOAD=1 --env GITHUB_TOKEN=${{ secrets.OUR_GITHUB_TOKEN }} --env KOHA_BRANCH=$KOHA_BRANCH quay.io/bywatersolutions/bywater-koha-release-notes-generator
+
+    release-notes-notify-general: # Message #general only for bywater releases
+        if: contains(github.ref, 'bywater-v')
+        name: Notify general channel about new release notes
+        needs: release-notes
+        runs-on: ubuntu-latest
+        steps:
+            - name: Export additional variables
+              id: extracted_variables
+              run: |
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "KOHA_BRANCH: $KOHA_BRANCH"
+                  echo ::set-output name=KOHA_BRANCH::$KOHA_BRANCH
+                  echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
+
+            - name: Notify Slack
+              run: |
+                  curl -X POST -H 'Content-type: application/json' --data '{ "blocks": [{"type": "section","text": {  "type": "mrkdwn","text": "@here, new release notes are here! https://github.com/bywatersolutions/bywater-koha-release-notes/blob/master/${{ steps.extracted_variables.outputs.KOHA_BRANCH }}.md"}}]}' ${{ secrets.SLACK_GENERAL_WEBHOOK }}
+
+    release-notes-notify-slack-channel: # Message #release-notes for all codebases
+        name: Notify release-notes channel about new release notes
+        needs: release-notes
+        runs-on: ubuntu-latest
+        steps:
+            - name: Export additional variables
+              id: extracted_variables
+              run: |
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "KOHA_BRANCH: $KOHA_BRANCH"
+                  echo ::set-output name=KOHA_BRANCH::$KOHA_BRANCH
+                  echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
+
+            - name: Notify Slack
+              run: |
+                  curl -X POST -H 'Content-type: application/json' --data '{ "blocks": [{"type": "section","text": {  "type": "mrkdwn","text": "@here, new release notes are here! https://github.com/bywatersolutions/bywater-koha-release-notes/blob/master/${{ steps.extracted_variables.outputs.KOHA_BRANCH }}.md"}}]}' ${{ secrets.SLACK_RELEASE_NOTES_WEBHOOK }}
+
+    auto-rebase:
+        if: startsWith( github.ref, 'refs/heads/bywater-v' ) && github.repository == 'bywatersolutions/bywater-koha'
+        name: Rebase custom codebases
+        needs: [unit-test, is-a-mark]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export additional variables needed by bywater-koha-custom-rebaser
+              id: extracted_variables
+              run: |
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "KOHA_BRANCH: $KOHA_BRANCH"
+                  echo ::set-output name=KOHA_BRANCH::$KOHA_BRANCH
+                  export KOHACLONE="$(pwd)" # Needed for koha-testing-docker
+                  echo "KOHACLONE: $KOHACLONE"
+                  echo ::set-output name=KOHACLONE::$KOHACLONE
+
+            - name: Run kylemhall/bywater-koha-custom-rebaser
+              run: |
+                  docker run --mount type=bind,source=${{ steps.extracted_variables.outputs.KOHACLONE }},target=/kohaclone -e DO_IT=1 -e GITHUB_TOKEN=$OUR_GITHUB_TOKEN -e KOHA_BRANCH=${{ steps.extracted_variables.outputs.KOHA_BRANCH }} quay.io/bywatersolutions/bywater-koha-custom-rebaser
+              env:
+                  OUR_GITHUB_TOKEN: ${{ secrets.OUR_GITHUB_TOKEN }}
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow # selectable (default: repo,message)
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
+              if: always() # Pick up events even if the job fails or is canceled.
+
+    build-debs:
+        if: github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security'
+        name: Build Debian packages
+        needs: [unit-test, is-a-mark]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export additional variables
+              id: extracted_variables
+              run: |
+                  # Export VERSION as Koha major and minor e.g. 18.11, 20.05, etc.. TODO: Make this into a js based github action.
+                  export FULL_VERSION="$(cat Koha.pm | grep '$VERSION =')" && export FULL_VERSION=${FULL_VERSION%\"*} && export FULL_VERSION=${FULL_VERSION##*\"} && echo $FULL_VERSION
+                  IFS='.' read -ra VER_PARTS <<< "$FULL_VERSION"
+                  KOHA_MAJOR=${VER_PARTS[0]}
+                  KOHA_MINOR=${VER_PARTS[1]}
+                  MAJOR_MINOR_VERSION="${KOHA_MAJOR}.${KOHA_MINOR}"
+                  echo "MAJOR_MINOR_VERSION: $MAJOR_MINOR_VERSION"
+                  echo ::set-output name=MAJOR_MINOR_VERSION::$MAJOR_MINOR_VERSION
+                  # Export kohaclone path
+                  KOHACLONE="$(pwd)"
+                  echo "KOHACLONE: $KOHACLONE"
+                  echo ::set-output name=KOHACLONE::$KOHACLONE
+                  # Export current branch name
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "KOHA_BRANCH: $KOHA_BRANCH"
+                  echo ::set-output name=KOHA_BRANCH::$KOHA_BRANCH
+                  # Split the branch name into parts ( e.g. bywater-v19.05.01-03 => "bywater", "v19.05.01", "03 )
+                  IFS='-' read -ra BRANCH_PARTS <<< "$KOHA_BRANCH"
+                  # Extract shortname branch name
+                  SHORTNAME=${BRANCH_PARTS[0]}
+                  echo "SHORTNAME: $SHORTNAME"
+                  echo ::set-output name=SHORTNAME::$SHORTNAME
+                  # Extract version without v
+                  TMP_VERSION=${BRANCH_PARTS[1]}
+                  MMM_VERSION=${TMP_VERSION:1} # Removes the first character i.e. 'v19.05.01' => '19.05.01'
+                  echo "MMM_VERSION: $MMM_VERSION"
+                  echo ::set-output name=MMM_VERSION::$MMM_VERSION
+                  # Extract mark
+                  MARK=${BRANCH_PARTS[2]}
+                  echo "MARK: $MARK"
+                  echo ::set-output name=MARK::$MARK
+                  # Generate tag name
+                  TAG_NAME="${SHORTNAME}_v${MMM_VERSION}-${MARK}"
+                  echo "TAG NAME: $TAG_NAME"
+                  echo ::set-output name="TAG_NAME::$TAG_NAME"
+
+            - name: Echo KOHA_BRANCH from previous step
+              run: echo "${{ steps.extracted_variables.outputs.KOHA_BRANCH }}"
+
+            - name: Create dir for debian packages
+              run: mkdir /tmp/debs
+
+            - name: Clean out old docker images, just in case
+              run: docker system prune -a
+
+            - name: Run koha-dpkg-docker
+              run: |
+                  docker run --volume=${{ steps.extracted_variables.outputs.KOHACLONE }}:/koha --volume=/tmp/debs:/debs --privileged --env VERSION="${{ steps.extracted_variables.outputs.MMM_VERSION }}~${{ steps.extracted_variables.outputs.SHORTNAME }}~${{ steps.extracted_variables.outputs.MARK }}" --env RELEASE="${{ steps.extracted_variables.outputs.MAJOR_MINOR_VERSION }}" --env DEB_BUILD_OPTIONS="nocheck" koha/koha-dpkg:master
+
+            - name: List file in debs dir
+              run: ls -alh /tmp/debs
+
+            - name: Stash koha-common deb file name
+              id: find_koha_common
+              run: |
+                  KOHA_COMMON_DEB=$(ls /tmp/debs | grep koha-common)
+                  echo "KOHA COMMON DEB: $KOHA_COMMON_DEB"
+                  echo ::set-output name=KOHA_COMMON_DEB::$KOHA_COMMON_DEB
+
+            - name: Create artifact zip
+              run: zip --junk-paths -r "/tmp/${{ steps.extracted_variables.outputs.KOHA_BRANCH }}.zip" /tmp/debs/*
+
+            - name: List contents of current directory, should contain artifacts zip
+              run: ls -alh
+
+            - name: Create Release
+              id: create_release
+              uses: bywatersolutions/github-action-create-release@master
+              env:
+                  GITHUB_TOKEN: ${{ secrets.OUR_GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+              with:
+                  tag_name: ${{ steps.extracted_variables.outputs.TAG_NAME }}
+                  release_name: Release ${{ steps.extracted_variables.outputs.KOHA_BRANCH }}
+                  target: ${{ steps.extracted_variables.outputs.KOHA_BRANCH }}
+                  draft: false
+                  prerelease: false
+
+            - name: Upload assets
+              uses: softprops/action-gh-release@v1
+              with:
+                tag_name: ${{ steps.extracted_variables.outputs.TAG_NAME }}
+                files: |
+                  /tmp/${{ steps.extracted_variables.outputs.KOHA_BRANCH }}.zip
+                  /tmp/debs/${{ steps.find_koha_common.outputs.KOHA_COMMON_DEB }}
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow # selectable (default: repo,message)
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
+              if: always() # Pick up events even if the job fails or is canceled.
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow # selectable (default: repo,message)
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_KYLE_WEBHOOK }} # required
+              if: always() # Pick up events even if the job fails or is canceled.
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: custom
+                fields: all
+                custom_payload: |
+                  {
+                    username: 'GitHub Koha Package Notifier',
+                    icon_emoji: ':octocat:',
+                    attachments: [{
+                      color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
+                      title: "New Koha Debian Package Ready!",
+                      text: `The Koha Debian package for branch ${process.env.AS_REF} has been built and is ready to import into Aptly!`,
+                    }]
+                  }
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_KYLE_WEBHOOK }}
+
+            - name: Sleep for 30 seconds
+              run: sleep 30s
+              shell: bash
+
+            - name: Notify package importer
+              run: curl --insecure "https://apt2.bywatersolutions.com/?tag=${{ steps.extracted_variables.outputs.TAG_NAME }}&t=${{ secrets.TOKEN }}"
+              shell: bash
+
+
+    build-docker:
+        #if: github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-futureNOT'
+        if: false
+        name: Build Docker image
+        needs: build-debs
+        runs-on: ubuntu-latest
+        steps:
+            - name: Git clone koha-docker
+              run: git clone https://gitlab.com/koha-community/docker/koha-docker.git --depth 1 --branch master
+
+            - name: Export additional variables
+              id: extracted_variables
+              run: |
+                  # Export VERSION as Koha major and minor e.g. 18.11, 20.05, etc.. TODO: Make this into a js based github action.
+                  # Export current branch name
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "KOHA_BRANCH: $KOHA_BRANCH"
+                  echo ::set-output name=KOHA_BRANCH::$KOHA_BRANCH
+                  IFS='-' read -ra VER_PARTS <<< "$KOHA_BRANCH"
+                  TMP_KOHA_BRANCH=${VER_PARTS[1]}
+                  IFS='.' read -ra VER_PARTS <<< "$TMP_KOHA_BRANCH"
+                  KOHA_MAJOR_MINOR="${VER_PARTS[0]}.${VER_PARTS[1]}"
+                  echo "KOHA_MAJOR_MINOR: $KOHA_MAJOR_MINOR"
+                  echo ::set-output name=KOHA_MAJOR_MINOR::$KOHA_MAJOR_MINOR
+                  # Split the branch name into parts ( e.g. bywater-v19.05.01-03 => "bywater", "v19.05.01", "03 )
+                  IFS='-' read -ra BRANCH_PARTS <<< "$KOHA_BRANCH"
+                  # Extract shortname branch name
+                  SHORTNAME=${BRANCH_PARTS[0]}
+                  echo "SHORTNAME: $SHORTNAME"
+                  echo ::set-output name=SHORTNAME::$SHORTNAME
+                  # Extract version without v
+                  TMP_VERSION=${BRANCH_PARTS[1]}
+                  MMM_VERSION=${TMP_VERSION:1} # Removes the first character i.e. 'v19.05.01' => '19.05.01'
+                  echo "MMM_VERSION: $MMM_VERSION"
+                  echo ::set-output name=MMM_VERSION::$MMM_VERSION
+                  # Extract mark
+                  MARK=${BRANCH_PARTS[2]}
+                  echo "MARK: $MARK"
+                  echo ::set-output name=MARK::$MARK
+                  # Build the branch specific part of the download path
+                  DOWNLOAD_PATH="${KOHA_BRANCH}/koha-common_${MMM_VERSION}.${SHORTNAME}.${MARK}-1_all.deb"
+                  echo ::set-output name=DOWNLOAD_PATH::$DOWNLOAD_PATH
+                  echo "DOWNLOAD PATH: $DOWNLOAD_PATH"
+                  # Set the base path of the URL, TODO: needs to change for bywater-koha-future
+                  BASE_URL="https://github.com/${{github.repository}}/releases/download/"
+                  DEB_URL="${BASE_URL}${DOWNLOAD_PATH}"
+                  echo "DEB_URL: $DEB_URL"
+                  echo ::set-output name=DEB_URL::$DEB_URL
+
+            - name: Echo DEB_URL from previous step
+              run: echo "${{ steps.extracted_variables.outputs.DEB_URL }}"
+
+            - name: cd to koha-docker
+              run: cd koha-docker
+
+            - name: Current directory
+              run: pwd
+
+            - name: Show files
+              run: ls -alh
+
+            - name: Build the Docker image
+              run: cd koha-docker; docker build --tag quay.io/bywatersolutions/koha:${{ steps.extracted_variables.outputs.SHORTNAME }}-${{ steps.extracted_variables.outputs.KOHA_MAJOR_MINOR }}-latest --tag quay.io/bywatersolutions/koha:${{ steps.extracted_variables.outputs.KOHA_BRANCH }} --build-arg KOHA_COMMON_DEB_URL=${{ steps.extracted_variables.outputs.DEB_URL }} --build-arg KOHA_VERSION=23.11 .
+
+            - name: Log in to Docker Hub
+              env:
+                QUAY_USER: ${{secrets.QUAY_USER}}
+                QUAY_PASSWORD: ${{secrets.QUAY_PASSWORD}}
+              run: docker login quay.io -u $QUAY_USER -p $QUAY_PASSWORD
+
+            - name: Push to Quay.io
+              run: docker push quay.io/bywatersolutions/koha:${{ steps.extracted_variables.outputs.KOHA_BRANCH }}
+
+            - name: Push to Quay.io - tag 'latest'
+              run: docker push quay.io/bywatersolutions/koha:${{ steps.extracted_variables.outputs.SHORTNAME }}-${{ steps.extracted_variables.outputs.KOHA_MAJOR_MINOR }}-latest
+
+    set-default-branch:
+        if: github.repository == 'bywatersolutions/bywater-koha'
+        name: Change the default branch in GitHub
+        needs: [build-debs]
+        runs-on: ubuntu-latest
+        steps:
+            - run: gh api repos/bywatersolutions/bywater-koha --method PATCH --field 'default_branch=${{ github.ref_name }}'
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    zap-scan-baseline-opac:
+        name: ZAP Scan - Baseline - OPAC
+        if: false
+        needs: unit-test
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export additional variables needed by koha-testing-docker
+              run: |
+                  export LOCAL_USER_ID="$(id -u)" # Needed for koha-testing-docker
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "BRANCH: $KOHA_BRANCH"
+                  export SYNC_REPO=.
+                  echo "LOCAL_USER_ID=$LOCAL_USER_ID" >> $GITHUB_ENV
+                  echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
+                  echo "SYNC_REPO=$SYNC_REPO" >> $GITHUB_ENV
+                  echo "RUN_TESTS_AND_EXIT=yes" >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=23.11" >> $GITHUB_ENV
+
+            - name: Set up koha-testing-docker
+              run: |
+                  sudo sysctl -w vm.max_map_count=262144
+                  wget -O docker-compose.yml https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/docker-compose.yml
+                  mkdir -p env
+                  wget -O env/defaults.env https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/env/defaults.env
+                  cp env/defaults.env .env
+                  docker-compose pull
+                  docker-compose -f docker-compose.yml -p koha up --detach
+                  echo "SLEEPING 3 MINUTES"
+                  sleep 60
+                  echo "1 MINUTE DONE"
+                  sleep 60
+                  echo "2 MINUTES DONE"
+                  sleep 60
+                  echo "3 MINUTES DONE"
+                  echo "WAKING UP"
+                  echo "DOCKER LOGS"
+                  docker logs koha_koha_1 2>&1
+                  echo "/DOCKER LOGS"
+
+            #    - name: Setup Debug Session
+            #      uses: csexton/debugger-action@master
+
+            - name: List docker networks
+              run: |
+                  docker network ls
+
+            - name: Scan opac interface
+              run: |
+                  docker run --network koha_kohanet -t owasp/zap2docker-weekly zap-baseline.py -t http://koha:8080
+
+            - name: Post test cleanup
+              run: |
+                  docker-compose down
+                  docker rm -f $(docker ps -a -f "name=koha_" -q)
+                  docker volume prune -f
+                  docker image  prune -f
+                  rm docker-compose.yml
+                  rm -rf env .env
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow # selectable (default: repo,message)
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
+              if: always() # Pick up events even if the job fails or is canceled.
+
+    zap-scan-baseline-staff:
+        name: ZAP Scan - Baseline - Staff
+        if: false
+        needs: unit-test
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export additional variables needed by koha-testing-docker
+              run: |
+                  export LOCAL_USER_ID="$(id -u)" # Needed for koha-testing-docker
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "BRANCH: $KOHA_BRANCH"
+                  export SYNC_REPO=.
+                  echo "LOCAL_USER_ID=$LOCAL_USER_ID" >> $GITHUB_ENV
+                  echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
+                  echo "SYNC_REPO=$SYNC_REPO" >> $GITHUB_ENV
+                  echo "RUN_TESTS_AND_EXIT=yes" >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=23.11" >> $GITHUB_ENV
+
+            - name: Set up koha-testing-docker
+              run: |
+                  sudo sysctl -w vm.max_map_count=262144
+                  wget -O docker-compose.yml https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/docker-compose.yml
+                  mkdir -p env
+                  wget -O env/defaults.env https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/env/defaults.env
+                  cp env/defaults.env .env
+                  docker-compose pull
+                  docker-compose -f docker-compose.yml -p koha up --detach
+                  echo "SLEEPING 3 MINUTES"
+                  sleep 60
+                  echo "1 MINUTE DONE"
+                  sleep 60
+                  echo "2 MINUTES DONE"
+                  sleep 60
+                  echo "3 MINUTES DONE"
+                  echo "WAKING UP"
+                  echo "DOCKER LOGS"
+                  docker logs koha_koha_1 2>&1
+                  echo "/DOCKER LOGS"
+
+            #    - name: Setup Debug Session
+            #      uses: csexton/debugger-action@master
+
+            - name: List docker networks
+              run: |
+                  docker network ls
+
+            - name: Scan staff interface
+              run: |
+                  docker run --network koha_kohanet -t owasp/zap2docker-weekly zap-baseline.py -t http://koha:8081
+
+            - name: Post test cleanup
+              run: |
+                  docker-compose down
+                  docker rm -f $(docker ps -a -f "name=koha_" -q)
+                  docker volume prune -f
+                  docker image  prune -f
+                  rm docker-compose.yml
+                  rm -rf env .env
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow # selectable (default: repo,message)
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
+              if: always() # Pick up events even if the job fails or is canceled.
+
+    zap-scan-full-staff:
+        name: ZAP Scan - Full - Staff
+        needs: zap-scan-baseline-staff
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export additional variables needed by koha-testing-docker
+              run: |
+                  export LOCAL_USER_ID="$(id -u)" # Needed for koha-testing-docker
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "BRANCH: $KOHA_BRANCH"
+                  export SYNC_REPO=.
+                  echo "LOCAL_USER_ID=$LOCAL_USER_ID" >> $GITHUB_ENV
+                  echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
+                  echo "SYNC_REPO=$SYNC_REPO" >> $GITHUB_ENV
+                  echo "RUN_TESTS_AND_EXIT=yes" >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=23.11" >> $GITHUB_ENV
+
+            - name: Set up koha-testing-docker
+              run: |
+                  sudo sysctl -w vm.max_map_count=262144
+                  wget -O docker-compose.yml https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/docker-compose.yml
+                  mkdir -p env
+                  wget -O env/defaults.env https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/env/defaults.env
+                  cp env/defaults.env .env
+                  docker-compose pull
+                  docker-compose -f docker-compose.yml -p koha up --detach
+                  echo "SLEEPING 3 MINUTES"
+                  sleep 60
+                  echo "1 MINUTE DONE"
+                  sleep 60
+                  echo "2 MINUTES DONE"
+                  sleep 60
+                  echo "3 MINUTES DONE"
+                  echo "WAKING UP"
+                  echo "DOCKER LOGS"
+                  docker logs koha_koha_1 2>&1
+                  echo "/DOCKER LOGS"
+
+            #    - name: Setup Debug Session
+            #      uses: csexton/debugger-action@master
+
+            - name: List docker networks
+              run: |
+                  docker network ls
+
+            - name: Scan staff interface
+              run: |
+                  docker run --network koha_kohanet -t owasp/zap2docker-weekly zap-full-scan.py -t http://koha:8081
+
+            - name: Post test cleanup
+              run: |
+                  docker-compose down
+                  docker rm -f $(docker ps -a -f "name=koha_" -q)
+                  docker volume prune -f
+                  docker image  prune -f
+                  rm docker-compose.yml
+                  rm -rf env .env
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow # selectable (default: repo,message)
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
+              if: always() # Pick up events even if the job fails or is canceled.
+
+    zap-scan-full-opac:
+        name: ZAP Scan - Full - OPAC
+        needs: zap-scan-baseline-opac
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export additional variables needed by koha-testing-docker
+              run: |
+                  export LOCAL_USER_ID="$(id -u)" # Needed for koha-testing-docker
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "BRANCH: $KOHA_BRANCH"
+                  export SYNC_REPO=.
+                  echo "LOCAL_USER_ID=$LOCAL_USER_ID" >> $GITHUB_ENV
+                  echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
+                  echo "SYNC_REPO=$SYNC_REPO" >> $GITHUB_ENV
+                  echo "RUN_TESTS_AND_EXIT=yes" >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=23.11" >> $GITHUB_ENV
+
+            - name: Set up koha-testing-docker
+              run: |
+                  sudo sysctl -w vm.max_map_count=262144
+                  wget -O docker-compose.yml https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/docker-compose.yml
+                  mkdir -p env
+                  wget -O env/defaults.env https://gitlab.com/koha-community/koha-testing-docker/raw/23.11/env/defaults.env
+                  cp env/defaults.env .env
+                  docker-compose pull
+                  docker-compose -f docker-compose.yml -p koha up --detach
+                  echo "SLEEPING 3 MINUTES"
+                  sleep 60
+                  echo "1 MINUTE DONE"
+                  sleep 60
+                  echo "2 MINUTES DONE"
+                  sleep 60
+                  echo "3 MINUTES DONE"
+                  echo "WAKING UP"
+                  echo "DOCKER LOGS"
+                  docker logs koha_koha_1 2>&1
+                  echo "/DOCKER LOGS"
+
+            #    - name: Setup Debug Session
+            #      uses: csexton/debugger-action@master
+
+            - name: List docker networks
+              run: |
+                  docker network ls
+
+            - name: Scan opac interface
+              run: |
+                  docker run --network koha_kohanet -t owasp/zap2docker-weekly zap-full-scan.py -t http://koha:8080
+
+            - name: Post test cleanup
+              run: |
+                  docker-compose down
+                  docker rm -f $(docker ps -a -f "name=koha_" -q)
+                  docker volume prune -f
+                  docker image  prune -f
+                  rm docker-compose.yml
+                  rm -rf env .env
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow # selectable (default: repo,message)
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
+              if: always() # Pick up events even if the job fails or is canceled.
+
+    auto-rebase-xslt:
+        if: false
+        #if: startsWith( github.ref, 'refs/heads/bywater-v' )
+        name: Rebase XSLT
+        needs: [unit-test, is-a-mark]
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                branch:
+                    - ajaxon
+                    - bedford
+                    - bedtest
+                    - briar
+                    - camden
+                    - centenary
+                    - duncanville
+                    - esripsa
+                    - fredh
+                    - keys
+                    - library
+                    - nrhtx
+                    - nyam
+                    - nycrecords
+                    - ottumwa
+                    - palnet
+                    - panhandle
+                    - presby
+                    - rosev
+                    - rta
+                    - siskiyou
+                    - taft
+                    - vatech
+                    - vatechtest
+                    - arlington
+
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Display xslt branch to be rebased
+              run: echo ${{ matrix.branch }}
+
+            - name: Add xslt remote for bywater-koha-xslt
+              run: git remote add bywater-koha-xslt https://github.com/bywatersolutions/bywater-koha-xslt.git
+
+            - name: Add xslt remote for bywater-koha-xslt-archives
+              run: git remote add bywater-koha-xslt https://github.com/bywatersolutions/bywater-koha-xslt-archives.git
+
+            - name: Fetch from xslt remotes
+              run: git fetch --all
+
+            - name: Check out the xslt branch to be rebassed
+              run: git checkout bywater-koha-xslt/${{ matrix.branch }}
+
+            - name: Push a backup copy of this branch to bywater-koha-xslt
+              run: git push bywater-koha-xslt-archives HEAD:refs/heads/${GITHUB_REF##*/}-$(date --iso-8601)
+
+            - name: Get first and last commits of custom XSLT
+              id: extracted_variables
+              run: |
+                  FIRST_COMMIT=$(git log --all --grep='BWS-XSLT' --pretty=format:"%H" | tail -1)
+                  echo "FIRST COMMIT: $FIRST_COMMIT"
+                  echo ::set-output name=FIRST_COMMIT::$FIRST_COMMIT
+                  LAST_COMMIT=$(git log --all --grep='BWS-XSLT' --pretty=format:"%H" | head -1)
+                  echo "LAST COMMIT: $LAST_COMMIT"
+                  echo ::set-output name=LAST_COMMIT::$LAST_COMMIT
+
+            - name: Check out the base Koha branch to cherry pick the XSLT commits on to
+              run: git checkout ${{ github.sha}}
+
+            - name: Cherry pick the commits
+              run: git cherry-pick ${{ steps.extracted_variables.outputs.LAST_COMMIT }}^..${{ steps.extracted_variables.outputs.FIRST_COMMIT }}
+
+            - name: Push the rebased branch back
+              run: git push -f bywater-koha-xslt HEAD:${{ github.ref }}
