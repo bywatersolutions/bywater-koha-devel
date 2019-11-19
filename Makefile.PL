@@ -336,6 +336,7 @@ my $target_map = {
     './lib'                                            => { target => 'PERL_MODULE_LIB_DIR', trimdir => -1 },
     './mainpage.pl'                                    => 'INTRANET_CGI_DIR',
     './Makefile.PL'                                    => 'NONE',
+    './.github'                                        => 'NONE',
     './MANIFEST.SKIP'                                  => 'NONE',
     './members'                                        => 'INTRANET_CGI_DIR',
     './misc'                                           => { target => 'SCRIPT_NONDEV_DIR', trimdir => -1 },
