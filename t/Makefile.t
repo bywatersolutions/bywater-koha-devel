@@ -27,6 +27,7 @@ my @MakeFile = split "\n", $MakeFile;
 my @ignored = qw(
     .editorconfig
     .gitignore
+    .github
     .mailmap
     .perlcriticrc
     .proverc

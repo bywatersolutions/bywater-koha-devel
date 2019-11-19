@@ -31,7 +31,7 @@ my $makefile = read_file("$curdir/Makefile.PL");
 my @missing;
 for my $d ( sort @dirs ) {
     chomp $d;
-    next if $d =~ /\.\/(debian|\.git)$/;
+    next if $d =~ /\.\/(debian|\.git|\.github|\.env|env)$/;
     next if $makefile =~ m{'$d('|\/)}xms;
     push @missing, $d;
 }
