@@ -11,3 +11,10 @@ log4perl.appender.OPAC.filename=__LOG_DIR__/opac-error.log
 log4perl.appender.OPAC.mode=append
 log4perl.appender.OPAC.layout=PatternLayout
 log4perl.appender.OPAC.layout.ConversionPattern=[%d] [%p] %m %l %n
+
+log4perl.logger.runlog = TRACE, RUNLOG
+log4perl.appender.RUNLOG=Log::Log4perl::Appender::File
+log4perl.appender.RUNLOG.filename=/var/log/koha/kohadev/runlog.log
+log4perl.appender.RUNLOG.mode=append
+log4perl.appender.RUNLOG.layout=PatternLayout
+log4perl.appender.RUNLOG.layout.ConversionPattern=[%d] [%P] %m %l %n

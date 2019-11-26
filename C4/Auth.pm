@@ -634,6 +634,8 @@ sub get_template_and_user {
         }
     }
 
+    C4::Context->log_run('start');
+
     return ( $template, $borrowernumber, $cookie, $flags );
 }
 

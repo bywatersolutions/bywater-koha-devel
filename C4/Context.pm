@@ -98,6 +98,7 @@ use Module::Load::Conditional qw(can_load);
 use POSIX ();
 use YAML qw/Load/;
 use ZOOM;
+use Digest::MD5 qw( md5_hex );
 
 use C4::Boolean;
 use C4::Debug;
@@ -105,6 +106,7 @@ use Koha::Caches;
 use Koha::Config::SysPref;
 use Koha::Config::SysPrefs;
 use Koha::Config;
+use Koha::Logger;
 use Koha;
 
 =head1 NAME
@@ -1118,6 +1120,42 @@ sub set_remote_address {
             $ENV{REMOTE_ADDR} = Koha::Middleware::RealIP::get_real_ip( $ENV{REMOTE_ADDR}, $header );
         }
     }
+}
+
+=item log_run
+
+log_run( 'start', 'intranet', 'script', 'mainpage' );
+...
+log_run( 'end', 'intranet', 'script', 'mainpage' );
+
+=cut
+
+sub log_run {
+    my ( $self, $action, $interface, $category, $caller ) = @_;
+    my $userenv_md5 = md5_hex( C4::Context->userenv );
+
+    $action      //= 'start';
+    $interface   //= C4::Context->interface;
+
+    unless ( $caller && $category ) {
+        my ( $script, $suffix ) = split( '\.', ( reverse( split( '/', ( caller(2) )[1] ) ) )[0] );
+        $caller //= $script;
+        $category = $suffix eq 'pl' ? 'script' : 'other';
+    }
+
+    my $logger = Koha::Logger->get(
+        {
+            interface => 'runlog',
+            category  => "$category.$caller.$action"
+        }
+    );
+    $logger->debug(
+        sub {
+            "$interface:$category:$caller:$action:$userenv_md5";
+        }
+    );
+
+    return $userenv_md5;
 }
 
 1;

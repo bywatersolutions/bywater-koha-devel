@@ -33,6 +33,7 @@ use Koha::Reviews;
 use Koha::ArticleRequests;
 
 my $query = new CGI;
+#my $start_time = C4::Context->log_run( 'intranet', 'script', 'mainpage', 'start' );
 
 my ( $template, $loggedinuser, $cookie, $flags ) = get_template_and_user(
     {
@@ -85,3 +86,4 @@ $template->param(
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;
+#C4::Context->log_run( 'intranet', 'script', 'mainpage', 'end', $start_time );

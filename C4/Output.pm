@@ -286,6 +286,7 @@ sub output_with_http_headers {
 
     $data =~ s/\&amp\;amp\; /\&amp\; /g;
     print $query->header($options), $data;
+    C4::Context->log_run('end');
 }
 
 sub output_html_with_http_headers {
