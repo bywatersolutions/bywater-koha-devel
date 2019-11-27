@@ -66,6 +66,8 @@ $template->param(
 my $page = "page_" . $input->param('p');            # go for "p" value in URL and do the concatenation
 my $preference = C4::Context->preference($page);    # Go for preference  
 $template->{VARS}->{'page_test'} = $preference;     # pass variable to template pages.tt
+$template->{VARS}->{'page_name'} = $page;           # pass name to template pages.tt
+
 
 # If GoogleIndicTransliteration system preference is On Set parameter to load Google's javascript in OPAC search screens
 if (C4::Context->preference('GoogleIndicTransliteration')) {
