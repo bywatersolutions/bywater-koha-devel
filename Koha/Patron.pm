@@ -1441,7 +1441,7 @@ sub can_edit_item {
 
     return 1 if C4::Context->IsSuperLibrarian();
 
-    if ( C4::Context->preference('IndependentBranches') ) {
+    if ( $userenv && C4::Context->preference('IndependentBranches') ) {
         return $userenv->{branch} eq $branchcode;
     }
 
