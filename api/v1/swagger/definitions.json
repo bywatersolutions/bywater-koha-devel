@@ -26,6 +26,9 @@
   "item": {
     "$ref": "definitions/item.json"
   },
+  "advancededitormacro": {
+    "$ref": "definitions/advancededitormacro.json"
+  },
   "patron": {
     "$ref": "definitions/patron.json"
   },
