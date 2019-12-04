@@ -154,12 +154,16 @@ if ($op eq "action") {
         $schema->txn_do(
             sub {
                 # For each item
+                my $can_edit = {};
                 my $i = 1;
                 foreach my $itemnumber (@itemnumbers) {
                     my $item = Koha::Items->find($itemnumber);
                     next
                       unless $item
                       ; # Should have been tested earlier, but just in case...
+                    $can_edit->{ $item->homebranch } //= $patron->can_edit_item( $item->homebranch );
+                    next unless $can_edit->{ $item->homebranch };
+
                     my $itemdata = $item->unblessed;
                     if ($del) {
                         my $return = $item->safe_delete;
