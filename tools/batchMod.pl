@@ -179,6 +179,7 @@ if ($op eq "action") {
         }
 
 	# For each item
+    my $can_edit = {};
 	my $i = 1; 
 	foreach my $itemnumber(@itemnumbers){
 
@@ -186,6 +187,10 @@ if ($op eq "action") {
         my $itemdata = Koha::Items->find($itemnumber);
         next unless $itemdata; # Should have been tested earlier, but just in case...
         $itemdata = $itemdata->unblessed;
+
+        $can_edit->{ $itemdata->{homebranch} } //= $patron->can_edit_item( $itemdata->{homebranch} );
+        next unless $can_edit->{ $itemdata->homebranch };
+
         if ( $del ){
             my $return = DelItemCheck( $itemdata->{'biblionumber'}, $itemdata->{'itemnumber'});
 			if ($return == 1) {
