@@ -112,7 +112,7 @@ sub _increment_barcode {
 
 
 sub generate_subfield_form {
-        my ($tag, $subfieldtag, $value, $tagslib,$subfieldlib, $branches, $biblionumber, $temp, $loop_data, $i, $restrictededition) = @_;
+        my ($tag, $subfieldtag, $value, $tagslib,$subfieldlib, $branches, $biblionumber, $temp, $loop_data, $i, $restrictededition, $patron) = @_;
   
         my $frameworkcode = &GetFrameworkCode($biblionumber);
 
@@ -175,7 +175,9 @@ sub generate_subfield_form {
             my %authorised_lib;
             # builds list, depending on authorised value...
             if ( $subfieldlib->{authorised_value} eq "branches" ) {
+                my @allowed = $patron->libraries_where_can_edit_items;
                 foreach my $thisbranch (@$branches) {
+                    next unless any { /^$thisbranch->{branchcode}$/ } @allowed;
                     push @authorised_values, $thisbranch->{branchcode};
                     $authorised_lib{$thisbranch->{branchcode}} = $thisbranch->{branchname};
                     $value = $thisbranch->{branchcode} if $thisbranch->{selected} && !$value;
@@ -914,7 +916,7 @@ if($itemrecord){
 
             next if ($tagslib->{$tag}->{$subfieldtag}->{'tab'} ne "10");
 
-            my $subfield_data = generate_subfield_form($tag, $subfieldtag, $value, $tagslib, $subfieldlib, $libraries, $biblionumber, $temp, \@loop_data, $i, $restrictededition);
+            my $subfield_data = generate_subfield_form($tag, $subfieldtag, $value, $tagslib, $subfieldlib, $libraries, $biblionumber, $temp, \@loop_data, $i, $restrictededition, $patron);
             push @fields, "$tag$subfieldtag";
             push (@loop_data, $subfield_data);
             $i++;

@@ -32,7 +32,7 @@ use C4::ClassSource;
 use C4::Debug;
 use C4::Members;
 use MARC::File::XML;
-use List::MoreUtils qw/uniq/;
+use List::MoreUtils qw( uniq any );
 
 use Koha::AuthorisedValues;
 use Koha::Biblios;
@@ -335,6 +335,8 @@ my $allowAllSubfields = (
 ) ? 1 : 0;
 my @subfieldsToAllow = split(/ /, $subfieldsToAllowForBatchmod);
 
+my @allowed_to_edit_branches = $patron->libraries_where_can_edit_items;
+
 foreach my $tag (sort keys %{$tagslib}) {
     # loop through each subfield
     foreach my $subfield (sort keys %{$tagslib->{$tag}}) {
@@ -379,6 +381,7 @@ foreach my $tag (sort keys %{$tagslib}) {
 
     if ( $tagslib->{$tag}->{$subfield}->{authorised_value} eq "branches" ) {
         foreach my $library (@$libraries) {
+            next unless any { /^$library->{branchcode}$/ } @allowed_to_edit_branches;
             push @authorised_values, $library->{branchcode};
             $authorised_lib{$library->{branchcode}} = $library->{branchname};
         }
