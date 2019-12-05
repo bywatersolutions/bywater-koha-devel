@@ -105,8 +105,8 @@ sub _increment_barcode {
 
 
 sub generate_subfield_form {
-        my ($tag, $subfieldtag, $value, $tagslib,$subfieldlib, $branches, $biblionumber, $temp, $loop_data, $i, $restrictededition, $item) = @_;
-  
+        my ($tag, $subfieldtag, $value, $tagslib,$subfieldlib, $branches, $biblionumber, $temp, $loop_data, $i, $restrictededition, $item, $patron) = @_;
+
         my $frameworkcode = &GetFrameworkCode($biblionumber);
 
         my %subfield_data;
@@ -192,7 +192,9 @@ sub generate_subfield_form {
                 }
             }
             elsif ( $subfieldlib->{authorised_value} eq "branches" ) {
+                my @allowed = $patron->libraries_where_can_edit_items;
                 foreach my $thisbranch (@$branches) {
+                    next unless any { /^$thisbranch->{branchcode}$/ } @allowed;
                     push @authorised_values, $thisbranch->{branchcode};
                     $authorised_lib{$thisbranch->{branchcode}} = $thisbranch->{branchname};
                     $value = $thisbranch->{branchcode} if $thisbranch->{selected} && !$value;
@@ -974,7 +976,7 @@ if($itemrecord){
 
             next if ($tagslib->{$tag}->{$subfieldtag}->{'tab'} ne "10");
 
-            my $subfield_data = generate_subfield_form($tag, $subfieldtag, $value, $tagslib, $subfieldlib, $libraries, $biblionumber, $temp, \@loop_data, $i, $restrictededition, $item);
+            my $subfield_data = generate_subfield_form($tag, $subfieldtag, $value, $tagslib, $subfieldlib, $libraries, $biblionumber, $temp, \@loop_data, $i, $restrictededition, $item, $patron);
             push @fields, "$tag$subfieldtag";
             push (@loop_data, $subfield_data);
             $i++;
@@ -998,7 +1000,7 @@ foreach my $tag ( keys %{$tagslib}){
         my @values = (undef);
         @values = $itemrecord->field($tag)->subfield($subtag) if ($itemrecord && defined($itemrecord->field($tag)) && defined($itemrecord->field($tag)->subfield($subtag)));
         for my $value (@values){
-            my $subfield_data = generate_subfield_form($tag, $subtag, $value, $tagslib, $tagslib->{$tag}->{$subtag}, $libraries, $biblionumber, $temp, \@loop_data, $i, $restrictededition, $item);
+            my $subfield_data = generate_subfield_form($tag, $subtag, $value, $tagslib, $tagslib->{$tag}->{$subtag}, $libraries, $biblionumber, $temp, \@loop_data, $i, $restrictededition, $item, $patron);
             push (@loop_data, $subfield_data);
             $i++;
         }
