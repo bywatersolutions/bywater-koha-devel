@@ -475,14 +475,7 @@ if ($op eq "additem") {
         push @errors,"barcode_not_unique";
         $current_item = $item->unblessed; # Restore edit form for the same item
     } else {
-<<<<<<< HEAD
         my $newitemlost = $item->itemlost;
-=======
-        my $newitem = ModItemFromMarc($itemtosave, $biblionumber, $itemnumber);
-        $itemnumber = q{};
-        my $olditemlost = $item->itemlost;
-        my $newitemlost = $newitem->{itemlost};
->>>>>>> 5b37193b6fe (Bug 20256: (QA follow-up) Redirect to record details page if user cannot edit this item)
         if ( $newitemlost && $newitemlost ge '1' && !$olditemlost ) {
             LostItem( $item->itemnumber, 'additem' );
         }
