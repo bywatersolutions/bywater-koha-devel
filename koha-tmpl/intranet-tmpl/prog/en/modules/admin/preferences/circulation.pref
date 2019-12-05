@@ -660,7 +660,13 @@ Circulation:
             - 'the last patron to return an item. This setting is independent of the <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=opacreadinghistory">opacreadinghistory</a> and <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=AnonymousPatron">AnonymousPatron</a> system preferences.'
     Holds policy:
         -
-            - In the staff interface, split the holds queue into separate tables by
+            - pref: EnableVolumes
+              choices:
+                  yes: Enable
+                  no: "Don't enable"
+            - volumes feature to allow collecting groups of items on a record into volumes.
+        -
+            - In the staff client, split the holds queue into separate tables by
             - pref: HoldsSplitQueue
               choices:
                   nothing: nothing
