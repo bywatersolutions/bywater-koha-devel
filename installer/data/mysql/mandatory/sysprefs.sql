@@ -709,6 +709,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('UseICU','0','1','Tell Koha if ICU indexing is in use for Zebra or not.','YesNo'),
 ('UseTransportCostMatrix','0','','Use Transport Cost Matrix when filling holds','YesNo'),
 ('UseWYSIWYGinSystemPreferences','0','','Show WYSIWYG editor when editing certain HTML system preferences.','YesNo'),
+('EnableVolumes','0','','Enable volumes feature','YesNo'),
 ('viewISBD','1','','Allow display of ISBD view of bibiographic records','YesNo'),
 ('viewLabeledMARC','0','','Allow display of labeled MARC view of bibiographic records','YesNo'),
 ('viewMARC','1','','Allow display of MARC view of bibiographic records','YesNo'),
