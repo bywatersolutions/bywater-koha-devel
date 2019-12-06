@@ -27,12 +27,13 @@ use Koha::DateUtils qw( dt_from_string );
 
 use C4::Context;
 
+use Koha::Biblio::Volumes;
 use Koha::Checkouts;
 use Koha::IssuingRules;
 use Koha::Item::Transfer::Limits;
 use Koha::Item::Transfers;
-use Koha::Patrons;
 use Koha::Libraries;
+use Koha::Patrons;
 use Koha::StockRotationItem;
 use Koha::StockRotationRotas;
 
@@ -125,6 +126,26 @@ sub checkout {
     my $checkout_rs = $self->_result->issue;
     return unless $checkout_rs;
     return Koha::Checkout->_new_from_dbic( $checkout_rs );
+}
+
+=head3 volume
+
+my $volume = $item->volume;
+
+Return the volume for this item
+
+=cut
+
+sub volume {
+    my ( $self ) = @_;
+
+    my $volume_item = $self->_result->volume_items->first;
+    return unless $volume_item;
+
+    my $volume_rs = $volume_item->volume;
+    return unless $volume_rs;
+
+    return Koha::Biblio::Volume->_new_from_dbic( $volume_rs );
 }
 
 =head3 holds

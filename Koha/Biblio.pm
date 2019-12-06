@@ -35,6 +35,7 @@ use base qw(Koha::Object);
 use Koha::ArticleRequest::Status;
 use Koha::ArticleRequests;
 use Koha::Biblio::Metadatas;
+use Koha::Biblio::Volumes;
 use Koha::Biblioitems;
 use Koha::IssuingRules;
 use Koha::Item::Transfer::Limits;
@@ -79,6 +80,21 @@ sub metadata {
 
     my $metadata = $self->_result->metadata;
     return Koha::Biblio::Metadata->_new_from_dbic($metadata);
+}
+
+=head3 volumes
+
+my $volumes = $biblio->volumes();
+
+Returns a Koha::Biblio::Volumes object
+
+=cut
+
+sub volumes {
+    my ( $self ) = @_;
+
+    my $volumes = $self->_result->volumes;
+    return Koha::Biblio::Volumes->_new_from_dbic($volumes);
 }
 
 =head3 can_article_request
