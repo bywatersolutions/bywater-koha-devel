@@ -36,6 +36,7 @@ use Koha::Acquisition::Orders;
 use Koha::ArticleRequest::Status;
 use Koha::ArticleRequests;
 use Koha::Biblio::Metadatas;
+use Koha::Biblio::Volumes;
 use Koha::Biblioitems;
 use Koha::CirculationRules;
 use Koha::Item::Transfer::Limits;
@@ -112,6 +113,21 @@ sub active_orders {
     my ( $self ) = @_;
 
     return $self->orders->search({ datecancellationprinted => undef });
+}
+
+=head3 volumes
+
+my $volumes = $biblio->volumes();
+
+Returns a Koha::Biblio::Volumes object
+
+=cut
+
+sub volumes {
+    my ( $self ) = @_;
+
+    my $volumes = $self->_result->volumes;
+    return Koha::Biblio::Volumes->_new_from_dbic($volumes);
 }
 
 =head3 can_article_request
