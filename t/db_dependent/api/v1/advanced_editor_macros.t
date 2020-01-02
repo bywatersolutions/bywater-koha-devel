@@ -64,7 +64,7 @@ subtest 'list() tests' => sub {
             name => 'Test2',
             macro => 'delete 100',
             borrowernumber => $patron_1->borrowernumber,
-            public => 1,
+            shared=> 1,
         }
     });
     my $macro_3 = $builder->build_object({ class => 'Koha::AdvancedEditorMacros', value =>
@@ -79,11 +79,11 @@ subtest 'list() tests' => sub {
             name => 'Test4',
             macro => 'delete 100',
             borrowernumber => $patron_2->borrowernumber,
-            public => 1,
+            shared => 1,
         }
     });
 
-    my $macros_index = Koha::AdvancedEditorMacros->search({ -or => { public => 1, borrowernumber => $patron_1->borrowernumber } })->count-1;
+    my $macros_index = Koha::AdvancedEditorMacros->search({ -or => { shared => 1, borrowernumber => $patron_1->borrowernumber } })->count-1;
     ## Authorized user tests
     # Make sure we are returned with the correct amount of macros
     $t->get_ok( "//$userid:$password@/api/v1/advancededitormacros" )
@@ -106,7 +106,7 @@ subtest 'list() tests' => sub {
         $t->get_ok("//$userid:$password@/api/v1/advancededitormacros?patron_id=" . $patron_1->borrowernumber)
           ->status_is(200)
           ->json_has( [ $macro_1, $macro_2 ] );
-        $t->get_ok("//$userid:$password@/api/v1/advancededitormacros?public=1")
+        $t->get_ok("//$userid:$password@/api/v1/advancededitormacros?shared=1")
           ->status_is(200)
           ->json_has( [ $macro_2, $macro_4 ] );
     };
@@ -120,7 +120,7 @@ subtest 'list() tests' => sub {
 
 subtest 'get() tests' => sub {
 
-    plan tests => 12;
+    plan tests => 15;
 
     my $patron = $builder->build_object({
         class => 'Koha::Patrons',
@@ -131,29 +131,34 @@ subtest 'get() tests' => sub {
     my $userid = $patron->userid;
 
     my $macro_1 = $builder->build_object( { class => 'Koha::AdvancedEditorMacros', value => {
-            public => 1,
+            shared => 1,
         }
     });
     my $macro_2 = $builder->build_object( { class => 'Koha::AdvancedEditorMacros', value => {
-            public => 0,
+            shared => 0,
         }
     });
     my $macro_3 = $builder->build_object( { class => 'Koha::AdvancedEditorMacros', value => {
             borrowernumber => $patron->borrowernumber,
+            shared => 0,
         }
     });
 
     $t->get_ok( "//$userid:$password@/api/v1/advancededitormacros/" . $macro_1->id )
-      ->status_is( 200, 'SWAGGER3.2.2' )
-      ->json_is( '' => Koha::REST::V1::AdvancedEditorMacro::_to_api( $macro_1->TO_JSON ), 'SWAGGER3.3.2' );
+      ->status_is( 403, 'Cannot get a shared macro via regular endpoint' )
+      ->json_is( '/error' => 'This macro is shared, you must access it via advancededitormacros/shared' );
+
+    $t->get_ok( "//$userid:$password@/api/v1/advancededitormacros/shared/" . $macro_1->id )
+      ->status_is( 200, 'Can get a shared macro via shared endpoint' )
+      ->json_is( '' => Koha::REST::V1::AdvancedEditorMacro::_to_api( $macro_1->TO_JSON ), 'Macro correctly retrieved' );
 
     $t->get_ok( "//$userid:$password@/api/v1/advancededitormacros/" . $macro_2->id )
-      ->status_is( 403, 'SWAGGER3.2.2' )
+      ->status_is( 403, 'Cannot access another users macro' )
       ->json_is( '/error' => 'You do not have permission to access this macro' );
 
     $t->get_ok( "//$userid:$password@/api/v1/advancededitormacros/" . $macro_3->id )
-      ->status_is( 200, 'SWAGGER3.2.2' )
-      ->json_is( '' => Koha::REST::V1::AdvancedEditorMacro::_to_api( $macro_3->TO_JSON ), 'SWAGGER3.3.2' );
+      ->status_is( 200, 'Can get your own private macro' )
+      ->json_is( '' => Koha::REST::V1::AdvancedEditorMacro::_to_api( $macro_3->TO_JSON ), 'Macro correctly retrieved' );
 
     my $non_existent_code = $macro_1->id;
     $macro_1->delete;
@@ -166,7 +171,7 @@ subtest 'get() tests' => sub {
 
 subtest 'add() tests' => sub {
 
-    plan tests => 20;
+    plan tests => 24;
 
     my $authorized_patron = $builder->build_object({
         class => 'Koha::Patrons',
@@ -194,7 +199,7 @@ subtest 'add() tests' => sub {
 
     my $macro = $builder->build_object({
         class => 'Koha::AdvancedEditorMacros',
-        value => { public => 0 }
+        value => { shared => 0 }
     });
     my $macro_values     = Koha::REST::V1::AdvancedEditorMacro::_to_api( $macro->TO_JSON );
     delete $macro_values->{macro_id};
@@ -222,12 +227,12 @@ subtest 'add() tests' => sub {
     # Authorized attempt to write
     $t->post_ok( "//$auth_userid:$password@/api/v1/advancededitormacros" => json => $macro_values )
       ->status_is( 201, 'SWAGGER3.2.1' )
-      ->json_has( '/macro_id', 'SWAGGER3.3.1' )
-      ->json_is( '/name' => $macro_values->{name}, 'SWAGGER3.3.1' )
-      ->json_is( '/macro_text' => $macro_values->{macro_text}, 'SWAGGER3.3.1' )
-      ->json_is( '/patron_id' => $macro_values->{patron_id}, 'SWAGGER3.3.1' )
-      ->json_is( '/public' => $macro_values->{public}, 'SWAGGER3.3.1' )
-      ->header_like( Location => qr|^\/api\/v1\/advancededitormacros\/d*|, 'SWAGGER3.4.1' );
+      ->json_has( '/macro_id', 'We generated a new id' )
+      ->json_is( '/name' => $macro_values->{name}, 'The name matches what we supplied' )
+      ->json_is( '/macro_text' => $macro_values->{macro_text}, 'The text matches what we supplied' )
+      ->json_is( '/patron_id' => $macro_values->{patron_id}, 'The borrower matches the borrower who submitted' )
+      ->json_is( '/shared' => 0, 'The macro is not shared' )
+      ->header_like( Location => qr|^\/api\/v1\/advancededitormacros\/d*|, 'Correct location' );
 
     # save the library_id
     my $macro_id = 999;
@@ -245,11 +250,14 @@ subtest 'add() tests' => sub {
         ]
     );
 
-    $macro_values->{public} = 1;
+    $macro_values->{shared} = 1;
     delete $macro_values->{macro_id};
 
-    # Unauthorized attempt to write a public macro
+    # Unauthorized attempt to write a shared macro on private endpoint
     $t->post_ok( "//$auth_userid:$password@/api/v1/advancededitormacros" => json => $macro_values )
+      ->status_is(403);
+    # Unauthorized attempt to write a private macro on shared endpoint
+    $t->post_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/shared" => json => $macro_values )
       ->status_is(403);
 
     $builder->build({
@@ -257,18 +265,22 @@ subtest 'add() tests' => sub {
         value  => {
             borrowernumber => $authorized_patron->borrowernumber,
             module_bit     => 9,
-            code           => 'create_public_macros',
+            code           => 'create_shared_macros',
         },
     });
 
-    # Authorized attempt to write a public macro
+    # Authorized attempt to write a shared macro on private endpoint
     $t->post_ok( "//$auth_userid:$password@/api/v1/advancededitormacros" => json => $macro_values )
+      ->status_is(403);
+
+    # Authorized attempt to write a shared macro on shared endpoint
+    $t->post_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/shared" => json => $macro_values )
       ->status_is(201);
 
 };
 
 subtest 'update() tests' => sub {
-    plan tests => 28;
+    plan tests => 32;
 
     my $authorized_patron = $builder->build_object({
         class => 'Koha::Patrons',
@@ -296,11 +308,11 @@ subtest 'update() tests' => sub {
 
     my $macro = $builder->build_object({
         class => 'Koha::AdvancedEditorMacros',
-        value => { borrowernumber => $authorized_patron->borrowernumber, public => 0 }
+        value => { borrowernumber => $authorized_patron->borrowernumber, shared => 0 }
     });
     my $macro_2 = $builder->build_object({
         class => 'Koha::AdvancedEditorMacros',
-        value => { borrowernumber => $unauthorized_patron->borrowernumber, public => 0 }
+        value => { borrowernumber => $unauthorized_patron->borrowernumber, shared => 0 }
     });
     my $macro_id = $macro->id;
     my $macro_2_id = $macro_2->id;
@@ -327,39 +339,44 @@ subtest 'update() tests' => sub {
         name => "Macro-update",
         macro_text => "delete 100",
         patron_id => $authorized_patron->borrowernumber,
-        public => 0,
+        shared => 0,
     };
 
     my $test = $t->put_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/$macro_id" => json => $macro_update )
-      ->status_is(200, 'SWAGGER3.2.1')
-      ->json_has( '/macro_id', 'SWAGGER3.3.1' )
-      ->json_is( '/name' => $macro_update->{name}, 'SWAGGER3.3.1' )
-      ->json_is( '/macro_text' => $macro_update->{macro_text}, 'SWAGGER3.3.1' )
-      ->json_is( '/patron_id' => $macro_update->{patron_id}, 'SWAGGER3.3.1' )
-      ->json_is( '/public' => $macro_update->{public}, 'SWAGGER3.3.1' );
+      ->status_is(200, 'Authorized user can update a macro')
+      ->json_is( '/macro_id' => $macro_id, 'We get the id back' )
+      ->json_is( '/name' => $macro_update->{name}, 'We get the name back' )
+      ->json_is( '/macro_text' => $macro_update->{macro_text}, 'We get the text back' )
+      ->json_is( '/patron_id' => $macro_update->{patron_id}, 'We get the patron_id back' )
+      ->json_is( '/shared' => $macro_update->{shared}, 'It should still not be shared' );
 
-    # Now try to make the macro public
-    $macro_update->{public} = 1;
+    # Now try to make the macro shared
+    $macro_update->{shared} = 1;
 
-    $t->put_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/$macro_id" => json => $macro_update )
-      ->status_is(403, 'Cannot make your macro public without permission');
+    $t->put_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/shared/$macro_id" => json => $macro_update )
+      ->status_is(403, 'Cannot make your macro shared on private endpoint');
+    $t->put_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/shared/$macro_id" => json => $macro_update )
+      ->status_is(403, 'Cannot make your macro shared without permission');
 
     $builder->build({
         source => 'UserPermission',
         value  => {
             borrowernumber => $authorized_patron->borrowernumber,
             module_bit     => 9,
-            code           => 'create_public_macros',
+            code           => 'create_shared_macros',
         },
     });
 
     $t->put_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/$macro_id" => json => $macro_update )
-      ->status_is(200, 'Can update macro to public with permission')
-      ->json_has( '/macro_id', 'SWAGGER3.3.1' )
-      ->json_is( '/name' => $macro_update->{name}, 'SWAGGER3.3.1' )
-      ->json_is( '/macro_text' => $macro_update->{macro_text}, 'SWAGGER3.3.1' )
-      ->json_is( '/patron_id' => $macro_update->{patron_id}, 'SWAGGER3.3.1' )
-      ->json_is( '/public' => $macro_update->{public}, 'SWAGGER3.3.1' );
+      ->status_is(403, 'Cannot make your macro shared on the private endpoint');
+
+    $t->put_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/shared/$macro_id" => json => $macro_update )
+      ->status_is(200, 'Can update macro to shared with permission')
+      ->json_is( '/macro_id' => $macro_id, 'We get back the id' )
+      ->json_is( '/name' => $macro_update->{name}, 'We get back the name' )
+      ->json_is( '/macro_text' => $macro_update->{macro_text}, 'We get back the text' )
+      ->json_is( '/patron_id' => $macro_update->{patron_id}, 'We get back our patron id' )
+      ->json_is( '/shared' => 1, 'It is shared' );
 
     # Authorized attempt to write invalid data
     my $macro_with_invalid_field = { %$macro_update };
@@ -384,11 +401,11 @@ subtest 'update() tests' => sub {
       ->status_is(404);
 
     $t->put_ok("//$auth_userid:$password@/api/v1/advancededitormacros/$macro_2_id" => json => $macro_update)
-      ->status_is(403, "Cannot update other borrowers non public macro");
+      ->status_is(403, "Cannot update other borrowers private macro");
 };
 
 subtest 'delete() tests' => sub {
-    plan tests => 10;
+    plan tests => 12;
 
     my $authorized_patron = $builder->build_object({
         class => 'Koha::Patrons',
@@ -416,11 +433,11 @@ subtest 'delete() tests' => sub {
 
     my $macro = $builder->build_object({
         class => 'Koha::AdvancedEditorMacros',
-        value => { borrowernumber => $authorized_patron->borrowernumber, public => 0 }
+        value => { borrowernumber => $authorized_patron->borrowernumber, shared => 0 }
     });
     my $macro_2 = $builder->build_object({
         class => 'Koha::AdvancedEditorMacros',
-        value => { borrowernumber => $unauthorized_patron->borrowernumber, public => 0 }
+        value => { borrowernumber => $unauthorized_patron->borrowernumber, shared => 0 }
     });
     my $macro_id = $macro->id;
     my $macro_2_id = $macro_2->id;
@@ -435,21 +452,23 @@ subtest 'delete() tests' => sub {
     $t->delete_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/$macro_2_id")
       ->status_is(403, 'Cannot delete other users macro with permission');
 
-    $macro_2->public(1)->store();
+    $macro_2->shared(1)->store();
 
-    $t->delete_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/$macro_2_id")
-      ->status_is(403, 'Cannot delete other users public macro without permission');
+    $t->delete_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/shared/$macro_2_id")
+      ->status_is(403, 'Cannot delete other users shared macro without permission');
 
     $builder->build({
         source => 'UserPermission',
         value  => {
             borrowernumber => $authorized_patron->borrowernumber,
             module_bit     => 9,
-            code           => 'delete_public_macros',
+            code           => 'delete_shared_macros',
         },
     });
     $t->delete_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/$macro_2_id")
-      ->status_is(200, 'Can delete other users public macro with permission');
+      ->status_is(403, 'Cannot delete other users shared macro with permission on private endpoint');
+    $t->delete_ok( "//$auth_userid:$password@/api/v1/advancededitormacros/shared/$macro_2_id")
+      ->status_is(200, 'Can delete other users shared macro with permission');
 
 };
 

@@ -16,11 +16,11 @@
       "description": "borrower number",
       "type": ["integer", "null"]
     },
-    "public": {
-        "description": "is macro public",
+    "shared": {
+        "description": "is macro shared",
         "type": ["string", "null"]
     }
   },
   "additionalProperties": false,
-  "required": ["name", "macro_text", "patron_id", "public"]
+  "required": ["name", "macro_text", "patron_id", "shared"]
 }

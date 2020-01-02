@@ -33,20 +33,16 @@ Koha::AdvancedEditorMacro - Koha Advanced Editor Macro Object class
 
 =head3 to_api_mapping
 
-This method returns the mapping for representing a Koha::AdvancedEditorMacro object
-on the API.
-
 =cut
 
 sub to_api_mapping {
     return {
-        id              => 'macro_id',
-        name            => 'name',
-        macro           => 'macro_text',
-        borrowernumber  => 'patron_id',
-        public          => 'public',
+        id                  => 'macro_id',
+        macro               => 'macro_text',
+        borrowernumber      => 'patron_id',
     };
 }
+
 
 =head2 Internal methods
 
