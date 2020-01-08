@@ -1843,6 +1843,7 @@ sub AddReturn {
         undef $branch;
     }
     $branch = C4::Context->userenv->{'branch'} unless $branch;  # we trust userenv to be a safe fallback/default
+    my $return_date_specified = !!$return_date;
     $return_date //= dt_from_string();
     my $messages;
     my $patron;
@@ -1960,7 +1961,7 @@ sub AddReturn {
                 MarkIssueReturned( $borrowernumber, $item->itemnumber, $return_date, $patron->privacy );
             };
             unless ( $@ ) {
-                if ( C4::Context->preference('CalculateFinesOnReturn') && !$item->itemlost ) {
+                if ( ( $return_date_specified || C4::Context->preference('CalculateFinesOnReturn') ) && !$item->itemlost ) {
                     _CalculateAndUpdateFine( { issue => $issue, item => $item_unblessed, borrower => $patron_unblessed, return_date => $return_date } );
                 }
             } else {
