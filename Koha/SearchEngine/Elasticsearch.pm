@@ -412,6 +412,27 @@ sub _process_mappings {
     }
 }
 
+our $heading_fields = {
+    150 => [
+        { name => 'Match', subfields => ['a','b','c','x'] },
+        { name => 'Match-heading', subfields => ['a','b','c','x'] },
+    ],
+    110 => [
+        { name => 'Match', subfields => ['a','b','c','x']  }
+    ]
+};
+
+=head2 subdivisions
+
+=cut
+
+our %subdivisions = (
+    'v' => 'formsubdiv',
+    'x' => 'generalsubdiv',
+    'y' => 'chronologicalsubdiv',
+    'z' => 'geographicsubdiv',
+);
+
 =head2 marc_records_to_documents($marc_records)
 
     my $record_documents = $self->marc_records_to_documents($marc_records);
@@ -433,6 +454,7 @@ Reference to array of C<MARC::Record> objects to be converted to Elasticsearch d
 
 sub marc_records_to_documents {
     my ($self, $records) = @_;
+warn $self->index;
     my $rules = $self->_get_marc_mapping_rules();
     my $control_fields_rules = $rules->{control_fields};
     my $data_fields_rules = $rules->{data_fields};
@@ -455,6 +477,22 @@ sub marc_records_to_documents {
                 }
             }
             else {
+                if( $self->index eq 'authorities' && defined $heading_fields->{$field->tag} ){
+                    foreach my $match_type (@{ $heading_fields->{$field->tag} }){
+                        my $term;
+                        foreach my $subfield (@{ $match_type->{subfields} }){
+                            if( exists $subdivisions{$subfield} ){
+                                $term .= " " . $subdivisions{$subfield};
+                            }
+                            if( $field->subfield($subfield) ){
+                                $term .= " " . $field->subfield($subfield);
+                            }
+                        }
+                        push @{ $record_document->{ $match_type->{name} } }, $term;
+                        warn Data::Dumper::Dumper( $record_document );
+                    }
+                }
+
                 my $tag = $field->tag();
                 # Handle alternate scripts in MARC 21
                 my $altscript = 0;
@@ -467,13 +505,13 @@ sub marc_records_to_documents {
                 }
 
                 my $data_field_rules = $data_fields_rules->{$tag};
-
                 if ($data_field_rules) {
                     my $subfields_mappings = $data_field_rules->{subfields};
                     my $wildcard_mappings = $subfields_mappings->{'*'};
                     foreach my $subfield ($field->subfields()) {
                         my ($code, $data) = @{$subfield};
                         my $mappings = $subfields_mappings->{$code} // [];
+                        
                         if ($wildcard_mappings) {
                             $mappings = [@{$mappings}, @{$wildcard_mappings}];
                         }
