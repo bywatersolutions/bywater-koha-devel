@@ -17,7 +17,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 4;
+use Test::More tests => 5;
 use Test::Exception;
 
 use t::lib::Mocks;
@@ -26,6 +26,7 @@ use Test::MockModule;
 
 use MARC::Record;
 use Try::Tiny;
+use List::Util qw( any );
 
 use Koha::SearchEngine::Elasticsearch;
 use Koha::SearchEngine::Elasticsearch::Search;
@@ -514,4 +515,87 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
     ok(defined $exception, "Exception has been thrown when processing mapping with unmatched closing parenthesis");
     ok($exception->isa("Koha::Exceptions::Elasticsearch::MARCFieldExprParseError"), "Exception is of correct class");
     ok($exception->message =~ /Unmatched closing parenthesis/, "Exception has the correct message");
+};
+
+subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () authority tests' => sub {
+
+    plan tests => 2;
+
+    t::lib::Mocks::mock_preference('marcflavour', 'MARC21');
+    t::lib::Mocks::mock_preference('ElasticsearchMARCFormat', 'ISO2709');
+
+    my @mappings = (
+        {
+            name => 'match-heading',
+            type => 'string',
+            facet => 0,
+            suggestible => 0,
+            sort => undef,
+            marc_type => 'marc21',
+            marc_field => '150',
+        },
+        {
+            name => 'match-heading',
+            type => 'string',
+            facet => 0,
+            suggestible => 0,
+            sort => 0,
+            marc_type => 'marc21',
+            marc_field => '150a',
+        },
+        {
+            name => 'match-heading',
+            type => 'string',
+            facet => 0,
+            suggestible => 0,
+            sort => 0,
+            marc_type => 'marc21',
+            marc_field => '150(ae)',
+        },
+    );
+
+    my $se = Test::MockModule->new('Koha::SearchEngine::Elasticsearch');
+    $se->mock('_foreach_mapping', sub {
+        my ($self, $sub) = @_;
+
+        foreach my $map (@mappings) {
+            $sub->(
+                $map->{name},
+                $map->{type},
+                $map->{facet},
+                $map->{suggestible},
+                $map->{sort},
+                $map->{marc_type},
+                $map->{marc_field}
+            );
+        }
+    });
+
+    my $see = Koha::SearchEngine::Elasticsearch::Search->new({ index => $Koha::SearchEngine::Elasticsearch::AUTHORITIES_INDEX });
+
+    my $marc_record_1 = MARC::Record->new();
+    $marc_record_1->append_fields(
+        MARC::Field->new('001', '123'),
+        MARC::Field->new('007', 'ku'),
+        MARC::Field->new('020', '', '', a => '1-56619-909-3'),
+        MARC::Field->new('150', '', '', a => 'Subject', v => 'Genresubdiv', x => 'Generalsubdiv', z => 'Geosubdiv'),
+    );
+    my $marc_record_2 = MARC::Record->new();
+    $marc_record_2->append_fields(
+        MARC::Field->new('150', '', '', a => 'Subject', v => 'Genresubdiv', z => 'Geosubdiv', x => 'Generalsubdiv', e => 'wrongsubdiv' ),
+    );
+    my $records = [$marc_record_1, $marc_record_2];
+
+    $see->get_elasticsearch_mappings(); #sort_fields will call this and use the actual db values unless we call it first
+    my $docs = $see->marc_records_to_documents($records);
+    ok(
+        any { $_ eq "Subject formsubdiv Genresubdiv generalsubdiv Generalsubdiv geographicsubdiv Geosubdiv" }
+        @{$docs->[0]->{'match-heading'}},
+        "First record match-heading should contain the correctly formatted heading"
+    );
+    ok(
+        any { $_ eq "Subject formsubdiv Genresubdiv geographicsubdiv Geosubdiv generalsubdiv Generalsubdiv" }
+        @{$docs->[1]->{'match-heading'}},
+        "Second record match-heading should contain the correctly formatted heading without wrong subfield"
+    );
 };
