@@ -277,7 +277,7 @@ $dbh->do(
 
 my ( $reused_itemnumber_1, $reused_itemnumber_2 );
 subtest "CanBookBeRenewed tests" => sub {
-    plan tests => 71;
+    plan tests => 77;
 
     C4::Context->set_preference('ItemsDeniedRenewal','');
     # Generate test biblio
