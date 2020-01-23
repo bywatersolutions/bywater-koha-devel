@@ -296,6 +296,12 @@
         "required": false,
         "type": "string"
       }, {
+        "name": "autorenew_checkouts",
+        "in": "query",
+        "description": "Search on autorenew_checkouts",
+        "required": false,
+        "type": "boolean"
+      }, {
         "name": "altcontact_firstname",
         "in": "query",
         "description": "Case insensitive search on altcontact_firstname",

@@ -769,6 +769,7 @@ $template->param(no_add => $no_add);
 
 $template->param( sort1 => $data{'sort1'});
 $template->param( sort2 => $data{'sort2'});
+$template->param( autorenew => $data{'autorenew'});
 
 if ($nok) {
     foreach my $error (@errors) {
