@@ -61,3 +61,5 @@ transfer_limit:
   $ref: definitions/transfer_limit.yaml
 vendor:
   $ref: definitions/vendor.yaml
+volume:
+  $ref: definitions/volume.yaml
