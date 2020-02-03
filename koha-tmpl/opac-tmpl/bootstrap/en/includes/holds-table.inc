@@ -67,7 +67,11 @@
                         <td class="reservedate">
                             <span title="[% HOLD.reservedate | html %]">
                                 <span class="tdlabel">Hold date:</span>
-                                [% HOLD.reservedate | $KohaDates %]
+                                [% IF Koha.Preference("HourBasedHolds") %]
+                                    [% HOLD.reservedate | $KohaDates with_hours = 1 %]
+                                [% ELSE %]
+                                    [% HOLD.reservedate | $KohaDates %]
+                                [% END %]
                             </span>
                         </td>
                         <td class="expirationdate">
@@ -75,7 +79,11 @@
                                 [% IF ( HOLD.expirationdate ) %]
                                     <span title="[% HOLD.expirationdate | html %]">
                                         <span class="tdlabel">Expiration:</span>
-                                            [% HOLD.expirationdate | $KohaDates %]
+                                            [% IF Koha.Preference("HourBasedHolds") %]
+                                                [% HOLD.expirationdate | $KohaDates with_hours = 1 %]
+                                            [% ELSE %]
+                                                [% HOLD.expirationdate | $KohaDates %]
+                                            [% END %]
                                     </span>
                                 [% ELSE %]
                                     <span title="0000-00-00">

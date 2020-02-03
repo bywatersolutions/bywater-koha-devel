@@ -279,14 +279,14 @@
                                                 [% IF ( reserve_in_future ) %]
                                                     <li>
                                                         <label for="from[% bibitemloo.biblionumber | html %]">Hold starts on date:</label>
-                                                        <input type="text" name="reserve_date_[% bibitemloo.biblionumber | html %]" id="from[% bibitemloo.biblionumber | html %]" size="10" class="holddatefrom"/>
+                                                        <input type="text" name="reserve_date_[% bibitemloo.biblionumber | html %]" id="from[% bibitemloo.biblionumber | html %]" size="15" class="holddatefrom"/>
                                                         <span class="date-format from" data-biblionumber="[% bibitemloo.biblionumber | html %]">[% INCLUDE 'date-format.inc' %]</span>
                                                     </li>
                                                 [% END %]
 
                                                 <li>
                                                     <label for="to[% bibitemloo.biblionumber | html %]">Hold not needed after:</label>
-                                                    <input type="text" name="expiration_date_[% bibitemloo.biblionumber | html %]" id="to[% bibitemloo.biblionumber | html %]" size="10" class="holddateto" />
+                                                    <input type="text" name="expiration_date_[% bibitemloo.biblionumber | html %]" id="to[% bibitemloo.biblionumber | html %]" size="15" class="holddateto" />
                                                     <span class="date-format to" data-biblionumber="[% bibitemloo.biblionumber | html %]">[% INCLUDE 'date-format.inc' %]</span>
                                                 </li>
 
@@ -466,6 +466,8 @@
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
 [% INCLUDE 'calendar.inc' %]
+[% Asset.js("lib/jquery/plugins/jquery-ui-timepicker-addon.min.js") | $raw %]
+[% INCLUDE 'timepicker.inc' %]
 <script>
 // <![CDATA[
     var MSG_NO_ITEM_SELECTED = _("Expecting a specific item selection.");
@@ -682,23 +684,35 @@
             return true;
         });
 
-        [% FOREACH bibitemloo IN bibitemloop %]
-            [% IF ( bibitemloo.holdable ) %]
-                // http://jqueryui.com/demos/datepicker/#date-range
-                var dates[% bibitemloo.biblionumber | html %] = $( "#from[% bibitemloo.biblionumber | html %], #to[% bibitemloo.biblionumber | html %]" ).datepicker({
-                    minDate: 0,
-                    changeMonth: true,
-                    numberOfMonths: 1,
-                    onSelect: function( selectedDate ) {
-                        var option = this.id == "from[% bibitemloo.biblionumber | html %]" ? "minDate" : "maxDate",
-                            instance = $( this ).data( "datepicker" );
-                            date = $.datepicker.parseDate(
-                                instance.settings.dateFormat ||
-                                $.datepicker._defaults.dateFormat,
-                                selectedDate, instance.settings );
-                        dates[% bibitemloo.biblionumber | html %].not( this ).datepicker( "option", option, date );
-                    }
-                });
+        [% IF Koha.Preference('HourBasedHolds') %]
+            [% FOREACH bibitemloo IN bibitemloop %]
+                [% IF ( bibitemloo.holdable ) %]
+                    var dates[% bibitemloo.biblionumber | html %] = $( "#from[% bibitemloo.biblionumber | html %], #to[% bibitemloo.biblionumber | html %]" ).datetimepicker({
+                        minDate: 0,
+                        hour: 23,
+                        minute: 59
+                    });
+                [% END %]
+            [% END %]
+        [% ELSE %]
+            [% FOREACH bibitemloo IN bibitemloop %]
+                [% IF ( bibitemloo.holdable ) %]
+                    // http://jqueryui.com/demos/datepicker/#date-range
+                    var dates[% bibitemloo.biblionumber | html %] = $( "#from[% bibitemloo.biblionumber | html %], #to[% bibitemloo.biblionumber | html %]" ).datepicker({
+                        minDate: 0,
+                        changeMonth: true,
+                        numberOfMonths: 1,
+                        onSelect: function( selectedDate ) {
+                            var option = this.id == "from[% bibitemloo.biblionumber | html %]" ? "minDate" : "maxDate",
+                                instance = $( this ).data( "datepicker" );
+                                date = $.datepicker.parseDate(
+                                    instance.settings.dateFormat ||
+                                    $.datepicker._defaults.dateFormat,
+                                    selectedDate, instance.settings );
+                            dates[% bibitemloo.biblionumber | html %].not( this ).datepicker( "option", option, date );
+                        }
+                    });
+                [% END %]
             [% END %]
         [% END %]
 
