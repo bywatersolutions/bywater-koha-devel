@@ -187,10 +187,26 @@ sub AddReserve {
     my $itemtype       = $params->{itemtype};
     my $non_priority   = $params->{non_priority};
 
-    $resdate = output_pref( { str => dt_from_string( $resdate ), dateonly => 1, dateformat => 'iso' })
-        or output_pref({ dt => dt_from_string, dateonly => 1, dateformat => 'iso' });
-
-    $expdate = output_pref({ str => $expdate, dateonly => 1, dateformat => 'iso' });
+    if ( C4::Context->preference('HourBasedHolds') ){
+        if ( $resdate ){
+            $resdate = dt_from_string( $resdate )->set_second( 00 );
+        } else {
+            $resdate = dt_from_string();
+        }
+        if ( $expdate ){
+            $expdate = dt_from_string( $expdate )->set_second( 59 );
+        }
+    } else {
+        # add hour and minute components
+        if ( $resdate ){
+            $resdate = dt_from_string( $resdate )->set({ hour => 00, minute => 00, second => 00 });
+        } else {
+            $resdate = dt_from_string();
+        }
+        if ( $expdate ){
+            $expdate = dt_from_string( $expdate )->set({ hour => 23, minute => 59, second => 59 });
+        }
+    }
 
     # if we have an item selectionned, and the pickup branch is the same as the holdingbranch
     # of the document, we force the value $priority and $found .
@@ -906,7 +922,7 @@ sub CancelExpiredReserves {
     my $expireWaiting = C4::Context->preference('ExpireReservesMaxPickUpDelay');
 
     my $dtf = Koha::Database->new->schema->storage->datetime_parser;
-    my $params = { expirationdate => { '<', $dtf->format_date($today) } };
+    my $params = { expirationdate => { '<', $today } };
     $params->{found} = [ { '!=', 'W' }, undef ]  unless $expireWaiting;
 
     # FIXME To move to Koha::Holds->search_expired (?)

@@ -439,7 +439,11 @@
                             [% IF ( reserve_in_future ) %]
                                 <li>
                                     <label for="from">Hold starts on date:</label>
-                                    <input name="reserve_date" id="from" size="10" class="datepickerfrom" type="text" >
+                                    [% IF Koha.Preference('HourBasedHolds') %]
+                                        <input name="reserve_date" id="from" size="15" type="text">
+                                    [% ELSE %]
+                                        <input name="reserve_date" id="from" size="10" class="datepickerfrom" type="text" >
+                                    [% END %]
                                     <input type="hidden" class="datepickerfrom_hidden" />
                                     <a href="#" id="clear-date-from" class="clear-date">Clear date</a>
                                 </li>
@@ -447,7 +451,11 @@
 
                             <li>
                                 <label for="to">Hold expires on date:</label>
-                                <input name="expiration_date" id="to" size="10" class="datepickerto" type="text" />
+                                [% IF Koha.Preference('HourBasedHolds') %]
+                                    <input name="expiration_date" id="to" size="15" type="text">
+                                [% ELSE %]
+                                    <input name="expiration_date" id="to" size="10" class="datepickerto" type="text" />
+                                [% END %]
                                 <input type="hidden" class="datepickerto_hidden" />
                                 <a href="#" id="clear-date-to" class="clear-date">Clear date</a>
                             </li>
@@ -985,6 +993,8 @@
     [% INCLUDE 'columns_settings.inc' %]
     [% Asset.js("lib/hc-sticky.js") | $raw %]
     [% Asset.js("js/circ-patron-search-results.js") | $raw %]
+    [% Asset.js("lib/jquery/plugins/jquery-ui-timepicker-addon.min.js") | $raw %]
+    [% INCLUDE 'timepicker.inc' %]
     <script>
         var Sticky;
         var biblionumber = "[% biblionumber | $raw %]";
@@ -1054,7 +1064,21 @@
             [% END %]
 
             [% IF AutoResumeSuspendedHolds %]
-                $(".suspend_until_datepicker, .datepickerfrom, .datepickerto").datepicker("option", "minDate", 1);
+                [% IF Koha.Preference('HourBasedHolds') %]
+                    $(".suspend_until_datepicker").datepicker("option", "minDate", 1);
+                    $("#from, #to, .holdstablefrom, .holdstableto").datetimepicker({
+                         onClose: function(dateText, inst) {
+                            validate_date(dateText, inst);
+                        },
+                        minDate: 0,
+                        hour: 23,
+                        minute: 59
+                    }).on("change", function(e) {
+                        if ( ! is_valid_date( $(this).val() ) ) {$(this).val("");}
+                    });
+                [% ELSE %]
+                    $(".suspend_until_datepicker, .datepickerfrom, .datepickerto").datepicker("option", "minDate", 1);
+                [% END %]
             [% END %]
 
             $(".datepickerto").datepicker("option", "altField", ".datepickerto_hidden");

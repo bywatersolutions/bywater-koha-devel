@@ -108,14 +108,22 @@
             </td>
 
             <td>[% hold.notes | html | html_line_break %]</td>
-            <td>
+
+            [% IF Koha.Preference('HourBasedHolds') %]
                 [% IF Koha.Preference('AllowHoldDateInFuture') %]
-                    <input type="text" class="datepicker" value="[% hold.date | $KohaDates %]" required="required" size="10" name="reservedate" />
+                    <td><input type="text" class="holdstablefrom" value="[% hold.date | $KohaDates with_hours = 1 | html %]" required="required" size="15" name="reservedate" /></td>
                 [% ELSE %]
-                    [% hold.date | $KohaDates %]
+                    <td>[% hold.date | $KohaDates with_hours = 1 | html %]</td>
                 [% END %]
-            </td>
-            <td><input type="text" class="datepickerto" value="[% hold.expirationdate | $KohaDates %]" size="10" name="expirationdate" /></td>
+                <td><input type="text" class="holdstableto" value="[% hold.expirationdate | $KohaDates with_hours = 1 | html %]" size="15" name="expirationdate" /></td>
+            [% ELSE %]
+                [% IF Koha.Preference('AllowHoldDateInFuture') %]
+                    <td><input type="text" class="datepicker" value="[% hold.date | $KohaDates | html %]" required="required" size="10" name="reservedate" /></td>
+                [% ELSE %]
+                    <td>[% hold.date | $KohaDates | html %]</td>
+                [% END %]
+                <td><input type="text" class="datepicker" value="[% hold.expirationdate | $KohaDates | html %]" size="10" name="expirationdate" /></td>
+            [% END %]
 
             <td>
                 [% IF ( hold.found ) %]
