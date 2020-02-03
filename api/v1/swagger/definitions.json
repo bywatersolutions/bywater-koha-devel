@@ -44,6 +44,9 @@
   "fund": {
     "$ref": "definitions/fund.json"
   },
+  "volume": {
+    "$ref": "definitions/volume.json"
+  },
   "return_claim": {
     "$ref": "definitions/return_claim.json"
   }
