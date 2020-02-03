@@ -628,6 +628,12 @@ Circulation:
             - the last patron to return an item. This setting is independent of the opacreadinghistory and AnonymousPatron system preferences.
     Holds policy:
         -
+            - pref: HourBasedHolds
+              choices:
+                  yes: Allow
+                  no: "Don't allow"
+            - holds to operate on an hourly or minutes basis. If enabled, hours and minutes will be considered when placing a hold, and cronjobs will be run hourly.
+        -
             - In the staff interface, split the holds queue into separate tables by
             - pref: HoldsSplitQueue
               choices:

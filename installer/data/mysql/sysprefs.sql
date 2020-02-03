@@ -232,6 +232,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('HoldsSplitQueue','nothing','nothing|branch|itemtype|branch_itemtype','In the staff interface, split the holds view by the given criteria','Choice'),
 ('HoldsToPullStartDate','2',NULL,'Set the default start date for the Holds to pull list to this many days ago','Integer'),
 ('HomeOrHoldingBranch','holdingbranch','holdingbranch|homebranch','Used by Circulation to determine which branch of an item to check with independent branches on, and by search to determine which branch to choose for availability ','Choice'),
+('HourBasedHolds', 0, NULL, 'Allow holds to operate on an hourly or minutes basis', 'YesNo'),
 ('HouseboundModule',0,'','If ON, enable housebound module functionality.','YesNo'),
 ('HTML5MediaEnabled','not','not|opac|staff|both','Show a tab with a HTML5 media player for files catalogued in field 856','Choice'),
 ('HTML5MediaExtensions','webm|ogg|ogv|oga|vtt','','Media file extensions','free'),
