@@ -1,0 +1,48 @@
+{
+    "type": "object",
+    "properties": {
+        "volume_id": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "Internal identifier for the volume"
+        },
+        "biblio_id": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "Internal identifier for the parent bibliographic record"
+        },
+        "description": {
+            "type": "string",
+            "description": "Volume description"
+        },
+        "display_order": {
+            "type": "integer",
+            "description": "Volume description"
+        },
+        "creation_date": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Date and time the volume was created"
+        },
+        "modification_date": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "Date and time the volume was last modified"
+        },
+        "items": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "readOnly": true,
+            "description": "A list of items that belong to the volume (x-koha-embed)"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "volume_id",
+        "biblio_id"
+    ]
+}

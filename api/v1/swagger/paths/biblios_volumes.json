@@ -1,0 +1,593 @@
+{
+    "/biblios/{biblio_id}/volumes": {
+        "get": {
+            "x-mojo-to": "Biblios::Volumes#list",
+            "operationId": "listVolumes",
+            "tags": [
+                "volumes"
+            ],
+            "parameters": [
+                {
+                    "name": "biblio_id",
+                    "in": "path",
+                    "description": "Internal identifier for the parent bibliographic record",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "$ref": "../parameters.json#/match"
+                },
+                {
+                    "$ref": "../parameters.json#/order_by"
+                },
+                {
+                    "$ref": "../parameters.json#/page"
+                },
+                {
+                    "$ref": "../parameters.json#/per_page"
+                }
+            ],
+            "consumes": [
+                "application/json"
+            ],
+            "produces": [
+                "application/json"
+            ],
+            "responses": {
+                "200": {
+                    "description": "A list of volumes",
+                    "schema": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "../definitions.json#/volume"
+                        }
+                    }
+                },
+                "401": {
+                    "description": "Authentication required",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "403": {
+                    "description": "Access forbidden",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "500": {
+                    "description": "Internal server error",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "503": {
+                    "description": "Under maintenance",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                }
+            },
+            "x-koha-authorization": {
+                "permissions": {
+                    "catalogue": "1"
+                }
+            },
+            "x-koha-embed": [
+                "items"
+            ]
+        },
+        "post": {
+            "x-mojo-to": "Biblios::Volumes#add",
+            "operationId": "addVolume",
+            "tags": [
+                "volumes"
+            ],
+            "parameters": [
+                {
+                    "name": "biblio_id",
+                    "in": "path",
+                    "description": "Internal identifier for the parent bibliographic record",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "body",
+                    "in": "body",
+                    "description": "A JSON object representing a volume",
+                    "required": true,
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "description": {
+                                "type": "string",
+                                "description": "Volume description"
+                            },
+                            "display_order": {
+                                "type": "integer",
+                                "description": "Position in waiting queue"
+                            }
+                        }
+                    }
+                }
+            ],
+            "consumes": [
+                "application/json"
+            ],
+            "produces": [
+                "application/json"
+            ],
+            "responses": {
+                "201": {
+                    "description": "A successfully created volume",
+                    "schema": {
+                        "$ref": "../definitions.json#/volume"
+                    }
+                },
+                "400": {
+                    "description": "Bad parameter",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "401": {
+                    "description": "Authentication required",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "403": {
+                    "description": "Access forbidden",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "404": {
+                    "description": "Resource not found",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "409": {
+                    "description": "Conflict in creating resource",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "500": {
+                    "description": "Internal server error",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "503": {
+                    "description": "Under maintenance",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                }
+            },
+            "x-koha-authorization": {
+                "permissions": {
+                    "catalogue": "1"
+                }
+            }
+        }
+    },
+    "/biblios/{biblio_id}/volumes/{volume_id}": {
+        "get": {
+            "x-mojo-to": "Biblios::Volumes#get",
+            "operationId": "getVolume",
+            "tags": [
+                "volumes"
+            ],
+            "parameters": [
+                {
+                    "name": "biblio_id",
+                    "in": "path",
+                    "description": "Internal identifier for the parent bibliographic record",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "volume_id",
+                    "in": "path",
+                    "description": "Internal identifier for the volume",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "consumes": [
+                "application/json"
+            ],
+            "produces": [
+                "application/json"
+            ],
+            "responses": {
+                "200": {
+                    "description": "A volume",
+                    "schema": {
+                        "$ref": "../definitions.json#/volume"
+                    }
+                },
+                "400": {
+                    "description": "Missing or wrong parameters",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "404": {
+                    "description": "Volume not found",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "500": {
+                    "description": "Internal server error",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "503": {
+                    "description": "Under maintenance",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                }
+            },
+            "x-koha-embed": [
+                "items"
+            ],
+            "x-koha-authorization": {
+                "permissions": {
+                    "catalogue": "1"
+                }
+            }
+        },
+        "put": {
+            "x-mojo-to": "Biblios::Volumes#update",
+            "operationId": "updateVolume",
+            "tags": [
+                "volumes"
+            ],
+            "parameters": [
+                {
+                    "name": "biblio_id",
+                    "in": "path",
+                    "description": "Internal identifier for the parent bibliographic record",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "volume_id",
+                    "in": "path",
+                    "description": "Internal identifier for the volume",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "body",
+                    "in": "body",
+                    "description": "A JSON object with the new values for the volume",
+                    "required": true,
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "description": {
+                                "type": "string",
+                                "description": "Volume description"
+                            },
+                            "display_order": {
+                                "type": "integer",
+                                "description": "Position in waiting queue"
+                            }
+                        }
+                    }
+                }
+            ],
+            "consumes": [
+                "application/json"
+            ],
+            "produces": [
+                "application/json"
+            ],
+            "responses": {
+                "200": {
+                    "description": "The updated volume",
+                    "schema": {
+                        "$ref": "../definitions.json#/volume"
+                    }
+                },
+                "400": {
+                    "description": "Bad request",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "401": {
+                    "description": "Authentication required",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "403": {
+                    "description": "Access forbidden",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "404": {
+                    "description": "Volume not found",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "500": {
+                    "description": "Internal error",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "503": {
+                    "description": "Under maintenance",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                }
+            },
+            "x-koha-authorization": {
+                "permissions": {
+                    "catalogue": "1"
+                }
+            },
+            "x-koha-embed": [
+                "items"
+            ]
+        },
+        "delete": {
+            "x-mojo-to": "Biblios::Volumes#delete",
+            "operationId": "deleteVolume",
+            "tags": [
+                "volumes"
+            ],
+            "parameters": [
+                {
+                    "name": "biblio_id",
+                    "in": "path",
+                    "description": "Internal identifier for the parent bibliographic record",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "volume_id",
+                    "in": "path",
+                    "description": "Internal identifier for the volume",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "produces": [
+                "application/json"
+            ],
+            "responses": {
+                "204": {
+                    "description": "Volume deleted",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                "401": {
+                    "description": "Authentication required",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "403": {
+                    "description": "Access forbidden",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "404": {
+                    "description": "Volume not found",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "500": {
+                    "description": "Internal error",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "503": {
+                    "description": "Under maintenance",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                }
+            },
+            "x-koha-authorization": {
+                "permissions": {
+                    "catalogue": "1"
+                }
+            }
+        }
+    },
+    "/biblios/{biblio_id}/volumes/{volume_id}/items": {
+        "post": {
+            "x-mojo-to": "Biblios::Volumes::Items#add",
+            "operationId": "addVolumeItem",
+            "tags": [
+                "volumes"
+            ],
+            "parameters": [
+                {
+                    "name": "biblio_id",
+                    "in": "path",
+                    "description": "Internal identifier for the parent bibliographic record",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "volume_id",
+                    "in": "path",
+                    "description": "Internal identifier for the volume",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "body",
+                    "in": "body",
+                    "description": "A JSON object containing an item_id",
+                    "required": true,
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "item_id": {
+                                "type": "integer",
+                                "description": "Internal identifier for an item to be linked"
+                            }
+                        }
+                    }
+                }
+            ],
+            "consumes": [
+                "application/json"
+            ],
+            "produces": [
+                "application/json"
+            ],
+            "responses": {
+                "201": {
+                    "description": "Item linked to volume"
+                },
+                "400": {
+                    "description": "Bad request",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "401": {
+                    "description": "Authentication required",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "403": {
+                    "description": "Access forbidden",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "409": {
+                    "description": "Request conflicts",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "500": {
+                    "description": "Internal error",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "503": {
+                    "description": "Under maintenance",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                }
+            },
+            "x-koha-authorization": {
+                "permissions": {
+                    "catalogue": "1"
+                }
+            },
+            "x-koha-embed": [
+                "items"
+            ]
+        }
+    },
+    "/biblios/{biblio_id}/volumes/{volume_id}/items/{item_id}": {
+        "delete": {
+            "x-mojo-to": "Biblios::Volumes::Items#delete",
+            "operationId": "deleteVolumeItems",
+            "tags": [
+                "volumes"
+            ],
+            "parameters": [
+                {
+                    "name": "biblio_id",
+                    "in": "path",
+                    "description": "Internal identifier for the parent bibliographic record",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "volume_id",
+                    "in": "path",
+                    "description": "Internal identifier for the volume",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "item_id",
+                    "in": "path",
+                    "description": "Internal identifier for the item",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "consumes": [
+                "application/json"
+            ],
+            "produces": [
+                "application/json"
+            ],
+            "responses": {
+                "204": {
+                    "description": "Item unlinked from volume",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                "401": {
+                    "description": "Authentication required",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "403": {
+                    "description": "Access forbidden",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "404": {
+                    "description": "Item not linked to volume",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "500": {
+                    "description": "Internal error",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                },
+                "503": {
+                    "description": "Under maintenance",
+                    "schema": {
+                        "$ref": "../definitions.json#/error"
+                    }
+                }
+            },
+            "x-koha-authorization": {
+                "permissions": {
+                    "catalogue": "1"
+                }
+            }
+        }
+    }
+}
