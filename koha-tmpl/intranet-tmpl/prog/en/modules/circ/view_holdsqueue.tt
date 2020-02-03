@@ -170,7 +170,13 @@
               [% END %]
             </td>
             <td class="hq-sendto">[% Branches.GetName( itemsloo.pickbranch ) | html %]</td>
-            <td class="hq-date"><span title="[% itemsloo.reservedate | html %]">[% itemsloo.reservedate | $KohaDates %]</span></td>
+            <td class="hq-date"><span title="[% itemsloo.reservedate | html %]">
+                [% IF Koha.Preference('HourBasedHolds') %]
+                    [% itemsloo.reservedate | $KohaDates with_hours = 1 %]
+                [% ELSE %]
+                    [% itemsloo.reservedate | $KohaDates %]
+                [% END %]
+            </span></td>
             <td class="hq-notes">[% itemsloo.notes | html %]</td>
         </tr>
     [% END %]</tbody>

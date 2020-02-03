@@ -19,8 +19,20 @@
     <tbody>
         [% FOREACH reserveloo IN reserveloop %]
             <tr>
-                <td><span title="[% reserveloo.waitingdate | html %]">[% reserveloo.waitingdate | $KohaDates %]</span></td>
-                <td><span title="[% reserveloo.reservedate | html %]">[% reserveloo.reservedate | $KohaDates %]</span></td>
+                <td><span title="[% reserveloo.waitingdate | html %]">
+                    [% IF Koha.Preference('HourBasedHolds') %]
+                        [% reserveloo.waitingdate | $KohaDates with_hours = 1 %]
+                    [% ELSE %]
+                        [% reserveloo.waitingdate | $KohaDates %]
+                    [% END %]
+                </span></td>
+                <td><span title="[% reserveloo.reservedate | html %]">
+                    [% IF Koha.Preference('HourBasedHolds') %]
+                        [% reserveloo.reservedate | $KohaDates with_hours = 1 %]
+                    [% ELSE %]
+                        [% reserveloo.reservedate | $KohaDates %]
+                    [% END %]
+                </span></td>
                 <td>[% INCLUDE 'biblio-default-view.inc' biblionumber = reserveloo.biblionumber %]
                         [% INCLUDE 'biblio-title.inc' biblio=reserveloo.biblio %]
                     </a>

@@ -61,10 +61,20 @@
           <td>[% hold.biblio.author | html %]</td>
           <td>[% hold.item.barcode | html %]</td>
           <td>[% Branches.GetName( hold.branchcode ) | html %]</td>
-          <td><span title="[% hold.reservedate | html %]">[% hold.reservedate | $KohaDates %]</span></td>
+          <td><span title="[% hold.reservedate | html %]">
+            [% IF Koha.Preference('HourBasedHolds') %]
+              [% hold.reservedate | $KohaDates with_hours = 1 %]
+            [% ELSE %]
+              [% hold.reservedate | $KohaDates with_hours %]
+            [% END %]
+          </span></td>
           <td>
               [% IF hold.expirationdate %]
+                [% IF Koha.Preference('HourBasedHolds') %]
+                  <span title="[% hold.expirationdate | html %]">[% hold.expirationdate | $KohaDates with_hours = 1 %]</span>
+                [% ELSE %]
                   <span title="[% hold.expirationdate | html %]">[% hold.expirationdate | $KohaDates %]</span>
+                [% END %]
               [% ELSE %]
                   <span title="0000-00-00"></span>
               [% END %]

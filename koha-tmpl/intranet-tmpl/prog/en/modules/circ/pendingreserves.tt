@@ -145,7 +145,12 @@
         [% END %]
         </td>
         <td>
-            <span title="[% reserveloo.reservedate | html %]">[% reserveloo.reservedate | $KohaDates %] in [% Branches.GetName ( reserveloo.branch ) | html %]</span>
+            <span title="[% reserveloo.reservedate | html %]">
+                [% IF Koha.Preference('HourBasedHolds') %]
+                    [% reserveloo.reservedate | $KohaDates with_hours = 1 %]
+                [% ELSE %]
+                    [% reserveloo.reservedate | $KohaDates %]
+                [% END %] in [% Branches.GetName ( reserveloo.branch ) | html %]</span>
         </td>
         <td>
             <form name="cancelReserve" action="/cgi-bin/koha/circ/pendingreserves.pl" method="post">
