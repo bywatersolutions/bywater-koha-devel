@@ -96,9 +96,11 @@
     <h3>Pending orders</h3>
 
     [% IF ( loop_orders ) %]
+      <a class="receivemulti" style="display:none;" href="#receiveMultiple">Recieve selected</a>
       <table id="pendingt">
         <thead>
           <tr>
+            <th>&nbsp;</th>
             <th>Basket search</th>
             <th>Basket group search</th>
             <th>Order line search</th>
@@ -113,6 +115,7 @@
             <th>&nbsp;</th>
           </tr>
           <tr>
+            <th>&nbsp;</th>
             <th>Basket</th>
             <th>Basket group</th>
             <th>Order line</th>
@@ -130,6 +133,7 @@
         <tbody class="filterclass">
         [% FOREACH loop_order IN loop_orders %]
             <tr>
+                <td><input type="checkbox" class="multireceipt" value="[% loop_order.ordernumber | html %]"></td>
                 <td class="basketfilterclass"><a href="/cgi-bin/koha/acqui/basket.pl?basketno=[% loop_order.basketno | uri %]">[% loop_order.basketname | html %] ([% loop_order.basketno | html %])</a></td>
                 <td>
                   [% IF loop_order.basketgroupid %]
@@ -460,6 +464,20 @@
         var sticky_filters = [% sticky_filters | html %];
 
         $(document).ready(function(){
+            $(".multireceipt").click(function(){
+                if( $(".multireceipt:checked").length > 0 ){
+                    $('.receivemulti').show();
+                } else {
+                    $('.receivemulti').hide();
+                }
+            });
+            $(".receivemulti").click(function(){
+                var the_orders = "";
+                $(".multireceipt:checked").each(function(){
+                    the_orders += "&ordernumber="+$(this).val();
+                });
+                window.location.href = "/cgi-bin/koha/acqui/multireceive.pl?invoiceid=[%invoiceid | uri %]"+the_orders;
+            });
           if ( $("#pendingt").length ) {
             var pendingt = $("#pendingt").dataTable($.extend(true, {}, dataTablesDefaults, {
                 "bStateSave": true,
@@ -467,9 +485,10 @@
                 "iDisplayLength": 10,
                 "aLengthMenu": [[5, 10, 20, 50, 100, -1], [5, 10, 20, 50, 100, _("All")]],
                 "aoColumnDefs": [
-                    { "aTargets": [ 4, 9, 10 ], "bSortable": false, "bSearchable": false },
+                    { "aTargets": [ 5, 10, 11 ], "bSortable": false, "bSearchable": false },
                 ],
                 "aoColumns": [
+                    null,
                     { "sType": "html" },
                     { "sType": "html" },
                     { "sType": "num-html" },
@@ -489,6 +508,7 @@
             ).columnFilter({
                 sPlaceHolder: "head:after",
                 aoColumns: [
+                    null,
                     { type: "text" },
                     { type: "text" },
                     { type: "text" },
