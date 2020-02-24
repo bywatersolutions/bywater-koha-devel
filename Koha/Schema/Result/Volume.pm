@@ -36,6 +36,12 @@ __PACKAGE__->table("volumes");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 display_order
+
+  data_type: 'integer'
+  default_value: 0
+  is_nullable: 0
+
 =head2 description
 
   data_type: 'mediumtext'
@@ -45,8 +51,7 @@ __PACKAGE__->table("volumes");
 
   data_type: 'timestamp'
   datetime_undef_if_invalid: 1
-  default_value: '0000-00-00 00:00:00'
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 updated_on
 
@@ -67,14 +72,15 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable    => 0,
   },
+  "display_order",
+  { data_type => "integer", default_value => 0, is_nullable => 0 },
   "description",
   { data_type => "mediumtext", is_nullable => 1 },
   "created_on",
   {
     data_type => "timestamp",
     datetime_undef_if_invalid => 1,
-    default_value => "0000-00-00 00:00:00",
-    is_nullable => 0,
+    is_nullable => 1,
   },
   "updated_on",
   {
@@ -114,6 +120,36 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 old_reserves
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::OldReserve>
+
+=cut
+
+__PACKAGE__->has_many(
+  "old_reserves",
+  "Koha::Schema::Result::OldReserve",
+  { "foreign.volume_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 reserves
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::Reserve>
+
+=cut
+
+__PACKAGE__->has_many(
+  "reserves",
+  "Koha::Schema::Result::Reserve",
+  { "foreign.volume_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 volume_items
 
 Type: has_many
@@ -130,8 +166,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-02-04 15:22:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cXvLM2TgY18pxE2ZJBMouw
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-02-28 14:28:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Qg1AhIgW7n2Ws8rAwdFSpw
 
 sub koha_objects_class {
     'Koha::Biblio::Volumes';

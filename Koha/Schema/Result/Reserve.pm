@@ -49,6 +49,12 @@ __PACKAGE__->table("reserves");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 volume_id
+
+  data_type: 'integer'
+  is_foreign_key: 1
+  is_nullable: 1
+
 =head2 branchcode
 
   data_type: 'varchar'
@@ -168,6 +174,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable    => 0,
   },
+  "volume_id",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "branchcode",
   { data_type => "varchar", is_foreign_key => 1, is_nullable => 1, size => 10 },
   "notificationdate",
@@ -335,9 +343,29 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 volume
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-10-01 07:08:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Pc5zh5iFbdwko5KS51Y9Uw
+Type: belongs_to
+
+Related object: L<Koha::Schema::Result::Volume>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "volume",
+  "Koha::Schema::Result::Volume",
+  { id => "volume_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "SET NULL",
+    on_update     => "CASCADE",
+  },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-02-24 11:26:50
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZH4g79tek2appBHwdFLn5g
 
 __PACKAGE__->belongs_to(
   "item",
