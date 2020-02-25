@@ -448,9 +448,13 @@ sub CanItemBeReserved {
         return { status => "tooManyHoldsForThisRecord", limit => $holds_per_record };
     }
 
+    my $dtf = Koha::Database->new->schema->storage->datetime_parser;
+    my $fromdate = dt_from_string->set({ hour => 00, minute => 00, second => 00 });
+    my $todate = dt_from_string->set({ hour => 23, minute => 59, second => 59 });
+
     my $today_holds = Koha::Holds->search({
         borrowernumber => $borrowernumber,
-        reservedate    => dt_from_string->date
+        reservedate    => [ -and => { '>=' => $dtf->format_datetime($fromdate) }, { '<=' => $dtf->format_datetime($todate) } ]
     });
 
     if (   defined $holds_per_day && $holds_per_day ne ''
@@ -922,7 +926,7 @@ sub CancelExpiredReserves {
     my $expireWaiting = C4::Context->preference('ExpireReservesMaxPickUpDelay');
 
     my $dtf = Koha::Database->new->schema->storage->datetime_parser;
-    my $params = { expirationdate => { '<', $today } };
+    my $params = { expirationdate => { '<', $dtf->format_datetime($today) } };
     $params->{found} = [ { '!=', 'W' }, undef ]  unless $expireWaiting;
 
     # FIXME To move to Koha::Holds->search_expired (?)

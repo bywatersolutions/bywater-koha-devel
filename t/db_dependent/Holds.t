@@ -102,7 +102,7 @@ my $reservedate = $first_hold->reservedate;
 my $borrowernumber = $first_hold->borrowernumber;
 my $branch_1code = $first_hold->branchcode;
 my $reserve_id = $first_hold->reserve_id;
-is( $reservedate, output_pref({ dt => dt_from_string, dateformat => 'iso', dateonly => 1 }), "holds_placed_today should return a valid reserve date");
+is( dt_from_string( $reservedate ), dt_from_string, "holds_placed_today should return a valid reserve date");
 is( $borrowernumber, $borrowernumbers[0], "holds_placed_today should return a valid borrowernumber");
 is( $branch_1code, $branch_1, "holds_placed_today should return a valid branchcode");
 ok($reserve_id, "Test holds_placed_today()");
@@ -715,7 +715,7 @@ subtest 'CanItemBeReserved / holds_per_day tests' => sub {
     is_deeply(
         CanItemBeReserved( $patron->borrowernumber, $itemnumber_2 ),
         { status => 'tooManyReservesToday', limit => 2 },
-        'Patron cannot a third item with 2 reserves daily cap'
+        'Patron cannot reserve a third item with 2 reserves daily cap'
     );
 
     # Update last hold so reservedate is in the past, so 2 holds, but different day

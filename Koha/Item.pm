@@ -648,7 +648,7 @@ sub current_holds {
         itemnumber => $self->itemnumber,
         suspend => 0,
         -or => [
-            reservedate => { '<=' => $dtf->format_date(dt_from_string) },
+            reservedate => { '<=' => $dtf->format_datetime(dt_from_string) },
             waitingdate => { '!=' => undef },
         ],
     };
