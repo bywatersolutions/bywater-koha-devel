@@ -21,33 +21,36 @@ use Modern::Perl;
 use CGI qw ( -utf8 );
 use HTML::Entities;
 use Try::Tiny;
-use C4::Auth;
-use C4::Context;
-use C4::Koha;
-use C4::Serials;    #uses getsubscriptionfrom biblionumber
-use C4::Output;
-use C4::Biblio;
-use C4::Items;
-use C4::Circulation;
-use C4::Reserves;
-use C4::Serials;
-use C4::XISBN qw(get_xisbns);
-use C4::External::Amazon;
-use C4::Search;        # enabled_staff_search_views
-use C4::Tags qw(get_tags);
-use C4::XSLT;
-use C4::Images;
-use Koha::DateUtils;
-use C4::HTML5Media;
-use C4::CourseReserves qw(GetItemCourseReservesInfo);
+
 use C4::Acquisition qw(GetOrdersByBiblionumber);
+use C4::Auth;
+use C4::Biblio;
+use C4::Circulation;
+use C4::Context;
+use C4::CourseReserves qw(GetItemCourseReservesInfo);
+use C4::External::Amazon;
+use C4::HTML5Media;
+use C4::Images;
+use C4::Items;
+use C4::Koha;
+use C4::Output;
+use C4::Reserves;
+use C4::Search;        # enabled_staff_search_views
+use C4::Serials;
+use C4::Serials;    #uses getsubscriptionfrom biblionumber
+use C4::Tags qw(get_tags);
+use C4::XISBN qw(get_xisbns);
+use C4::XSLT;
+
 use Koha::AuthorisedValues;
+use Koha::Biblio::Volume::Items;
 use Koha::Biblios;
-use Koha::Items;
+use Koha::DateUtils;
 use Koha::ItemTypes;
+use Koha::Items;
 use Koha::Patrons;
-use Koha::Virtualshelves;
 use Koha::Plugins;
+use Koha::Virtualshelves;
 
 my $query = CGI->new();
 
@@ -114,6 +117,41 @@ if ( not defined $record ) {
 
 eval { $biblio->metadata->record };
 $template->param( decoding_error => $@ );
+
+my $op = $query->param('op') || q{};
+if ( $op eq 'set_volume' ) {
+    my $volume_id   = $query->param('volume_id');
+    my @itemnumbers = $query->multi_param('itemnumber');
+
+    foreach my $itemnumber (@itemnumbers) {
+        my $volume_item =
+          Koha::Biblio::Volume::Items->find( { itemnumber => $itemnumber } );
+
+        if ($volume_item) {
+            $volume_item->volume_id($volume_id);
+        }
+        else {
+            $volume_item = Koha::Biblio::Volume::Item->new(
+                {
+                    itemnumber => $itemnumber,
+                    volume_id  => $volume_id,
+                }
+            );
+        }
+
+        $volume_item->store();
+    }
+}
+elsif ( $op eq 'unset_volume' ) {
+    my $volume_id   = $query->param('volume_id');
+    my @itemnumbers = $query->multi_param('itemnumber');
+
+    foreach my $itemnumber (@itemnumbers) {
+        my $volume_item =
+          Koha::Biblio::Volume::Items->find( { itemnumber => $itemnumber } );
+        $volume_item->delete() if $volume_item;
+    }
+}
 
 if($query->cookie("holdfor")){ 
     my $holdfor_patron = Koha::Patrons->find( $query->cookie("holdfor") );
@@ -312,6 +350,7 @@ foreach my $item (@items) {
 
     # checking for holds
     my $item_object = Koha::Items->find( $item->{itemnumber} );
+    $item->{object} = $item_object;
     my $holds = $item_object->current_holds;
     if ( my $first_hold = $holds->next ) {
         $item->{first_hold} = $first_hold;

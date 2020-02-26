@@ -36,12 +36,14 @@ use Koha::ArticleRequest::Status;
 use Koha::ArticleRequests;
 use Koha::Biblio::Metadatas;
 use Koha::Biblio::Volumes;
+use Koha::Biblio::Volumes;
 use Koha::Biblioitems;
 use Koha::IssuingRules;
 use Koha::Item::Transfer::Limits;
 use Koha::Items;
 use Koha::Libraries;
 use Koha::Subscriptions;
+use Koha::Suggestions;
 
 =head1 NAME
 
