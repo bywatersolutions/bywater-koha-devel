@@ -69,6 +69,26 @@ $(document).ready(function(){
         multiCopyControl.toggle();
     });
 
+    // Add new item to volume
+    if ( has_volumes ) {
+        $('#volume-add-or-create-form-description-block').hide();
+        $('#volume-add-or-create-form-no-add').attr('selected', 'selected' );
+
+        $('#volume-add-or-create-form-select').on('change', function(){
+            if ( $(this).val() == 'create' ) {
+                $('#volume-add-or-create-form-description')
+                    .addClass('required')
+                    .attr( 'required', 'required' );
+                $('#volume-add-or-create-form-description-block').show();
+            } else {
+                $('#volume-add-or-create-form-description')
+                    .removeClass('required')
+                    .removeAttr('required');
+                $('#volume-add-or-create-form-description-block').hide();
+            }
+        });
+    }
+
 });
 
 function Check(f) {

@@ -22,28 +22,30 @@
 use Modern::Perl;
 
 use CGI qw ( -utf8 );
+use List::MoreUtils qw/any/;
+use MARC::File::XML;
+use Storable qw(thaw freeze);
+use URI::Escape;
+
 use C4::Auth;
-use C4::Output;
 use C4::Biblio;
-use C4::Items;
-use C4::Context;
 use C4::Circulation;
-use C4::Koha;
 use C4::ClassSource;
+use C4::Context;
+use C4::Items;
+use C4::Koha;
+use C4::Members;
+use C4::Output;
+use C4::Search;
+
+use Koha::Biblio::Volume::Items;
+use Koha::Biblio::Volumes;
 use Koha::DateUtils;
-use Koha::Items;
 use Koha::ItemTypes;
+use Koha::Items;
 use Koha::Libraries;
 use Koha::Patrons;
 use Koha::SearchEngine::Indexer;
-use List::MoreUtils qw/any/;
-use C4::Search;
-use Storable qw(thaw freeze);
-use URI::Escape;
-use C4::Members;
-
-use MARC::File::XML;
-use URI::Escape;
 
 our $dbh = C4::Context->dbh;
 
@@ -85,6 +87,34 @@ sub set_item_default_location {
         $item->permanent_location($item->location) unless defined $item->permanent_location;
     }
     $item->store;
+}
+
+sub add_item_to_volume {
+    my ( $biblionumber, $itemnumber, $volume, $volume_description ) = @_;
+
+    return unless $volume;
+
+    my $volume_id;
+    if ( $volume eq 'create' ) {
+        my $volume = Koha::Biblio::Volume->new(
+            {
+                biblionumber => $biblionumber,
+                description  => $volume_description,
+            }
+        )->store();
+
+        $volume_id = $volume->id;
+    }
+    else {
+        $volume_id = $volume;
+    }
+
+    my $volume_item = Koha::Biblio::Volume::Item->new(
+        {
+            itemnumber => $itemnumber,
+            volume_id  => $volume_id,
+        }
+    )->store();
 }
 
 # NOTE: This code is subject to change in the future with the implemenation of ajax based autobarcode code
@@ -419,6 +449,8 @@ my $fa_barcode            = $input->param('barcode');
 my $fa_branch             = $input->param('branch');
 my $fa_stickyduedate      = $input->param('stickyduedate');
 my $fa_duedatespec        = $input->param('duedatespec');
+my $volume                = $input->param('volume');
+my $volume_description    = $input->param('volume_description');
 
 my $frameworkcode = &GetFrameworkCode($biblionumber);
 
@@ -527,6 +559,7 @@ if ($op eq "additem") {
         unless ($exist_itemnumber) {
             my ( $oldbiblionumber, $oldbibnum, $oldbibitemnum ) = AddItemFromMarc( $record, $biblionumber );
             set_item_default_location($oldbibitemnum);
+            add_item_to_volume( $oldbiblionumber, $oldbibitemnum, $volume, $volume_description );
 
             # Pushing the last created item cookie back
             if ($prefillitem && defined $record) {
@@ -627,6 +660,7 @@ if ($op eq "additem") {
             my ( $oldbiblionumber, $oldbibnum, $oldbibitemnum ) =
                 AddItemFromMarc( $record, $biblionumber, { skip_record_index => 1 } );
             set_item_default_location($oldbibitemnum);
+            add_item_to_volume( $oldbiblionumber, $oldbibitemnum, $volume, $volume_description );
 
             # We count the item only if it was really added
             # That way, all items are added, even if there was some already existing barcodes
@@ -997,6 +1031,7 @@ foreach my $tag ( keys %{$tagslib}){
 
 # what's the next op ? it's what we are not in : an add if we're editing, otherwise, and edit.
 $template->param(
+    volumes      => scalar Koha::Biblio::Volumes->search({ biblionumber => $biblionumber }),
     biblionumber => $biblionumber,
     title        => $oldrecord->{title},
     author       => $oldrecord->{author},
