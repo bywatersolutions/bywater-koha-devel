@@ -46,16 +46,18 @@ use Koha::DateUtils qw( format_sqldatetime );
 use C4::HTML5Media;
 use C4::CourseReserves qw( GetItemCourseReservesInfo );
 use Koha::AuthorisedValues;
+use Koha::Biblio::Volume::Items;
 use Koha::Biblios;
 use Koha::CoverImages;
+use Koha::DateUtils;
 use Koha::Illrequests;
-use Koha::Items;
 use Koha::ItemTypes;
+use Koha::Items;
 use Koha::Patrons;
-use Koha::Virtualshelves;
 use Koha::Plugins;
 use Koha::SearchEngine::Search;
 use Koha::SearchEngine::QueryBuilder;
+use Koha::Virtualshelves;
 
 my $query = CGI->new();
 
@@ -97,6 +99,41 @@ if ( not defined $record ) {
 
 my $marc_record = eval { $biblio->metadata->record };
 $template->param( decoding_error => $@ );
+
+my $op = $query->param('op') || q{};
+if ( $op eq 'set_volume' ) {
+    my $volume_id   = $query->param('volume_id');
+    my @itemnumbers = $query->multi_param('itemnumber');
+
+    foreach my $itemnumber (@itemnumbers) {
+        my $volume_item =
+          Koha::Biblio::Volume::Items->find( { itemnumber => $itemnumber } );
+
+        if ($volume_item) {
+            $volume_item->volume_id($volume_id);
+        }
+        else {
+            $volume_item = Koha::Biblio::Volume::Item->new(
+                {
+                    itemnumber => $itemnumber,
+                    volume_id  => $volume_id,
+                }
+            );
+        }
+
+        $volume_item->store();
+    }
+}
+elsif ( $op eq 'unset_volume' ) {
+    my $volume_id   = $query->param('volume_id');
+    my @itemnumbers = $query->multi_param('itemnumber');
+
+    foreach my $itemnumber (@itemnumbers) {
+        my $volume_item =
+          Koha::Biblio::Volume::Items->find( { itemnumber => $itemnumber } );
+        $volume_item->delete() if $volume_item;
+    }
+}
 
 if($query->cookie("holdfor")){
     my $holdfor_patron = Koha::Patrons->find( $query->cookie("holdfor") );
@@ -335,6 +372,7 @@ foreach my $item (@items) {
 
     # checking for holds
     my $item_object = Koha::Items->find( $item->{itemnumber} );
+    $item->{object} = $item_object;
     my $holds = $item_object->current_holds;
     if ( my $first_hold = $holds->next ) {
         $item->{first_hold} = $first_hold;

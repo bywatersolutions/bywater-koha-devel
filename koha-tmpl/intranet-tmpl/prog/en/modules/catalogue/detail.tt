@@ -304,6 +304,10 @@
               [% IF CAN_user_tools_items_batchmod %]
                 <a class="itemselection_action_modify"><i class="fa fa-pencil"></i> Modify selected items</a>
               [% END %]
+              [% IF biblio.volumes.count %]
+                <a class="itemselection_action_volume_set" href="#"><i class="fa fa-book"></i> Add/move to volume</a>
+                <a class="itemselection_action_volume_unset" href="#"><i class="fa fa-unlink"></i> Remove from volume</a>
+              [% END %]
             </span>
         [% END %]
     </div>
@@ -318,6 +322,7 @@
                 <th id="[% tab | html %]_holdingbranch" data-colname="[% tab | html %]_holdingbranch">Current library</th>
                 <th id="[% tab | html %]_homebranch" data-colname="[% tab | html %]_homebranch">Home library</th>
                 [% IF ( itemdata_ccode ) %]<th id="[% tab | html %]_ccode" data-colname="[% tab | html %]_ccode">Collection</th>[% END %]
+                [% IF Koha.Preference('EnableVolumes') %]<th>Volume</th>[% END %]
                 <th id="[% tab | html %]_itemcallnumber" data-colname="[% tab | html %]_itemcallnumber">Call number</th>
                 [% IF volinfo %]
                     <th id="[% tab | html %]_enumchron" data-colname="[% tab | html %]_enumchron">Serial enumeration / chronology</th>
@@ -392,6 +397,7 @@ Note that permanent location is a code, and location may be an authval.
                         </span>
                     </td>
                     [% IF ( itemdata_ccode ) %]<td>[% item.ccode | html %]</td>[% END %]
+                    [% IF Koha.Preference('EnableVolumes') %]<td>[% item.object.volume.description | html %]</td>[% END %]
                     <td class="itemcallnumber">[% IF ( item.itemcallnumber ) %] [% item.itemcallnumber | html %][% END %]</td>
                     [% IF ( volinfo ) %]
                         [% IF itemdata_publisheddate #If there is at least one published date, use it for sorting %]
@@ -1109,7 +1115,7 @@ Note that permanent location is a code, and location may be an authval.
     </div>
 </div>
 
-<div class="modal fade" id="modal-volume-delete" tabindex="-1" role="dialog" aria-labelledby="modal-volume-create-label">
+<div class="modal fade" id="modal-volume-delete" tabindex="-1" role="dialog" aria-labelledby="modal-volume-delete-label">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -1121,6 +1127,54 @@ Note that permanent location is a code, and location may be an authval.
             </div>
             <div class="modal-footer">
                 <button id="modal-volume-delete-submit" class="btn btn-danger"><i class='fa fa-trash'></i> Delete</button>
+                <button class="btn btn-link" data-dismiss="modal" aria-hidden="true">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-volume-set" tabindex="-1" role="dialog" aria-labelledby="modal-volume-set-label">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="closebtn" data-dismiss="modal" aria-hidden="true">×</button>
+                <h3 id="modal-volume-set-label"><i class='fa fa-book'></i> Set volume for items</h3>
+            </div>
+            <form id="modal-volume-set-form" class="validated">
+                <div class="modal-body">
+                    <fieldset>
+                        <p>
+                            <label for="volume" class="required">Volume: </label>
+                            <select name="volume" id="volume-add-form-select">
+                                [% FOREACH v IN biblio.volumes %]
+                                    <option value="[% v.id | html %]">[% v.description | html %]</option>
+                                [% END %]
+                            </select>
+                            <span class="required">Required</span>
+                        </p>
+                    </fieldset>
+                </div>
+                <div class="modal-footer">
+                    <button id="modal-volume-set-submit" class="btn btn-default"><i class='fa fa-book'></i> Set volume</button>
+                    <button class="btn btn-link" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-volume-unset" tabindex="-1" role="dialog" aria-labelledby="modal-volume-unset-label">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="closebtn" data-dismiss="modal" aria-hidden="true">×</button>
+                <h3 id="modal-volume-unset-label"><i class='fa fa-unlink'></i> Remove item from volume</h3>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to remove these item(s) from their volume(s)?
+            </div>
+            <div class="modal-footer">
+                <button id="modal-volume-unset-submit" class="btn btn-danger"><i class='fa fa-unlink'></i> Remove</button>
                 <button class="btn btn-link" data-dismiss="modal" aria-hidden="true">Cancel</button>
             </div>
         </div>
@@ -1663,6 +1717,59 @@ Note that permanent location is a code, and location may be an authval.
                         });
                     }
                 });
+            });
+
+            // Add item(s) to a volume
+            $('.itemselection_action_volume_set').on('click', function(){
+                $('#modal-volume-set').modal('show');
+            });
+
+            $("#modal-volume-set-form").validate({
+                submitHandler: function(form) {
+                    $('#modal-volume-set-submit').attr('disabled', 'disabled');
+
+                    const volume_id = $('#volume-add-form-select').val();
+
+                    let itemnumbers = new Array();
+                    $("input[name='itemnumber'][type='checkbox']:checked").each(function() {
+                        const itemnumber = $(this).val();
+                        itemnumbers.push( itemnumber );
+                    });
+                    if (itemnumbers.length > 0) {
+                        let url = '/cgi-bin/koha/catalogue/detail.pl?op=set_volume';
+                        url += '&itemnumber=' + itemnumbers.join('&itemnumber=');
+                        url += '&biblionumber=[% biblionumber | uri %]';
+                        url += `&volume_id=${volume_id}`;
+
+                        window.location.replace(url);
+                    }
+
+                    $('#modal-volume-set').modal('hide');
+                }
+            });
+
+            // Remove item(s) from a volume
+            $('.itemselection_action_volume_unset').on('click', function(){
+                $('#modal-volume-unset').modal('show');
+            });
+
+            $("#modal-volume-unset-submit").on('click', function(){
+                $('#modal-volume-unset-submit').attr('disabled', 'disabled');
+
+                let itemnumbers = new Array();
+                $("input[name='itemnumber'][type='checkbox']:checked").each(function() {
+                    const itemnumber = $(this).val();
+                    itemnumbers.push( itemnumber );
+                });
+                if (itemnumbers.length > 0) {
+                    let url = '/cgi-bin/koha/catalogue/detail.pl?op=unset_volume';
+                    url += '&itemnumber=' + itemnumbers.join('&itemnumber=');
+                    url += '&biblionumber=[% biblionumber | uri %]';
+
+                    window.location.replace(url);
+                }
+
+                $('#modal-volume-unset').modal('hide');
             });
         [% END %]
     </script>
