@@ -35,6 +35,7 @@ use Koha::Acquisition::Orders;
 use Koha::ArticleRequests;
 use Koha::Biblio::Metadatas;
 use Koha::Biblio::Volumes;
+use Koha::Biblio::Volumes;
 use Koha::Biblioitems;
 use Koha::Checkouts;
 use Koha::CirculationRules;
@@ -47,6 +48,7 @@ use Koha::Subscriptions;
 use Koha::SearchEngine;
 use Koha::SearchEngine::Search;
 use Koha::SearchEngine::QueryBuilder;
+use Koha::Suggestions;
 
 =head1 NAME
 
