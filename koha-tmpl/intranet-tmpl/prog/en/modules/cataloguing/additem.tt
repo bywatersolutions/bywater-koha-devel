@@ -23,6 +23,9 @@
 [% INCLUDE 'calendar.inc' %]
 [% INCLUDE 'str/cataloging_additem.inc' %]
 [% Asset.js("js/cataloging_additem.js") | $raw %]
+<script>
+  var has_volumes = [% volumes.count %];
+</script>
 </head>
 
 <body id="cat_additem" class="cat">
@@ -162,6 +165,33 @@
     [% IF op != 'add_item' %]
         <input type="hidden" name="itemnumber" value="[% itemnumber | html %]" />
     [% END %]
+
+[% IF volumes.count && op != 'saveitem' %]
+    <fieldset class="rows">
+        <legend><i class="fa fa-plus"></i> Add to volume</legend>
+
+        <p>
+            <label for="select_volume">Options: </label>
+            <select name="volume" id="volume-add-or-create-form-select">
+                <optgroup label="Use existing volume">
+                    [% FOREACH v IN volumes %]
+                        <option value="[% v.id | html %]">Use: [% v.description | html %]</option>
+                    [% END %]
+                </optgroup>
+                <optgroup label="Other options">
+                    <option id="volume-add-or-create-form-no-add" value="">Do not add to volume</option>
+                    <option value="create">Create new volume</option>
+                </optgroup>
+            </select>
+        </p>
+
+        <p id="volume-add-or-create-form-description-block">
+            <label for="volume_description" class="required">Name: </label>
+            <input name="volume_description" id="volume-add-or-create-form-description" type="text" size="30" class="required" />
+            <span class="required">Required</span>
+        </p>
+    </fieldset>
+[% END %]
 
 <fieldset class="action">    [% IF op != 'saveitem' %]
     <input type="submit" name="phony_submit" value="phony_submit" id="phony_submit" style="display:none;" onclick="return false;" />
