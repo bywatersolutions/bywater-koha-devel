@@ -39,6 +39,7 @@ use C4::Barcodes::ValueBuilder;
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Items;
 use Koha::ItemTypes;
+use Koha::Items;
 use Koha::Libraries;
 use Koha::Patrons;
 use Koha::SearchEngine::Indexer;
@@ -56,6 +57,34 @@ use List::Util qw( first );
 use List::MoreUtils qw( any uniq );
 
 our $dbh = C4::Context->dbh;
+
+sub add_item_to_volume {
+    my ( $biblionumber, $itemnumber, $volume, $volume_description ) = @_;
+
+    return unless $volume;
+
+    my $volume_id;
+    if ( $volume eq 'create' ) {
+        my $volume = Koha::Biblio::Volume->new(
+            {
+                biblionumber => $biblionumber,
+                description  => $volume_description,
+            }
+        )->store();
+
+        $volume_id = $volume->id;
+    }
+    else {
+        $volume_id = $volume;
+    }
+
+    my $volume_item = Koha::Biblio::Volume::Item->new(
+        {
+            itemnumber => $itemnumber,
+            volume_id  => $volume_id,
+        }
+    )->store();
+}
 
 sub get_item_from_cookie {
     my ( $input ) = @_;
@@ -102,6 +131,8 @@ my $fa_barcode            = $input->param('barcode');
 my $fa_branch             = $input->param('branch');
 my $fa_stickyduedate      = $input->param('stickyduedate');
 my $fa_duedatespec        = $input->param('duedatespec');
+my $volume                = $input->param('volume');
+my $volume_description    = $input->param('volume_description');
 
 our $frameworkcode = &GetFrameworkCode($biblionumber);
 
@@ -206,6 +237,7 @@ if ($op eq "additem") {
         }
         else {
             $item->store->discard_changes;
+            add_item_to_volume( $oldbiblionumber, $oldbibitemnum, $volume, $volume_description );
 
             # This is a bit tricky : if there is a cookie for the last created item and
             # we just added an item, the cookie value is not correct yet (it will be updated
@@ -315,6 +347,7 @@ if ($op eq "additem") {
                         { skip_record_index => 1 } );
                     $current_item->discard_changes; # Cannot chain discard_changes
                     $current_item = $current_item->unblessed;
+                    add_item_to_volume( $oldbiblionumber, $oldbibitemnum, $volume, $volume_description );
 
 # We count the item only if it was really added
 # That way, all items are added, even if there was some already existing barcodes
@@ -607,6 +640,7 @@ if( my $default_location = C4::Context->preference('NewItemsDefaultLocation') ) 
 $template->param(
     biblio       => $biblio,
     items        => \@items,
+    volumes      => scalar Koha::Biblio::Volumes->search({ biblionumber => $biblionumber }),
     item_header_loop => \@header_value_loop,
     subfields        => $subfields,
     itemnumber       => $itemnumber,
