@@ -39,6 +39,22 @@ if ( CheckVersion( $DBversion ) ) {
         });
     }
 
+    unless ( column_exists( 'reserves', 'volume_id' ) ) {
+        $dbh->do(q{
+            ALTER TABLE reserves
+            ADD COLUMN `volume_id` int(11) NULL default NULL AFTER biblionumber,
+            ADD CONSTRAINT `reserves_ibfk_6` FOREIGN KEY (`volume_id`) REFERENCES `volumes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+        });
+    }
+
+    unless ( column_exists( 'old_reserves', 'volume_id' ) ) {
+        $dbh->do(q{
+            ALTER TABLE old_reserves
+            ADD COLUMN `volume_id` int(11) NULL default NULL AFTER biblionumber,
+            ADD CONSTRAINT `old_reserves_ibfk_5` FOREIGN KEY (`volume_id`) REFERENCES `volumes` (`id`) ON DELETE SET NULL ON UPDATE SET NULL;
+        });
+    }
+
     # Always end with this (adjust the bug info)
     SetVersion( $DBversion );
     print "Upgrade to $DBversion done (Bug XXXXX - Add ability to define volumes for items on a record)\n";
