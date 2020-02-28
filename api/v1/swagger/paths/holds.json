@@ -31,6 +31,12 @@
           "type": "integer"
         },
         {
+          "name": "volume_id",
+          "in": "query",
+          "description": "Internal volume identifier for the volume to place on hold",
+          "type": "integer"
+        },
+        {
           "name": "pickup_library_id",
           "in": "query",
           "description": "Internal library identifier for the pickup library",
@@ -179,6 +185,10 @@
               },
               "biblio_id": {
                 "description": "Internal biblio identifier",
+                "type": [ "integer", "null" ]
+              },
+              "volume_id": {
+                "description": "Internal volume identifier for the volume to place on hold",
                 "type": [ "integer", "null" ]
               },
               "item_id": {

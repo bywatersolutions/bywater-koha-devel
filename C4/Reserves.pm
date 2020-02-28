@@ -160,7 +160,8 @@ sub AddReserve {
     my (
         $branch,   $borrowernumber, $biblionumber, $bibitems,
         $priority, $resdate,        $expdate,      $notes,
-        $title,    $checkitem,      $found,        $itemtype
+        $title,    $checkitem,      $found,        $itemtype,
+        $volume_id
     ) = @_;
 
     $resdate = output_pref( { str => dt_from_string( $resdate ), dateonly => 1, dateformat => 'iso' })
@@ -215,6 +216,7 @@ sub AddReserve {
         {
             borrowernumber => $borrowernumber,
             biblionumber   => $biblionumber,
+            volume_id      => $volume_id,
             reservedate    => $resdate,
             branchcode     => $branch,
             priority       => $priority,
