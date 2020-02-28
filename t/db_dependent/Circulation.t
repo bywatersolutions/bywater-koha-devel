@@ -608,10 +608,10 @@ subtest "CanBookBeRenewed tests" => sub {
     is( $error, 'auto_too_soon',
         'Bug 14101: Cannot renew, renewal is automatic and premature, "No renewal before" = undef (returned code is auto_too_soon)' );
 
-    $renewing_borrower_obj->autorenewal(0)->store;
+    $renewing_borrower_obj->autorenew_checkouts(0)->store;
     ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
     is( $renewokay, 1, 'No renewal before is undef, but patron opted out of auto_renewal' );
-    $renewing_borrower_obj->autorenewal(1)->store;
+    $renewing_borrower_obj->autorenew_checkouts(1)->store;
 
 
     # Bug 7413
@@ -649,11 +649,11 @@ subtest "CanBookBeRenewed tests" => sub {
         'Bug 14101: Cannot renew, renewal is automatic and premature (returned code is auto_too_soon)'
     );
 
-    $renewing_borrower_obj->autorenewal(0)->store;
+    $renewing_borrower_obj->autorenew_checkouts(0)->store;
     ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
     is( $renewokay, 0, 'No renewal before is 7, patron opted out of auto_renewal still cannot renew early' );
     is( $error, 'too_soon', 'Error is too_soon, no auto' );
-    $renewing_borrower_obj->autorenewal(1)->store;
+    $renewing_borrower_obj->autorenew_checkouts(1)->store;
 
     # Change policy so that loans can only be renewed exactly on due date (0 days prior to due date)
     # and test automatic renewal again
@@ -665,11 +665,11 @@ subtest "CanBookBeRenewed tests" => sub {
         'Bug 14101: Cannot renew, renewal is automatic and premature, "No renewal before" = 0 (returned code is auto_too_soon)'
     );
 
-    $renewing_borrower_obj->autorenewal(0)->store;
+    $renewing_borrower_obj->autorenew_checkouts(0)->store;
     ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
     is( $renewokay, 0, 'No renewal before is 0, patron opted out of auto_renewal still cannot renew early' );
     is( $error, 'too_soon', 'Error is too_soon, no auto' );
-    $renewing_borrower_obj->autorenewal(1)->store;
+    $renewing_borrower_obj->autorenew_checkouts(1)->store;
 
     # Change policy so that loans can be renewed 99 days prior to the due date
     # and test automatic renewal again
@@ -681,10 +681,10 @@ subtest "CanBookBeRenewed tests" => sub {
         'Bug 14101: Cannot renew, renewal is automatic (returned code is auto_renew)'
     );
 
-    $renewing_borrower_obj->autorenewal(0)->store;
+    $renewing_borrower_obj->autorenew_checkouts(0)->store;
     ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrowernumber, $item_4->itemnumber );
     is( $renewokay, 1, 'No renewal before is 99, patron opted out of auto_renewal so can renew' );
-    $renewing_borrower_obj->autorenewal(1)->store;
+    $renewing_borrower_obj->autorenew_checkouts(1)->store;
 
     subtest "too_late_renewal / no_auto_renewal_after" => sub {
         plan tests => 14;
