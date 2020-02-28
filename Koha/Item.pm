@@ -233,6 +233,18 @@ sub delete {
     $indexer->index_records( $self->biblionumber, "specialUpdate", "biblioserver" )
         unless $params->{skip_record_index};
 
+    if ( C4::Context->preference('EnableVolumes') ) {
+        my $volume_item =
+          Koha::Biblio::Volume::Items->find( { itemnumber => $self->itemnumber } );
+        my $volume_id = $volume_item ? $volume_item->volume_id : undef;
+
+        # If this item is the last item on a volume, delete the volume as well
+        if ($volume_id) {
+            my $volume = Koha::Biblio::Volumes->find($volume_id);
+            $volume->delete unless $volume->items->count > 1;
+        }
+    }
+
     $self->_after_item_action_hooks({ action => 'delete' });
 
     logaction( "CATALOGUING", "DELETE", $self->itemnumber, "item" )
