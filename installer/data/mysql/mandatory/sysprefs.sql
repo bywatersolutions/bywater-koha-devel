@@ -186,6 +186,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('EnableOpacSearchHistory','1','YesNo','Enable or disable opac search history',''),
 ('EnablePointOfSale','0',NULL,'Enable the point of sale feature to allow anonymous transactions with the accounting system. (Requires UseCashRegisters)','YesNo'),
 ('EnableSearchHistory','0','','Enable or disable search history','YesNo'),
+('EnableVolumeHolds','0','','Enable volume level holds feature','YesNo'),
 ('EnableVolumes','0','','Enable volumes feature','YesNo'),
 ('EnhancedMessagingPreferences','1','','If ON, allows patrons to select to receive additional messages about items due or nearly due.','YesNo'),
 ('EnhancedMessagingPreferencesOPAC', '1', NULL, 'If ON, show patrons messaging setting on the OPAC.', 'YesNo'),
