@@ -351,6 +351,22 @@ sub patron {
     return Koha::Patron->_new_from_dbic($patron_rs);
 }
 
+=head3 volume
+
+Returns the related Koha::Biblio::Volume object for this hold
+
+=cut
+
+sub volume {
+    my ($self) = @_;
+
+    my $volume_rs = $self->_result->volume;
+
+    return unless $volume_rs;
+
+    return Koha::Biblio::Volume->_new_from_dbic($volume_rs);
+}
+
 =head3 item
 
 Returns the related Koha::Item object for this Hold

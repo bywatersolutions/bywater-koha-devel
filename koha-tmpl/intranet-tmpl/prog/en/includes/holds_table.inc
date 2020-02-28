@@ -167,6 +167,8 @@
                     [% ELSE %]
                         [% IF hold.itemtype %]
                             <em>Next available [% ItemTypes.GetDescription( hold.itemtype ) | html %] item</em>
+                        [% ELSIF hold.object.volume_id %]
+                            <em>Next available item from volume <strong>[% hold.object.volume.description | html %]</strong></em>
                         [% ELSE %]
                             <em>Next available</em>
                         [% END %]

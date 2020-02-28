@@ -86,6 +86,9 @@ sub forced_hold_level {
     my $item_level_count = $self->search( { itemnumber => { '!=' => undef } } )->count();
     return 'item' if $item_level_count > 0;
 
+    my $volume_level_count = $self->search( { volume_id => { '!=' => undef } } )->count();
+    return 'volume' if $volume_level_count > 0;
+
     my $record_level_count = $self->search( { itemnumber => undef } )->count();
     return 'record' if $record_level_count > 0;
 
