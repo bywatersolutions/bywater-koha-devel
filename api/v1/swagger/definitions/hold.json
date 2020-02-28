@@ -18,6 +18,10 @@
       "type": "integer",
       "description": "Internal biblio identifier"
     },
+    "volume_id": {
+      "type": ["integer", "null"],
+      "description": "Internal volume identifier for the volume to place on hold"
+    },
     "pickup_library_id": {
       "type": ["string", "null"],
       "description": "Internal library identifier for the pickup library"
