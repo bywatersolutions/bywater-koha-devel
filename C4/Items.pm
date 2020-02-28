@@ -612,12 +612,26 @@ sub DelItem {
     # If there is no biblionumber for the given itemnumber, there is nothing to delete
     return 0 unless $biblionumber;
 
+    # Find the volume_item now, it will be deleted when the item is deleted
+    my $volume_id;
+    if ( C4::Context->preference('EnableVolumes') ) {
+        my $volume_item = Koha::Biblio::Volume::Items->find({ itemnumber => $itemnumber });
+        $volume_id = $volume_item ? $volume_item->volume_id : undef;
+    }
+
     # FIXME check the item has no current issues
     my $deleted = _koha_delete_item( $itemnumber );
 
     ModZebra( $biblionumber, "specialUpdate", "biblioserver" );
 
     _after_item_action_hooks({ action => 'delete', item_id => $itemnumber });
+
+    # If this item is the last item on a volume, delete the volume as well
+    if ( $volume_id ) {
+        my $volume = Koha::Biblio::Volumes->find( $volume_id );
+        my @volume_items = $volume->items();
+        $volume->delete unless @volume_items;
+    }
 
     #search item field code
     logaction("CATALOGUING", "DELETE", $itemnumber, "item") if C4::Context->preference("CataloguingLog");
