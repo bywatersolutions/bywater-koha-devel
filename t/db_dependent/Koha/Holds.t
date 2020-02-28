@@ -25,6 +25,7 @@ use Test::Warn;
 use C4::Reserves;
 use Koha::Holds;
 use Koha::Database;
+use Koha::Biblio::Volumes;
 
 use t::lib::Mocks;
 use t::lib::TestBuilder;
@@ -35,7 +36,7 @@ $schema->storage->txn_begin;
 my $builder = t::lib::TestBuilder->new;
 
 subtest 'cancel' => sub {
-    plan tests => 12;
+    plan tests => 13;
     my $biblioitem = $builder->build_object( { class => 'Koha::Biblioitems' } );
     my $library    = $builder->build_object( { class => 'Koha::Libraries' } );
     my $itemtype   = $builder->build_object( { class => 'Koha::ItemTypes', value => { rentalcharge => 0 } } );
@@ -150,6 +151,31 @@ subtest 'cancel' => sub {
         my $hold_old = Koha::Old::Holds->find( $reserve_id );
         is( $hold_old->found, 'W', 'The found column should have been kept and a hold is cancelled' );
     };
+
+    subtest 'Test Koha::Hold::volume' => sub {
+        plan tests => 1;
+        my $patron = $builder->build_object( { class => 'Koha::Patrons' } );
+        my $volume = $builder->build_object(
+            {
+                class => 'Koha::Biblio::Volumes',
+                value => { biblionumber => $item->biblionumber }
+            }
+        );
+        my $reserve_id = C4::Reserves::AddReserve(
+            $library->branchcode, $patron->borrowernumber,
+            $item->biblionumber,  '',
+            1,                    undef,
+            undef,                '',
+            "title for fee",      $item->itemnumber,
+            'W',                  undef,
+            $volume->id
+        );
+
+        my $hold = Koha::Holds->find($reserve_id);
+        is( $hold->volume_id, $volume->id,
+            'Koha::Hold::volume returns the correct volume' );
+    };
+
 
     subtest 'HoldsLog' => sub {
         plan tests => 2;

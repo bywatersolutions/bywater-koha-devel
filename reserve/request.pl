@@ -490,6 +490,7 @@ foreach my $biblionumber (@biblionumbers) {
 
             # checking reserve
             my $item_object = Koha::Items->find( $itemnumber );
+            $item->{object} = $item_object;
             my $holds = $item_object->current_holds;
             if ( my $first_hold = $holds->next ) {
                 my $p = Koha::Patrons->find( $first_hold->borrowernumber );
@@ -603,6 +604,12 @@ foreach my $biblionumber (@biblionumbers) {
             $biblioloopiter{none_avail} = 1;
         }
         $template->param( hiddencount => $hiddencount);
+
+        if ( C4::Context->preference('EnableVolumeHolds') ) {
+            my $volumes = Koha::Biblio::Volumes->search(
+                { biblionumber => $biblionumber } );
+            $biblioitem->{volumes} = $volumes;
+        }
 
         push @bibitemloop, $biblioitem;
     }
