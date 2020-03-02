@@ -2974,7 +2974,7 @@ sub AddRenewal {
     # Add the renewal to stats
     UpdateStats(
         {
-            branch         => $item_object->renewalbranch({branch => $branch}),
+            branch         => $item_object->renewal_branchcode({branch => $branch}),
             type           => 'renew',
             amount         => $charge,
             itemnumber     => $itemnumber,
