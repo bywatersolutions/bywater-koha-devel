@@ -6,7 +6,7 @@ package C4::SIP::ILS::Transaction::RenewAll;
 use strict;
 use warnings;
 
-use C4::SIP::Sip qw(syslog);
+use C4::SIP::Sip qw(log);
 
 use C4::SIP::ILS::Item;
 
@@ -42,7 +42,7 @@ sub do_renew_all {
         my $item_id = $itemx->{barcode};
         my $item    = C4::SIP::ILS::Item->new($item_id);
         if ( !defined($item) ) {
-            syslog(
+            log(
                 'LOG_WARNING',
                 q|renew_all: Invalid item id '%s' associated with patron '%s'|,
                 $item_id,
