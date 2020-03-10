@@ -63,6 +63,9 @@
                                 </strong>
                             [% END %]
                             [% HOLD.biblio.author | html %]
+                            [% IF HOLD.volume_id %]
+                                <br/><strong>Next available item from volume <i>[% HOLD.volume.description | html %]</i></strong>
+                            [% END %]
                         </td>
                         <td class="reservedate">
                             <span title="[% HOLD.reservedate | html %]">
