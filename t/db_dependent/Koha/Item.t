@@ -76,10 +76,12 @@ subtest 'has_pending_hold() tests' => sub {
     ok( $item->has_pending_hold, "Yes, we have a pending hold");
     $dbh->do("DELETE FROM tmp_holdsqueue WHERE itemnumber=$itemnumber");
     ok( !$item->has_pending_hold, "We don't have a pending hold if nothing in the tmp_holdsqueue");
+    
+    $schema->storage->txn_rollback;
 };
 
 subtest 'renewal_branchcode' => sub {
-    plan tests => 15;
+    plan tests => 13;
 
     $schema->storage->txn_begin;
 
@@ -123,4 +125,5 @@ subtest 'renewal_branchcode' => sub {
     is( $item->renewal_branchcode, $item->homebranch, "If interface opac and OpacRenewalBranch set to itemhomebranch, we get homebranch of item");
     is( $item->renewal_branchcode({branch=>'MANATEE'}), $item->homebranch, "If interface opac and OpacRenewalBranch set to itemhomebranch, we get homebranch of item even if branch passed");
 
+    $schema->storage->txn_rollback;
 };
