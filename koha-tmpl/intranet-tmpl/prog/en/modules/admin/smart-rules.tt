@@ -635,6 +635,7 @@
                 <tr>
                     <th>Patron category</th>
                     <th>Total current checkouts allowed</th>
+                    <th>Total current checkouts allowed (global)</th>
                     <th>Total current on-site checkouts allowed</th>
                     <th>Total holds allowed</th>
                     <th>&nbsp;</th>
@@ -642,6 +643,7 @@
                 [% FOREACH c IN categorycodes %]
                     [% NEXT UNLESS c %]
                     [% SET patron_maxissueqty = CirculationRules.Search( branchcode, c, undef, 'patron_maxissueqty' ) %]
+                    [% SET patron_maxissueqty_global = CirculationRules.Search( branchcode, c, undef, 'patron_maxissueqty_global' ) %]
                     [% SET patron_maxonsiteissueqty = CirculationRules.Search( branchcode, c, undef, 'patron_maxonsiteissueqty' ) %]
                     [% SET max_holds = CirculationRules.Search( branchcode, c, undef, 'max_holds' ) %]
 
@@ -661,6 +663,15 @@
                                 <span>Unlimited</span>
                             [% END %]
                         </td>
+                        [% UNLESS humanbranch %]
+                            <td>
+                                [% IF patron_maxissueqty_global.defined && patron_maxissueqty_global != '' %]
+                                    [% patron_maxissueqty_global | html %]
+                                [% ELSE %]
+                                    <span>Unlimited</span>
+                                [% END %]
+                            </td>
+                        [% END %]
                         <td>
                             [% IF patron_maxonsiteissueqty.defined && patron_maxonsiteissueqty != '' %]
                                 [% patron_maxonsiteissueqty | html %]
@@ -691,6 +702,9 @@
                         </select>
                     </td>
                     <td><input name="patron_maxissueqty" size="3" type="text" /></td>
+                    [% UNLESS humanbranch %]
+                        <td><input name="patron_maxissueqty_global" size="3" type="text" /></td>
+                    [% END %]
                     <td><input name="patron_maxonsiteissueqty" size="3" type="text" /></td>
                     <td><input name="max_holds" size="3" type="text" /></td>
                     <td class="actions"><button type="submit" class="btn btn-default btn-xs"><i class="fa fa-plus"></i> Add</td>

@@ -154,6 +154,15 @@ elsif ($op eq 'delete-branch-cat') {
                     }
                 }
             );
+            # patron_maxissueqty_global is only set for default branch, cannot accept branchcode
+            Koha::CirculationRules->set_rules(
+                {
+                    categorycode => $categorycode,
+                    rules        => {
+                        patron_maxissueqty_global => undef,
+                    }
+                }
+            );
         }
     } elsif ($categorycode eq "*") {
         Koha::CirculationRules->set_rules(
@@ -183,9 +192,9 @@ elsif ($op eq 'delete-branch-cat') {
                 categorycode => $categorycode,
                 branchcode   => $branch,
                 rules        => {
-                    max_holds         => undef,
-                    patron_maxissueqty       => undef,
-                    patron_maxonsiteissueqty => undef,
+                    max_holds                 => undef,
+                    patron_maxissueqty        => undef,
+                    patron_maxonsiteissueqty  => undef,
                 }
             }
         );
@@ -401,6 +410,7 @@ elsif ($op eq "set-branch-defaults") {
 elsif ($op eq "add-branch-cat") {
     my $categorycode  = $input->param('categorycode');
     my $patron_maxissueqty = strip_non_numeric($input->param('patron_maxissueqty'));
+    my $patron_maxissueqty_global = strip_non_numeric($input->param('patron_maxissueqty_global'));
     my $patron_maxonsiteissueqty = $input->param('patron_maxonsiteissueqty');
     $patron_maxonsiteissueqty = strip_non_numeric($patron_maxonsiteissueqty);
     my $max_holds = $input->param('max_holds');
@@ -427,8 +437,17 @@ elsif ($op eq "add-branch-cat") {
                     branchcode   => undef,
                     rules        => {
                         max_holds         => $max_holds,
-                        patron_maxissueqty       => $patron_maxissueqty,
-                        patron_maxonsiteissueqty => $patron_maxonsiteissueqty,
+                        patron_maxissueqty        => $patron_maxissueqty,
+                        patron_maxonsiteissueqty  => $patron_maxonsiteissueqty,
+                    }
+                }
+            );
+            # patron_maxissueqty_global is only set for default branch, cannot accept branchcode
+            Koha::CirculationRules->set_rules(
+                {
+                    categorycode => $categorycode,
+                    rules        => {
+                        patron_maxissueqty_global => $patron_maxissueqty_global,
                     }
                 }
             );

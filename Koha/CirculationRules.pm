@@ -50,6 +50,9 @@ our $RULE_KINDS = {
         scope => [ 'branchcode' ],
     },
 
+    patron_maxissueqty_global => {
+        scope => [ 'categorycode' ],
+    },
     patron_maxissueqty => {
         scope => [ 'branchcode', 'categorycode' ],
     },
