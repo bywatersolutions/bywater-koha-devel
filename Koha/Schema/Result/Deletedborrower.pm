@@ -660,6 +660,12 @@ __PACKAGE__->add_columns(
 # Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-03-24 18:32:51
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:IXLyIMpcA523NucBrM1e2Q
 
+__PACKAGE__->add_columns(
+    '+anonymized' => { is_boolean => 1 },
+    '+lost'          => { is_boolean => 1 },
+    '+gonenoaddress' => { is_boolean => 1 },
+    '+autorenew_checkouts' => { is_boolean => 1 }
+);
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
