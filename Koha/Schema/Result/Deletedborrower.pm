@@ -421,7 +421,7 @@ __PACKAGE__->table("deletedborrowers");
 
   data_type: 'timestamp'
   datetime_undef_if_invalid: 1
-  default_value: current_timestamp
+  default_value: 'current_timestamp()'
   is_nullable: 0
 
 =head2 lastseen
@@ -452,6 +452,12 @@ __PACKAGE__->table("deletedborrowers");
 
   data_type: 'tinyint'
   default_value: 0
+  is_nullable: 0
+
+=head2 autorenew_checkouts
+
+  data_type: 'tinyint'
+  default_value: 1
   is_nullable: 0
 
 =cut
@@ -624,7 +630,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "timestamp",
     datetime_undef_if_invalid => 1,
-    default_value => \"current_timestamp",
+    default_value => "current_timestamp()",
     is_nullable => 0,
   },
   "lastseen",
@@ -646,11 +652,13 @@ __PACKAGE__->add_columns(
   { data_type => "mediumtext", is_nullable => 1 },
   "anonymized",
   { data_type => "tinyint", default_value => 0, is_nullable => 0 },
+  "autorenew_checkouts",
+  { data_type => "tinyint", default_value => 1, is_nullable => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2019-04-25 10:08:38
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hzKeGjtecf3VyEvaBhDmUg
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-03-24 18:32:51
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:IXLyIMpcA523NucBrM1e2Q
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
