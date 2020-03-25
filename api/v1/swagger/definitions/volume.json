@@ -33,7 +33,7 @@
         },
         "items": {
             "type": [
-                "integer",
+                "array",
                 "null"
             ],
             "readOnly": true,
