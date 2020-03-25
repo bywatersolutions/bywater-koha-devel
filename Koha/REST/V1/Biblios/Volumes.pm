@@ -45,7 +45,7 @@ sub list {
 
     return try {
         my $volumes_set = Koha::Biblio::Volumes->new;
-        my $volumes     = $c->objects->search( $volumes_set );
+        my $volumes     = $c->objects->search( $volumes_set, \&_to_model, \&_to_api  );
         return $c->render(
             status  => 200,
             openapi => $volumes
@@ -240,5 +240,90 @@ sub delete {
         );
     };
 }
+
+=head2 Internal methods
+
+=head3 _to_api
+
+Helper function that maps a hashref of Koha::Biblio::Volume attributes into REST api
+attribute names.
+
+=cut
+
+sub _to_api {
+    my $volume = shift;
+
+    # Rename attributes
+    foreach my $column ( keys %{ $Koha::REST::V1::Biblios::Volumes::to_api_mapping } ) {
+        my $mapped_column = $Koha::REST::V1::Biblios::Volumes::to_api_mapping->{$column};
+        if (    exists $volume->{ $column }
+             && defined $mapped_column )
+        {
+            # key /= undef
+            $volume->{ $mapped_column } = delete $volume->{ $column };
+        }
+        elsif (    exists $volume->{ $column }
+                && !defined $mapped_column )
+        {
+            # key == undef => to be deleted
+            delete $volume->{ $column };
+        }
+    }
+
+    return $volume;
+}
+
+=head3 _to_model
+
+Helper function that maps REST api objects into Koha::Biblio::Volume
+attribute names.
+
+=cut
+
+sub _to_model {
+    my $volume = shift;
+
+    foreach my $attribute ( keys %{ $Koha::REST::V1::Biblios::Volumes::to_model_mapping } ) {
+        my $mapped_attribute = $Koha::REST::V1::Biblios::Volumes::to_model_mapping->{$attribute};
+        if (    exists $volume->{ $attribute }
+             && defined $mapped_attribute )
+        {
+            # key /= undef
+            $volume->{ $mapped_attribute } = delete $volume->{ $attribute };
+        }
+        elsif (    exists $volume->{ $attribute }
+                && !defined $mapped_attribute )
+        {
+            # key == undef => to be deleted
+            delete $volume->{ $attribute };
+        }
+    }
+
+    return $volume;
+}
+
+=head2 Global variables
+
+=head3 $to_api_mapping
+
+=cut
+
+our $to_api_mapping = {
+    id           => 'volume_id',
+    biblionumber => 'biblio_id',
+    created_on   => 'creation_date',
+    updated_on   => 'modification_date'
+};
+
+=head3 $to_model_mapping
+
+=cut
+
+our $to_model_mapping = {
+    'volume_id'         => 'id',
+    'biblio_id'         => 'biblionumber',
+    'creation_date'     => 'created_on',
+    'modification_date' => 'updated_on' 
+};
 
 1;
