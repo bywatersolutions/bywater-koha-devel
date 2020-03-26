@@ -155,6 +155,10 @@ $(document).ready(function() {
                                 data += __("Next available %s item").format(oObj.itemtype_limit);
                             }
 
+                            if ( oObj.volume_id ) {
+                                data += _("Next available volume <strong>%s</strong> item").format( oObj.volume_description );
+                            }
+
                             if ( oObj.barcode ) {
                                 data += "<em>";
                                 if ( oObj.found == "W" ) {
