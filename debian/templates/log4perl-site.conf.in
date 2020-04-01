@@ -21,3 +21,14 @@ log4perl.appender.Z3950.mode=append
 log4perl.appender.Z3950.layout=PatternLayout
 log4perl.appender.Z3950.layout.ConversionPattern=[%d] [%p] %m %l %n
 log4perl.appender.Z3950.utf8=1
+
+log4perl.logger.sip = DEBUG, SIP
+log4perl.appender.SIP=Log::Log4perl::Appender::File
+log4perl.appender.SIP.filename=__LOG_DIR__/sip.log
+log4perl.appender.SIP.mode=append
+log4perl.appender.SIP.create_at_logtime=true
+log4perl.appender.SIP.syswrite=true
+log4perl.appender.SIP.recreate=true
+log4perl.appender.SIP.layout=PatternLayout
+log4perl.appender.SIP.layout.ConversionPattern=[%d] [%p] %X{accountid}@%X{peeraddr}: %m %l %n
+log4perl.appender.SIP.utf8=1
