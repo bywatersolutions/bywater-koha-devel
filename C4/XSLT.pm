@@ -324,12 +324,12 @@ sub buildKohaItemsNamespace {
         my $reservestatus = C4::Reserves::GetReserveStatus( $item->{itemnumber} );
 
         if ( ( $item->{itype} && $itemtypes->{ $item->{itype} }->{notforloan} ) || $item->{notforloan} || $item->{onloan} || $item->{withdrawn} || $item->{itemlost} || $item->{damaged} ||
-             (defined $transfertwhen && $transfertwhen ne '') || $item->{itemnotforloan} || (defined $reservestatus && $reservestatus eq "Waiting") || $item->{has_pending_hold} ){
+             (defined $transfertwhen && $transfertwhen ne '') || $item->{itemnotforloan} || (defined $reservestatus && $reservestatus eq "Waiting") || $item->{has_pending_hold} || $item->{notforloan_per_itemtype} ){
             if ( $item->{notforloan} ) {
                     $status = $item->{notforloan} < 0 ? "reallynotforloan" : "reference";
                     $substatus = exists $descs{$item->{notforloan}} ? $descs{$item->{notforloan}}->{opac_description} : "Not for loan_$item->{notforloan}";
             }
-            if ( $item->{itype} && $itemtypes->{ $item->{itype} }->{notforloan} && $itemtypes->{ $item->{itype} }->{notforloan} == 1 ) {
+            if ( $item->{itype} && $itemtypes->{ $item->{itype} }->{notforloan} && $itemtypes->{ $item->{itype} }->{notforloan} == 1 || $item->{notforloan_per_itemtype} ) {
                 $status = "reference";
                 $substatus = "Not for loan";
             }
