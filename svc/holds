@@ -107,11 +107,6 @@ while ( my $h = $holds_rs->next() ) {
         waiting_here   => $h->branch()->branchcode() eq $branch,
         priority       => $h->priority(),
         itemtype_limit => $itemtype_limit,
-        subtitle       => GetRecordValue(
-            'subtitle',
-            GetMarcBiblio({ biblionumber => $biblionumber }),
-            GetFrameworkCode($biblionumber)
-        ),
         suspend_until_formatted => $h->suspend_until() ? output_pref(
             { dt => dt_from_string( $h->suspend_until() ), dateonly => 1 }
           )
