@@ -38,7 +38,7 @@ __PACKAGE__->table("reserves");
 
 =head2 reservedate
 
-  data_type: 'date'
+  data_type: 'datetime'
   datetime_undef_if_invalid: 1
   is_nullable: 1
 
@@ -118,7 +118,7 @@ __PACKAGE__->table("reserves");
 
 =head2 expirationdate
 
-  data_type: 'date'
+  data_type: 'datetime'
   datetime_undef_if_invalid: 1
   is_nullable: 1
 
@@ -173,7 +173,11 @@ __PACKAGE__->add_columns(
     is_nullable    => 0,
   },
   "reservedate",
-  { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
+  {
+    data_type => "datetime",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
   "biblionumber",
   {
     data_type      => "integer",
@@ -209,7 +213,11 @@ __PACKAGE__->add_columns(
   "waitingdate",
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
   "expirationdate",
-  { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
+  {
+    data_type => "datetime",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
   "lowestPriority",
   {
     accessor      => "lowest_priority",
@@ -353,8 +361,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2020-08-31 14:16:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:goRy3ZQWpGNmicok5Av37Q
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-09-15 12:01:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MYGDTBYY6bQ6zMDRgxMGIg
 
 __PACKAGE__->belongs_to(
   "item",
