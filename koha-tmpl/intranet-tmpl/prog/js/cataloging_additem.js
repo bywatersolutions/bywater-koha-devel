@@ -89,6 +89,13 @@ $(document).ready(function(){
         });
     }
 
+    $('#volume-add-or-create-form-select').on('change', function() {
+        if ( ! $('input.items-enumchron').val() ) {
+            let volume_selector = '#volume-' + $(this).val();
+            let enumchron = $(volume_selector).val();
+            $('input.items-enumchron').val( enumchron );
+        }
+    });
 });
 
 function Check(f) {
