@@ -166,7 +166,7 @@
         <input type="hidden" name="itemnumber" value="[% itemnumber | html %]" />
     [% END %]
 
-[% IF volumes.count && op != 'saveitem' %]
+[% IF volumes.count && op != 'saveitem' && CAN_user_editcatalogue_manage_volumes %]
     <fieldset class="rows">
         <legend><i class="fa fa-plus"></i> Add to volume</legend>
         [% FOREACH v IN volumes %]

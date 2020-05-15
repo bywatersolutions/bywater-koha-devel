@@ -306,7 +306,7 @@
               [% IF CAN_user_tools_items_batchmod %]
                 <a class="itemselection_action_modify"><i class="fa fa-pencil"></i> Modify selected items</a>
               [% END %]
-              [% IF biblio.volumes.count %]
+              [% IF CAN_user_editcatalogue_manage_volumes && biblio.volumes.count %]
                 <a class="itemselection_action_volume_set" href="#"><i class="fa fa-book"></i> Add/move to volume</a>
                 <a class="itemselection_action_volume_unset" href="#"><i class="fa fa-unlink"></i> Remove from volume</a>
               [% END %]
@@ -607,9 +607,11 @@ Note that permanent location is a code, and location may be an authval.
 
 [% IF Koha.Preference('EnableVolumes') %]
     <div id="volumes">
-        <div class="volumes_table_table_controls">
-            <a href="#" class="volume-create btn btn-default btn-xs"><i class="fa fa-plus"></i> Create new</a>
-        </div>
+        [% IF CAN_user_editcatalogue_manage_volumes %]
+            <div class="volumes_table_table_controls">
+                <a href="#" class="volume-create btn btn-default btn-xs"><i class="fa fa-plus"></i> Create new</a>
+            </div>
+        [% END %]
         <table class="volumes-table" id="volumes-table">
             <thead>
                 <tr>
@@ -1559,13 +1561,17 @@ Note that permanent location is a code, and location may be an authval.
                     },
                     {
                         "mDataProp": function( oObj ) {
-                            return `<button class='volume-edit btn btn-default btn-xs' data-volume-id='${oObj.volume_id}'>
-                                <i class='fa fa-edit'></i> ${_('Edit')}
-                            </button>`
-                            + '&nbsp'
-                            + `<button class='volume-delete btn btn-default btn-xs' data-volume-id='${oObj.volume_id}'>
-                                <i class='fa fa-trash'></i> ${('Delete')}
-                            </button>`;
+                            [% IF CAN_user_editcatalogue_manage_volumes %]
+                                return `<button class='volume-edit btn btn-default btn-xs' data-volume-id='${oObj.volume_id}'>
+                                    <i class='fa fa-edit'></i> ${_('Edit')}
+                                </button>`
+                                + '&nbsp'
+                                + `<button class='volume-delete btn btn-default btn-xs' data-volume-id='${oObj.volume_id}'>
+                                    <i class='fa fa-trash'></i> ${('Delete')}
+                                </button>`;
+                            [% ELSE %]
+                                return "";
+                            [% END %]
                         },
                     },
                 ],

@@ -70,7 +70,7 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "1"
+                    "catalogue": "CAN_user_editcatalogue_manage_volumes"
                 }
             },
             "x-koha-embed": [
@@ -169,7 +169,7 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "1"
+                    "catalogue": "CAN_user_editcatalogue_manage_volumes"
                 }
             }
         }
@@ -240,7 +240,7 @@
             ],
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "1"
+                    "catalogue": "CAN_user_editcatalogue_manage_volumes"
                 }
             }
         },
@@ -337,7 +337,7 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "1"
+                    "catalogue": "CAN_user_editcatalogue_manage_volumes"
                 }
             },
             "x-koha-embed": [
@@ -409,7 +409,7 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "1"
+                    "catalogue": "CAN_user_editcatalogue_manage_volumes"
                 }
             }
         }
@@ -501,7 +501,7 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "1"
+                    "catalogue": "CAN_user_editcatalogue_manage_volumes"
                 }
             },
             "x-koha-embed": [
@@ -585,7 +585,7 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "1"
+                    "catalogue": "CAN_user_editcatalogue_manage_volumes"
                 }
             }
         }
