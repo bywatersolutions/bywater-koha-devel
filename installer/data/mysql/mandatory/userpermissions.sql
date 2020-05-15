@@ -48,6 +48,7 @@ INSERT INTO permissions (module_bit, code, description) VALUES
    ( 9, 'edit_items', 'Edit items'),
    ( 9, 'edit_items_restricted', 'Limit item modification to subfields defined in the SubfieldsToAllowForRestrictedEditing preference (please note that edit_item is still required)'),
    ( 9, 'delete_all_items', 'Delete all items at once'),
+   ( 9, 'manage_volumes', 'Create, update and delete volumes, add or remove items from a volume'),
    (10, 'payout', 'Perform account payout action'),
    (10, 'refund', 'Perform account refund action'),
    (10, 'discount', 'Perform account discount action'),

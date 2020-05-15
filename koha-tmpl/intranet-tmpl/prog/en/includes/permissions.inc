@@ -325,6 +325,11 @@
             Fast cataloging
         </span>
         <span class="permissioncode">([% name | html %])</span>
+    [%- CASE 'manage_volumes' -%]
+        <span class="sub_permission manage_volumes_subpermission">
+            Create, update and delete volumes, add or remove items from a volume
+        </span>
+        <span class="permissioncode">([% name | html %])</span>
     [%- CASE 'remaining_permissions' -%]
         <span class="sub_permission remaining_permissions_subpermission">
             Remaining permissions for managing fines and fees
