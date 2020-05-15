@@ -169,7 +169,9 @@
 [% IF volumes.count && op != 'saveitem' %]
     <fieldset class="rows">
         <legend><i class="fa fa-plus"></i> Add to volume</legend>
-
+        [% FOREACH v IN volumes %]
+            <input type="hidden" id="volume-[% v.id | html %]" value="[% v.description | html %]" />
+        [% END %]
         <p>
             <label for="select_volume">Options: </label>
             <select name="volume" id="volume-add-or-create-form-select">
