@@ -159,6 +159,8 @@ sub generate_subfield_form {
         $subfield_data{important}  = $subfieldlib->{important};
         $subfield_data{repeatable} = $subfieldlib->{repeatable};
         $subfield_data{maxlength}  = $subfieldlib->{maxlength};
+        $subfield_data{kohafield}  = $subfieldlib->{kohafield} || 'unlinked';
+        $subfield_data{kohafield} =~ s/\./-/g;
         
         if ( ! defined( $value ) || $value eq '')  {
             $value = $subfieldlib->{defaultvalue};
