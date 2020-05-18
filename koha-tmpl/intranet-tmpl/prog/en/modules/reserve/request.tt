@@ -961,6 +961,16 @@
         columns_settings_borrowers_table = [% ColumnsSettings.GetColumns( 'circ', 'circulation', 'table_borrowers', 'json' ) | $raw %]
 
         $(document).ready(function() {
+            $(".cancellation-reason").hide();
+            $(".rank-request").on("change", function(){
+                const reserve_id = $(this).data('hold-id');
+                if ( $(this).val() == "del" ) {
+                    $(`#cancellation-reason-${reserve_id}`).show();
+                } else {
+                    $(`#cancellation-reason-${reserve_id}`).hide();
+                }
+            });
+
             [% SET active = clubs ? 1 : 0 %]
             $('#circ_holds_select').tabs({
                 active: [% active | $raw %],

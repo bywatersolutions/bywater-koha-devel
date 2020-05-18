@@ -24,8 +24,10 @@ use Carp;
 use Data::Dumper qw(Dumper);
 
 use C4::Context qw(preference);
+use C4::Letters;
 use C4::Log;
 
+use Koha::AuthorisedValues;
 use Koha::DateUtils qw(dt_from_string output_pref);
 use Koha::Patrons;
 use Koha::Biblios;
@@ -356,6 +358,7 @@ sub cancel {
         sub {
             $self->cancellationdate( dt_from_string->strftime( '%Y-%m-%d %H:%M:%S' ) );
             $self->priority(0);
+            $self->cancellation_reason( $params->{cancellation_reason} );
             $self->_move_to_old;
             $self->SUPER::delete(); # Do not add a DELETE log
 
@@ -377,6 +380,34 @@ sub cancel {
                         item_id    => $self->itemnumber
                     }
                 );
+            }
+
+            if ( $params->{cancellation_reason} ) {
+                my $letter = C4::Letters::GetPreparedLetter(
+                    module                 => 'reserves',
+                    letter_code            => 'HOLD_CANCELLATION',
+                    message_transport_type => 'email',
+                    branchcode             => $self->borrower->branchcode,
+                    lang                   => $self->borrower->lang,
+                    tables                 => {
+                        branches    => $self->borrower->branchcode,
+                        borrowers   => $self->borrowernumber,
+                        items       => $self->itemnumber,
+                        biblio      => $self->biblionumber,
+                        biblioitems => $self->biblionumber,
+                        reserves    => $self->unblessed,
+                    }
+                );
+
+                if ($letter) {
+                    C4::Letters::EnqueueLetter(
+                        {
+                            letter                   => $letter,
+                            borrowernumber         => $self->borrowernumber,
+                            message_transport_type => 'email',
+                        }
+                    );
+                }
             }
 
             C4::Log::logaction( 'HOLDS', 'CANCEL', $self->reserve_id, Dumper($self->unblessed) )

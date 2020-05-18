@@ -1,4 +1,6 @@
 [% USE Koha %]
+[% USE AuthorisedValues %]
+[% SET hold_cancellation = AuthorisedValues.GetAuthValueDropbox('HOLD_CANCELLATION') %]
 <table>
     <tr>
         [% IF ( CAN_user_reserveforothers_modify_holds_priority ) %]
@@ -31,10 +33,10 @@
                 <input type="hidden" name="borrowernumber" value="[% hold.borrowernumber | html %]" />
                 <input type="hidden" name="biblionumber" value="[% hold.biblionumber | html %]" />
                 [% IF Koha.Preference('HoldsSplitQueue') == "nothing" && !hold.found %]
-                    <select name="rank-request">
+                    <select name="rank-request" class="rank-request" data-hold-id="[% hold.reserve_id %]">
                 [% ELSE %]
-                    <input type="hidden" name="rank-request" value="[% hold.priority | html %]">
-                    <select name="rank-request" disabled="disabled">
+                    <input type="hidden" name="rank-request" class="rank-request" value="[% hold.priority | html %]" data-hold-id="[% hold.reserve_id %]">
+                    <select name="rank-request" class="rank-request" disabled="disabled" data-hold-id="[% hold.reserve_id %]">
                 [% END %]
                     [% IF ( hold.found ) %]
                         [% IF ( hold.intransit ) %]
@@ -71,6 +73,15 @@
 
                     <option value="del">del</option>
                 </select>
+
+                [% IF hold_cancellation %]
+                    <select class="cancellation-reason" name="cancellation-reason-[% hold.reserve_id %]" id="cancellation-reason-[% hold.reserve_id %]" data-hold-id="[% hold.reserve_id %]">
+                        <option value="">No reason given</option>
+                        [% FOREACH reason IN hold_cancellation %]
+                            <option value="[% reason.authorised_value | html %]">[% reason.lib | html %]</option>
+                        [% END %]
+                    </select>
+                [% END %]
             </td>
 
             [% IF ( CAN_user_reserveforothers_modify_holds_priority ) %]
