@@ -66,7 +66,6 @@ the item's id in the breeding reservoir
 
 use Modern::Perl;
 use CGI qw ( -utf8 );
-use C4::Context;
 
 use C4::Auth qw( get_template_and_user );
 use C4::Budgets qw( GetBudget GetBudgetHierarchy CanUserUseBudget );
@@ -92,10 +91,11 @@ use C4::ImportBatch qw( SetImportRecordStatus SetMatchedBiblionumber GetImportRe
 use Koha::Acquisition::Booksellers;
 use Koha::Acquisition::Currencies qw( get_active );
 use Koha::Biblios;
+use Koha::Acquisition::Utils;
 use Koha::BiblioFrameworks;
 use Koha::DateUtils qw( dt_from_string );
-use Koha::MarcSubfieldStructures;
 use Koha::ItemTypes;
+use Koha::MarcSubfieldStructures;
 use Koha::Patrons;
 use Koha::RecordProcessor;
 use Koha::Subscriptions;
@@ -629,7 +629,7 @@ sub staged_items_field {
     my ($marcrecord, $encoding) = MARCfindbreeding($breedingid);
     die("Could not find the selected record in the reservoir, bailing") unless $marcrecord;
 
-    my $infos = get_infos_syspref('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2', 'replacementprice']);
+    my $infos = Koha::Acquisition::Utils::get_infos_syspref('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2', 'replacementprice']);
     my $price = $infos->{price};
     my $replacementprice = $infos->{replacementprice};
     my $quantity = $infos->{quantity};
@@ -647,7 +647,7 @@ sub staged_items_field {
     # Items
     my @itemlist = ();
     my $all_items_quantity = 0;
-    my $alliteminfos = get_infos_syspref_on_item('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
+    my $alliteminfos = C4::Acquisition::Utils::get_infos_syspref_on_item('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
     if ($alliteminfos != -1) {
         foreach my $iteminfos (@$alliteminfos) {
             my %itemrecord=(
@@ -696,113 +696,10 @@ sub staged_items_field {
     return (\%cellrecord);
 }
 
-sub get_infos_syspref {
-    my ($syspref_name, $record, $field_list) = @_;
-    my $syspref = C4::Context->preference($syspref_name);
-    $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
-    my $yaml = eval {
-        YAML::Load($syspref);
-    };
-    if ( $@ ) {
-        warn "Unable to parse $syspref syspref : $@";
-        return ();
-    }
-    my $r;
-    for my $field_name ( @$field_list ) {
-        next unless exists $yaml->{$field_name};
-        my @fields = split /\|/, $yaml->{$field_name};
-        for my $field ( @fields ) {
-            my ( $f, $sf ) = split /\$/, $field;
-            next unless $f and $sf;
-            if ( my $v = $record->subfield( $f, $sf ) ) {
-                $r->{$field_name} = $v;
-            }
-            last if $yaml->{$field};
-        }
-    }
-    return $r;
-}
-
-sub equal_number_of_fields {
-    my ($tags_list, $record) = @_;
-    my $tag_fields_count;
-    for my $tag (@$tags_list) {
-        my @fields = $record->field($tag);
-        $tag_fields_count->{$tag} = scalar @fields;
-    }
-
-    my $tags_count;
-    foreach my $key ( keys %$tag_fields_count ) {
-        if ( $tag_fields_count->{$key} > 0 ) { # Having 0 of a field is ok
-            $tags_count //= $tag_fields_count->{$key}; # Start with the count from the first occurrence
-            return -1 if $tag_fields_count->{$key} != $tags_count; # All counts of various fields should be equal if they exist
-        }
-    }
-
-    return $tags_count;
-}
-
-sub get_infos_syspref_on_item {
-    my ($syspref_name, $record, $field_list) = @_;
-    my $syspref = C4::Context->preference($syspref_name);
-    $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
-    my $yaml = eval {
-        YAML::Load($syspref);
-    };
-    if ( $@ ) {
-        warn "Unable to parse $syspref syspref : $@";
-        return ();
-    }
-    my @result;
-    my @tags_list;
-
-    # Check tags in syspref definition
-    for my $field_name ( @$field_list ) {
-        next unless exists $yaml->{$field_name};
-        my @fields = split /\|/, $yaml->{$field_name};
-        for my $field ( @fields ) {
-            my ( $f, $sf ) = split /\$/, $field;
-            next unless $f and $sf;
-            push @tags_list, $f;
-        }
-    }
-    @tags_list = List::MoreUtils::uniq(@tags_list);
-
-    my $tags_count = equal_number_of_fields(\@tags_list, $record);
-    # Return if the number of these fields in the record is not the same.
-    return -1 if $tags_count == -1;
-
-    # Gather the fields
-    my $fields_hash;
-    foreach my $tag (@tags_list) {
-        my @tmp_fields;
-        foreach my $field ($record->field($tag)) {
-            push @tmp_fields, $field;
-        }
-        $fields_hash->{$tag} = \@tmp_fields;
-    }
-
-    for (my $i = 0; $i < $tags_count; $i++) {
-        my $r;
-        for my $field_name ( @$field_list ) {
-            next unless exists $yaml->{$field_name};
-            my @fields = split /\|/, $yaml->{$field_name};
-            for my $field ( @fields ) {
-                my ( $f, $sf ) = split /\$/, $field;
-                next unless $f and $sf;
-                my $v = $fields_hash->{$f}[$i] ? $fields_hash->{$f}[$i]->subfield( $sf ) : undef;
-                $r->{$field_name} = $v if (defined $v);
-                last if $yaml->{$field};
-            }
-        }
-        push @result, $r;
-    }
-    return \@result;
-}
 
 sub _trim {
-    return $_[0] unless $_[0];
-    $_[0] =~ s/^\s+//;
-    $_[0] =~ s/\s+$//;
-    $_[0];
+    my $string = shift;
+    return unless $string;
+    $string =~ s/^\s+|\s+$//g;
+    return $string;
 }

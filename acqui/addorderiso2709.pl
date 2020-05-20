@@ -44,14 +44,17 @@ use C4::Items qw( PrepareItemrecordDisplay AddItemFromMarc );
 use C4::Budgets qw( GetBudget GetBudgets GetBudgetHierarchy CanUserUseBudget GetBudgetByCode );
 use C4::Suggestions;    # GetSuggestion
 use C4::Members;
-
-use Koha::Number::Price;
-use Koha::Libraries;
+use C4::Output;
+use C4::Search qw/FindDuplicate/;
+use C4::Suggestions;    # GetSuggestion
 use Koha::Acquisition::Baskets;
+use Koha::Acquisition::Booksellers;
 use Koha::Acquisition::Currencies;
 use Koha::Acquisition::Orders;
-use Koha::Acquisition::Booksellers;
+use Koha::Acquisition::Utils;
 use Koha::Import::Records;
+use Koha::Libraries;
+use Koha::Number::Price;
 use Koha::Patrons;
 
 my $input = CGI->new;
@@ -489,7 +492,7 @@ sub import_biblios_list {
         );
         my $marcrecord = $import_record->get_marc_record || die "couldn't translate marc information";
 
-        my $infos = get_infos_syspref('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2','replacementprice']);
+        my $infos = Koha::Acquisition::Utils::get_infos_syspref('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2','replacementprice']);
         my $price = $infos->{price};
         my $replacementprice = $infos->{replacementprice};
         my $quantity = $infos->{quantity};
@@ -508,7 +511,7 @@ sub import_biblios_list {
         # Items
         my @itemlist = ();
         my $all_items_quantity = 0;
-        my $alliteminfos = get_infos_syspref_on_item('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
+        my $alliteminfos = C4::Acquisition::Utils::get_infos_syspref_on_item('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
         if ($alliteminfos != -1) {
             foreach my $iteminfos (@$alliteminfos) {
                 my $item_homebranch = $iteminfos->{homebranch};
@@ -642,108 +645,4 @@ sub add_matcher_list {
         }
     }
     $template->param(available_matchers => \@matchers);
-}
-
-sub get_infos_syspref {
-    my ($syspref_name, $record, $field_list) = @_;
-    my $syspref = C4::Context->preference($syspref_name);
-    $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
-    my $yaml = eval {
-        YAML::XS::Load(Encode::encode_utf8($syspref));
-    };
-    if ( $@ ) {
-        warn "Unable to parse $syspref syspref : $@";
-        return ();
-    }
-    my $r;
-    for my $field_name ( @$field_list ) {
-        next unless exists $yaml->{$field_name};
-        my @fields = split /\|/, $yaml->{$field_name};
-        for my $field ( @fields ) {
-            my ( $f, $sf ) = split /\$/, $field;
-            next unless $f and $sf;
-            if ( my $v = $record->subfield( $f, $sf ) ) {
-                $r->{$field_name} = $v;
-            }
-            last if $yaml->{$field};
-        }
-    }
-    return $r;
-}
-
-sub equal_number_of_fields {
-    my ($tags_list, $record) = @_;
-    my $tag_fields_count;
-    for my $tag (@$tags_list) {
-        my @fields = $record->field($tag);
-        $tag_fields_count->{$tag} = scalar @fields;
-    }
-
-    my $tags_count;
-    foreach my $key ( keys %$tag_fields_count ) {
-        if ( $tag_fields_count->{$key} > 0 ) { # Having 0 of a field is ok
-            $tags_count //= $tag_fields_count->{$key}; # Start with the count from the first occurrence
-            return -1 if $tag_fields_count->{$key} != $tags_count; # All counts of various fields should be equal if they exist
-        }
-    }
-
-    return $tags_count;
-}
-
-sub get_infos_syspref_on_item {
-    my ($syspref_name, $record, $field_list) = @_;
-    my $syspref = C4::Context->preference($syspref_name);
-    $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
-    my $yaml = eval {
-        YAML::XS::Load(Encode::encode_utf8($syspref));
-    };
-    if ( $@ ) {
-        warn "Unable to parse $syspref syspref : $@";
-        return ();
-    }
-    my @result;
-    my @tags_list;
-
-    # Check tags in syspref definition
-    for my $field_name ( @$field_list ) {
-        next unless exists $yaml->{$field_name};
-        my @fields = split /\|/, $yaml->{$field_name};
-        for my $field ( @fields ) {
-            my ( $f, $sf ) = split /\$/, $field;
-            next unless $f and $sf;
-            push @tags_list, $f;
-        }
-    }
-    @tags_list = List::MoreUtils::uniq(@tags_list);
-
-    my $tags_count = equal_number_of_fields(\@tags_list, $record);
-    # Return if the number of these fields in the record is not the same.
-    return -1 if $tags_count == -1;
-
-    # Gather the fields
-    my $fields_hash;
-    foreach my $tag (@tags_list) {
-        my @tmp_fields;
-        foreach my $field ($record->field($tag)) {
-            push @tmp_fields, $field;
-        }
-        $fields_hash->{$tag} = \@tmp_fields;
-    }
-
-    for (my $i = 0; $i < $tags_count; $i++) {
-        my $r;
-        for my $field_name ( @$field_list ) {
-            next unless exists $yaml->{$field_name};
-            my @fields = split /\|/, $yaml->{$field_name};
-            for my $field ( @fields ) {
-                my ( $f, $sf ) = split /\$/, $field;
-                next unless $f and $sf;
-                my $v = $fields_hash->{$f}[$i] ? $fields_hash->{$f}[$i]->subfield( $sf ) : undef;
-                $r->{$field_name} = $v if (defined $v);
-                last if $yaml->{$field};
-            }
-        }
-        push @result, $r;
-    }
-    return \@result;
 }
