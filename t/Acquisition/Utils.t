@@ -63,7 +63,7 @@ test4: 541$a
     is( $data->{test4}, "Test 4", "Got test 4 correctly" );
 };
 
-subtest "get_infos_syspref_on_item" => sub {
+subtest "GetMarcItemFieldsToOrderValues" => sub {
     plan tests => 13;
 
     my $record = MARC::Record->new;
@@ -85,7 +85,7 @@ testC: 976$a
 testD: 976$b
     };
     t::lib::Mocks::mock_preference('MarcItemFieldsToOrder', $MarcItemFieldsToOrder);
-    my $data = Koha::Acquisition::Utils::get_infos_syspref_on_item(
+    my $data = Koha::Acquisition::Utils::GetMarcItemFieldsToOrderValues(
         'MarcItemFieldsToOrder',
         $record,
         [ 'testA', 'testB', 'testC', 'testD' ]
@@ -116,7 +116,7 @@ testD: 976$b
         MARC::Field->new( '976', '', '', a => 'Test 11', b => "Test 12" ),
     );
 
-    $data = Koha::Acquisition::Utils::get_infos_syspref_on_item(
+    $data = Koha::Acquisition::Utils::GetMarcItemFieldsToOrderValues(
         'MarcItemFieldsToOrder',
         $record,
         [ 'testA', 'testB', 'testC', 'testD' ]

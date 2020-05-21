@@ -65,9 +65,9 @@ sub get_infos_syspref {
     return $r;
 }
 
-=head3 get_infos_syspref_on_item($syspref_name, $record, $field_list)
+=head3 GetMarcItemFieldsToOrderValues($syspref_name, $record, $field_list)
 
-my $data = get_infos_syspref_on_item('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
+my $data = GetMarcItemFieldsToOrderValues('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
 
 This subroutine accepts a syspref ( MarcItemFieldsToOrder ),
 a marc record, and an arrayref of fields to retrieve.
@@ -76,13 +76,13 @@ The return value is a hashref of key value pairs, where the keys are the field l
 and the values are extracted from the MARC record based on the key to MARC field mapping from the
 given system preference.
 
-The largest difference between get_infos_syspref and get_infos_syspref_on_item is that the former deals
+The largest difference between get_infos_syspref and GetMarcItemFieldsToOrderValues is that the former deals
 with singular marc fields, while the latter works on multiple matching marc fields and returns -1 if it cannot
 find a matching number of all fields to be looked up.
 
 =cut
 
-sub get_infos_syspref_on_item {
+sub GetMarcItemFieldsToOrderValues {
     my ($syspref_name, $record, $field_list) = @_;
     my $syspref = C4::Context->preference($syspref_name);
     $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
