@@ -629,7 +629,7 @@ sub staged_items_field {
     my ($marcrecord, $encoding) = MARCfindbreeding($breedingid);
     die("Could not find the selected record in the reservoir, bailing") unless $marcrecord;
 
-    my $infos = Koha::Acquisition::Utils::get_infos_syspref('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2', 'replacementprice']);
+    my $infos = Koha::Acquisition::Utils::GetMarcFieldsToOrderValues('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2', 'replacementprice']);
     my $price = $infos->{price};
     my $replacementprice = $infos->{replacementprice};
     my $quantity = $infos->{quantity};

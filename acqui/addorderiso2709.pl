@@ -492,7 +492,7 @@ sub import_biblios_list {
         );
         my $marcrecord = $import_record->get_marc_record || die "couldn't translate marc information";
 
-        my $infos = Koha::Acquisition::Utils::get_infos_syspref('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2','replacementprice']);
+        my $infos = Koha::Acquisition::Utils::GetMarcFieldsToOrderValues('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2','replacementprice']);
         my $price = $infos->{price};
         my $replacementprice = $infos->{replacementprice};
         my $quantity = $infos->{quantity};

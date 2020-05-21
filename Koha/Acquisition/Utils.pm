@@ -25,9 +25,9 @@ Koha::Acquisition::Utils - Additional Koha functions for dealing with orders and
 
 =head1 SUBROUTINES
 
-=head3 get_infos_syspref($syspref_name, $record, $field_list)
+=head3 GetMarcFieldsToOrderValues($syspref_name, $record, $field_list)
 
-my $data = Koha::Acquisition::Utils::get_infos_syspref('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', etc.]);
+my $data = Koha::Acquisition::Utils::GetMarcFieldsToOrderValues('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', etc.]);
 
 This subroutine accepts a syspref ( MarcFieldsToOrder ),
 a marc record, and an arrayref of fields to retrieve.
@@ -38,7 +38,7 @@ given system preference.
 
 =cut
 
-sub get_infos_syspref {
+sub GetMarcFieldsToOrderValues {
     my ($syspref_name, $record, $field_list) = @_;
     my $syspref = C4::Context->preference($syspref_name);
     $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
@@ -76,7 +76,7 @@ The return value is a hashref of key value pairs, where the keys are the field l
 and the values are extracted from the MARC record based on the key to MARC field mapping from the
 given system preference.
 
-The largest difference between get_infos_syspref and GetMarcItemFieldsToOrderValues is that the former deals
+The largest difference between GetMarcFieldsToOrderValues and GetMarcItemFieldsToOrderValues is that the former deals
 with singular marc fields, while the latter works on multiple matching marc fields and returns -1 if it cannot
 find a matching number of all fields to be looked up.
 

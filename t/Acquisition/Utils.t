@@ -33,7 +33,7 @@ $schema->storage->txn_begin;
 my $builder = t::lib::TestBuilder->new;
 my $dbh = C4::Context->dbh;
 
-subtest "get_infos_syspref" => sub {
+subtest "GetMarcFieldsToOrderValues" => sub {
     plan tests => 4;
 
     my $record = MARC::Record->new;
@@ -51,7 +51,7 @@ test3: 520$a
 test4: 541$a
     };
     t::lib::Mocks::mock_preference('MarcFieldsToOrder', $MarcFieldsToOrder);
-    my $data = Koha::Acquisition::Utils::get_infos_syspref(
+    my $data = Koha::Acquisition::Utils::GetMarcFieldsToOrderValues(
         'MarcFieldsToOrder',
         $record,
         [ 'test1', 'test2', 'test3', 'test4' ]
