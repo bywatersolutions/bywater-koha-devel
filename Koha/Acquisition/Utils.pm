@@ -39,8 +39,8 @@ given system preference.
 =cut
 
 sub GetMarcFieldsToOrderValues {
-    my ($syspref_name, $record, $field_list) = @_;
-    my $syspref = C4::Context->preference($syspref_name);
+    my ($record, $field_list) = @_;
+    my $syspref = C4::Context->preference('MarcFieldsToOrder');
     $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
     my $yaml = eval {
         YAML::Load($syspref);
@@ -83,8 +83,8 @@ find a matching number of all fields to be looked up.
 =cut
 
 sub GetMarcItemFieldsToOrderValues {
-    my ($syspref_name, $record, $field_list) = @_;
-    my $syspref = C4::Context->preference($syspref_name);
+    my ($record, $field_list) = @_;
+    my $syspref = C4::Context->preference('MarcItemFieldsToOrder');
     $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
     my $yaml = eval {
         YAML::Load($syspref);

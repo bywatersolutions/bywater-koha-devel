@@ -492,7 +492,7 @@ sub import_biblios_list {
         );
         my $marcrecord = $import_record->get_marc_record || die "couldn't translate marc information";
 
-        my $infos = Koha::Acquisition::Utils::GetMarcFieldsToOrderValues('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2','replacementprice']);
+        my $infos = Koha::Acquisition::Utils::GetMarcFieldsToOrderValues( $marcrecord, [ 'price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2', 'replacementprice' ] );
         my $price = $infos->{price};
         my $replacementprice = $infos->{replacementprice};
         my $quantity = $infos->{quantity};
@@ -511,7 +511,7 @@ sub import_biblios_list {
         # Items
         my @itemlist = ();
         my $all_items_quantity = 0;
-        my $alliteminfos = C4::Acquisition::Utils::GetMarcItemFieldsToOrderValues('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
+        my $alliteminfos = C4::Acquisition::Utils::GetMarcItemFieldsToOrderValues( $marcrecord, [ 'homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code' ] );
         if ($alliteminfos != -1) {
             foreach my $iteminfos (@$alliteminfos) {
                 my $item_homebranch = $iteminfos->{homebranch};

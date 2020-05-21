@@ -52,7 +52,6 @@ test4: 541$a
     };
     t::lib::Mocks::mock_preference('MarcFieldsToOrder', $MarcFieldsToOrder);
     my $data = Koha::Acquisition::Utils::GetMarcFieldsToOrderValues(
-        'MarcFieldsToOrder',
         $record,
         [ 'test1', 'test2', 'test3', 'test4' ]
     );
@@ -86,7 +85,6 @@ testD: 976$b
     };
     t::lib::Mocks::mock_preference('MarcItemFieldsToOrder', $MarcItemFieldsToOrder);
     my $data = Koha::Acquisition::Utils::GetMarcItemFieldsToOrderValues(
-        'MarcItemFieldsToOrder',
         $record,
         [ 'testA', 'testB', 'testC', 'testD' ]
     );
@@ -117,7 +115,6 @@ testD: 976$b
     );
 
     $data = Koha::Acquisition::Utils::GetMarcItemFieldsToOrderValues(
-        'MarcItemFieldsToOrder',
         $record,
         [ 'testA', 'testB', 'testC', 'testD' ]
     );

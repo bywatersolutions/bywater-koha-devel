@@ -629,7 +629,7 @@ sub staged_items_field {
     my ($marcrecord, $encoding) = MARCfindbreeding($breedingid);
     die("Could not find the selected record in the reservoir, bailing") unless $marcrecord;
 
-    my $infos = Koha::Acquisition::Utils::GetMarcFieldsToOrderValues('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2', 'replacementprice']);
+    my $infos = Koha::Acquisition::Utils::GetMarcFieldsToOrderValues( $marcrecord, [ 'price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2', 'replacementprice' ] );
     my $price = $infos->{price};
     my $replacementprice = $infos->{replacementprice};
     my $quantity = $infos->{quantity};
@@ -647,7 +647,7 @@ sub staged_items_field {
     # Items
     my @itemlist = ();
     my $all_items_quantity = 0;
-    my $alliteminfos = C4::Acquisition::Utils::GetMarcItemFieldsToOrderValues('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
+    my $alliteminfos = C4::Acquisition::Utils::GetMarcItemFieldsToOrderValues( $marcrecord, [ 'homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code' ] );
     if ($alliteminfos != -1) {
         foreach my $iteminfos (@$alliteminfos) {
             my %itemrecord=(
