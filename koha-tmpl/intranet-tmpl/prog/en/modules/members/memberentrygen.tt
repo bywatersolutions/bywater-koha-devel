@@ -214,6 +214,13 @@ legend:hover {
                             </div>
                         [% END %]
 
+                        <fieldset class="rows" id="dl-scan">
+                            <legend id="dl-scan_lgd">Import address from drivers license</legend>
+                            <label for="dl-data">Scan drivers license:</label>
+                            <textarea id="dl-data"></textarea>
+                        </fieldset>
+
+
                         <form name="form" id="entryform" action="/cgi-bin/koha/members/memberentry.pl" method="post" autocomplete="off" class="toggler">
                             [% UNLESS ( check_member ) %]
                                 <input type="hidden" name="nodouble"  value="[% nodouble | html %]" />
@@ -1721,6 +1728,49 @@ legend:hover {
             });
         [% END %]
         $("#guarantor_template").hide();
+
+        $(document).ready(function () {
+            let lastUpdate;
+            let dlInterval;
+            $("#dl-data").bind('input propertychange', function(){
+                lastUpdate = new Date().getTime();
+                if ( !dlInterval ) {
+                    dlInterval = window.setInterval(function () {
+                        let newUpdate = new Date().getTime();
+
+                        console.log(newUpdate - lastUpdate);
+                        if ( newUpdate - lastUpdate > 100 ) {
+                            clearInterval(dlInterval);
+                            dlInterval = null;
+                            lastUpdate = null;
+                            var lines = $('#dl-data').val().split('\n');
+                            $('#dl-data').val("");
+                            for( var i = 0 ; i < lines.length ; i++ ){
+                                const line = lines[i];
+                                const code = line.substring(0, 3);
+                                const value = line.substring(3);
+
+                                switch(code) {
+                                    case 'DAG':
+                                        $('#address').val(value);
+                                        break;
+                                    case 'DAI':
+                                        $('#city').val(value);
+                                        break;
+                                    case 'DAJ':
+                                        $('#state').val(value);
+                                        break;
+                                    case 'DAK':
+                                        $('#zipcode').val(value);
+                                        break;
+                                }
+                            }
+                        }
+                    }, 10);
+                }
+            });
+
+        });
 
     </script>
     [% Asset.js("js/members.js") | $raw %]
