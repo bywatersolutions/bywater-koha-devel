@@ -234,5 +234,8 @@ __PAZPAR2_TOGGLE_XML_POST__
  <dev_install>0</dev_install>
  <strict_sql_modes>0</strict_sql_modes>
 
+ <!-- See z3950_responder.pl for available options. The options -c, -u and -p are already passed automatically by koha-z3950-responder -->
+ <z3950_responder_options>--add-item-status k -t 5</z3950_responder_options>
+
 </config>
 </yazgfs>
