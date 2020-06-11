@@ -35,6 +35,7 @@ use Koha::Items;
 use Koha::ItemTypes;
 use Koha::Libraries;
 use Koha::Patrons;
+use Koha::Plugins;
 use List::MoreUtils qw/any/;
 use C4::Search;
 use Storable qw(thaw freeze);
@@ -485,6 +486,9 @@ if ($op eq "additem") {
     if ( C4::Context->preference('autoBarcode') eq 'incremental' ) {
         $record = _increment_barcode($record, $frameworkcode);
     }
+
+    my ( $new_barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $addedolditem->{'barcode'} );
+    $addedolditem->{'barcode'} = $new_barcode;
 
     my $addedolditem = TransformMarcToKoha( $record );
 

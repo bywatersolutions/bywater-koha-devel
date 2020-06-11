@@ -49,6 +49,7 @@ use Koha::Items;
 use Koha::Patrons;
 use Koha::Patron::Images;
 use Koha::Patron::Messages;
+use Koha::Plugins;
 use Koha::Token;
 
 my $query = new CGI;
@@ -110,6 +111,8 @@ my ($op, $patronid, $patronlogin, $patronpw, $barcode, $confirmed, $newissues) =
     $query->param("newissues")  || '',
 );
 
+( $barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $barcode );
+
 my @newissueslist = split /,/, $newissues;
 my $issuenoconfirm = 1; #don't need to confirm on issue.
 my $issuer   = Koha::Patrons->find( $issuerid )->unblessed;
@@ -122,6 +125,7 @@ if (C4::Context->preference('SelfCheckoutByLogin') && !$patronid) {
 
 my ( $borrower, $patron );
 if ( $patronid ) {
+    ( $patronid ) = Koha::Plugins->call( 'barcode_transform', 'patron', $patronid );
     $patron = Koha::Patrons->find( { cardnumber => $patronid } );
     $borrower = $patron->unblessed if $patron;
 }

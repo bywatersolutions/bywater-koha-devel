@@ -20,6 +20,7 @@ use Modern::Perl;
 use Koha::Database;
 use Koha::Exceptions::Patron::Attribute;
 use Koha::Patron::Attribute::Types;
+use Koha::Plugins;
 use Koha::AuthorisedValues;
 
 use base qw(Koha::Object);

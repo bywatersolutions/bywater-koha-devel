@@ -93,6 +93,15 @@ sub intranet_js {
     return "Koha::Plugin::Test::intranet_js";
 }
 
+sub barcode_transform {
+    my ( $self, $type, $barcode ) = @_;
+    return "Koha::Plugin::Test::barcode_transform";
+}
+
+sub barcode_generate {
+    my ( $self, $type, $object )
+}
+
 sub configure {
     my ( $self, $args ) = @_;
     return "Koha::Plugin::Test::configure";;

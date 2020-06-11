@@ -41,6 +41,8 @@ use Koha::AuthorisedValues;
 use Koha::BiblioFrameworks;
 use Koha::ClassSources;
 use Koha::Items;
+use Koha::Plugins;
+
 use List::MoreUtils qw( none );
 
 my $minlocation=$input->param('minlocation') || '';
@@ -171,6 +173,9 @@ if ( $uploadbarcodes && length($uploadbarcodes) > 0 ) {
     }
     for my $barcode (@uploadedbarcodes) {
         next unless $barcode;
+
+        ($barcode) = Koha::Plugins->call('barcode_transform', 'item', $barcode );
+
         ++$lines_read;
         if (length($barcode)>$barcode_size) {
             $err_length += 1;

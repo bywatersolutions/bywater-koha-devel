@@ -72,6 +72,7 @@ use Koha::ItemTypes;
 use Koha::SearchEngine;
 use Koha::SearchEngine::Search;
 use Koha::Libraries;
+use Koha::Plugins;
 
 =head1 NAME
 

@@ -110,7 +110,10 @@ Autogenerate next cardnumber from highest value found in database
 
 sub fixup_cardnumber {
     my ( $self ) = @_;
-    my $max = Koha::Patrons->search({
+
+    my ( $max ) = Koha::Plugins->call( 'barcode_generate', 'patron', $self );
+
+    $max ||= Koha::Patrons->search({
         cardnumber => {-regexp => '^-?[0-9]+$'}
     }, {
         select => \'CAST(cardnumber AS SIGNED)',
@@ -196,6 +199,9 @@ sub store {
             }
 
             $self->trim_whitespaces;
+
+            my ( $new_cardnumber ) = Koha::Plugins->call( 'barcode_transform', 'patron', $self->cardnumber );
+            $self->cardnumber( $new_cardnumber );
 
             # Set surname to uppercase if uppercasesurname is true
             $self->surname( uc($self->surname) )
