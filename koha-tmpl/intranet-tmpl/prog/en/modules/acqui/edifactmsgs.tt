@@ -61,8 +61,9 @@
     [% END %]
 [% ELSE %]
 <!-- Assuming invoices -->
-     <a href="/cgi-bin/koha/acqui/invoices.pl?message_id=[% msg.id | uri %]&op=do_search">
-      Invoices
+     [% SET invoice_id = msg.invoice_id %]
+     <a href="/cgi-bin/koha/acqui/invoices.pl?invoicenumber=[% invoice_id | uri %]&op=do_search">
+      Invoice: [% invoice_id %]
      </a>
 [% END %]
 </td>

@@ -202,4 +202,14 @@ __PACKAGE__->add_columns(
     '+deleted' => { is_boolean => 1 },
 );
 
+sub invoice_id {
+    my ( $self ) = @_;
+
+    if ( $self->raw_msg =~ /BGM\+\d{3}\+(\d+)\+/ ) {
+         return $1;
+    } else {
+        return;
+    }
+}
+
 1;
