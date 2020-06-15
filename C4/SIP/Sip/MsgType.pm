@@ -433,7 +433,7 @@ sub build_patron_status {
             $password_rc = $patron->check_password($patron_pwd);
         }
 
-        $resp .= patron_status_string($patron);
+        $resp .= patron_status_string( $patron, $server );
         $resp .= $lang . timestamp();
         if ( defined $server->{account}->{ae_field_template} ) {
             $resp .= add_field( FID_PERSONAL_NAME, $patron->format( $server->{account}->{ae_field_template}, $server ) );
@@ -1623,6 +1623,8 @@ sub send_acs_status {
 #
 sub patron_status_string {
     my $patron = shift;
+    my $server = shift;
+
     my $patron_status;
 
     syslog( "LOG_DEBUG", "patron_status_string: %s charge_ok: %s", $patron->id, $patron->charge_ok );
@@ -1634,7 +1636,7 @@ sub patron_status_string {
         denied( $patron->hold_ok ),
         boolspace( $patron->card_lost ),
         boolspace( $patron->too_many_charged ),
-        boolspace( $patron->too_many_overdue ),
+        $server->{account}->{disable_too_many_overdue} ? boolspace( $patron->too_many_overdue ) : q{ },
         boolspace( $patron->too_many_renewal ),
         boolspace( $patron->too_many_claim_return ),
         boolspace( $patron->too_many_lost ),
