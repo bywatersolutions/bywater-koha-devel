@@ -188,7 +188,7 @@ sub hold_patron_name {
 
     my $holder = Koha::Patrons->find( $borrowernumber );
     unless ($holder) {
-        siplog("LOG_ERR", "While checking hold, failed to retrieve the patron with borrowernumber '$borrowernumber'");
+        syslog("LOG_ERR", "While checking hold, failed to retrieve the patron with borrowernumber '$borrowernumber'");
         return q{};
     }
     my $email = $holder->email || '';
