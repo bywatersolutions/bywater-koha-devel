@@ -160,7 +160,7 @@ sub checkout {
             # If the item is already associated with this patron, then
             # we're renewing it.
             $circ->renew_ok( $item->{borrowernumber}
-                  && _ci_cardnumber_cmp( $item->{borrowernumber}, $patron->borrowernumber; ) );
+                  && _ci_cardnumber_cmp( $item->{borrowernumber}, $patron->borrowernumber ) );
 
             $item->{borrowernumber}   = $patron_id;
             $item->{due_date} = $circ->{due};
