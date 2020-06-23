@@ -68,6 +68,7 @@
 [%        CASE 'OPAC'        %]OPAC
 [%        CASE 'SIP'         %]SIP
 [%        CASE 'COMMANDLINE' %]Command-line
+[%        CASE 'API'         %]REST API
 [%        CASE %][% log_interface | html %]
 [%    END %]
 [% END %]
@@ -159,7 +160,7 @@
                                         <option value="">All</option>
                                     [% END %]
 
-                                    [% FOREACH interf IN [ 'INTRANET' 'OPAC' 'SIP' 'COMMANDLINE' ] %]
+                                    [% FOREACH interf IN [ 'INTRANET' 'OPAC' 'SIP' 'COMMANDLINE' 'API' ] %]
                                         [% IF interfaces.grep(interf).size %]
                                             <option value="[% interf | html %]" selected="selected">[% PROCESS translate_log_interface log_interface=interf %]</option>
                                         [% ELSE %]
