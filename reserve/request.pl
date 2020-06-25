@@ -69,6 +69,12 @@ my ( $template, $borrowernumber, $cookie, $flags ) = get_template_and_user(
 my $showallitems = $input->param('showallitems');
 my $pickup = $input->param('pickup') || C4::Context->userenv->{'branch'};
 
+my $pickup_branch = Koha::Libraries->find( $pickup );
+unless ( $pickup_branch->pickup_location ) {
+    $pickup_branch = Koha::Libraries->search({ pickup_location => 1 })->next;
+    $pickup = $pickup_branch ? $pickup_branch->id : undef;
+}
+
 my $itemtypes = { map { $_->{itemtype} => $_ } @{ Koha::ItemTypes->search_with_localization->unblessed } };
 
 # Select borrowers infos
