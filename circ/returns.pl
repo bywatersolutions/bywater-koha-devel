@@ -426,6 +426,7 @@ if ( $messages->{'ResFound'}) {
             hold_auto_filled => 1,
             print_slip       => C4::Context->preference('HoldsAutoFillPrintSlip'),
             reserve_id       => $nextreservinfo->{reserve_id},
+            itemnumber       => $itemnumber,
         );
 
         if ( $messages->{'transfert'} ) {
