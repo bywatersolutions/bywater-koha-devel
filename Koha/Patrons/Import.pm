@@ -217,9 +217,9 @@ sub import_patrons {
             next LINE;
         }
 
-        my $relationship        = $borrower{relationship};
-        my $guarantor_id        = $borrower{guarantor_id};
-        delete $borrower{relationship};
+        my $guarantor_relationship = $borrower{guarantor_relationship};
+        delete $borrower{guarantor_relationship};
+        my $guarantor_id = $borrower{guarantor_id};
         delete $borrower{guarantor_id};
 
         # Remove warning for int datatype that cannot be null
@@ -320,6 +320,7 @@ sub import_patrons {
                 Koha::Patron->new(\%borrower)->store;
             };
             unless ( $@ ) {
+                $borrowernumber = $patron->id;
 
                 if ( $patron->is_debarred ) {
                     AddDebarment(
@@ -370,13 +371,26 @@ sub import_patrons {
 
         # Add a guarantor if we are given a relationship
         if ( $guarantor_id ) {
-            Koha::Patron::Relationship->new(
+            my $relationship = Koha::Patron::Relationships->find(
                 {
                     guarantee_id => $borrowernumber,
-                    relationship => $relationship,
                     guarantor_id => $guarantor_id,
                 }
-            )->store();
+            );
+
+            if ( $relationship ) {
+                $relationship->relationship( $guarantor_relationship );
+                $relationship->store();
+            }
+            else {
+                Koha::Patron::Relationship->new(
+                    {
+                        guarantee_id => $borrowernumber,
+                        relationship => $guarantor_relationship,
+                        guarantor_id => $guarantor_id,
+                    }
+                )->store();
+            }
         }
     }
 
@@ -452,6 +466,7 @@ sub set_column_keys {
 
     my @columnkeys = map { $_ ne 'borrowernumber' ? $_ : () } Koha::Patrons->columns();
     push( @columnkeys, 'patron_attributes' ) if $extended;
+    push( @columnkeys, qw( guarantor_relationship guarantor_id ) );
 
     return @columnkeys;
 }
