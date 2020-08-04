@@ -951,4 +951,11 @@ if ( $tab eq 'database' ) {
     my $db_audit   = $db_auditor->run;
     $template->param( db_audit => $db_audit );
 }
+
+my $bwsbranch_filename = '/usr/share/koha/bin/bwsbranch';
+if ( -r $bwsbranch_filename ) {
+    my $bwsbranch = read_file( $bwsbranch_filename );
+    $template->param( bwsbranch => $bwsbranch );
+}
+
 output_html_with_http_headers $query, $cookie, $template->output;
