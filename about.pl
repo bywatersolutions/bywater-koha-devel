@@ -33,6 +33,7 @@ use Config;
 use Search::Elasticsearch;
 use Try::Tiny;
 use YAML qw/LoadFile/;
+use File::Slurp qw(read_file);
 
 use C4::Output;
 use C4::Auth;
@@ -704,6 +705,12 @@ if ( open( my $file, "<:encoding(UTF-8)", "$docdir" . "/history.txt" ) ) {
     $template->param( table2 => $table2 );
 } else {
     $template->param( timeline_read_error => 1 );
+}
+
+my $bwsbranch_filename = '/usr/share/koha/bin/bwsbranch';
+if ( -r $bwsbranch_filename ) {
+    my $bwsbranch = read_file( $bwsbranch_filename );
+    $template->param( bwsbranch => $bwsbranch );
 }
 
 output_html_with_http_headers $query, $cookie, $template->output;
