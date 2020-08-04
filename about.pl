@@ -880,4 +880,10 @@ if ( open( my $file, "<:encoding(UTF-8)", "$docdir" . "/history.txt" ) ) {
     $template->param( timeline_read_error => 1 );
 }
 
+my $bwsbranch_filename = '/usr/share/koha/bin/bwsbranch';
+if ( -r $bwsbranch_filename ) {
+    my $bwsbranch = read_file( $bwsbranch_filename );
+    $template->param( bwsbranch => $bwsbranch );
+}
+
 output_html_with_http_headers $query, $cookie, $template->output;
