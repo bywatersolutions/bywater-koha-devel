@@ -478,6 +478,14 @@
                 <h2>Warnings regarding the system configuration</h2>
                 <table>
                     <caption>Preferences and parameters</caption>
+                    <tr>
+                        <th scope="row">BWS branch: </th>
+                        <td>[% bwsbranch | html %]</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">OS version ('uname -a'): </th>
+                        <td>[% osVersion | html %]</td>
+                    </tr>
                     [% IF (warnFastCataloging) %]
                         <tr>
                             <th scope="row"><strong>Warning</strong> </th>
