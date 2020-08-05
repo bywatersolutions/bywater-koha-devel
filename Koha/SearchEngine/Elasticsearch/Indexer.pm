@@ -25,6 +25,8 @@ use base qw(Koha::SearchEngine::Elasticsearch);
 use Data::Dumper;
 
 use Koha::Exceptions;
+use Koha::SearchEngine::Zebra::Indexer;
+use C4::Biblio;
 use C4::Context;
 
 =head1 NAME
@@ -276,6 +278,29 @@ sub update_index_background {
     my $self = shift;
     $self->update_index(@_);
 }
+
+sub index_records {
+    my ( $self, $biblionumbers, $op, $server, $records ) = @_;
+    $biblionumbers = [$biblionumbers] if ref $biblionumbers ne 'ARRAY' && defined $biblionumbers;
+    $records = [$records] if ref $biblionumbers ne 'ARRAY' && defined $records;
+    if ( $op eq 'specialUpdate' ) {
+        unless ($records) {
+            foreach my $biblionumber ( @$biblionumbers ){
+                my $record = C4::Biblio::GetMarcBiblio({
+                    biblionumber => $biblionumber,
+                    embed_items  => 1 });
+                push @$records, $record;
+            }
+        }
+        $self->update_index_background( $biblionumbers, $records );
+    }
+    elsif ( $op eq 'recordDelete' ) {
+        $self->delete_index_background( $biblionumbers );
+    }
+    #FIXME Current behaviour is to index Zebra when using ES, at some point we should stop
+    Koha::SearchEngine::Zebra::Indexer::index_records( $self, $biblionumbers, $op, $server, undef );
+}
+    
 
 =head2 delete_index($biblionums)
 

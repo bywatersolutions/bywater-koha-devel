@@ -44,6 +44,7 @@ use Koha::DateUtils;
 use Koha::Items;
 use Koha::ItemTypes;
 use Koha::Patrons;
+use Koha::SearchEngine::Indexer;
 
 my $input = new CGI;
 my $dbh = C4::Context->dbh;
@@ -192,6 +193,7 @@ if ($op eq "action") {
             $ynhash->{'av'.$yn->authorised_value} = $yn->lib;
         }
 
+        my $biblionumbers;
         try {
             my $schema = Koha::Database->new->schema;
             $schema->txn_do(
@@ -210,6 +212,7 @@ if ($op eq "action") {
                             my $return = $item->safe_delete;
                             if ( ref( $return ) ) {
                                 $deleted_items++;
+                                push @$biblionumbers, $itemdata->{'biblionumber'};
                             }
                             else {
                                 $not_deleted_items++;
@@ -298,15 +301,21 @@ if ($op eq "action") {
                                             my $item = ModItemFromMarc(
                                                 $localmarcitem,
                                                 $itemdata->{biblionumber},
-                                                $itemnumber
+                                                $itemnumber,
+                                                { skip_modzebra_update => 1 },
                                             )
                                           )
                                         {
-                                            LostItem( $itemnumber, 'batchmod' )
-                                              if $item->{itemlost}
+                                            LostItem(
+                                                $itemnumber,
+                                                'batchmod',
+                                                undef,
+                                                { skip_modzebra_update => 1 }
+                                            ) if $item->{itemlost}
                                               and not $itemdata->{itemlost};
                                         }
                                     };
+                                    push @$biblionumbers, $itemdata->{'biblionumber'};
                                 }
                             }
                             if ($runinbackground) {
@@ -336,7 +345,11 @@ if ($op eq "action") {
             }
             die "Something terrible has happened!"
                 if ($_ =~ /Rollback failed/); # Rollback failed
-        }
+        };
+        $biblionumbers = [ uniq @$biblionumbers ];
+        my $op = $del ? "delete" : "specialUpdate";
+        my $indexer = Koha::SearchEngine::Indexer->new({ index => $Koha::SearchEngine::BIBLIOS_INDEX });
+        $indexer->index_records( $biblionumbers, $op, "biblioserver", undef );
     }
 }
 #

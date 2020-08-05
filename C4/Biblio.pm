@@ -103,6 +103,7 @@ use Koha::Holds;
 use Koha::ItemTypes;
 use Koha::Plugins;
 use Koha::SearchEngine;
+use Koha::SearchEngine::Indexer;
 use Koha::Libraries;
 use Koha::Util::MARC;
 
@@ -395,7 +396,8 @@ sub DelBiblio {
     # for at least 2 reasons :
     # - if something goes wrong, the biblio may be deleted from Koha but not from zebra
     #   and we would have no way to remove it (except manually in zebra, but I bet it would be very hard to handle the problem)
-    ModZebra( $biblionumber, "recordDelete", "biblioserver" );
+    my $indexer = Koha::SearchEngine::Indexer->new({ index => $Koha::SearchEngine::BIBLIOS_INDEX });
+    $indexer->index_records( $biblionumber, "recordDelete", "biblioserver" );
 
     # delete biblioitems and items from Koha tables and save in deletedbiblioitems,deleteditems
     $sth = $dbh->prepare("SELECT biblioitemnumber FROM biblioitems WHERE biblionumber=?");
@@ -2491,67 +2493,44 @@ sub CountItemsIssued {
 
   ModZebra( $biblionumber, $op, $server, $record );
 
-$biblionumber is the biblionumber we want to index
+$biblionumbers are an arrayref of the biblionumbers we want to index, if single passed we convert to arrayref
 
 $op is specialUpdate or recordDelete, and is used to know what we want to do
 
 $server is the server that we want to update
 
-$record is the updated MARC record. If it's not supplied
-and is needed it will be loaded from the database.
+$records are an arrayref of the updated MARC records if they are available. If they are not supplied
+and are needed, they will be loaded from the database using $biblionumbers param. If a single record passed we convert to array ref
 
 =cut
 
 sub ModZebra {
 ###Accepts a $server variable thus we can use it for biblios authorities or other zebra dbs
-    my ( $biblionumber, $op, $server, $record ) = @_;
-    $debug && warn "ModZebra: update requested for: $biblionumber $op $server\n";
-    if ( C4::Context->preference('SearchEngine') eq 'Elasticsearch' ) {
-
-        # TODO abstract to a standard API that'll work for whatever
-        require Koha::SearchEngine::Elasticsearch::Indexer;
-        my $indexer = Koha::SearchEngine::Elasticsearch::Indexer->new(
-            {
-                index => $server eq 'biblioserver'
-                ? $Koha::SearchEngine::BIBLIOS_INDEX
-                : $Koha::SearchEngine::AUTHORITIES_INDEX
-            }
-        );
-        if ( $op eq 'specialUpdate' ) {
-            unless ($record) {
-                $record = GetMarcBiblio({
-                    biblionumber => $biblionumber,
-                    embed_items  => 1 });
-            }
-            $indexer->update_index_background( [$biblionumber], [$record] );
-        }
-        elsif ( $op eq 'recordDelete' ) {
-            $indexer->delete_index_background( [$biblionumber] );
-        }
-        else {
-            croak "ModZebra called with unknown operation: $op";
-        }
-    }
-
+    my ( $biblionumbers, $op, $server, $records ) = @_;
+    $biblionumbers = [$biblionumbers] if ref $biblionumbers ne 'ARRAY' && defined $biblionumbers;
+    $records = [$records] if ref $biblionumbers ne 'ARRAY' && defined $records;
+    $debug && warn "ModZebra: updates requested for: @$biblionumbers $op $server\n";
     my $dbh = C4::Context->dbh;
 
     # true ModZebra commented until indexdata fixes zebraDB crashes (it seems they occur on multiple updates
     # at the same time
     # replaced by a zebraqueue table, that is filled with ModZebra to run.
     # the table is emptied by rebuild_zebra.pl script (using the -z switch)
-    my $check_sql = "SELECT COUNT(*) FROM zebraqueue
-    WHERE server = ?
-        AND   biblio_auth_number = ?
-        AND   operation = ?
-        AND   done = 0";
-    my $check_sth = $dbh->prepare_cached($check_sql);
-    $check_sth->execute( $server, $biblionumber, $op );
-    my ($count) = $check_sth->fetchrow_array;
-    $check_sth->finish();
-    if ( $count == 0 ) {
-        my $sth = $dbh->prepare("INSERT INTO zebraqueue  (biblio_auth_number,server,operation) VALUES(?,?,?)");
-        $sth->execute( $biblionumber, $server, $op );
-        $sth->finish;
+    foreach my $biblionumber ( @$biblionumbers ){
+        my $check_sql = "SELECT COUNT(*) FROM zebraqueue
+        WHERE server = ?
+            AND   biblio_auth_number = ?
+            AND   operation = ?
+            AND   done = 0";
+        my $check_sth = $dbh->prepare_cached($check_sql);
+        $check_sth->execute( $server, $biblionumber, $op );
+        my ($count) = $check_sth->fetchrow_array;
+        $check_sth->finish();
+        if ( $count == 0 ) {
+            my $sth = $dbh->prepare("INSERT INTO zebraqueue  (biblio_auth_number,server,operation) VALUES(?,?,?)");
+            $sth->execute( $biblionumber, $server, $op );
+            $sth->finish;
+        }
     }
 }
 
@@ -3147,7 +3126,8 @@ sub ModBiblioMarc {
     $m_rs->metadata( $record->as_xml_record($encoding) );
     $m_rs->store;
 
-    ModZebra( $biblionumber, "specialUpdate", "biblioserver" );
+    my $indexer = Koha::SearchEngine::Indexer->new({ index => $Koha::SearchEngine::BIBLIOS_INDEX });
+    $indexer->index_records( $biblionumber, "specialUpdate", "biblioserver" );
 
     return $biblionumber;
 }
