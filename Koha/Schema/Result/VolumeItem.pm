@@ -112,9 +112,18 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-02-03 18:25:20
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:i6YHB4Jq+79kVVYmuurzIQ
 
+=head2 koha_object_class
+
+=cut
+
 sub koha_object_class {
     'Koha::Biblio::Volume::Item';
 }
+
+=head2 koha_objects_class
+
+=cut
+
 sub koha_objects_class {
     'Koha::Biblio::Volume::Items';
 }

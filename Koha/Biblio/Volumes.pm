@@ -27,8 +27,6 @@ Koha::Biblio::Volumes - Koha Volume Object set class
 
 =head1 API
 
-=head2 Class methods
-
 =head2 Internal methods
 
 =head3 _type
