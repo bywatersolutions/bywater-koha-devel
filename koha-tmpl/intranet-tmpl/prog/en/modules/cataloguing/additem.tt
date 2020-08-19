@@ -4,6 +4,7 @@
 [% USE Branches %]
 [% USE KohaDates %]
 [% USE TablesSettings %]
+[% SET footerjs = 1 %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Items &rsaquo; [% biblio.title | html %] [% IF ( biblio.author ) %] by [% biblio.author | html %][% END %] (Record #[% biblio.biblionumber | html %]) &rsaquo; Cataloging &rsaquo; Koha</title>
 [% INCLUDE 'doc-head-close.inc' %]
@@ -23,9 +24,6 @@
 [% INCLUDE 'calendar.inc' %]
 [% INCLUDE 'str/cataloging_additem.inc' %]
 [% Asset.js("js/cataloging_additem.js") | $raw %]
-<script>
-  var has_volumes = [% volumes.count %];
-</script>
 </head>
 
 <body id="cat_additem" class="cat">
@@ -243,5 +241,11 @@
             </main>
         </div> <!-- /.col-sm-12 -->
     </div> <!-- /.row -->
+
+[% MACRO jsinclude BLOCK %]
+    <script>
+      var has_volumes = [% volumes.count | html %];
+    </script>
+[% END %]
 
 [% INCLUDE 'intranet-bottom.inc' %]
