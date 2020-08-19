@@ -37,7 +37,6 @@ use Koha::ArticleRequest::Status;
 use Koha::ArticleRequests;
 use Koha::Biblio::Metadatas;
 use Koha::Biblio::Volumes;
-use Koha::Biblio::Volumes;
 use Koha::Biblioitems;
 use Koha::CirculationRules;
 use Koha::Item::Transfer::Limits;
