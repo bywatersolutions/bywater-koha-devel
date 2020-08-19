@@ -607,7 +607,7 @@ Note that permanent location is a code, and location may be an authval.
     <div id="volumes">
         [% IF CAN_user_editcatalogue_manage_volumes %]
             <div class="volumes_table_table_controls">
-                <a href="#" class="volume-create btn btn-default btn-xs"><i class="fa fa-plus"></i> Create new</a>
+                <a href="#" class="volume-create btn btn-default btn-xs"><i class="fa fa-plus"></i> New volume</a>
             </div>
         [% END %]
         <table class="volumes-table" id="volumes-table">
