@@ -133,9 +133,17 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-02-04 15:22:18
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cXvLM2TgY18pxE2ZJBMouw
 
+=head2 koha_objects_class
+
+=cut
+
 sub koha_objects_class {
     'Koha::Biblio::Volumes';
 }
+
+=head2 koha_object_class
+
+=cut
 
 sub koha_object_class {
     'Koha::Biblio::Volume';
