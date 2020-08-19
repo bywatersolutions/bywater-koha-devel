@@ -1563,7 +1563,7 @@ Note that permanent location is a code, and location may be an authval.
                         "mDataProp": function( oObj ) {
                             [% IF CAN_user_editcatalogue_manage_volumes %]
                                 return `<button class='volume-edit btn btn-default btn-xs' data-volume-id='${oObj.volume_id}'>
-                                    <i class='fa fa-edit'></i> ${_('Edit')}
+                                    <i class='fa fa-edit'></i> ${_("Edit")}
                                 </button>`
                                 + '&nbsp'
                                 + `<button class='volume-delete btn btn-default btn-xs' data-volume-id='${oObj.volume_id}'>
