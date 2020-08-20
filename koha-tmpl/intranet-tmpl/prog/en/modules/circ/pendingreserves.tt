@@ -155,7 +155,7 @@
                 [% SET hold_cancellation = AuthorisedValues.GetAuthValueDropbox('HOLD_CANCELLATION') %]
                 [% IF hold_cancellation %]
                     <div class="form-group">
-                        <label for="cancellation-reason">Cancellation reason</label>
+                        <label for="cancellation-reason">Cancellation reason:</label>
                         <select class="cancellation-reason" name="cancellation-reason" id="cancellation-reason">
                             <option value="">No reason given</option>
                             [% FOREACH reason IN hold_cancellation %]
