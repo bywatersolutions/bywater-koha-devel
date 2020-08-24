@@ -77,8 +77,8 @@ eval { $results_thingisbn = C4::XISBN::get_xisbns($isbn1,$biblionumber3); };
 SKIP: {
     skip "Problem retrieving ThingISBN", 1
         unless $@ eq '';
-    is( $results_thingisbn->[0]->{biblionumber},
-        undef,
+    isnt( $results_thingisbn->[0]->{biblionumber},
+        $biblionumber3,
         "Doesn't get biblionumber if the biblionumber matches the one passed to the sub." );
 }
 
