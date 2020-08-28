@@ -113,8 +113,9 @@ if ( $op eq 'cud-move' ) {
 elsif ( $op eq 'cud-cancel' ) {
     my $reserve_id          = $input->param('reserve_id');
     my $cancellation_reason = $input->param("cancellation-reason");
+    my $cancellation_notify_patron = $input->param("cancellation-notify-patron");
     my $hold                = Koha::Holds->find($reserve_id);
-    $hold->cancel( { cancellation_reason => $cancellation_reason } ) if $hold;
+    $hold->cancel( { cancellation_reason => $cancellation_reason, notify_patron => $cancellation_notify_patron } ) if $hold;
 }
 elsif ( $op eq 'cud-setLowestPriority' ) {
     my $reserve_id = $input->param('reserve_id');

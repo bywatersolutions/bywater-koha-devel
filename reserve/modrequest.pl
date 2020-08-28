@@ -56,6 +56,8 @@ if( $op eq 'cud-cancelall' || $op eq 'cud-modifyall' ) {
         undef $itemnumber[$i] if !$itemnumber[$i];
         my $suspend_until = $query->param( "suspend_until_" . $reserve_id[$i] );
         my $cancellation_reason = $query->param("cancellation-reason");
+        my $cancellation_notify_patron = $query->param("cancellation-notify-patron");
+
         my $params = {
             rank => $rank[$i],
             reserve_id => $reserve_id[$i],
@@ -64,6 +66,7 @@ if( $op eq 'cud-cancelall' || $op eq 'cud-modifyall' ) {
             itemnumber => $itemnumber[$i],
             defined $suspend_until ? ( suspend_until => $suspend_until ) : (),
             cancellation_reason => $cancellation_reason,
+            notify_patron => $cancellation_notify_patron,
         };
         if (C4::Context->preference('AllowHoldDateInFuture')) {
             $params->{reservedate} = $reservedates[$i] || undef;

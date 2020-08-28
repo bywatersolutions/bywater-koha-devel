@@ -1032,6 +1032,7 @@ sub ModReserve {
     my $biblionumber = $params->{'biblionumber'};
     my $cancellation_reason = $params->{'cancellation_reason'};
     my $date = $params->{expirationdate};
+    my $notify_patron = $params->{'notify_patron'};
 
     return if defined $rank && $rank eq "n";
 
@@ -1053,7 +1054,7 @@ sub ModReserve {
     my $original = C4::Context->preference('HoldsLog') ? $hold->unblessed : undef;
 
     if ( $rank eq "del" ) {
-        $hold->cancel({ cancellation_reason => $cancellation_reason });
+        $hold->cancel({ cancellation_reason => $cancellation_reason, notify_patron => $notify_patron });
     }
     elsif ($hold->found && $hold->priority eq '0' && $date) {
 

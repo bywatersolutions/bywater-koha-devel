@@ -55,7 +55,8 @@ if ( $op eq 'cud-cancel_reserve' and $reserve_id ) {
     my $hold = Koha::Holds->find( $reserve_id );
     if ( $hold ) {
         my $cancellation_reason = $input->param('cancellation-reason');
-        $hold->cancel({ cancellation_reason => $cancellation_reason });
+        my $cancellation_notify_patron = $input->param('cancellation-notify-patron');
+        $hold->cancel({ cancellation_reason => $cancellation_reason, notify_patron => $cancellation_notify_patron });
         push @messages, { type => 'message', code => 'hold_cancelled' };
     }
 } elsif ( $op =~ m|^mark_as_lost| ) {
