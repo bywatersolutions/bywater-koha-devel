@@ -44,6 +44,9 @@
   "import_batch_profiles": {
     "$ref": "definitions/import_batch_profiles.json"
   },
+  "import_record_match": {
+    "$ref": "definitions/import_record_match.json"
+  },
   "library": {
     "$ref": "definitions/library.json"
   },

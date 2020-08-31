@@ -20,6 +20,9 @@
   "hold_id_pp": {
     "$ref": "parameters/hold.json#/hold_id_pp"
   },
+  "import_record_id_pp": {
+    "$ref": "parameters/import_record_match.json#/import_record_id_pp"
+  },
   "club_id_pp": {
     "$ref": "parameters/club.json#/club_id_pp"
   },

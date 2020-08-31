@@ -496,6 +496,7 @@ sub calculate {
       if ( @$filters[10] );
 
     $strcalc .= " GROUP BY $linefield, $colfield ORDER BY $linefield,$colfield";
+    warn $strcalc;
     my $dbcalc = $dbh->prepare($strcalc);
     $dbcalc->execute;
 

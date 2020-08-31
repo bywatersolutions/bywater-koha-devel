@@ -3,6 +3,14 @@
     "type": "integer",
     "description": "Internal biblio identifier"
   },
+  "import_record_id": {
+    "type": "integer",
+    "description": "Internal import record identifier"
+  },
+  "candidate_match_id": {
+    "type": "integer",
+    "description": "Internal import record match identifier"
+  },
   "advancededitormacro_id": {
     "type": "integer",
     "description": "Internal advanced editor macro identifier",
