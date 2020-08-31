@@ -787,6 +787,7 @@ CREATE TABLE `import_record_matches` ( -- matches found when importing a batch o
   `import_record_id` int(11) NOT NULL, -- the id given to the imported bib record (import_records.import_record_id)
   `candidate_match_id` int(11) NOT NULL, -- the biblio the imported record matches (biblio.biblionumber)
   `score` int(11) NOT NULL default 0, -- the match score
+  PRIMARY KEY (`import_record_id`,`candidate_match_id`),
   CONSTRAINT `import_record_matches_ibfk_1` FOREIGN KEY (`import_record_id`)
              REFERENCES `import_records` (`import_record_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   KEY `record_score` (`import_record_id`, `score`)

@@ -72,6 +72,11 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-07-11 09:26:55
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hJW36EeP+H8+0/Ij3iuIFw
 
+sub koha_object_class {
+    'Koha::Import::Record::Match';
+}
+sub koha_objects_class {
+    'Koha::Import::Record::Matches';
+}
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
