@@ -97,75 +97,70 @@ subtest 'relationships_debt() tests' => sub {
     is( $parent_1->guarantee_relationships->guarantees->count, 2, 'Parent 1 has correct number of guarantors' );
     is( $parent_2->guarantee_relationships->guarantees->count, 2, 'Parent 2 has correct number of guarantors' );
 
-    # 3 params, count from 0 to 6 in binary ( 3 places ) to get the set of switches, then do that 4 times, one for each parent and child
-    is( $parent_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 1 }), 0, 'Family debt is correct' );
+    # 3 params, count from 0 to 7 in binary ( 3 places ) to get the set of switches, then do that 4 times, one for each parent and child
+    for my $i ( 0 .. 7 ) {
+        my ( $only_this_guarantor, $include_guarantors, $include_this_patron ) = split '', sprintf( "%03b", $i );
+        for my $patron ( $parent_1, $parent_2, $child_1, $child_2 ) {
+            is(
+                $patron->relationships_debt(
+                    {
+                        only_this_guarantor => $only_this_guarantor,
+                        include_guarantors  => $include_guarantors,
+                        include_this_patron => $include_this_patron
+                    }
+                ), 0, 'Family debt is correct'
+            );
+        }
+    }
 
-    $child_2->account->add_debit({ type => 'ACCOUNT', amount => 10, interface => 'commandline' });
+
+    my $child_2_debt = 10;
+    $child_2->account->add_debit({ type => 'ACCOUNT', amount => $child_2_debt, interface => 'commandline' });
     is( $child_2->account->non_issues_charges, 10, 'Child 2 owes correct amount' );
+    for my $i ( 0 .. 7 ) {
+        my ( $only_this_guarantor, $include_guarantors, $include_this_patron ) = split '', sprintf( "%03b", $i );
+        is(
+            $parent_1->relationships_debt(
+                {
+                    only_this_guarantor => $only_this_guarantor,
+                    include_guarantors  => $include_guarantors,
+                    include_this_patron => $include_this_patron
+                }
+            ),
+            $child_2_debt, "parent 1 debt is correct (only_this_guarantor => $only_this_guarantor, include_guarantors => $include_guarantors, include_this_patron => $include_this_patron"
+        );
+        is(
+            $parent_2->relationships_debt(
+                {
+                    only_this_guarantor => $only_this_guarantor,
+                    include_guarantors  => $include_guarantors,
+                    include_this_patron => $include_this_patron
+                }
+            ),
+            $child_2_debt, "parent 2 debt is correct (only_this_guarantor => $only_this_guarantor, include_guarantors => $include_guarantors, include_this_patron => $include_this_patron"
+        );
+        is(
+            $child_1->relationships_debt(
+                {
+                    only_this_guarantor => $only_this_guarantor,
+                    include_guarantors  => $include_guarantors,
+                    include_this_patron => $include_this_patron
+                }
+            ),
+            $child_2_debt, "child 1 debt is correct (only_this_guarantor => $only_this_guarantor, include_guarantors => $include_guarantors, include_this_patron => $include_this_patron"
+        );
 
-    is( $parent_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 0 }), 10, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 0 }), 10, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 0 }), 10, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 0 }), 10, 'Family debt is correct' );
-    is( $parent_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 0 }), 10, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 0 }), 10, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 0 }), 10, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 0 }), 10, 'Family debt is correct' );
-    is( $parent_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 0 }), 10, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 0 }), 10, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_1->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 0, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 0, include_guarantors => 1, include_this_patron => 1 }), 10, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 0, include_this_patron => 1 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 0 }), 0, 'Family debt is correct' );
-    is( $child_2->relationships_debt({ only_this_guarantor => 1, include_guarantors => 1, include_this_patron => 1 }), 10, 'Family debt is correct' );
+        is(
+            $child_2->relationships_debt(
+                {
+                    only_this_guarantor => $only_this_guarantor,
+                    include_guarantors  => $include_guarantors,
+                    include_this_patron => $include_this_patron
+                }
+            ),
+            ( $include_this_patron && $child_2_debt ) ? $child_2_debt : 0, "child 2 debt is correct (only_this_guarantor => $only_this_guarantor, include_guarantors => $include_guarantors, include_this_patron => $include_this_patron"
+        );
+    }
 
     $parent_1->account->add_debit({ type => 'ACCOUNT', amount => 10, interface => 'commandline' });
     is( $parent_1->account->non_issues_charges, 10, 'Parent 1 owes correct amount' );
