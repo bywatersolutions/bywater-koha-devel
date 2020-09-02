@@ -56,6 +56,7 @@ use Koha::DateUtils;
 use Koha::Holds;
 use Koha::Items;
 use Koha::Patrons;
+use Koha::Plugins;
 
 my $query = CGI->new;
 
@@ -113,6 +114,7 @@ foreach ( $query->param ) {
 
     # decode barcode    ## Didn't we already decode them before passing them back last time??
     $barcode =~ s/^\s*|\s*$//g; # remove leading/trailing whitespace
+    ( $barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $barcode ) || $barcode;
     $barcode = barcodedecode($barcode) if(C4::Context->preference('itemBarcodeInputFilter'));
 
     ######################
@@ -242,6 +244,7 @@ if ($canceltransfer){
 my $returnbranch;
 if ($barcode) {
     $barcode =~ s/^\s*|\s*$//g; # remove leading/trailing whitespace
+    ( $barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $barcode ) || $barcode;
     $barcode = barcodedecode($barcode) if C4::Context->preference('itemBarcodeInputFilter');
     my $item = Koha::Items->find({ barcode => $barcode });
 

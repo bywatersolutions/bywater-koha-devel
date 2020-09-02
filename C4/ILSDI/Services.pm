@@ -34,6 +34,7 @@ use CGI qw ( -utf8 );
 use DateTime;
 use C4::Auth;
 use Koha::DateUtils;
+use Koha::Plugins;
 
 use Koha::Biblios;
 use Koha::Checkouts;
@@ -613,6 +614,7 @@ sub GetServices {
     # Issuing management
     my $barcode = $item->barcode || '';
     $barcode = barcodedecode($barcode) if ( $barcode && C4::Context->preference('itemBarcodeInputFilter') );
+    ($barcode) = Koha::Plugins->call('barcode_transform', 'item', $barcode ) || $barcode;
     if ($barcode) {
         my ( $issuingimpossible, $needsconfirmation ) = CanBookBeIssued( $patron, $barcode );
 

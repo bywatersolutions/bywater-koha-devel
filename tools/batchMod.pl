@@ -45,6 +45,7 @@ use Koha::Items;
 use Koha::ItemTypes;
 use Koha::Patrons;
 use Koha::SearchEngine::Indexer;
+use Koha::Plugins;
 
 my $input = CGI->new;
 my $dbh = C4::Context->dbh;
@@ -402,6 +403,9 @@ if ($op eq "show"){
         if ( my $list = $input->param('barcodelist') ) {
             my @barcodelist = grep /\S/, ( split /[$split_chars]/, $list );
             @barcodelist = uniq @barcodelist;
+
+            @barcodelist = map { ( Koha::Plugins->call( 'barcode_transform', 'item', $_ ) )[0] || $_ } @barcodelist;
+
             # Note: adding lc for case insensitivity
             my %itemdata = map { lc($_->{barcode}) => $_->{itemnumber} } @{ Koha::Items->search({ barcode => \@barcodelist }, { columns => [ 'itemnumber', 'barcode' ] } )->unblessed };
             @itemnumbers = map { exists $itemdata{lc $_} ? $itemdata{lc $_} : () } @barcodelist;

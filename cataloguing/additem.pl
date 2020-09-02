@@ -36,6 +36,7 @@ use Koha::ItemTypes;
 use Koha::Libraries;
 use Koha::Patrons;
 use Koha::SearchEngine::Indexer;
+use Koha::Plugins;
 use List::MoreUtils qw/any/;
 use C4::Search;
 use Storable qw(thaw freeze);
@@ -515,6 +516,9 @@ if ($op eq "additem") {
     }
 
     my $addedolditem = TransformMarcToKoha( $record );
+
+    my ( $new_barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $addedolditem->{'barcode'} ) || $addedolditem->{'barcode'};
+    $addedolditem->{'barcode'} = $new_barcode;
 
     # If we have to add or add & duplicate, we add the item
     if ( $add_submit || $add_duplicate_submit ) {

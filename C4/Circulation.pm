@@ -58,6 +58,7 @@ use Koha::Config::SysPrefs;
 use Koha::Charges::Fees;
 use Koha::Util::SystemPreferences;
 use Koha::Checkouts::ReturnClaims;
+use Koha::Plugins;
 use Carp;
 use List::MoreUtils qw( uniq any );
 use Scalar::Util qw( looks_like_number );
@@ -173,6 +174,7 @@ sub barcodedecode {
     my ($barcode, $filter) = @_;
     my $branch = C4::Context::mybranch();
     $filter = C4::Context->preference('itemBarcodeInputFilter') unless $filter;
+    ($barcode) = Koha::Plugins->call('barcode_transform', 'item', $barcode ) || $barcode;
     $filter or return $barcode;     # ensure filter is defined, else return untouched barcode
 	if ($filter eq 'whitespace') {
 		$barcode =~ s/\s//g;
