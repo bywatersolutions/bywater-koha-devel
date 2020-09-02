@@ -19,59 +19,61 @@ package C4::Circulation;
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
-use DateTime;
-use POSIX qw( floor );
-use Koha::DateUtils;
-use C4::Context;
-use C4::Stats;
-use C4::Reserves;
-use C4::Biblio;
-use C4::Items;
-use C4::Members;
-use C4::Accounts;
-use C4::ItemCirculationAlertPreference;
-use C4::Message;
-use C4::Debug;
-use C4::Log; # logaction
-use C4::Overdues qw(CalcFine UpdateFine get_chargeable_units);
-use C4::RotatingCollections qw(GetCollectionItemBranches);
-use Algorithm::CheckDigits;
 
+use Algorithm::CheckDigits;
+use Carp;
 use Data::Dumper;
+use Date::Calc qw(
+    Today
+    Today_and_Now
+    Add_Delta_YM
+    Add_Delta_DHMS
+    Date_to_Days
+    Day_of_Week
+    Add_Delta_Days
+);
+use DateTime;
+use List::MoreUtils qw( uniq any );
+use POSIX qw( floor );
+use Scalar::Util qw( looks_like_number );
+use Try::Tiny;
+
+use C4::Accounts;
+use C4::Biblio;
+use C4::Context;
+use C4::Debug;
+use C4::ItemCirculationAlertPreference;
+use C4::Items;
+use C4::Log; # logaction
+use C4::Members;
+use C4::Message;
+use C4::Overdues qw(CalcFine UpdateFine get_chargeable_units);
+use C4::Reserves;
+use C4::RotatingCollections qw(GetCollectionItemBranches);
+use C4::Stats;
+
+use Koha::Account::Lines;
+use Koha::Account::Offsets;
 use Koha::Account;
 use Koha::AuthorisedValues;
 use Koha::Biblioitems;
-use Koha::DateUtils;
 use Koha::Calendar;
+use Koha::Charges::Fees;
+use Koha::Checkouts::ReturnClaims;
 use Koha::Checkouts;
+use Koha::Config::SysPrefs;
+use Koha::Database;
+use Koha::DateUtils;
+use Koha::Holds;
 use Koha::Illrequests;
 use Koha::Items;
-use Koha::Patrons;
-use Koha::Patron::Debarments;
-use Koha::Database;
 use Koha::Libraries;
-use Koha::Account::Lines;
-use Koha::Holds;
-use Koha::Account::Lines;
-use Koha::Account::Offsets;
-use Koha::Config::SysPrefs;
-use Koha::Charges::Fees;
-use Koha::Util::SystemPreferences;
-use Koha::Checkouts::ReturnClaims;
+use Koha::Patron::Debarments;
+use Koha::Patrons;
+use Koha::Plugins;
 use Koha::SearchEngine::Indexer;
-use Carp;
-use List::MoreUtils qw( uniq any );
-use Scalar::Util qw( looks_like_number );
-use Try::Tiny;
-use Date::Calc qw(
-  Today
-  Today_and_Now
-  Add_Delta_YM
-  Add_Delta_DHMS
-  Date_to_Days
-  Day_of_Week
-  Add_Delta_Days
-);
+use Koha::Util::SystemPreferences;
+
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 BEGIN {
@@ -173,6 +175,7 @@ sub barcodedecode {
     my ($barcode, $filter) = @_;
     my $branch = C4::Context::mybranch();
     $filter = C4::Context->preference('itemBarcodeInputFilter') unless $filter;
+    ($barcode) = Koha::Plugins->call('barcode_transform', 'item', $barcode ) || $barcode;
     $filter or return $barcode;     # ensure filter is defined, else return untouched barcode
 	if ($filter eq 'whitespace') {
 		$barcode =~ s/\s//g;

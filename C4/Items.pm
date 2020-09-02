@@ -73,6 +73,7 @@ use Koha::SearchEngine;
 use Koha::SearchEngine::Indexer;
 use Koha::SearchEngine::Search;
 use Koha::Libraries;
+use Koha::Plugins;
 
 =head1 NAME
 

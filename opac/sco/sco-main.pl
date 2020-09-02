@@ -49,6 +49,7 @@ use Koha::Items;
 use Koha::Patrons;
 use Koha::Patron::Images;
 use Koha::Patron::Messages;
+use Koha::Plugins;
 use Koha::Token;
 
 my $query = CGI->new;
@@ -108,6 +109,8 @@ my ($op, $patronid, $patronlogin, $patronpw, $barcode, $confirmed, $newissues) =
     $query->param("confirmed")  || '',
     $query->param("newissues")  || '',
 );
+
+( $barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $barcode ) || $barcode;
 
 my @newissueslist = split /,/, $newissues;
 my $issuenoconfirm = 1; #don't need to confirm on issue.

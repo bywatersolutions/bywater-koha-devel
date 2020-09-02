@@ -46,6 +46,7 @@ use Koha::AuthorisedValues;
 use Koha::CsvProfiles;
 use Koha::Patrons;
 use Koha::Patron::Debarments qw(GetDebarments);
+use Koha::Plugins;
 use Koha::DateUtils;
 use Koha::Database;
 use Koha::BiblioFrameworks;
@@ -165,6 +166,7 @@ for my $barcode ( @$barcodes ) {
     $barcode =~ s/^\s*|\s*$//g; # remove leading/trailing whitespace
     $barcode = barcodedecode($barcode)
         if( $barcode && C4::Context->preference('itemBarcodeInputFilter'));
+    ( $barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $barcode ) || $barcode;
 }
 
 my $stickyduedate  = $query->param('stickyduedate') || $session->param('stickyduedate');
