@@ -90,6 +90,9 @@ sub store {
         $self->itype($self->biblio->biblioitem->itemtype);
     }
 
+    my ($transformed_barcode) = Koha::Plugins->call( 'barcode_transform', 'item', $self->barcode ) || $self->barcode;
+    $self->barcode($transformed_barcode);
+
     my $today  = dt_from_string;
     my $action = 'create';
 

@@ -38,6 +38,7 @@ use Koha::UploadedFiles;
 use Koha::Account;
 use Koha::Checkouts;
 use Koha::Patrons;
+use Koha::Plugins;
 
 use Date::Calc qw( Add_Delta_Days Date_to_Days );
 
@@ -246,6 +247,10 @@ sub kocIssueItem {
     my $circ = shift;
 
     $circ->{ 'barcode' } = barcodedecode($circ->{'barcode'}) if( $circ->{'barcode'} && C4::Context->preference('itemBarcodeInputFilter'));
+
+    my ( $new_barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $circ->{barcode} ) || $circ->{barcode};
+    $circ->{barcode} = $new_barcode;
+
     my $branchcode = C4::Context->userenv->{branch};
     my $patron = Koha::Patrons->find( { cardnumber => $circ->{cardnumber} } );
     my $borrower = $patron->unblessed;
@@ -326,6 +331,10 @@ sub kocIssueItem {
 sub kocReturnItem {
     my ( $circ ) = @_;
     $circ->{'barcode'} = barcodedecode($circ->{'barcode'}) if( $circ->{'barcode'} && C4::Context->preference('itemBarcodeInputFilter'));
+
+    my ( $new_barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $circ->{barcode} ) || $circ->{barcode};
+    $circ->{barcode} = $new_barcode;
+
     my $item = Koha::Items->find({ barcode => $circ->{barcode} });
     my $biblio = $item->biblio;
     my $borrowernumber = _get_borrowernumber_from_barcode( $circ->{'barcode'} );

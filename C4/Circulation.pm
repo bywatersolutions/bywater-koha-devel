@@ -63,18 +63,19 @@ use Koha::Config::SysPref;
 use Koha::Checkouts::ReturnClaims;
 use Koha::SearchEngine::Indexer;
 use Koha::Exceptions::Checkout;
+use Koha::Plugins;
 use Carp;
 use List::MoreUtils qw( uniq any );
 use Scalar::Util qw( looks_like_number );
 use Try::Tiny;
 use Date::Calc qw(
-  Today
-  Today_and_Now
-  Add_Delta_YM
-  Add_Delta_DHMS
-  Date_to_Days
-  Day_of_Week
-  Add_Delta_Days
+    Today
+    Today_and_Now
+    Add_Delta_YM
+    Add_Delta_DHMS
+    Date_to_Days
+    Day_of_Week
+    Add_Delta_Days
 );
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -176,6 +177,7 @@ sub barcodedecode {
     my ($barcode, $filter) = @_;
     my $branch = C4::Context::mybranch();
     $filter = C4::Context->preference('itemBarcodeInputFilter') unless $filter;
+    ($barcode) = Koha::Plugins->call('barcode_transform', 'item', $barcode ) || $barcode;
     $filter or return $barcode;     # ensure filter is defined, else return untouched barcode
 	if ($filter eq 'whitespace') {
 		$barcode =~ s/\s//g;
