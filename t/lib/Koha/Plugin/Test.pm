@@ -99,12 +99,13 @@ sub barcode_transform {
 }
 
 sub barcode_generate {
-    my ( $self, $type, $object )
+    my ( $self, $type, $object ) = @_;
+    return "Koha::Plugin::Test::barcode_generate";
 }
 
 sub configure {
     my ( $self, $args ) = @_;
-    return "Koha::Plugin::Test::configure";;
+    return "Koha::Plugin::Test::configure";
 }
 
 sub install {
