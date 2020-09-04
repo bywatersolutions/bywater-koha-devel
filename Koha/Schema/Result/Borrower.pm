@@ -443,6 +443,12 @@ __PACKAGE__->table("borrowers");
   default_value: 0
   is_nullable: 0
 
+=head2 autorenew_checkouts
+
+  data_type: 'tinyint'
+  default_value: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -627,6 +633,8 @@ __PACKAGE__->add_columns(
   { data_type => "mediumtext", is_nullable => 1 },
   "anonymized",
   { data_type => "tinyint", default_value => 0, is_nullable => 0 },
+  "autorenew_checkouts",
+  { data_type => "tinyint", default_value => 1, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -1600,8 +1608,8 @@ Composing rels: L</aqorder_users> -> ordernumber
 __PACKAGE__->many_to_many("ordernumbers", "aqorder_users", "ordernumber");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-08-05 12:05:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:gRxUCVal6ahHWu4kiaL87g
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-09-04 14:59:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rxmdjUA7kjY59s+lRwJbWw
 
 __PACKAGE__->add_columns(
     '+anonymized'    => { is_boolean => 1 },
