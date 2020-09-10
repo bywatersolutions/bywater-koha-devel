@@ -322,7 +322,9 @@
                 <th id="[% tab | html %]_holdingbranch" data-colname="[% tab | html %]_holdingbranch">Current library</th>
                 <th id="[% tab | html %]_homebranch" data-colname="[% tab | html %]_homebranch">Home library</th>
                 [% IF ( itemdata_ccode ) %]<th id="[% tab | html %]_ccode" data-colname="[% tab | html %]_ccode">Collection</th>[% END %]
-                [% IF Koha.Preference('EnableVolumes') %]<th>Volume</th>[% END %]
+                [% IF Koha.Preference('EnableVolumes') %]
+                    <th id="[% tab | html %]_volume" data-colname="[% tab | html %]_volume">Volume</th>
+                [% END %]
                 <th id="[% tab | html %]_itemcallnumber" data-colname="[% tab | html %]_itemcallnumber">Call number</th>
                 [% IF volinfo %]
                     <th id="[% tab | html %]_enumchron" data-colname="[% tab | html %]_enumchron">Serial enumeration / chronology</th>
@@ -397,7 +399,7 @@ Note that permanent location is a code, and location may be an authval.
                         </span>
                     </td>
                     [% IF ( itemdata_ccode ) %]<td>[% item.ccode | html %]</td>[% END %]
-                    [% IF Koha.Preference('EnableVolumes') %]<td>[% item.object.volume.description | html %]</td>[% END %]
+                    [% IF Koha.Preference('EnableVolumes') %]<td class="volume">[% item.object.volume.description | html %]</td>[% END %]
                     <td class="itemcallnumber">[% IF ( item.itemcallnumber ) %] [% item.itemcallnumber | html %][% END %]</td>
                     [% IF ( volinfo ) %]
                         [% IF itemdata_publisheddate #If there is at least one published date, use it for sorting %]
