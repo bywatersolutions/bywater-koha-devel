@@ -961,7 +961,7 @@ for my $library ( @$libraries ) {
     $library->{selected} = 1 if $library->{branchcode} eq $branch
 }
 
-my $item = Koha::Items->find($itemnumber);
+$item = Koha::Items->find($itemnumber);
 
 # We generate form, from actuel record
 @fields = ();
