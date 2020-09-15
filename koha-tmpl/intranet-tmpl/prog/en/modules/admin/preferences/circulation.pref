@@ -632,7 +632,7 @@ Circulation:
               choices:
                   yes: Allow
                   no: "Don't allow"
-            - holds to operate on an hourly or minutes basis. If enabled, hours and minutes will be considered when placing a hold, and cronjobs will be run hourly.
+            - holds to operate on an hourly or minutes basis. If enabled, hours and minutes will be considered when placing a hold, and the relevant cronjob should be enabled to run hourly.<br><strong>NOTE:</strong> This system preference requires the <code>misc/cronjobs/holds/*</code> cronjobs to run hourly. Ask your system administrator to schedule them.
         -
             - In the staff interface, split the holds queue into separate tables by
             - pref: HoldsSplitQueue

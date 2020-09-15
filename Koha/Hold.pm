@@ -201,7 +201,7 @@ sub set_waiting {
     # If patron's requested expiration date is prior to the
     # calculated one, we keep the patron's one.
     my $cmp = $requested_expiration ? DateTime->compare($requested_expiration, $expirationdate) : 0;
-    $values->{expirationdate} = $cmp == -1 ? $requested_expiration->ymd : $expirationdate->ymd;
+    $values->{expirationdate} = $cmp == -1 ? $requested_expiration : $expirationdate;
 
     $self->set($values)->store();
 
