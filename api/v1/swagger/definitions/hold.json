@@ -11,7 +11,7 @@
     },
     "hold_date": {
       "type": ["string", "null"],
-      "format": "date",
+      "format": "date-time",
       "description": "The date the hold was placed"
     },
     "biblio_id": {
@@ -55,7 +55,7 @@
     },
     "expiration_date": {
       "type": ["string", "null"],
-      "format": "date",
+      "format": "date-time",
       "description": "The date the hold expires"
     },
     "lowest_priority": {

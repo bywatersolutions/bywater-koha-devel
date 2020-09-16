@@ -157,7 +157,7 @@ my $post_data = {
     biblio_id => int($biblio_1->biblionumber),
     item_id => int($item_1->itemnumber),
     pickup_library_id => $branchcode,
-    expiration_date => output_pref({ dt => $expiration_date, dateformat => 'rfc3339', dateonly => 1 }),
+    expiration_date => output_pref({ dt => $expiration_date, dateformat => 'rfc3339' }),
     priority => 2,
 };
 my $put_data = {
@@ -273,7 +273,7 @@ subtest "Test endpoints with permission" => sub {
     $t->get_ok( "//$userid_1:$password@/api/v1/holds?patron_id=" . $patron_1->borrowernumber )
       ->status_is(200)
       ->json_is('/0/hold_id', $reserve_id)
-      ->json_is('/0/expiration_date', output_pref({ dt => $expiration_date, dateformat => 'rfc3339', dateonly => 1 }))
+      ->json_is('/0/expiration_date', output_pref({ dt => $expiration_date, dateformat => 'rfc3339' }))
       ->json_is('/0/pickup_library_id', $branchcode);
 
     $t->post_ok( "//$userid_3:$password@/api/v1/holds" => json => $post_data )
@@ -342,8 +342,8 @@ subtest 'test AllowHoldDateInFuture' => sub {
         biblio_id => int($biblio_1->biblionumber),
         item_id => int($item_1->itemnumber),
         pickup_library_id => $branchcode,
-        expiration_date => output_pref({ dt => $expiration_date, dateformat => 'rfc3339', dateonly => 1 }),
-        hold_date => output_pref({ dt => $future_hold_date, dateformat => 'rfc3339', dateonly => 1 }),
+        expiration_date => output_pref({ dt => $expiration_date, dateformat => 'rfc3339' }),
+        hold_date => output_pref({ dt => $future_hold_date, dateformat => 'rfc3339' }),
         priority => 2,
     };
 
@@ -357,7 +357,7 @@ subtest 'test AllowHoldDateInFuture' => sub {
 
     $t->post_ok( "//$userid_3:$password@/api/v1/holds" => json => $post_data )
       ->status_is(201)
-      ->json_is('/hold_date', output_pref({ dt => $future_hold_date, dateformat => 'rfc3339', dateonly => 1 }));
+      ->json_is('/hold_date', output_pref({ dt => $future_hold_date, dateformat => 'rfc3339' }));
 };
 
 subtest 'test AllowHoldPolicyOverride' => sub {
@@ -425,7 +425,7 @@ subtest 'suspend and resume tests' => sub {
     my $end_date = output_pref({
       dt         => dt_from_string( undef ),
       dateformat => 'rfc3339',
-      dateonly   => 1
+      dateonly => 1
     });
 
     $t->post_ok( "//$userid:$password@/api/v1/holds/" . $hold->id . "/suspension" => json => { end_date => $end_date } );
@@ -438,7 +438,7 @@ subtest 'suspend and resume tests' => sub {
       output_pref({
         dt         => dt_from_string( $hold->suspend_until ),
         dateformat => 'rfc3339',
-        dateonly   => 1
+        dateonly => 1
       }),
       'Hold suspension has correct end date'
     );
