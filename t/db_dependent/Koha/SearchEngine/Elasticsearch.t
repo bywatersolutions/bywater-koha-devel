@@ -132,7 +132,7 @@ subtest 'get_elasticsearch_mappings() tests' => sub {
 
 subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' => sub {
 
-    plan tests => 53;
+    plan tests => 55;
 
     t::lib::Mocks::mock_preference('marcflavour', 'MARC21');
     t::lib::Mocks::mock_preference('ElasticsearchMARCFormat', 'ISO2709');
@@ -298,6 +298,16 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
             marc_type => 'marc21',
             marc_field => '952l',
         },
+        {
+            name => 'subject',
+            type => 'string',
+            facet => 0,
+            suggestible => 0,
+            searchable => 1,
+            sort => 1,
+            marc_type => 'marc21',
+            marc_field => '650(avxyz)',
+        },
     );
 
     my $se = Test::MockModule->new('Koha::SearchEngine::Elasticsearch');
@@ -335,6 +345,8 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
         MARC::Field->new('210', '', '', a => 'Title 1'),
         MARC::Field->new('240', '', '4', a => 'The uniform title with nonfiling indicator'),
         MARC::Field->new('245', '', '', a => 'Title:', b => 'first record'),
+        MARC::Field->new('650', '', '', a => 'Heading', z => 'Geohead', v => 'Formhead'),
+        MARC::Field->new('650', '', '', a => 'Heading', x => 'Gensubhead', z => 'Geohead'),
         MARC::Field->new('999', '', '', c => '1234567'),
         # '  ' for testing trimming of white space in boolean value callback:
         MARC::Field->new('952', '', '', 0 => '  ', g => '123.30', o => $callno, l => 3),
@@ -365,6 +377,9 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () tests' 
 
     is(scalar @{$docs->[0]->{author}}, 2, 'First document author field should contain two values');
     is_deeply($docs->[0]->{author}, ['Author 1', 'Corp Author'], 'First document author field should be set correctly');
+
+    is(scalar @{$docs->[0]->{subject}}, 2, 'First document subject field should contain two values');
+    is_deeply($docs->[0]->{subject}, ['Heading Geohead Formhead', 'Heading Gensubhead Geohead'], 'First document asubject field should be set correctly, record order preserved for grouped subfield mapping');
 
     is(scalar @{$docs->[0]->{author__sort}}, 1, 'First document author__sort field should have a single value');
     is_deeply($docs->[0]->{author__sort}, ['Author 1 Corp Author'], 'First document author__sort field should be set correctly');
@@ -651,7 +666,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents_array () t
 
 subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () authority tests' => sub {
 
-    plan tests => 2;
+    plan tests => 3;
 
     t::lib::Mocks::mock_preference('marcflavour', 'MARC21');
     t::lib::Mocks::mock_preference('ElasticsearchMARCFormat', 'ISO2709');
@@ -671,7 +686,7 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () authori
             searchable => 1,
             sort => 0,
             marc_type => 'marc21',
-            marc_field => '150(ae)',
+            marc_field => '150(aevxyz)',
         }
     );
 
@@ -711,15 +726,20 @@ subtest 'Koha::SearchEngine::Elasticsearch::marc_records_to_documents () authori
 
     my $docs = $see->marc_records_to_documents($records);
 
-    ok(
-        any { $_ eq "Subject formsubdiv Genresubdiv generalsubdiv Generalsubdiv geographicsubdiv Geosubdiv" }
-        @{$docs->[0]->{'match-heading'}},
+    is_deeply(
+        [ "Subject formsubdiv Genresubdiv generalsubdiv Generalsubdiv geographicsubdiv Geosubdiv" ],
+        $docs->[0]->{'match-heading'},
         "First record match-heading should contain the correctly formatted heading"
     );
-    ok(
-        any { $_ eq "Subject formsubdiv Genresubdiv geographicsubdiv Geosubdiv generalsubdiv Generalsubdiv" }
-        @{$docs->[1]->{'match-heading'}},
+    is_deeply(
+        [ "Subject formsubdiv Genresubdiv geographicsubdiv Geosubdiv generalsubdiv Generalsubdiv" ],
+        $docs->[1]->{'match-heading'},
         "Second record match-heading should contain the correctly formatted heading without wrong subfield"
+    );
+    is_deeply(
+        [ "Subject Genresubdiv Geosubdiv Generalsubdiv wrongsubdiv" ],
+        $docs->[1]->{'match'} ,
+        "Second record heading should contain the subfields with record order retained"
     );
 };
 
