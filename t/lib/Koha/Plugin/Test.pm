@@ -95,7 +95,7 @@ sub intranet_js {
 
 sub barcode_transform {
     my ( $self, $type, $barcode ) = @_;
-    return "Koha::Plugin::Test::barcode_transform";
+    Koha::Exceptions::Exception->throw("barcode_transform called with parameters: $type, $barcode");
 }
 
 sub barcode_generate {
