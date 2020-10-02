@@ -375,3 +375,5 @@ att 9021    Awards
 att 9024    Alt-language
 att 6071    Electronic-Copy-Availability
 att 9026    Accession-number
+att 9022    LC-card-number-active
+att 9023    LC-card-number-canceled

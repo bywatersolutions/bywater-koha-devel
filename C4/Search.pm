@@ -1167,6 +1167,8 @@ sub getIndexes{
                     'language-original',
                     'lc-card',
                     'LC-card-number',
+                    'LC-card-number-active',
+                    'LC-card-number-canceled',
                     'lcn',
                     'lex',
                     'lexile-number',

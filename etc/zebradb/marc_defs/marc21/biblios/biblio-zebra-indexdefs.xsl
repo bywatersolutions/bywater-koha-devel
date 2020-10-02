@@ -134,6 +134,22 @@ definition file (probably something like {biblio,authority}-koha-indexdefs.xml) 
       <xslo:value-of select="substring(., 40, 0)"/>
     </z:index>
   </xslo:template>
+  <xslo:template mode="index_subfields" match="marc:datafield[@tag='010']">
+    <xslo:for-each select="marc:subfield">
+      <xslo:if test="contains('a', @code)">
+        <z:index name="LC-card-number-active:w">
+          <xslo:value-of select="."/>
+        </z:index>
+      </xslo:if>
+    </xslo:for-each>
+    <xslo:for-each select="marc:subfield">
+      <xslo:if test="contains('z', @code)">
+        <z:index name="LC-card-number-canceled:w">
+          <xslo:value-of select="."/>
+        </z:index>
+      </xslo:if>
+    </xslo:for-each>
+  </xslo:template>
   <xslo:template mode="index_subfields" match="marc:datafield[@tag='020']">
     <xslo:for-each select="marc:subfield">
       <xslo:if test="contains('a', @code)">
