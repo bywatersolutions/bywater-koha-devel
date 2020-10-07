@@ -158,13 +158,31 @@ sub batch_add {
         );
     }
     catch {
-        if ( blessed $_ && $_->isa('Koha::Exceptions::Object::DuplicateID') ) {
-            return $c->render(
-                status  => 409,
-                openapi => { error => $_->error, conflict => $_->duplicate_id }
-            );
-        }
+        $c->unhandled_exception($_);
+    };
+}
 
+=head3 batch_delete
+
+Controller function that handles batch deleting transfer limits
+
+=cut
+
+sub batch_delete {
+
+    my $c = shift->openapi->valid_input or return;
+
+    return try {
+        my $params = $c->validation->param( 'body' );
+        my $transfer_limit = Koha::Item::Transfer::Limit->new_from_api( $params );
+        my $search_params = $transfer_limit->unblessed;
+        warn "SEARCH PARAMS: " . Data::Dumper::Dumper( $search_params );
+
+        Koha::Item::Transfer::Limits->search($search_params)->delete;
+
+        return $c->render( status => 204, openapi => '');
+    }
+    catch {
         $c->unhandled_exception($_);
     };
 }

@@ -223,7 +223,7 @@
   "/transfer_limits/batch": {
     "post": {
       "x-mojo-to": "TransferLimits#batch_add",
-      "operationId": "batchAddTransferLimit",
+      "operationId": "batchAddTransferLimits",
       "tags": [
         "transfer"
       ],
@@ -268,6 +268,89 @@
             "items": {
               "$ref": "../definitions.json#/transfer_limit"
             }
+          }
+        },
+        "500": {
+          "description": "Internal error",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "503": {
+          "description": "Under maintenance",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        }
+      },
+      "x-koha-authorization": {
+        "permissions": {
+          "parameters": "manage_transfers"
+        }
+      }
+    },
+    "delete": {
+      "x-mojo-to": "TransferLimits#batch_delete",
+      "operationId": "batchDeleteTransferLimits",
+      "tags": [
+        "transfer"
+      ],
+      "parameters": [
+        {
+          "name": "body",
+          "in": "body",
+          "description": "A JSON object containing information about new transfer limits.",
+          "required": true,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "to_library_id": {
+                "type": "string",
+                "description": "Internal library id for which library the item is going to"
+              },
+              "from_library_id": {
+                "type": "string",
+                "description": "Internal library id for which library the item is coming from"
+              },
+              "item_type": {
+                "type": ["string", "null"],
+                "description": "Itemtype defining the type for this limi"
+              },
+              "collection_code": {
+                "type": ["string", "null"],
+                "description": "Authorized value for the collection code associated with this limit"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "204": {
+          "description": "Transfer limits deleted",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "401": {
+          "description": "Authentication required",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "403": {
+          "description": "Access forbidden",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "404": {
+          "description": "Library not found",
+          "schema": {
+            "$ref": "../definitions.json#/error"
           }
         },
         "500": {
