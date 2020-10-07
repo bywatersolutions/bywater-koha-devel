@@ -219,5 +219,75 @@
         }
       }
     }
+  },
+  "/transfer_limits/batch": {
+    "post": {
+      "x-mojo-to": "TransferLimits#batch_add",
+      "operationId": "batchAddTransferLimit",
+      "tags": [
+        "transfer"
+      ],
+      "parameters": [
+        {
+          "name": "body",
+          "in": "body",
+          "description": "A JSON object containing information about new transfer limits.",
+          "required": true,
+          "schema": {
+          "type": "object",
+          "properties": {
+              "to_library_id": {
+                "type": "string",
+                "description": "Internal library id for which library the item is going to"
+              },
+              "from_library_id": {
+                "type": "string",
+                "description": "Internal library id for which library the item is coming from"
+              },
+              "item_type": {
+                "type": ["string", "null"],
+                "description": "Itemtype defining the type for this limi"
+              },
+              "collection_code": {
+                "type": ["string", "null"],
+                "description": "Authorized value for the collection code associated with this limit"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "201": {
+          "description": "A list of transfer limits",
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref": "../definitions.json#/transfer_limit"
+            }
+          }
+        },
+        "500": {
+          "description": "Internal error",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        },
+        "503": {
+          "description": "Under maintenance",
+          "schema": {
+            "$ref": "../definitions.json#/error"
+          }
+        }
+      },
+      "x-koha-authorization": {
+        "permissions": {
+          "parameters": "manage_transfers"
+        }
+      }
+    }
   }
 }

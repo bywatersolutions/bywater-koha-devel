@@ -19,6 +19,8 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 use Koha::Item::Transfer::Limits;
+use Koha::Libraries;
+
 use Koha::Exceptions::TransferLimit;
 
 use Scalar::Util qw( blessed );
@@ -66,7 +68,7 @@ sub add {
     return try {
         my $params = $c->validation->param( 'body' );
         my $transfer_limit = Koha::Item::Transfer::Limit->new_from_api( $params );
-        # TODO: Throw exception if transfer limit already exists
+
         if ( Koha::Item::Transfer::Limits->search( $transfer_limit->attributes_from_api($params) )->count == 0 ) {
             $transfer_limit->store;
         } else {
@@ -114,4 +116,57 @@ sub delete {
         $c->unhandled_exception($_);
     };
 }
+
+=head3 batch_add
+
+Controller function that handles adding a new transfer limit
+
+=cut
+
+sub batch_add {
+    my $c = shift->openapi->valid_input or return;
+
+    return try {
+        my $params = $c->validation->param( 'body' );
+
+        my @libraries = Koha::Libraries->search->as_list;
+
+        my @from_branches = $params->{from_library_id} ? $params->{from_library_id} : map { $_->id } @libraries;
+        my @to_branches = $params->{to_library_id} ? $params->{to_library_id} : map { $_->id } @libraries;
+
+        my @results;
+        foreach my $from ( @from_branches ) {
+            foreach my $to ( @to_branches ) {
+                my $limit_params = { %$params };
+
+                $limit_params->{from_library_id} = $from;
+                $limit_params->{to_library_id} = $to;
+
+                my $transfer_limit = Koha::Item::Transfer::Limit->new_from_api( $limit_params );
+                my $exists = Koha::Item::Transfer::Limits->search( $transfer_limit->unblessed )->count;
+                unless ( $exists ) {
+                    $transfer_limit->store;
+                    push( @results, $transfer_limit->to_api());
+                }
+            }
+        }
+        my $transfer_limit = Koha::Item::Transfer::Limit->new_from_api( $params );
+
+        return $c->render(
+            status  => 201,
+            openapi => \@results
+        );
+    }
+    catch {
+        if ( blessed $_ && $_->isa('Koha::Exceptions::Object::DuplicateID') ) {
+            return $c->render(
+                status  => 409,
+                openapi => { error => $_->error, conflict => $_->duplicate_id }
+            );
+        }
+
+        $c->unhandled_exception($_);
+    };
+}
+
 1;
