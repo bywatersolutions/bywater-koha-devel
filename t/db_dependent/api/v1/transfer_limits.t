@@ -17,7 +17,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Test::Mojo;
 use Test::Warn;
 
@@ -145,6 +145,117 @@ subtest 'delete() tests' => sub {
 
     $t->delete_ok( "//$auth_userid:$password@/api/v1/transfer_limits/$limit_id" )
       ->status_is(404);
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'batch_add() and batch_delete() tests' => sub {
+    plan tests => 26;
+
+    $schema->storage->txn_begin;
+
+    Koha::Item::Transfer::Limits->delete;
+
+    #my $library = $builder->build_object({ class => 'Koha::Libraries' });
+
+    my $library = Koha::Libraries->search->next;
+    my $itemtype = Koha::ItemTypes->search->next;
+
+    my $authorized_patron = $builder->build_object({
+        class => 'Koha::Patrons',
+        value => { flags => 1 }
+    });
+    my $password = 'thePassword123';
+    $authorized_patron->set_password({ password => $password, skip_validation => 1 });
+    my $auth_userid = $authorized_patron->userid;
+
+    my $unauthorized_patron = $builder->build_object({
+        class => 'Koha::Patrons',
+        value => { flags => 4 }
+    });
+    $unauthorized_patron->set_password({ password => $password, skip_validation => 1 });
+    my $unauth_userid = $unauthorized_patron->userid;
+
+    my $limit_hashref = {
+        item_type => $itemtype->id
+    };
+
+    # Unauthorized attempt to write
+    $t->post_ok( "//$unauth_userid:$password@/api/v1/transfer_limits/batch" => json => $limit_hashref )
+        ->status_is(403);
+
+    # Authorized attempt to write invalid data
+    my $limit_with_invalid_field = {'invalid' => 'invalid'};
+
+    $t->post_ok( "//$auth_userid:$password@/api/v1/transfer_limits/batch" => json => $limit_with_invalid_field )
+        ->status_is(400)
+        ->json_is(
+        "/errors" => [
+            {
+                message => "Properties not allowed: invalid.",
+                path    => "/body"
+            }
+        ]
+    );
+
+    # Create all combinations of to/from libraries
+    $t->post_ok( "//$auth_userid:$password@/api/v1/transfer_limits/batch" => json => $limit_hashref )
+        ->status_is( 201, 'SWAGGER3.2.1' )
+        ->json_has( '' => $limit_hashref, 'SWAGGER3.3.1' );
+
+    my $limits = Koha::Item::Transfer::Limits->search;
+
+    my $libraries_count = Koha::Libraries->search->count;
+    is( $limits->count, $libraries_count * ($libraries_count - 1 ), "Created the correct number of limits" );
+
+    # Delete all combinations of to/from libraries
+    $t->delete_ok( "//$auth_userid:$password@/api/v1/transfer_limits/batch" => json => $limit_hashref )
+        ->status_is( 204, 'SWAGGER3.2.1' );
+
+    $limits = Koha::Item::Transfer::Limits->search;
+
+    is( $limits->count, 0, "Deleted the correct number of limits" );
+
+    # Create all combinations of 'to' libraries
+    $limit_hashref->{to_library_id} = $library->id;
+    $t->post_ok( "//$auth_userid:$password@/api/v1/transfer_limits/batch" => json => $limit_hashref )
+        ->status_is( 201, 'SWAGGER3.2.1' )
+        ->json_has( '' => $limit_hashref, 'SWAGGER3.3.1' );
+
+    $limits = Koha::Item::Transfer::Limits->search;
+
+    is( $limits->count, $libraries_count - 1 , "Created the correct number of limits" );
+
+    # Delete all combinations of 'to' libraries
+    $t->delete_ok( "//$auth_userid:$password@/api/v1/transfer_limits/batch" => json => $limit_hashref )
+        ->status_is( 204, 'SWAGGER3.2.1' );
+
+    $limits = Koha::Item::Transfer::Limits->search;
+
+    is( $limits->count, 0, "Deleted the correct number of limits" );
+
+    # Create all combinations of 'from' libraries
+    Koha::Item::Transfer::Limits->search->delete;
+
+    delete $limit_hashref->{to_library_id};
+    $limit_hashref->{from_library_id} = $library->id;
+    $t->post_ok( "//$auth_userid:$password@/api/v1/transfer_limits/batch" => json => $limit_hashref )
+        ->status_is( 201, 'SWAGGER3.2.1' )
+        ->json_has( '' => $limit_hashref, 'SWAGGER3.3.1' );
+
+    $limits = Koha::Item::Transfer::Limits->search;
+
+    $libraries_count = Koha::Libraries->search->count;
+    is( $limits->count, $libraries_count - 1 , "Created the correct number of limits" );
+
+    # Delete all combinations of 'from' libraries
+    $t->delete_ok( "//$auth_userid:$password@/api/v1/transfer_limits/batch" => json => $limit_hashref )
+        ->status_is( 204, 'SWAGGER3.2.1' );
+
+    $limits = Koha::Item::Transfer::Limits->search;
+
+    $libraries_count = Koha::Libraries->search->count;
+    is( $limits->count, 0, "Deleted the correct number of limits" );
 
     $schema->storage->txn_rollback;
 };

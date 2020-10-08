@@ -142,6 +142,8 @@ sub batch_add {
                 $limit_params->{from_library_id} = $from;
                 $limit_params->{to_library_id} = $to;
 
+                next if $to eq $from;
+
                 my $transfer_limit = Koha::Item::Transfer::Limit->new_from_api( $limit_params );
                 my $exists = Koha::Item::Transfer::Limits->search( $transfer_limit->unblessed )->count;
                 unless ( $exists ) {
@@ -176,7 +178,6 @@ sub batch_delete {
         my $params = $c->validation->param( 'body' );
         my $transfer_limit = Koha::Item::Transfer::Limit->new_from_api( $params );
         my $search_params = $transfer_limit->unblessed;
-        warn "SEARCH PARAMS: " . Data::Dumper::Dumper( $search_params );
 
         Koha::Item::Transfer::Limits->search($search_params)->delete;
 
