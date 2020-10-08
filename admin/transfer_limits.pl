@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright 2000-2002 Katipo Communications
-# copyright 2010 BibLibre
+# copyright 2020 ByWater Solutions
 #
 # This file is part of Koha.
 #

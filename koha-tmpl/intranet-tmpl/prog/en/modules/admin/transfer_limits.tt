@@ -56,9 +56,9 @@
 
                 <p class="help">Check the boxes for the libraries you allow your items to be transferred to.</p>
                 <fieldset>
-                    <a id="CheckAll" href="#"><i class="fa fa-check"></i> Check all</a>
+                    <a id="check-all" href="#"><i class="fa fa-check"></i> Check all</a>
                     |
-                    <a id="UncheckAll" href="#"><i class="fa fa-remove"></i> Uncheck all</a>
+                    <a id="uncheck-all" href="#"><i class="fa fa-remove"></i> Uncheck all</a>
                     |
                     <a href="/cgi-bin/koha/admin/branch_transfer_limits.pl">Switch to basic editor</a>
                 </fieldset>
@@ -133,80 +133,109 @@
         $('.spinner').hide();
 
         $(document).ready(function() {
-            $("#CheckAll").click(function() {
+            $("#check-all").click(function() {
+                const val = $('#value_selector').val();
+
+                let checkboxes = [];
                 $(".limit-checkboxes").each(function() {
                     const checkbox = $(this);
-                    if (!checkbox.attr('checked')) {
-                        checkbox.attr('checked', true);
-                        checkbox.change();
+                    if (checkbox.data('limit_id')) {
+                        checkboxes.push(checkbox);
+                        checkbox.hide();
+                        $(`#spinner-${checkbox.attr('id')}`).show();
                     }
                 });
 
+                del_limits( checkboxes, val );
                 return false;
             });
 
-            $("#UncheckAll").click(function() {
+
+            $("#uncheck-all").click(function() {
+                const val = $('#value_selector').val();
+
+                let checkboxes = [];
                 $(".limit-checkboxes").each(function() {
                     const checkbox = $(this);
-                    if (checkbox.attr('checked')) {
-                        checkbox.attr('checked', false);
-                        $(checkbox).change();
+                    if (!checkbox.data('limit_id')) {
+                        checkboxes.push(checkbox);
+                        checkbox.hide();
+                        $(`#spinner-${checkbox.attr('id')}`).show();
                     }
                 });
 
+                add_limits( checkboxes, val );
                 return false;
             });
 
             $('.check-all-col').click(function() {
+                let checkboxes = [];
                 const to = $(this).data('to');
+                const val = $('#value_selector').val();
+
                 $(`.to-${to}`).each(function() {
                     const checkbox = $(this);
                     if (checkbox.data('limit_id')) {
+                        checkboxes.push(checkbox);
                         checkbox.hide();
                         $(`#spinner-${checkbox.attr('id')}`).show();
-                        delLimit(checkbox);
                     }
                 });
-                return false;
-            });
 
-            $('.check-all-row').click(function() {
-                const from = $(this).data('from');
-                $(`.from-${from}`).each(function() {
-                    const checkbox = $(this);
-                    if (checkbox.data('limit_id')) {
-                        checkbox.hide();
-                        $(`#spinner-${checkbox.attr('id')}`).show();
-                        delLimit(checkbox);
-                    }
-                });
+                del_limits( checkboxes, val, to );
                 return false;
             });
 
             $('.uncheck-all-col').click(function() {
+                let checkboxes = [];
                 const to = $(this).data('to');
+                const val = $('#value_selector').val();
+
                 $(`.to-${to}`).each(function() {
                     const checkbox = $(this);
                     if (!checkbox.data('limit_id')) {
                         checkbox.hide();
                         $(`#spinner-${checkbox.attr('id')}`).show();
-                        addLimit(checkbox);
                     }
                 });
+
+                add_limits( checkboxes, val, to );
                 return false;
             });
 
-            $('.uncheck-all-row').click(function() {
+            $('.check-all-row').click(function() {
+                let checkboxes = [];
                 const from = $(this).data('from');
-                console.log(from);
+                const val = $('#value_selector').val();
+
+                $(`.from-${from}`).each(function() {
+                    const checkbox = $(this);
+                    if (checkbox.data('limit_id')) {
+                        checkboxes.push(checkbox);
+                        checkbox.hide();
+                        $(`#spinner-${checkbox.attr('id')}`).show();
+                    }
+                });
+
+                del_limits( checkboxes, val, null, from );
+                return false;
+            });
+
+
+            $('.uncheck-all-row').click(function() {
+                let checkboxes = [];
+                const from = $(this).data('from');
+                const val = $('#value_selector').val();
+
                 $(`.from-${from}`).each(function() {
                     const checkbox = $(this);
                     if (!checkbox.data('limit_id')) {
                         checkbox.hide();
                         $(`#spinner-${checkbox.attr('id')}`).show();
-                        addLimit(checkbox);
                     }
                 });
+
+                add_limits( checkboxes, val, null, from );
                 return false;
             });
 
@@ -286,6 +315,63 @@
                     checkbox.attr('checked', false);
                     $(`#spinner-${id}`).hide();
                     checkbox.show();
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = xhr.status + ': ' + xhr.statusText
+                    alert('Error - ' + errorMessage);
+                }
+            });
+        }
+
+        function add_limits( checkboxes, val, to, from ){
+            let data = {};
+            data[val_type] = val;
+            if (to) data["to_library_id"] = to;
+            if (from) data["from_library_id"] = from;
+
+            return $.ajax({
+                url: `/api/v1/transfer_limits/batch`,
+                type: 'POST',
+                data: JSON.stringify(data),
+                dataType: 'json',
+                success: function(result) {
+                    for ( i = 0; i < result.length; i++ ) {
+                        const r = result[i];
+                        let checkbox = $(`#limit-${r.from_library_id}-${r.to_library_id}`);
+                        const id = checkbox.attr('id');
+                        checkbox.data('limit_id', r.limit_id);
+                        checkbox.attr('checked', false);
+                        $(`#spinner-${id}`).hide();
+                        checkbox.show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = xhr.status + ': ' + xhr.statusText
+                    alert('Error - ' + errorMessage);
+                }
+            });
+        }
+
+        function del_limits( checkboxes, val, to, from ){
+            let data = {};
+            data[val_type] = val;
+            if (to) data["to_library_id"] = to;
+            if (from) data["from_library_id"] = from;
+
+            return $.ajax({
+                url: `/api/v1/transfer_limits/batch`,
+                type: 'DELETE',
+                data: JSON.stringify(data),
+                dataType: 'json',
+                success: function(result) {
+                    for ( i = 0; i < checkboxes.length; i++ ) {
+                        const checkbox = checkboxes[i];
+                        const id = checkbox.attr('id');
+                        checkbox.data('limit_id', '');
+                        checkbox.attr('checked', true);
+                        $(`#spinner-${id}`).hide();
+                        checkbox.show();
+                    }
                 },
                 error: function(xhr, status, error) {
                     var errorMessage = xhr.status + ': ' + xhr.statusText
