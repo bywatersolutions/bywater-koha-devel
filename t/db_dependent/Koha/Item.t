@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 9;
+use Test::More tests => 10;
 use Test::Exception;
 
 use C4::Biblio;
@@ -29,6 +29,8 @@ use Koha::Items;
 use Koha::Database;
 use Koha::DateUtils;
 use Koha::Old::Items;
+use Koha::AuthorisedValueCategories;
+use Koha::AuthorisedValues;
 
 use List::MoreUtils qw(all);
 
@@ -813,6 +815,37 @@ subtest 'get_transfers' => sub {
     is($transfers->count, 1, 'Once a transfer is cancelled, it no longer appears in the list from ->get_transfers()');
     $result_1 = $transfers->next;
     is( $result_1->branchtransfer_id, $transfer_3->branchtransfer_id, 'Koha::Item->get_transfers returns the only transfer that remains');
+
+    $schema->storage->txn_rollback;
+};
+
+subtest '_fetch_authorised_values' => sub {
+    plan tests => 1;
+
+    $schema->storage->txn_begin;
+
+    # Delete all Authorised Values of 'Countries' category
+    Koha::AuthorisedValues->search({category => 'Countries'})->delete;
+    Koha::AuthorisedValueCategories->search({category_name => 'Countries'})->delete;
+
+    # Create 'Countries' category and authorised value
+    my $cat = $builder->build_object({ class => 'Koha::AuthorisedValueCategories'});
+    my $country = $builder->build_object({ class => 'Koha::AuthorisedValues', value => { category => $cat->category_name } });
+
+    # Create a new biblio framework
+    my $fw = $builder->build_object({ class => 'Koha::BiblioFrameworks' });
+
+    # Add a Marc subfield with kohafield setted to 'items.itemnote'
+    $builder->build_object({class => 'Koha::MarcSubfieldStructures', value => {frameworkcode => $fw->frameworkcode, authorised_value => $cat->category_name, kohafield => 'items.itemnotes'}});
+
+    # Create biblio and item
+    my $biblio = $builder->build_sample_biblio({frameworkcode => $fw->frameworkcode});
+    my $item = $builder->build_sample_item({biblionumber => $biblio->biblionumber, itemnotes => $country->authorised_value});
+
+    # Fetch authorised values
+    my $avs = $item->_fetch_authorised_values();
+
+    is($avs->{itemnotes}->{lib}, $country->lib, 'Fetched auhtorised value is ok');
 
     $schema->storage->txn_rollback;
 };
