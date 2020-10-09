@@ -112,6 +112,13 @@ Acquisitions:
             - 'If you choose <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=EmailAddressForSuggestions">EmailAddressForSuggestions</a> you have to enter a valid email address:'
             - pref: EmailAddressForSuggestions
               class: email
+        -
+          - pref: AcqReceiveMultipleOrderLines
+            defualt: no
+            choices:
+              yes: "Allow"
+              no: "Don't allow"
+          - " to process multiple order lines at once"
     Printing:
         -
             - Use the
