@@ -551,28 +551,10 @@ sub to_api {
     my ( $self, $params ) = @_;
     my $json_object = $self->TO_JSON;
 
-    my $to_api_mapping = $self->to_api_mapping;
-
-    # Rename attributes if there's a mapping
-    if ( $self->can('to_api_mapping') ) {
-        foreach my $column ( keys %{ $self->to_api_mapping } ) {
-            my $mapped_column = $self->to_api_mapping->{$column};
-            if ( exists $json_object->{$column}
-                && defined $mapped_column )
-            {
-                # key != undef
-                $json_object->{$mapped_column} = delete $json_object->{$column};
-            }
-            elsif ( exists $json_object->{$column}
-                && !defined $mapped_column )
-            {
-                # key == undef
-                delete $json_object->{$column};
-            }
-        }
-    }
+    $json_object = $self->_do_api_mapping($json_object);
 
     my $embeds = $params->{embed};
+    my $av_expand = $params->{av_expand};
 
     if ($embeds) {
         foreach my $embed ( keys %{$embeds} ) {
@@ -591,20 +573,60 @@ sub to_api {
                 if ( defined $children and ref($children) eq 'ARRAY' ) {
                     my @list = map {
                         $self->_handle_to_api_child(
-                            { child => $_, next => $next, curr => $curr } )
+                            { child => $_, next => $next, curr => $curr, av_expand => $av_expand } )
                     } @{$children};
                     $json_object->{$curr} = \@list;
                 }
                 else {
                     $json_object->{$curr} = $self->_handle_to_api_child(
-                        { child => $children, next => $next, curr => $curr } );
+                        { child => $children, next => $next, curr => $curr, av_expand => $av_expand } );
                 }
             }
         }
     }
 
+    if($av_expand && $self->can('_fetch_authorised_values')) {
+        # _fetch_authorised_values should return a hash as the following
+        # {
+        #  column_name => <authorised_value>->unblessed
+        #  ...
+        # }
+        my $avs = $self->_fetch_authorised_values($av_expand);
 
+        # Language selection will be implemented when lang overlay for av is ready
+        # Now we will just fetch plain authorised values from the Koha::AuthorisedValues
+        $avs = $self->_do_api_mapping($avs);
 
+        $json_object->{_authorised_values} = $avs || {};
+    }
+
+    return $json_object;
+}
+
+=head3 _do_api_mapping
+
+=cut
+
+sub _do_api_mapping {
+    my ($self, $json_object) = @_;
+    # Rename attributes if there's a mapping
+    if ( $self->can('to_api_mapping') ) {
+        foreach my $column ( keys %{ $self->to_api_mapping } ) {
+            my $mapped_column = $self->to_api_mapping->{$column};
+            if ( exists $json_object->{$column}
+                && defined $mapped_column )
+            {
+                # key != undef
+                $json_object->{$mapped_column} = delete $json_object->{$column};
+            }
+            elsif ( exists $json_object->{$column}
+                && !defined $mapped_column )
+            {
+                # key == undef
+                delete $json_object->{$column};
+            }
+        }
+    }
     return $json_object;
 }
 
@@ -861,6 +883,7 @@ sub _handle_to_api_child {
     my $child = $args->{child};
     my $next  = $args->{next};
     my $curr  = $args->{curr};
+    my $av_expand = $args->{av_expand};
 
     my $res;
 
@@ -870,7 +893,7 @@ sub _handle_to_api_child {
             if defined $next and blessed $child and !$child->can('to_api');
 
         if ( blessed $child ) {
-            $res = $child->to_api({ embed => $next });
+            $res = $child->to_api({ embed => $next, av_expand => $av_expand });
         }
         else {
             $res = $child;
