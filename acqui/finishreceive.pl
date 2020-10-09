@@ -73,6 +73,7 @@ if (C4::Context->preference("CurrencyFormat") eq 'FR') {
 $unitprice = Koha::Number::Price->new( $unitprice )->unformat();
 $replacementprice = Koha::Number::Price->new( $replacementprice )->unformat();
 my $order_obj = Koha::Acquisition::Orders->find( $ordernumber );
+
 my $basket = $order_obj->basket;
 
 #need old receivedate if we update the order, parcel.pl only shows the right parcel this way FIXME
@@ -116,6 +117,7 @@ if ($quantityrec > $origquantityrec ) {
             # Quantity can only be modified if linked to a subscription
             $order->{quantity} = $quantity; # quantityrec will be deduced from this value in ModReceiveOrder
         }
+
         ( $datereceived, $new_ordernumber ) = ModReceiveOrder(
             {
                 biblionumber     => $biblionumber,

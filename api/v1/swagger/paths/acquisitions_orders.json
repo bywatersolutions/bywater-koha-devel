@@ -122,10 +122,15 @@
                 "biblio.items+count",
                 "biblio.suggestions.suggester",
                 "fund",
+                "fund.budget",
                 "current_item_level_holds+count",
                 "invoice",
                 "items",
-                "subscription"
+                "items.home_branch",
+                "items.holding_branch",
+                "items.itemtype",
+                "subscription",
+                "creator"
             ]
         },
         "post": {

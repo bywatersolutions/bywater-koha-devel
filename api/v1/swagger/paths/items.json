@@ -133,7 +133,12 @@
         "permissions": {
           "catalogue": "1"
         }
-      }
+      },
+      "x-koha-embed": [
+        "itemtype",
+        "home_branch",
+        "holding_branch"
+      ]
     }
   },
   "/items/{item_id}/pickup_locations": {

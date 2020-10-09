@@ -180,6 +180,18 @@
     "exclude_from_local_holds_priority": {
       "type": "boolean",
       "description": "Exclude this item from local holds priority."
+    },
+    "home_branch": {
+      "type": ["object", "null"]
+    },
+    "holding_branch": {
+      "type": ["object", "null"]
+    },
+    "itemtype": {
+      "type": ["object", "null"]
+    },
+    "_authorised_values": {
+      "type": ["object", "null"]
     }
   },
   "additionalProperties": false,

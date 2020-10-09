@@ -17,8 +17,8 @@ package Koha::Acquisition::Fund;
 
 use Modern::Perl;
 
-use Koha::Acquisition::Budgets;
 use Koha::Database;
+use Koha::Acquisition::Budget;
 
 use base qw(Koha::Object);
 

@@ -329,6 +329,15 @@
                 "object",
                 "null"
             ]
+        },
+        "creator": {
+            "type": [
+                "object",
+                "null"
+            ]
+        },
+        "_authorised_values": {
+            "type": "object"
         }
     },
     "additionalProperties": false

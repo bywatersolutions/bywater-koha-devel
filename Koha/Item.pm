@@ -46,6 +46,8 @@ use Koha::Plugins;
 use Koha::Libraries;
 use Koha::StockRotationItem;
 use Koha::StockRotationRotas;
+use Koha::MarcSubfieldStructures;
+use Koha::AuthorisedValues;
 
 use base qw(Koha::Object);
 
@@ -1196,6 +1198,31 @@ sub _after_item_action_hooks {
             item_id => $self->itemnumber,
         }
     );
+}
+
+=head3 _fetch_authorised_values
+
+Retrieves for each column name the unblessed authorised value.
+
+=cut
+
+sub _fetch_authorised_values {
+    my ($self, $av_expand) = @_;
+
+    my $columns_info = $self->_result->result_source->columns_info;
+    my $framworkcode = $self->biblio->frameworkcode;
+    # Handle not null and default values for integers and dates
+    my $avs = {};
+    foreach my $col ( keys %{$columns_info} ) {
+        next unless defined $self->$col;
+        my $field = $self->_result->result_source->name.'.'.$col;
+        my $mss = Koha::MarcSubfieldStructures->find({frameworkcode => $framworkcode, kohafield => $field});
+        if ($mss && $mss->authorised_value) {
+            my $av = Koha::AuthorisedValues->find({category => $mss->authorised_value, authorised_value => $self->$col});
+            $avs->{$col} = $av->unblessed if $av;
+        };
+    }
+    return $avs;
 }
 
 =head3 _type

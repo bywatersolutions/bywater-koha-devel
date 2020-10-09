@@ -130,7 +130,10 @@ sub list {
                 for my $f ( qw( isbn ean publisher ) ) {
                     $reserved_params->{$q} =~ s|"biblio.$f":|"biblio.biblioitem.$f":|g;
                 }
-                push @query_params_array, $reserved_params->{$q};
+                push @query_params_array, $q eq 'query'
+                  ? $reserved_params->{$q}
+                  : decode_json( $reserved_params->{$q} );
+
             }
 
             if(scalar(@query_params_array) > 1) {
@@ -157,7 +160,7 @@ sub list {
 
         return $c->render(
             status  => 200,
-            openapi => $orders->to_api({ embed => $embed })
+            openapi => $orders->to_api({ embed => $embed, av_expand => $c->req->headers->header('x-koha-av') })
         );
     }
     catch {
