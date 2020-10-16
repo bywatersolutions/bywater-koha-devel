@@ -246,10 +246,7 @@ sub arguments_for_command {
 sub kocIssueItem {
     my $circ = shift;
 
-    $circ->{ 'barcode' } = barcodedecode($circ->{'barcode'}) if( $circ->{'barcode'} && C4::Context->preference('itemBarcodeInputFilter'));
-
-    my ( $new_barcode ) = Koha::Plugins->call( 'item_barcode_transform', $circ->{barcode} ) || $circ->{barcode};
-    $circ->{barcode} = $new_barcode;
+    $circ->{barcode} = barcodedecode( $circ->{barcode} ) if $circ->{barcode};
 
     my $branchcode = C4::Context->userenv->{branch};
     my $patron = Koha::Patrons->find( { cardnumber => $circ->{cardnumber} } );
@@ -330,10 +327,8 @@ sub kocIssueItem {
 
 sub kocReturnItem {
     my ( $circ ) = @_;
-    $circ->{'barcode'} = barcodedecode($circ->{'barcode'}) if( $circ->{'barcode'} && C4::Context->preference('itemBarcodeInputFilter'));
 
-    my ( $new_barcode ) = Koha::Plugins->call( 'item_barcode_transform', $circ->{barcode} ) || $circ->{barcode};
-    $circ->{barcode} = $new_barcode;
+    $circ->{barcode} = barcodedecode( $circ->{barcode} ) if $circ->{barcode};
 
     my $item = Koha::Items->find({ barcode => $circ->{barcode} });
     my $biblio = $item->biblio;

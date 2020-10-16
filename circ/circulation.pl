@@ -164,9 +164,7 @@ if (C4::Context->preference("DisplayClearScreenButton")) {
 
 for my $barcode ( @$barcodes ) {
     $barcode =~ s/^\s*|\s*$//g; # remove leading/trailing whitespace
-    $barcode = barcodedecode($barcode)
-        if( $barcode && C4::Context->preference('itemBarcodeInputFilter'));
-    ( $barcode ) = Koha::Plugins->call( 'item_barcode_transform', $barcode ) || $barcode;
+    $barcode = barcodedecode( $barcode ) if $barcode;
 }
 
 my $stickyduedate  = $query->param('stickyduedate') || $session->param('stickyduedate');

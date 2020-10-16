@@ -110,7 +110,7 @@ my ($op, $patronid, $patronlogin, $patronpw, $barcode, $confirmed, $newissues) =
     $query->param("newissues")  || '',
 );
 
-( $barcode ) = Koha::Plugins->call( 'item_barcode_transform', $barcode ) || $barcode;
+$barcode = barcodedecode( $barcode ) if $barcode;
 
 my @newissueslist = split /,/, $newissues;
 my $issuenoconfirm = 1; #don't need to confirm on issue.
