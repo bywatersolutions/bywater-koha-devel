@@ -70,7 +70,7 @@ subtest '() hook tests' => sub {
     $item_1->barcode('THISISATEST');
 
     warning_like { $item_1->store(); }
-        qr/barcode_transform called with parameters: item, THISISATEST/,
+        qr/item_barcode_transform called with parameter: THISISATEST/,
         'AddReserve calls the after_hold_create hook';
 
     $schema->storage->txn_rollback;
