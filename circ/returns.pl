@@ -115,8 +115,7 @@ foreach ( $query->param ) {
 
     # decode barcode    ## Didn't we already decode them before passing them back last time??
     $barcode =~ s/^\s*|\s*$//g; # remove leading/trailing whitespace
-    ( $barcode ) = Koha::Plugins->call( 'item_barcode_transform', $barcode ) || $barcode;
-    $barcode = barcodedecode($barcode) if(C4::Context->preference('itemBarcodeInputFilter'));
+    $barcode = barcodedecode($barcode) if $barcode;
 
     ######################
     #Are these lines still useful ?
@@ -245,8 +244,7 @@ if ($canceltransfer){
 my $returnbranch;
 if ($barcode) {
     $barcode =~ s/^\s*|\s*$//g; # remove leading/trailing whitespace
-    ( $barcode ) = Koha::Plugins->call( 'item_barcode_transform', $barcode ) || $barcode;
-    $barcode = barcodedecode($barcode) if C4::Context->preference('itemBarcodeInputFilter');
+    $barcode = barcodedecode($barcode) if $barcode;
     my $item = Koha::Items->find({ barcode => $barcode });
 
     if ( $item ) {
