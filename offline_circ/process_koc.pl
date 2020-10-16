@@ -248,7 +248,7 @@ sub kocIssueItem {
 
     $circ->{ 'barcode' } = barcodedecode($circ->{'barcode'}) if( $circ->{'barcode'} && C4::Context->preference('itemBarcodeInputFilter'));
 
-    my ( $new_barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $circ->{barcode} ) || $circ->{barcode};
+    my ( $new_barcode ) = Koha::Plugins->call( 'item_barcode_transform', $circ->{barcode} ) || $circ->{barcode};
     $circ->{barcode} = $new_barcode;
 
     my $branchcode = C4::Context->userenv->{branch};
@@ -332,7 +332,7 @@ sub kocReturnItem {
     my ( $circ ) = @_;
     $circ->{'barcode'} = barcodedecode($circ->{'barcode'}) if( $circ->{'barcode'} && C4::Context->preference('itemBarcodeInputFilter'));
 
-    my ( $new_barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $circ->{barcode} ) || $circ->{barcode};
+    my ( $new_barcode ) = Koha::Plugins->call( 'item_barcode_transform', $circ->{barcode} ) || $circ->{barcode};
     $circ->{barcode} = $new_barcode;
 
     my $item = Koha::Items->find({ barcode => $circ->{barcode} });

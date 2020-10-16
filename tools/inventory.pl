@@ -191,7 +191,7 @@ if ( ($uploadbarcodes && length($uploadbarcodes) > 0) || ($barcodelist && length
     for my $barcode (@uploadedbarcodes) {
         next unless $barcode;
 
-        ($barcode) = Koha::Plugins->call('barcode_transform', 'item', $barcode ) || $barcode;
+        ($barcode) = Koha::Plugins->call('item_barcode_transform', $barcode ) || $barcode;
 
         ++$lines_read;
         if (length($barcode)>$barcode_size) {

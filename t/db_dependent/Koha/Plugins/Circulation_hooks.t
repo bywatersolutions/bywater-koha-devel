@@ -66,7 +66,7 @@ subtest 'after_circ_action() hook tests' => sub {
     my $test_plugin = Test::MockModule->new('Koha::Plugin::Test');
     $test_plugin->mock( 'after_item_action',   undef );
     $test_plugin->mock( 'after_biblio_action', undef );
-    $test_plugin->mock( 'barcode_transform', undef );
+    $test_plugin->mock( 'item_barcode_transform', undef );
 
     my $biblio = $builder->build_sample_biblio();
     my $item_1 = $builder->build_sample_item( { biblionumber => $biblio->biblionumber } );

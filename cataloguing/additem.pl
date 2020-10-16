@@ -510,7 +510,7 @@ if ($op eq "additem") {
 
     my $addedolditem = TransformMarcToKoha( $record );
 
-    my ( $new_barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $addedolditem->{'barcode'} ) || $addedolditem->{'barcode'};
+    my ( $new_barcode ) = Koha::Plugins->call( 'item_barcode_transform', $addedolditem->{'barcode'} ) || $addedolditem->{'barcode'};
     $addedolditem->{'barcode'} = $new_barcode;
 
     # If we have to add or add & duplicate, we add the item
