@@ -404,7 +404,7 @@ if ($op eq "show"){
             my @barcodelist = grep /\S/, ( split /[$split_chars]/, $list );
             @barcodelist = uniq @barcodelist;
 
-            @barcodelist = map { ( Koha::Plugins->call( 'barcode_transform', 'item', $_ ) )[0] || $_ } @barcodelist;
+            @barcodelist = map { ( Koha::Plugins->call( 'item_barcode_transform', $_ ) )[0] || $_ } @barcodelist;
 
             # Note: adding lc for case insensitivity
             my %itemdata = map { lc($_->{barcode}) => $_->{itemnumber} } @{ Koha::Items->search({ barcode => \@barcodelist }, { columns => [ 'itemnumber', 'barcode' ] } )->unblessed };

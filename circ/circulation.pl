@@ -166,7 +166,7 @@ for my $barcode ( @$barcodes ) {
     $barcode =~ s/^\s*|\s*$//g; # remove leading/trailing whitespace
     $barcode = barcodedecode($barcode)
         if( $barcode && C4::Context->preference('itemBarcodeInputFilter'));
-    ( $barcode ) = Koha::Plugins->call( 'barcode_transform', 'item', $barcode ) || $barcode;
+    ( $barcode ) = Koha::Plugins->call( 'item_barcode_transform', $barcode ) || $barcode;
 }
 
 my $stickyduedate  = $query->param('stickyduedate') || $session->param('stickyduedate');

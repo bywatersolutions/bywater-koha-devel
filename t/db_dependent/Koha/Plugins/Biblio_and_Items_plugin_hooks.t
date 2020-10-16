@@ -53,7 +53,7 @@ subtest 'after_biblio_action() and after_item_action() hooks tests' => sub {
     my $plugin = Koha::Plugin::Test->new->enable;
 
     my $test_plugin = Test::MockModule->new('Koha::Plugin::Test');
-    $test_plugin->mock( 'barcode_transform', undef );
+    $test_plugin->mock( 'item_barcode_transform', undef );
 
     my $biblio_id;
 
