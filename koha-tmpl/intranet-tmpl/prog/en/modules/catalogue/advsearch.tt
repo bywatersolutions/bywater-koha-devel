@@ -2,6 +2,7 @@
 [% USE Koha %]
 [% USE Asset %]
 [% USE Branches %]
+[% USE Dumper %]
 [% SET footerjs = 1 %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Koha &rsaquo; Catalog &rsaquo; Advanced search</title>
@@ -93,28 +94,44 @@
 <!-- BOOLEAN SEARCH OPTIONS -->
     <fieldset id="searchterms">
     <legend>Search for </legend>
-    [% FOREACH search_box IN search_boxes_loop %]
-        [% IF ( search_boxes_label ) %]<div style="text-indent: 4.5em;">[% ELSE %]<div>[% END %]
-			[% IF ( expanded_options ) %]
-            [% IF ( search_box.boolean ) %]
+    [% FOREACH query IN queries %]
+        [% IF ( expanded_options ) %]
+            [% IF ( loop.first ) %]
+            <div style="text-indent: 4.5em;">
+            [% ELSE %]
+            <div>
+                    [% SET opindex = loop.index - 1 %]
                 <select name="op">
-                    <option value="and" selected="selected">and</option>
-                    <option value="or">or</option>
-                    <option value="not">not</option>
+                    [% IF operators.$opindex == 'or' %]
+                        <option value="and">and</option>
+                        <option value="or" selected="selected">or</option>
+                        <option value="not">not</option>
+                    [% ELSIF operators.$opindex == 'not' %] 
+                        <option value="and">and</option>
+                        <option value="or">or</option>
+                        <option value="not" selected="selected">not</option>
+                    [% ELSE %]
+                        <option value="and" selected="selected">and</option>
+                        <option value="or">or</option>
+                        <option value="not">not</option>
+                    [% END %]
                 </select>
-            [% END %] 
-			[% END %]
-			[% INCLUDE 'search_indexes.inc' %]
-			<input type="text" size="30" name="q" title="Enter search terms" value="" />
-            [% IF ( expanded_options ) %]
-                [% IF ( search_box.add_field ) %]
-                    <a href="JavaScript:add_field();" id="ButtonPlus" title="Add another field">[+]</a>
-				[% END %]
-              [% IF ( search_box.scan_index ) %]
-                <label for="scan">Scan indexes:</label> <input type="checkbox" name="scan" id="scan" value="1" />
-              [% END %]
             [% END %]
-		</div>
+        [% ELSE %]
+            <div>
+        [% END %]
+        [% SET preselect = 'ms_' _ indexes.${loop.index}.replace(',','comma') %]
+        [% INCLUDE 'search_indexes.inc' $preselect=1 %]
+                <input type="text" size="30" name="q" title="Enter search terms" value="[% query | html %]" />
+        [% IF ( expanded_options ) %]
+            [% IF ( loop.last ) %]
+                <a href="JavaScript:add_field();" id="ButtonPlus" title="Add another field">[+]</a>
+            [% END %]
+            [% IF ( loop.first ) %]
+                <label for="scan">Scan indexes:</label> <input type="checkbox" name="scan" id="scan" value="1" />
+            [% END %]
+        [% END %]
+		    </div>
     [% END %]
     [% IF Koha.Preference('SearchEngine') == 'Elasticsearch' %]
         [% IF ( expanded_options ) %]
@@ -125,7 +142,7 @@
                 <span id="weight_search">
                     <label><input type="checkbox" name="weight_search" checked="checked" /> Apply field weights to search</label>
                 </span>
-            <p>
+
         [% ELSE %]
             <input type="hidden" name="weight_search" value="1" />
         [% END %]
@@ -155,9 +172,32 @@
     <table>
         <tr>
     [% FOREACH itemtypeloo IN advsearchloo.code_loop %]
-        <td><input type="checkbox" id="[% itemtypeloo.ccl FILTER remove(',') | html %]-[% itemtypeloo.number | html %]" name="limit" value="mc-[% itemtypeloo.ccl | html %]:[% itemtypeloo.code | html %]"/><label for="[% itemtypeloo.ccl FILTER remove(',') | html %]-[% itemtypeloo.number | html %]">[% UNLESS ( Koha.Preference('OpacNoItemTypeImages') ) %][% IF ( itemtypeloo.imageurl ) %]<img src="[% itemtypeloo.imageurl | html %]" alt="[% itemtypeloo.description | html %]" />[% END %]&nbsp;[% END %]
-        [% itemtypeloo.description | html %]</label></td>
-        [% IF ( loop.last ) %]</tr>[% ELSE %][% UNLESS ( loop.count % 5 ) %]</tr><tr>[% END %][% END %]
+        <td>
+            [% SET limit_key = 'mc-' _ itemtypeloo.ccl _ "_" _ itemtypeloo.code %]
+            [% IF limits.$limit_key.defined %]
+                [% limits.delete($limit_key) %]
+                <input type="checkbox" checked="checked" id="[% itemtypeloo.ccl FILTER remove(',') | html %]-[% itemtypeloo.number | html %]" name="limit" value="mc-[% itemtypeloo.ccl | html %]:[% itemtypeloo.code | html %]"/>
+            [% ELSE %]
+                <input type="checkbox" id="[% itemtypeloo.ccl FILTER remove(',') | html %]-[% itemtypeloo.number | html %]" name="limit" value="mc-[% itemtypeloo.ccl | html %]:[% itemtypeloo.code | html %]"/>
+            [% END %]
+            <label for="[% itemtypeloo.ccl FILTER remove(',') | html %]-[% itemtypeloo.number | html %]">
+        [% UNLESS ( Koha.Preference('OpacNoItemTypeImages') ) %]
+            [% IF ( itemtypeloo.imageurl ) %]
+                <img src="[% itemtypeloo.imageurl | html %]" alt="[% itemtypeloo.description | html %]" />
+            [% END %]
+                &nbsp;
+        [% END %]
+        [% itemtypeloo.description | html %]
+            </label>
+        </td>
+        [% IF ( loop.last ) %]
+        </tr>
+        [% ELSE %]
+            [% UNLESS ( loop.count % 5 ) %]
+        </tr>
+        <tr>
+            [% END %]
+        [% END %]
     [% END %]
     </table>
     </div>
@@ -170,7 +210,9 @@
 <fieldset id="pubrange">
 <!-- PUB / COPY YEAR LIMIT --><!-- FIXME: add publication,copyright,acquisition options -->
 	<p><label for="limit-yr">Year: </label>
-		<input type="text" size="15" name="limit-yr" id="limit-yr" value=""/>&nbsp;&nbsp;(format: yyyy-yyyy)</p>
+        [% SET year_limit_key = 'yr,st-numeric' %]
+		<input type="text" size="15" name="limit-yr" id="limit-yr" value="[% limits.$year_limit_key %]"/>&nbsp;&nbsp;(format: yyyy-yyyy)</p>
+        [% IF limits.$year_limit_key.defind %][% limits.delete($year_limit_key) %][% END %]
 <!-- /PUB / COPY YEAR LIMIT -->
 </fieldset>
 <fieldset id="language">
@@ -264,14 +306,22 @@
 <!-- AVAILABILITY LIMITS -->
     <fieldset id="availability"><legend>Location and availability</legend>
 <fieldset id="currently-avail">
-        <p><label for="available-items">Only items currently available:</label> <input type="checkbox" id="available-items" name="limit" value="available" /></p>
+        [% IF limits.exists('available') %]
+            <p><label for="available-items">Only items currently available:</label> <input type="checkbox" id="available-items" name="limit" value="available"  checked="checked" /></p>
+            [% limits.delete('available') %]
+        [% ELSE %]
+            <p><label for="available-items">Only items currently available:</label> <input type="checkbox" id="available-items" name="limit" value="available" /></p>
+        [% END %]
 </fieldset>
 
 <fieldset id="select-libs">
+        [% limits.branch %]
         <p><label for="branchloop">Individual libraries:</label><select name="limit" id="branchloop">
         <option value="">All libraries</option>
         [%# FIXME Should not we filter the libraries displayed? %]
-        [% PROCESS options_for_libraries prefix => "branch:" libraries => Branches.all( selected => selected_branchcode, unfiltered => 1 ) %]
+        [% SET selected_branch = limits.branch %]
+        [% limits.delete('branch') %]
+        [% PROCESS options_for_libraries prefix => "branch:" libraries => Branches.all({ selected => selected_branch, unfiltered => 1 }) %]
         </select></p>
     <!-- <input type="hidden" name="limit" value="branch: MAIN" /> -->
         [% IF search_groups %]
@@ -297,7 +347,7 @@
 <fieldset id="sortby"><legend>Sorting</legend>
     <p>
     <label for="sort_by">Sort by: </label><select id="sort_by" name="sort_by">
-  [% INCLUDE 'resort_form.inc' %]
+  [% INCLUDE 'resort_form.inc' sort_by = sort %]
     </select>
         </p>
 </fieldset>

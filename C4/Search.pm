@@ -1225,6 +1225,7 @@ sub getIndexes{
                     'lost',
                     'materials-specified',
                     'mc-ccode',
+                    'mc-homebranch',
                     'mc-itype',
                     'mc-loc',
                     'notforloan',

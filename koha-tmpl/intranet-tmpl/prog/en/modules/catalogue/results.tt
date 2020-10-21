@@ -65,6 +65,7 @@
                     <h3>
                         [% total | html %] result(s) found [% IF ( query_desc ) %]for <span class="results_query_desc">'[% query_desc | html %]'</span>[% END %][% IF limit_desc  %]&nbsp;with limit(s): <span class="results_limit_desc">'[% limit_desc | html %]'</span>[% END %][% IF ( LibraryName ) %] in [% LibraryName | html %] Catalog[% END %].
                     </h3>
+                    <a href="/cgi-bin/koha/catalogue/search.pl?advsearch=1&edit_search=1&[% query_cgi %]&[% limit_cgi %]&[% sort_cgi %]">Edit this search</a>
 
                     <div id="searchheader">
                         <div id="selection_ops">
@@ -315,6 +316,7 @@
                             <p>
                                 No results match your search [% IF ( query_desc ) %]for <span style="font-weight: bold;">'[% query_desc | html %]'</span>[% END %][% IF ( limit_desc ) %]&nbsp;with limit(s): <span style="font-weight: bold;">'[% limit_desc | html %]'</span>[% END %][% IF ( LibraryName ) %] in [% LibraryName | html %] Catalog[% END %].
                             </p>
+                            <a href="/cgi-bin/koha/catalogue/search.pl?advsearch=1&edit_search=1&[% query_cgi %]&[% limit_cgi %]&[% sort_cgi %]">Edit this search</a>
                         [% ELSE %]
                             <p>You did not specify any search criteria.</p>
                         [% END %]

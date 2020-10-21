@@ -680,6 +680,7 @@ our %index_field_convert = (
     'inv' => 'number-local-acquisition',
     'bc' => 'barcode',
     'mc-itype' => 'itype',
+    'mc-homebranch' => 'homebranch',
     'aub' => 'author-personal-bibliography',
     'auo' => 'author-in-order',
     'ff8-22' => 'ta',
