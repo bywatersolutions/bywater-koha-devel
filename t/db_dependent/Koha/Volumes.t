@@ -73,11 +73,11 @@ subtest 'Test Koha::Biblio::Volume::add_item & Koha::Biblio::Volume::items' => s
 
     my $volume = Koha::Biblio::Volume->new( { biblionumber => $biblio->id } )->store();
 
-    my @items = $volume->items;
-    is( scalar(@items), 0, 'Volume has no items');
+    my $items = $volume->items;
+    is( $items->count, 0, 'Volume has no items');
 
     $volume->add_item({ item_id => $item_1->id });
-    @items = $volume->items->as_list;
+    my @items = $volume->items->as_list;
     is( scalar(@items), 1, 'Volume has one item');
     is( $items[0]->id, $item_1->id, 'Item 1 is correct' );
 
@@ -117,7 +117,7 @@ subtest 'Test Koha::Item::volume' => sub {
 
 subtest 'Koha::Item::delete should delete volume if no other items are using the volume' => sub {
 
-    plan tests => 8;
+    plan tests => 11;
 
     $schema->storage->txn_begin;
 
@@ -137,10 +137,15 @@ subtest 'Koha::Item::delete should delete volume if no other items are using the
     my $volume = Koha::Biblio::Volumes->find( $volume_1->id );
     is( $volume->id, $volume_1->id, 'Found the correct volume');
 
+    is( $item_1->volume->id, $volume_1->id, 'Item 1 has correct volume');
+    is( $item_2->volume->id, $volume_1->id, 'Item 2 has correct volume');
+
     $item_1->delete();
     is( $biblio->items->count, 1, 'Bib has 2 item');
     $volume = Koha::Biblio::Volumes->find( $volume_1->id );
     is( $volume->id, $volume_1->id, 'Volume still exists after deleting and item, but other items remain');
+
+    is( $item_2->volume->id, $volume_1->id, 'Item 2 still has correct volume');
 
     $item_2->delete();
     is( $biblio->items->count, 0, 'Bib has 0 items');
