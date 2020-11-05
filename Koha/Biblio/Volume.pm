@@ -68,7 +68,7 @@ sub items {
     my $items_rs = $self->_result->volume_items;
     my @item_numbers = $items_rs->get_column('itemnumber')->all;
 
-    return unless @item_numbers;
+    return Koha::Items->new->empty unless @item_numbers;
 
     return Koha::Items->search(
         {

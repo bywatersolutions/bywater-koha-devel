@@ -227,23 +227,17 @@ sub delete {
     # FIXME check the item has no current issues
     # i.e. raise the appropriate exception
 
+    # Get the volume so we can delete it later if it has no items left
+    my $volume = C4::Context->preference('EnableVolumes') ? $self->volume : undef;
+
     my $result = $self->SUPER::delete;
+
+    # Delete the volume if it has no items left
+    $volume->delete if ( $volume && $volume->items->count == 0 );
 
     my $indexer = Koha::SearchEngine::Indexer->new({ index => $Koha::SearchEngine::BIBLIOS_INDEX });
     $indexer->index_records( $self->biblionumber, "specialUpdate", "biblioserver" )
         unless $params->{skip_record_index};
-
-    if ( C4::Context->preference('EnableVolumes') ) {
-        my $volume_item =
-          Koha::Biblio::Volume::Items->find( { itemnumber => $self->itemnumber } );
-        my $volume_id = $volume_item ? $volume_item->volume_id : undef;
-
-        # If this item is the last item on a volume, delete the volume as well
-        if ($volume_id) {
-            my $volume = Koha::Biblio::Volumes->find($volume_id);
-            $volume->delete unless $volume->items->count > 1;
-        }
-    }
 
     $self->_after_item_action_hooks({ action => 'delete' });
 
@@ -427,7 +421,8 @@ sub volume {
     my $volume_rs = $volume_item->volume;
     return unless $volume_rs;
 
-    return Koha::Biblio::Volume->_new_from_dbic( $volume_rs );
+    my $volume = Koha::Biblio::Volume->_new_from_dbic( $volume_rs );
+    return $volume;
 }
 
 =head3 holds
