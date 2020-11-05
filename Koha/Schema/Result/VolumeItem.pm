@@ -76,6 +76,22 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<volume_id>
+
+=over 4
+
+=item * L</volume_id>
+
+=item * L</itemnumber>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("volume_id", ["volume_id", "itemnumber"]);
+
 =head1 RELATIONS
 
 =head2 itemnumber
@@ -109,8 +125,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-02-03 18:25:20
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:i6YHB4Jq+79kVVYmuurzIQ
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2020-11-05 18:59:43
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MzxVYdlWCeUEOR9GNHSmfA
 
 =head2 koha_object_class
 
