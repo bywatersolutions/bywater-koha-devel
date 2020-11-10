@@ -282,6 +282,21 @@ sub biblio {
     return $self->{_biblio};
 }
 
+=head3 patron
+
+Returns the related Koha::Patron object for this hold
+
+=cut
+
+sub patron {
+    my ($self) = @_;
+
+    my $patron_rs = $self->_result->patron;
+    return unless $patron_rs;
+
+    return Koha::Patron->_new_from_dbic($patron_rs);
+}
+
 =head3 item
 
 Returns the related Koha::Item object for this Hold
