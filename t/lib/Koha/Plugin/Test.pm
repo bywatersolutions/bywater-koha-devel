@@ -98,11 +98,6 @@ sub barcode_transform {
     Koha::Exceptions::Exception->throw("barcode_transform called with parameters: $type, $barcode");
 }
 
-sub barcode_generate {
-    my ( $self, $type, $object ) = @_;
-    return "Koha::Plugin::Test::barcode_generate";
-}
-
 sub configure {
     my ( $self, $args ) = @_;
     return "Koha::Plugin::Test::configure";
