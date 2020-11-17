@@ -275,16 +275,18 @@
                             </td>
 
                             [% IF CAN_user_coursereserves_add_reserves || CAN_user_coursereserves_delete_reserves %]
-                                <td class="actions">
-                                    [% IF CAN_user_coursereserves_add_reserves %]
-                                        <a class="btn btn-default btn-xs" href="add_items.pl?course_id=[% course.course_id | html %]&amp;itemnumber=[% cr.item.itemnumber | html %]&amp;biblionumber=[% cr.biblio.biblionumber | html %]&amp;action=lookup&amp;return=[% course.course_id | html %]&amp;is_edit=1"><i class="fa fa-pencil"></i> Edit</a>
-                                    [% END %]
+                                [% IF user.can_edit_item( cr.item ) %]
+                                    <td class="actions">
+                                        [% IF CAN_user_coursereserves_add_reserves %]
+                                            <a class="btn btn-default btn-xs" href="add_items.pl?course_id=[% course.course_id | html %]&amp;itemnumber=[% cr.item.itemnumber | html %]&amp;action=lookup&amp;return=[% course.course_id | html %]&amp;is_edit=1"><i class="fa fa-pencil"></i> Edit</a>
+                                        [% END %]
 
-                                    [% IF CAN_user_coursereserves_delete_reserves %]
-                                        <a class="btn btn-default btn-xs delete_item" href="course-details.pl?course_id=[% course.course_id | html %]&amp;action=del_reserve&amp;cr_id=[% cr.cr_id | html %]">
-                                        <i class="fa fa-trash"></i> Remove</a>
-                                    [% END %]
-                                </td>
+                                        [% IF CAN_user_coursereserves_delete_reserves %]
+                                            <a class="btn btn-default btn-xs delete_item" href="course-details.pl?course_id=[% course.course_id | html %]&amp;action=del_reserve&amp;cr_id=[% cr.cr_id | html %]">
+                                            <i class="fa fa-trash"></i> Remove</a>
+                                        [% END %]
+                                    </td>
+                                [% END %]
                             [% END %]
 
                         </tr>
