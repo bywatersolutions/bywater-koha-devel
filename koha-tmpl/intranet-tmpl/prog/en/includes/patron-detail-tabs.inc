@@ -175,6 +175,9 @@
                                         <option value="[% reason.authorised_value | html %]">[% reason.lib | html %]</option>
                                     [% END %]
                                 </select>
+
+                                <input type="checkbox" name="cancellation-notify-patron" id="cancellation-notify-patron" value="1" checked/>
+                                <label for="cancellation-notify-patron">Notify patron</label>
                             [% END %]
                         </fieldset>
                     </form>

@@ -916,7 +916,7 @@
                     </div> <!-- /div or div.col-sm-6 -->
                 </div> <!-- /.row -->
 
-                    [% INCLUDE 'patron-detail-tabs.inc' patronpage = "circ" %]
+                [% INCLUDE 'patron-detail-tabs.inc' patronpage = "circ" %]
 
                 [% ELSIF borrowernumber # IF patron %]
                     <div class="alert alert-info">Patron not found. <a href="/cgi-bin/koha/members/members-home.pl">Return to search</a></div>
