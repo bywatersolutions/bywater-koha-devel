@@ -738,7 +738,7 @@ sub cancel {
                 }, undef, $self->id
             );
 
-            if ( $params->{cancellation_reason} && $params->{notify_patron} ) {
+            if ( $params->{notify_patron} ) {
                 my $letter = C4::Letters::GetPreparedLetter(
                     module                 => 'reserves',
                     letter_code            => 'HOLD_CANCELLATION',
