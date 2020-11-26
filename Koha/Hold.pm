@@ -695,6 +695,7 @@ my $cancel_hold = $hold->cancel(
         [ charge_cancel_fee   => 1||0, ]
         [ cancellation_reason => $cancellation_reason, ]
         [ skip_holds_queue    => 1||0 ]
+        [ notify_patron       => 1||0, ]
     }
 );
 
