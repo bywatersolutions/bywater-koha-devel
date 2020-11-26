@@ -25,12 +25,12 @@ cancel_expired_holds.pl - cron script to cancel holds as they expire
 =head1 SYNOPSIS
 
   ./cancel_expired_holds.pl
-  ./cancel_expired_holds.pl --reason="EXPIRED"
+  ./cancel_expired_holds.pl --reason="EXPIRED" --notify
 
 or, in crontab:
 
   0 1 * * * cancel_expired_holds.pl
-  0 1 * * * cancel_expired_holds.pl --reason="EXPIRED"
+  0 1 * * * cancel_expired_holds.pl --reason="EXPIRED" --notify
 
 =head1 DESCRIPTION
 
@@ -56,25 +56,31 @@ Print a brief help message and exits.
 
 =item B<--reason>
 
-Optionally adds a reason for cancellation (which will trigger a notice to be sent to the patron)
+Optionally adds a reason for cancellation
+
+=item B<--notify>
+
+Optionally trigger a notice to be sent to the patron
 
 =back
 
 =cut
 
 my $help = 0;
+my $notify = 0;
 my $reason;
 
 my $command_line_options = join(" ",@ARGV);
 
 GetOptions(
     'help|?'   => \$help,
-    'reason=s' => \$reason
+    'notify'   => \$notify,
+    'reason=s' => \$reason,
 ) or pod2usage(1);
 pod2usage(1) if $help;
 
 cronlogaction({ info => $command_line_options });
 
-C4::Reserves::CancelExpiredReserves($reason);
+C4::Reserves::CancelExpiredReserves($reason, $notify);
 
 cronlogaction({ action => 'End', info => "COMPLETED" });
