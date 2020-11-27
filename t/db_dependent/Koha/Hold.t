@@ -1172,7 +1172,7 @@ subtest 'cancel() tests' => sub {
 
     $get_prepared_letter_called = 0;
     $hold->cancel({ notify_patron => 1 });
-    ok( $get_prepared_letter_called, 'GetPreparedLetter called if notify_patron passed' );
+    is( $get_prepared_letter_called, 0, 'GetPreparedLetter not called if notify_patron passed and no cancellation_reason passed' );
 
     isnt( $hold->cancellationdate, undef, 'cancellationdate gets set to the passed value' );
     is( $hold->priority, 0, 'priority gets set to 0' );
