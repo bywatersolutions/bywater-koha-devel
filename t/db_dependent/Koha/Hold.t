@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 14;
+use Test::More tests => 15;
 
 use Test::Exception;
 use Test::MockModule;
@@ -1086,6 +1086,97 @@ subtest 'change_type() tests' => sub {
     throws_ok { $hold->change_type }
     'Koha::Exceptions::Hold::CannotChangeHoldType',
         'Exception thrown because more than one hold per record';
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'cancel() tests' => sub {
+
+    plan tests => 12;
+
+    $schema->storage->txn_begin;
+
+    my $get_prepared_letter_called;
+
+    # Mock GetPreparedLetter so it raises a warning we can look for
+    # and returns undef, so no call to EnqueueLetter happens
+    my $mocked_letter = Test::MockModule->new("C4::Letters");
+    $mocked_letter->mock( 'GetPreparedLetter', sub {
+        $get_prepared_letter_called = 1;
+        return;
+    });
+
+    my $hold = $builder->build_object(
+        {
+            class => 'Koha::Holds',
+            value => {
+                cancellationdate    => undef,
+                priority            => 1,
+                cancellation_reason => undef,
+            }
+        }
+    );
+
+    # leave this things out of the test
+    t::lib::Mocks::mock_preference( 'ExpireReservesMaxPickUpDelayCharge', 0 );
+    t::lib::Mocks::mock_preference( 'HoldsLog', 0 );
+
+    $hold = $builder->build_object(
+        {
+            class => 'Koha::Holds',
+            value => {
+                cancellationdate    => undef,
+                priority            => 1,
+                cancellation_reason => undef,
+            }
+        }
+    );
+
+    $get_prepared_letter_called = 0;
+    $hold->cancel({ cancellation_reason => 'Some reason' });
+    ok( !$get_prepared_letter_called, 'GetPreparedLetter not called' );
+
+    isnt( $hold->cancellationdate, undef, 'cancellationdate gets set to the passed value' );
+    is( $hold->priority, 0, 'priority gets set to 0' );
+    is( $hold->cancellation_reason, 'Some reason', 'cancellation_reason is set to the passed value' );
+
+    $hold = $builder->build_object(
+        {
+            class => 'Koha::Holds',
+            value => {
+                cancellationdate    => undef,
+                priority            => 1,
+                cancellation_reason => undef,
+            }
+        }
+    );
+
+    $get_prepared_letter_called = 0;
+    $hold->cancel({ cancellation_reason => 'Some reason', notify_patron => 1 });
+    ok( $get_prepared_letter_called, 'GetPreparedLetter called if notify_patron and cancellation_reason passed' );
+
+    isnt( $hold->cancellationdate, undef, 'cancellationdate gets set to the passed value' );
+    is( $hold->priority, 0, 'priority gets set to 0' );
+    is( $hold->cancellation_reason, 'Some reason', 'cancellation_reason is set to the passed value' );
+
+    $hold = $builder->build_object(
+        {
+            class => 'Koha::Holds',
+            value => {
+                cancellationdate    => undef,
+                priority            => 1,
+                cancellation_reason => undef,
+            }
+        }
+    );
+
+    $get_prepared_letter_called = 0;
+    $hold->cancel({ notify_patron => 1 });
+    ok( $get_prepared_letter_called, 'GetPreparedLetter called if notify_patron passed' );
+
+    isnt( $hold->cancellationdate, undef, 'cancellationdate gets set to the passed value' );
+    is( $hold->priority, 0, 'priority gets set to 0' );
+    is( $hold->cancellation_reason, undef, 'cancellation_reason not passed' );
 
     $schema->storage->txn_rollback;
 };
