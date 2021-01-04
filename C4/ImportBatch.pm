@@ -620,7 +620,7 @@ sub BatchCommitRecords {
             }
         }
 
-        my ($record_result, $item_result, $record_matches) =
+        my ($record_result, $item_result, $record_match) =
             _get_commit_action($overlay_action, $nomatch_action, $item_action, 
                                $rowref->{'overlay_status'}, $rowref->{'import_record_id'}, $record_type);
 
@@ -648,51 +648,46 @@ sub BatchCommitRecords {
             SetImportRecordStatus($rowref->{'import_record_id'}, 'imported');
         } elsif ($record_result eq 'replace') {
             $num_updated++;
-            $query = $record_type eq 'biblio' ?
-                "UPDATE import_biblios SET matched_biblionumber = ? WHERE import_record_id = ?" :
-                "UPDATE import_auths SET matched_authid = ? WHERE import_record_id = ?";
-            my $oldxml_batch = MARC::File::XML::header() . "\n";
-            foreach my $recordid (@$record_matches){
-                my $oldxml;
-                if ($record_type eq 'biblio') {
-                    my $oldbiblio = Koha::Biblios->find( $recordid );
-                    $oldxml = GetXmlBiblio($recordid);
+            $recordid = $record_match;
+            my $oldxml;
+            if ($record_type eq 'biblio') {
+                my $oldbiblio = Koha::Biblios->find( $recordid );
+                $oldxml = GetXmlBiblio($recordid);
 
-                    # remove item fields so that they don't get
-                    # added again if record is reverted
-                    # FIXME: GetXmlBiblio output should not contain item info any more! So the next foreach should not be needed. Does not hurt either; may remove old 952s that should not have been there anymore.
-                    my $old_marc = MARC::Record->new_from_xml(StripNonXmlChars($oldxml), 'UTF-8', $rowref->{'encoding'}, $marc_type);
-                    foreach my $item_field ($old_marc->field($item_tag)) {
-                        $old_marc->delete_field($item_field);
-                    }
-                    $oldxml = $old_marc->as_xml($marc_type);
-
-                    ModBiblio($marc_record, $recordid, $oldbiblio->frameworkcode);
-
-                    if ($item_result eq 'create_new' || $item_result eq 'replace') {
-                        my ($bib_items_added, $bib_items_replaced, $bib_items_errored) = BatchCommitItems($rowref->{'import_record_id'}, $recordid, $item_result);
-                        $num_items_added += $bib_items_added;
-                        $num_items_replaced += $bib_items_replaced;
-                        $num_items_errored += $bib_items_errored;
-                    }
-                } else {
-                    $oldxml = GetAuthorityXML($recordid);
-
-                    ModAuthority($recordid, $marc_record, GuessAuthTypeCode($marc_record));
+                # remove item fields so that they don't get
+                # added again if record is reverted
+                # FIXME: GetXmlBiblio output should not contain item info any more! So the next foreach should not be needed. Does not hurt either; may remove old 952s that should not have been there anymore.
+                my $old_marc = MARC::Record->new_from_xml(StripNonXmlChars($oldxml), 'UTF-8', $rowref->{'encoding'}, $marc_type);
+                foreach my $item_field ($old_marc->field($item_tag)) {
+                    $old_marc->delete_field($item_field);
                 }
-                $oldxml_batch .= $oldxml . "\n";
+                $oldxml = $old_marc->as_xml($marc_type);
+
+                ModBiblio($marc_record, $recordid, $oldbiblio->frameworkcode);
+                $query = "UPDATE import_biblios SET matched_biblionumber = ? WHERE import_record_id = ?";
+
+                if ($item_result eq 'create_new' || $item_result eq 'replace') {
+                    my ($bib_items_added, $bib_items_replaced, $bib_items_errored) = BatchCommitItems($rowref->{'import_record_id'}, $recordid, $item_result);
+                    $num_items_added += $bib_items_added;
+                    $num_items_replaced += $bib_items_replaced;
+                    $num_items_errored += $bib_items_errored;
+                }
+            } else {
+                $oldxml = GetAuthorityXML($recordid);
+
+                ModAuthority($recordid, $marc_record, GuessAuthTypeCode($marc_record));
+                $query = "UPDATE import_auths SET matched_authid = ? WHERE import_record_id = ?";
             }
-            $oldxml_batch = MARC::File::XML::footer() . "\n";
             my $sth = $dbh->prepare_cached("UPDATE import_records SET marcxml_old = ? WHERE import_record_id = ?");
-            $sth->execute($oldxml_batch, $rowref->{'import_record_id'});
+            $sth->execute($oldxml, $rowref->{'import_record_id'});
             $sth->finish();
             my $sth2 = $dbh->prepare_cached($query);
-            $sth2->execute(join("|",@$record_matches), $rowref->{'import_record_id'});
+            $sth2->execute($recordid, $rowref->{'import_record_id'});
             $sth2->finish();
             SetImportRecordOverlayStatus($rowref->{'import_record_id'}, 'match_applied');
             SetImportRecordStatus($rowref->{'import_record_id'}, 'imported');
         } elsif ($record_result eq 'ignore') {
-            $recordid = $record_matches->[0]; # If ignoring, but processing items we must only have one match
+            $recordid = $record_match;
             $num_ignored++;
             if ($record_type eq 'biblio' and defined $recordid and ( $item_result eq 'create_new' || $item_result eq 'replace' ) ) {
                 my ($bib_items_added, $bib_items_replaced, $bib_items_errored) = BatchCommitItems($rowref->{'import_record_id'}, $recordid, $item_result);
@@ -1134,7 +1129,7 @@ sub GetImportRecordsRange {
 
     my $query = "SELECT title, author, isbn, issn, authorized_heading, import_records.import_record_id,
                                            record_sequence, status, overlay_status,
-                                           matched_biblionumber, matched_authid, record_type,has_items
+                                           matched_biblionumber, matched_authid, record_type
                                     FROM   import_records
                                     LEFT JOIN import_auths ON (import_records.import_record_id=import_auths.import_record_id)
                                     LEFT JOIN import_biblios ON (import_records.import_record_id=import_biblios.import_record_id)
@@ -1185,13 +1180,9 @@ sub GetBestRecordMatch {
                              AND chosen = 1
                              ORDER BY score DESC, candidate_match_id DESC");
     $sth->execute($import_record_id);
-    my $record_ids = $sth->fetchall_arrayref([0]);
+    my ($record_id) = $sth->fetchrow_array();
     $sth->finish();
-    my $matches;
-    foreach my $record_id ( @$record_ids ){
-        push @$matches, $record_id->[0];
-    }
-    return $matches;
+    return $record_id;
 }
 
 =head2 GetImportBatchStatus
@@ -1710,10 +1701,10 @@ sub _get_commit_action {
     my ($overlay_action, $nomatch_action, $item_action, $overlay_status, $import_record_id, $record_type) = @_;
     
     if ($record_type eq 'biblio') {
-        my ($bib_result, $bib_matches, $item_result);
+        my ($bib_result, $bib_match, $item_result);
 
-        $bib_matches = GetBestRecordMatch($import_record_id);
-        if ($overlay_status ne 'no_match' && defined($bib_matches)) {
+        my $bib_match = GetBestRecordMatch($import_record_id);
+        if ($overlay_status ne 'no_match' && defined($bib_match)) {
 
             $bib_result = $overlay_action;
 
@@ -1729,18 +1720,18 @@ sub _get_commit_action {
             $bib_result = $nomatch_action;
             $item_result = ($item_action eq 'always_add' or $item_action eq 'add_only_for_new') ? 'create_new' : 'ignore';
         }
-        return ($bib_result, $item_result, $bib_matches);
+        return ($bib_result, $item_result, $bib_match);
     } else { # must be auths
-        my ($auth_result, $auth_matches);
+        my ($auth_result, $auth_match);
 
-        $auth_matches = GetBestRecordMatch($import_record_id);
-        if ($overlay_status ne 'no_match' && defined($auth_matches)) {
+        $auth_match = GetBestRecordMatch($import_record_id);
+        if ($overlay_status ne 'no_match' && defined($auth_match)) {
             $auth_result = $overlay_action;
         } else {
             $auth_result = $nomatch_action;
         }
 
-        return ($auth_result, undef, $auth_matches);
+        return ($auth_result, undef, $auth_match);
 
     }
 }
