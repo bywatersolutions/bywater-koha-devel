@@ -40,6 +40,11 @@ __PACKAGE__->table("import_record_matches");
   default_value: 0
   is_nullable: 0
 
+=head2 chosen
+
+  data_type: 'tinyint'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -49,7 +54,23 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_nullable => 0 },
   "score",
   { data_type => "integer", default_value => 0, is_nullable => 0 },
+  "chosen",
+  { data_type => "tinyint", is_nullable => 1 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</import_record_id>
+
+=item * L</candidate_match_id>
+
+=back
+
+=cut
+
+__PACKAGE__->set_primary_key("import_record_id", "candidate_match_id");
 
 =head1 RELATIONS
 
@@ -69,8 +90,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-07-11 09:26:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hJW36EeP+H8+0/Ij3iuIFw
+# Created by DBIx::Class::Schema::Loader v0.07046 @ 2021-01-04 14:04:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YSZUbzE+4O/Z2BWrcWQ/bQ
 
 sub koha_object_class {
     'Koha::Import::Record::Match';
