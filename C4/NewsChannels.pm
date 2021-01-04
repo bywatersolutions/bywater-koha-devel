@@ -19,8 +19,11 @@ package C4::NewsChannels;
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
+
 use C4::Context;
 use Koha::DateUtils;
+
+use Carp qw(croak);
 
 use vars qw(@ISA @EXPORT);
 
@@ -211,9 +214,29 @@ sub GetNewsToDisplay {
     my $sth = $dbh->prepare($query);
     $lang = $lang // q{};
     $sth->execute($lang,$branch);
+
+    my $use_template_cache = C4::Context->config('template_cache_dir') && defined $ENV{GATEWAY_INTERFACE};
+    my $template           = Template->new(
+        {
+            EVAL_PERL    => 1,
+            ABSOLUTE     => 1,
+            PLUGIN_BASE  => 'Koha::Template::Plugin',
+            COMPILE_EXT  => $use_template_cache ? '.ttc' : '',
+            COMPILE_DIR  => $use_template_cache ? C4::Context->config('template_cache_dir') : '',
+            FILTERS      => {},
+            ENCODING     => 'UTF-8',
+        }
+    ) or die Template->error();
+
     my @results;
     while ( my $row = $sth->fetchrow_hashref ){
         $row->{newdate} = output_pref({ dt => dt_from_string( $row->{newdate} ), dateonly => 1 });
+
+        my $content = $row->{content};
+        my $output;
+        $template->process( \$content, {}, \$output ) || croak "ERROR PROCESSING TEMPLATE: " . $template->error();
+        $row->{content} = $output;
+
         push @results, $row;
     }
     return \@results;
