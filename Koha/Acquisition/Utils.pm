@@ -23,7 +23,7 @@ use C4::Context;
 
 Koha::Acquisition::Utils - Additional Koha functions for dealing with orders and acquisitions
 
-=head1 SUBROUTINES
+=head2 SUBROUTINES
 
 =head3 GetMarcFieldsToOrderValues($syspref_name, $record, $field_list)
 

@@ -372,7 +372,7 @@
                         <input class="addItemControl cancel" name="buttonClear" style="cursor:pointer;" onclick="clearItemBlock(this)" value="Clear" type="button">
                         <input class="addItemControl" name="buttonPlusMulti" onclick="javascript:this.nextElementSibling.style.display='inline'; return false;" style="cursor:pointer; margin:0 1em;" value="Add multiple items" type="button">
                         <span id="add_multiple_copies" style="display:none">
-                            <input class="addItemControl" id="multiValue" name="multiValue" placeholder="Number of items to add" type="number">
+                            <input class="addItemControl" id="multiValue" name="multiValue" placeholder="Number of items to add" type="text" inputmode="numeric" pattern="[0-9]*">
                             <input class="addItemControl" name="buttonAddMulti&quot;" style="cursor:pointer; margin:0 1em;" onclick="checkCount( this ,'[% UniqueItemFields | html %]')" value="Add" type="button">
                             <div class="dialog message">NOTE: Fields listed in the 'UniqueItemsFields' system preference will not be copied</div>
                         </span>
