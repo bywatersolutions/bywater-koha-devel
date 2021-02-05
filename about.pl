@@ -886,4 +886,12 @@ if ( -r $bwsbranch_filename ) {
     $template->param( bwsbranch => $bwsbranch );
 }
 
+my $url = C4::Context->preference('staffClientBaseURL');
+$url =~ s|https://||;
+$url =~ s|http://||;
+$template->param(
+    inbound_ip => qx{dig $url +short | grep '^[.0-9]*\$'},
+    outbound_ip  => qx{curl ipinfo.io/ip},
+);
+
 output_html_with_http_headers $query, $cookie, $template->output;
