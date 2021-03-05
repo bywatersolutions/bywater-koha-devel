@@ -70,6 +70,7 @@ sub import_patrons {
 
     my $matchpoint           = $params->{matchpoint};
     my $defaults             = $params->{defaults};
+    my $preserve_fields      = $params->{preserve_fields};
     my $ext_preserve         = $params->{preserve_extended_attributes};
     my $overwrite_cardnumber = $params->{overwrite_cardnumber};
     my $overwrite_passwords  = $params->{overwrite_passwords};
@@ -237,7 +238,7 @@ sub import_patrons {
               if exists $borrower{$field} and $borrower{$field} eq "";
         }
 
-        if ($borrowernumber) {
+    if ($borrowernumber) {
 
             # borrower exists
             unless ($overwrite_cardnumber) {
@@ -252,6 +253,13 @@ sub import_patrons {
                 next LINE;
             }
             $borrower{'borrowernumber'} = $borrowernumber;
+
+            if ( $preserve_fields ) {
+                for my $field ( @$preserve_fields ) {
+                    delete $borrower{$field};
+                }
+            }
+
             for my $col ( keys %borrower ) {
 
                 # use values from extant patron unless our csv file includes this column or we provided a default.
