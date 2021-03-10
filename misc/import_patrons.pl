@@ -36,6 +36,7 @@ my $confirm;
 my $verbose      = 0;
 my $help;
 my @columns_to_remove;
+my $update_dateexpiry;
 
 GetOptions(
     'c|confirm'                      => \$confirm,
@@ -44,6 +45,7 @@ GetOptions(
     'd|default=s'                    => \%defaults,
     'o|overwrite'                    => \$overwrite_cardnumber,
     'op|overwrite_passwords'         => \$overwrite_passwords,
+    'ue|update_expiration'           => \$update_dateexpiry,
     'p|preserve-extended-attributes' => \$ext_preserve,
     'pf|preserve-field'              => \@preserve_fields,
     'v|verbose+'                     => \$verbose,
@@ -68,6 +70,7 @@ my $return = $Import->import_patrons(
         overwrite_passwords          => $overwrite_passwords,
         preserve_extended_attributes => $ext_preserve,
         preserve_fields              => \@preserve_fields,
+        update_dateexpiry            => $update_dateexpiry
     }
 );
 
@@ -106,7 +109,7 @@ import_patrons.pl - CLI script to import patrons data into Koha
 
 =head1 SYNOPSIS
 
-import_patrons.pl --file /path/to/patrons.csv --matchpoint cardnumber --confirm [--default branchcode=MPL] [--overwrite] [--preserve_field <column>] [--preserve-extended-attributes] [--verbose]
+import_patrons.pl --file /path/to/patrons.csv --matchpoint cardnumber --confirm [--default branchcode=MPL] [--overwrite] [--preserve_field <column>] [--preserve-extended-attributes] [--update-expiration] [--verbose]
 
 =head1 OPTIONS
 
@@ -143,6 +146,10 @@ Overwrite existing patrons with new data if a match is found
 =item B<-p|--preserve-extended-attributes>
 
 Retain extended patron attributes for existing patrons being overwritten
+
+=item B<-p|--update-expiration>
+
+If a matching patron is found, extend the expiration date of their account using the patron's enrollment date as the base
 
 =item B<-v|--verbose>
 

@@ -266,7 +266,11 @@
                         <li>
                             <input class="overwrite_passwords" type="checkbox" id="overwrite_passwords" name="overwrite_passwords" disabled/>
                             <label class="overwrite_passwords" for="overwrite_passwords">Replace patron passwords with those in the file (blank passwords will be ignored)</label>
-                        </li
+                        </li>
+                        <li>
+                            <input class="update_dateexpiry" type="checkbox" id="update_dateexpiry" name="update_dateexpiry" disabled/>
+                            <label class="update_dateexpiry" for="update_dateexpiry">Update patron's expiration date based on enrollment date</label>
+                        </li>
                     </ul>
                 </li>
             </ol>
@@ -370,9 +374,11 @@ you can supply dates in ISO format (e.g., '2010-10-28').
 
         $("#overwrite_cardnumberno").click(function(){
             $("#overwrite_passwords").prop('checked',false).prop('disabled',true);
+            $("#update_dateexpiry").prop('checked',false).prop('disabled',true);
         });
         $("#overwrite_cardnumberyes").click(function(){
             $("#overwrite_passwords").prop('disabled',false);
+            $("#update_dateexpiry").prop('disabled',false);
         });
     </script>
 [% END %]

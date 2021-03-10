@@ -71,6 +71,7 @@ sub import_patrons {
     my $matchpoint           = $params->{matchpoint};
     my $defaults             = $params->{defaults};
     my $preserve_fields      = $params->{preserve_fields};
+    my $update_dateexpiry    = $params->{update_dateexpiry};
     my $ext_preserve         = $params->{preserve_extended_attributes};
     my $overwrite_cardnumber = $params->{overwrite_cardnumber};
     my $overwrite_passwords  = $params->{overwrite_passwords};
@@ -259,6 +260,8 @@ sub import_patrons {
                     delete $borrower{$field};
                 }
             }
+
+            $borrower{dateexpiry} = Koha::Patron::Categories->find( $borrower{categorycode} )->get_expiry_date( $borrower{dateenrolled} ) if $update_dateexpiry;
 
             for my $col ( keys %borrower ) {
 
