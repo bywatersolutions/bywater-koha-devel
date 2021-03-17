@@ -17,6 +17,8 @@ package Koha::Acquisition::Utils;
 
 use Modern::Perl;
 
+use YAML::XS;
+
 use C4::Context;
 
 =head1 NAME
@@ -43,7 +45,7 @@ sub GetMarcFieldsToOrderValues {
     my $syspref = C4::Context->preference('MarcFieldsToOrder');
     $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
     my $yaml = eval {
-        YAML::Load($syspref);
+        YAML::XS::Load($syspref);
     };
     if ( $@ ) {
         warn "Unable to parse $syspref syspref : $@";
@@ -87,7 +89,7 @@ sub GetMarcItemFieldsToOrderValues {
     my $syspref = C4::Context->preference('MarcItemFieldsToOrder');
     $syspref = "$syspref\n\n"; # YAML is anal on ending \n. Surplus does not hurt
     my $yaml = eval {
-        YAML::Load($syspref);
+        YAML::XS::Load($syspref);
     };
     if ( $@ ) {
         warn "Unable to parse $syspref syspref : $@";
