@@ -126,7 +126,7 @@ subtest 'GetPlugins() tests' => sub {
 
     @plugins = $plugins->GetPlugins({ metadata => { my_example_tag  => 'find_me' }, all => 1 });
     @names = map { $_->get_metadata()->{'name'} } @plugins;
-    is( scalar @names, 2, "Only two plugins found via a metadata tag" );
+    is( scalar @names, 4, "Only four plugins found via a metadata tag" );
 
     $schema->storage->txn_rollback;
 };
