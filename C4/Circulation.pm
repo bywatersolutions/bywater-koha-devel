@@ -19,55 +19,10 @@ package C4::Circulation;
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
-use DateTime;
-use POSIX qw( floor );
-use YAML::XS;
-use Encode;
 
-use Koha::DateUtils;
-use C4::Context;
-use C4::Stats;
-use C4::Reserves;
-use C4::Biblio;
-use C4::Items;
-use C4::Members;
-use C4::Accounts;
-use C4::ItemCirculationAlertPreference;
-use C4::Message;
-use C4::Debug;
-use C4::Log; # logaction
-use C4::Overdues qw(CalcFine UpdateFine get_chargeable_units);
-use C4::RotatingCollections qw(GetCollectionItemBranches);
 use Algorithm::CheckDigits;
-
-use Data::Dumper;
-use Koha::Account;
-use Koha::AuthorisedValues;
-use Koha::Biblioitems;
-use Koha::DateUtils;
-use Koha::Calendar;
-use Koha::Checkouts;
-use Koha::Illrequests;
-use Koha::Items;
-use Koha::Patrons;
-use Koha::Patron::Debarments;
-use Koha::Database;
-use Koha::Libraries;
-use Koha::Account::Lines;
-use Koha::Holds;
-use Koha::Account::Lines;
-use Koha::Account::Offsets;
-use Koha::Config::SysPrefs;
-use Koha::Charges::Fees;
-use Koha::Config::SysPref;
-use Koha::Checkouts::ReturnClaims;
-use Koha::SearchEngine::Indexer;
-use Koha::Exceptions::Checkout;
-use Koha::Plugins;
 use Carp;
-use List::MoreUtils qw( uniq any );
-use Scalar::Util qw( looks_like_number );
-use Try::Tiny;
+use Data::Dumper;
 use Date::Calc qw(
     Today
     Today_and_Now
@@ -77,6 +32,50 @@ use Date::Calc qw(
     Day_of_Week
     Add_Delta_Days
 );
+use DateTime;
+use Encode;
+use List::MoreUtils qw( uniq any );
+use POSIX qw( floor );
+use Scalar::Util qw( looks_like_number );
+use Try::Tiny;
+use YAML::XS;
+
+use C4::Accounts;
+use C4::Biblio;
+use C4::Context;
+use C4::Debug;
+use C4::ItemCirculationAlertPreference;
+use C4::Items;
+use C4::Log; # logaction
+use C4::Members;
+use C4::Message;
+use C4::Overdues qw(CalcFine UpdateFine get_chargeable_units);
+use C4::Reserves;
+use C4::RotatingCollections qw(GetCollectionItemBranches);
+use C4::Stats;
+
+use Koha::Account::Lines;
+use Koha::Account::Offsets;
+use Koha::Account;
+use Koha::AuthorisedValues;
+use Koha::Biblioitems;
+use Koha::Calendar;
+use Koha::Charges::Fees;
+use Koha::Checkouts::ReturnClaims;
+use Koha::Checkouts;
+use Koha::Config::SysPrefs;
+use Koha::Database;
+use Koha::DateUtils;
+use Koha::Exceptions::Checkout;
+use Koha::Holds;
+use Koha::Illrequests;
+use Koha::Items;
+use Koha::Libraries;
+use Koha::Patron::Debarments;
+use Koha::Patrons;
+use Koha::Plugins;
+use Koha::SearchEngine::Indexer;
+
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 BEGIN {
