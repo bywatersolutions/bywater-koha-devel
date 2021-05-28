@@ -69,7 +69,7 @@ if ( $op eq 'cud-renew' && $barcode ) {
             my $borrowernumber = $patron->borrowernumber;
 
             $balance = $patron->account->balance;
-            my $amountlimit = C4::Context->preference("OPACFineNoRenewals");
+            my $amountlimit = C4::Context->preference("FineNoRenewals");
 
             if ( ( $patron->is_debarred || q{} ) lt dt_from_string()->ymd() ) {
                 my $confirmations;
@@ -142,7 +142,7 @@ if ( $op eq 'cud-renew' && $barcode ) {
         error               => $error,
         soonestrenewdate    => $soonest_renew_date,
         latestautorenewdate => $latest_auto_renew_date,
-        balance => $balance,
+        balance             => $balance,
     );
 }
 

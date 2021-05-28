@@ -5043,7 +5043,7 @@ sub _CanBookBeAutoRenewed {
     }
 
     if ( C4::Context->preference('OPACFineNoRenewalsBlockAutoRenew') ) {
-        my $fine_no_renewals = C4::Context->preference("OPACFineNoRenewals");
+        my $fine_no_renewals = C4::Context->preference("FineNoRenewals");
         my $amountoutstanding =
             C4::Context->preference("OPACFineNoRenewalsIncludeCredits")
             ? $patron->account->balance

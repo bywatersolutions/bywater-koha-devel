@@ -861,7 +861,7 @@
         CAN_user_circulate_manage_bookings = [% CAN_user_circulate_manage_bookings | $raw %]
         patron_borrowernumber = [% patron.borrowernumber | $raw %]
 
-        var amountlimit = "[% Koha.Preference('OPACFineNoRenewals') | html %]";
+        var amountlimit = "[% Koha.Preference('FineNoRenewals') | html %]";
         var fines = "[% fines | $Price %]";
         var MSG_CONFIRM_RENEW = _("The patron has a debt of %s\n Are you sure you want to renew checkout(s)?").format(fines);
 

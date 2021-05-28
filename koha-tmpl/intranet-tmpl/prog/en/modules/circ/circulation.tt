@@ -1133,7 +1133,7 @@
 
         [% UNLESS ( patron.borrowernumber ) %]window.onload=function(){ $('#findborrower').focus(); };[% END %]
 
-        var amountlimit = "[% Koha.Preference('OPACFineNoRenewals') | html %]";
+        var amountlimit = "[% Koha.Preference('FineNoRenewals') | html %]";
         var fines = "[% fines | $Price %]";
         var MSG_CONFIRM_RENEW = _("The patron has a debt of %s\nAre you sure you want to renew checkout(s)?").format(fines);
 

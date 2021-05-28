@@ -652,17 +652,11 @@ OPAC:
                   opacrenew: "'OPACRenew'"
             - as branchcode to store in the statistics table for renewals done in the OPAC.
         -
-            - Only allow patrons to renew their own checkouts on the OPAC if they have less than
-            - pref: OPACFineNoRenewals
-              class: currency
-            - '[% local_currency %] in charges (leave blank to disable).'
-            - <br /><strong>NOTE:</strong> If set, confirmation dialog is shown when renewing for patron with charges from staff interface.'
-        -
             - pref: OPACFineNoRenewalsIncludeCredits
               choices:
                   1: Include
                   0: "Don't include"
-            - outstanding/unapplied credits when applying the <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=OPACFineNoRenewals">OPACFineNoRenewals</a> rule to patrons.
+            - outstanding/unapplied credits when applying the <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=FineNoRenewals">FineNoRenewals</a> rule to patrons.
         -
             - pref: OpacHiddenItems
               type: textarea

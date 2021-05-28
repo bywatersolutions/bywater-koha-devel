@@ -509,7 +509,7 @@ Circulation:
                   blockitem: block renewing only for this item.
                   block: block renewing for all the patron's items.
         -
-            - If a patron owes more than the value of <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=OPACFineNoRenewals">OPACFineNoRenewals</a>,
+            - If a patron owes more than the value of <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=FineNoRenewals">FineNoRenewals</a>,
             - pref: OPACFineNoRenewalsBlockAutoRenew
               choices:
                   1: block
@@ -574,6 +574,11 @@ Circulation:
                   open: "extend the loan period and set the checkout to be due at the library's open time."
                   close: "shorten the loan period and set the checkout to be due at the library's close time."
                   ignore: "do not consider the library's opening hours."
+        -
+            - Only allow patrons or staff to renew items if patron has less than
+            - pref: FineNoRenewals
+              class: currency
+            - [% local_currency %] in fines (leave blank to disable).
     Lost item policy:
         -
             - By default, set the <a href="/cgi-bin/koha/admin/authorised_values.pl?searchfield=LOST">LOST</a> value of an item to
