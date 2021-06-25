@@ -1256,7 +1256,7 @@
                             </div>
                         <fieldset id="cancellation-reason-fieldset" class="action" style="display:none">
                             [% SET hold_cancellation = AuthorisedValues.GetAuthValueDropbox('HOLD_CANCELLATION') %]
-                            [% IF hold_cancellation.count %]
+                            [% IF hold_cancellation.count && cancel_notice_branches.size %]
                                 <label for="cancellation-reason">Cancellation reason: </label>
                                 <select class="cancellation-reason" name="cancellation-reason" id="cancellation-reason">
                                     <option value="">No reason given</option>
@@ -1307,7 +1307,7 @@
                                                 <div class="holds_by_library">
                                                     <h4>[% Branches.GetName( b ) | html %]</h4>
 
-                                                    [% INCLUDE holds_table.inc holds=holds_by_branch %]
+                                                    [% INCLUDE holds_table.inc holds=holds_by_branch cancel_notice_branches=cancel_notice_branches %]
                                                 </div>
                                             [% END # /FOREACh b %]
                                         [% END # /IF ( branchcodes.empty ) %]
@@ -1453,7 +1453,7 @@
                         <div id="cancel_hold_alert" class="alert alert-danger" style="display:none;"></div>
                         <fieldset class="action">
                             [% SET hold_cancellation = AuthorisedValues.GetAuthValueDropbox('HOLD_CANCELLATION') %]
-                            [% IF hold_cancellation.count %]
+                            [% IF hold_cancellation.count && cancel_notice_branches.size %]
                                 <label for="cancellation-reason">Cancellation reason: </label>
                                 <select class="cancellation-reason" name="cancellation-reason" id="modal-cancellation-reason">
                                     <option value="">No reason given</option>
@@ -1537,12 +1537,14 @@
         $.fn.select2.defaults.set("dropdownAutoWidth", true );
 
         $(document).ready(function() {
-            $('#cancellation-reason-fieldset').hide();
+            $('#cancellation-reason-fieldset, .no-notice-warning').hide();
             $('.rank-request').on('change', function() {
                 if ( $(".rank-request option:selected[value='del']").length ) {
                     $('#cancellation-reason-fieldset').show();
+                    $('.no-notice-warning').show();
                 } else {
                     $('#cancellation-reason-fieldset').hide();
+                    $('.no-notice-warning').hide();
                 }
             });
 

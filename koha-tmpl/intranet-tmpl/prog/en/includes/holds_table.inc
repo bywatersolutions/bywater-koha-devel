@@ -93,6 +93,14 @@
                         <input type="hidden" name="rank-request" class="rank-request" value="[% hold.priority | html %]" data-hold-id="[% hold.reserve_id | html %]">
                         [% hold.priority | html %]
                     [% END %]
+
+                    [% IF cancel_notice_branches.size %]
+                        [% SET bc = hold.patron.branchcode %]
+                        [% SET all_bc = "" %]
+                        [% UNLESS cancel_notice_branches.$bc || cancel_notice_branches.$all_bc %]
+                            <span class="no-notice-warning text-warning">Cancellation will not recieve a notice.</span>
+                        [% END %]
+                    [% END %]
                 </td>
                 [%- IF ( CAN_user_reserveforothers_modify_holds_priority ) -%]
                 [%- UNLESS hold.found -%]
