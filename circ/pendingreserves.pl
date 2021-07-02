@@ -300,14 +300,21 @@ foreach my $bibnum ( @biblionumbers ){
     push @holds_info, $hold_info;
 }
 
+my $cancel_notify_templates = Koha::Notice::Templates->search({ module => 'reserves', code => 'HOLD_CANCELLATION' });
+my $cancel_notice_branches;
+while ( my $notice = $cancel_notify_templates->next ) {
+    $cancel_notice_branches->{$notice->branchcode} = 1;
+}
+
 $template->param(
-    todaysdate          => $today,
-    from                => $startdate,
-    to                  => $enddate,
-    holds_info          => \@holds_info,
-    HoldsToPullStartDate => C4::Context->preference('HoldsToPullStartDate') || PULL_INTERVAL,
-    HoldsToPullEndDate  => C4::Context->preference('ConfirmFutureHolds') || 0,
-    messages            => \@messages,
+    cancel_notice_branches => $cancel_notice_branches,
+    todaysdate             => $today,
+    from                   => $startdate,
+    to                     => $enddate,
+    holds_info             => \@holds_info,
+    HoldsToPullStartDate   => C4::Context->preference('HoldsToPullStartDate') || PULL_INTERVAL,
+    messages               => \@messages,
+    HoldsToPullEndDate     => C4::Context->preference('ConfirmFutureHolds') || 0,
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;

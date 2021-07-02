@@ -221,8 +221,14 @@
                             [% END %]
                         </select>
 
-                        <input type="checkbox" name="cancellation-notify-patron" id="cancellation-notify-patron" value="1" checked/>
-                        <label for="cancellation-notify-patron">Notify patron</label>
+                        [% IF cancel_notice_branches.size %]
+                            [% SET bc = hold.patron.branchcode %]
+                            [% SET all_bc = "" %]
+                            [% IF cancel_notice_branches.$bc || cancel_notice_branches.$all_bc %]
+                                <input type="checkbox" name="cancellation-notify-patron" id="cancellation-notify-patron" value="1" checked/>
+                                <label for="cancellation-notify-patron">Notify patron</label>
+                            [% END %]
+                        [% END %]
                     </div>
                 [% END %]
 
