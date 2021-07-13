@@ -701,5 +701,5 @@ sub _trim {
     my $string = shift;
     return unless $string;
     $string =~ s/^\s+|\s+$//g;
-    return $string;
+    return $string // q{};
 }
