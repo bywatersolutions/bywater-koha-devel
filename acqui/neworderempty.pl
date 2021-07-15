@@ -696,10 +696,8 @@ sub staged_items_field {
     return (\%cellrecord);
 }
 
-
 sub _trim {
-    my $string = shift;
-    return unless $string;
+    my $string = shift // q{};
     $string =~ s/^\s+|\s+$//g;
-    return $string // q{};
+    return $string;
 }
