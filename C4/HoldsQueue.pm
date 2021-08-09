@@ -31,9 +31,11 @@ use Koha::Libraries;
 use Koha::Logger;
 use Koha::Patrons;
 
-use List::Util qw( shuffle );
-use List::MoreUtils qw( any );
 use Algorithm::Munkres qw();
+use List::MoreUtils qw( any );
+use List::Util qw( shuffle );
+use POSIX qw(ceil);
+use Parallel::ForkManager;
 
 our (@ISA, @EXPORT_OK);
 BEGIN {
@@ -170,17 +172,14 @@ Top level function that turns reserves into tmp_holdsqueue and hold_fill_targets
 sub CreateQueue {
     my $params      = shift;
     my $unallocated = $params->{unallocated};
-    my $dbh         = C4::Context->dbh;
+    my $loops       = $params->{loops} || 1;
+
+    my $dbh = C4::Context->dbh;
 
     unless ($unallocated) {
         $dbh->do("DELETE FROM tmp_holdsqueue");    # clear the old table for new info
         $dbh->do("DELETE FROM hold_fill_targets");
     }
-
-    my $total_bibs            = 0;
-    my $total_requests        = 0;
-    my $total_available_items = 0;
-    my $num_items_mapped      = 0;
 
     my $branches_to_use;
     my $transport_cost_matrix;
@@ -197,9 +196,41 @@ sub CreateQueue {
 
     my $bibs_with_pending_requests = GetBibsWithPendingHoldRequests();
 
-    foreach my $biblionumber (@$bibs_with_pending_requests) {
+    # Split the list of bibs into groups to run in parallel
+    if ( $loops > 1 ) {
+        my $bibs_per_chunk = ceil( scalar @$bibs_with_pending_requests / $loops );
+        my @chunks;
 
-        $total_bibs++;
+        push( @chunks, [ splice @$bibs_with_pending_requests, 0, $bibs_per_chunk ] ) while @$bibs_with_pending_requests;
+        push( @{$chunks[0]}, @$bibs_with_pending_requests ); # Add any remainders to the first parallel process
+
+        my $pm = Parallel::ForkManager->new($loops);
+
+        DATA_LOOP:
+        foreach my $chunk (@chunks) {
+            my $pid = $pm->start and next DATA_LOOP;
+            _ProcessBiblios($chunk);
+            $pm->finish;
+        }
+
+        $pm->wait_all_children;
+    } else {
+        _ProcessBiblios($bibs_with_pending_requests, $branches_to_use, $transport_cost_matrix);
+    }
+}
+
+=head2 _ProcessBiblios
+
+=cut
+
+sub _ProcessBiblios {
+    my $bibs_with_pending_requests = shift;
+    my $branches_to_use = shift;
+    my $transport_cost_matrix = shift;
+
+    foreach my $biblionumber (@$bibs_with_pending_requests) {
+        my $hold_requests   = GetPendingHoldRequestsForBib($biblionumber);
+        my $available_items = GetItemsAvailableToFillHoldRequestsForBib($biblionumber, $branches_to_use);
 
         my $result = update_queue_for_biblio(
             {
@@ -210,9 +241,15 @@ sub CreateQueue {
             }
         );
 
-        $total_requests        += $result->{requests};
-        $total_available_items += $result->{available_items};
-        $num_items_mapped      += $result->{mapped_items};
+        CreatePicklistFromItemMap($item_map);
+        AddToHoldTargetMap($item_map);
+        if (($item_map_size < scalar(@$hold_requests  )) and
+            ($item_map_size < scalar(@$available_items))) {
+            # DOUBLE CHECK, but this is probably OK - unfilled item-level requests
+            # FIXME
+            #warn "unfilled requests for $biblionumber";
+            #warn Dumper($hold_requests), Dumper($available_items), Dumper($item_map);
+        }
     }
 }
 
