@@ -1072,7 +1072,7 @@ Note that permanent location is a code, and location may be an authval.
                         </p>
                         <p>
                             <label for="volume_display_order" class="required">Display order: </label>
-                            <input name="display_order" id="modal-volume-create-form-display_order" value="0" type="number" size="5" required="required" class="required" />
+                            <input name="display_order" id="modal-volume-create-form-display_order" value="0" size="5" required="required" class="required" />
                             <span class="required">Required</span>
                             <br/>
                             <span class="hint">Numbers only, volumes will be displayed in counting order</span>
@@ -1105,7 +1105,7 @@ Note that permanent location is a code, and location may be an authval.
                         </p>
                         <p>
                             <label for="volume_display_order" class="required">Sort order: </label>
-                            <input name="display_order" id="modal-volume-edit-form-display_order" type="number" size="5" />
+                            <input name="display_order" id="modal-volume-edit-form-display_order" size="5" />
                             <span class="hint">Numbers only, volumes will be displayed in counting order</span>
                         </p>
                     </fieldset>
