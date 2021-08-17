@@ -103,12 +103,7 @@ sub add {
             }
         }
 
-        return $c->render(
-            status  => 500,
-            openapi => {
-                error => "Unhandled exception ($_)"
-            }
-        );
+        $c->unhandled_exception($_);
     };
 }
 
@@ -144,21 +139,11 @@ sub delete {
         $item_link->delete;
         return $c->render(
             status  => 204,
-            openapi => ''
+            openapi => q{}
         );
     }
     catch {
-        unless ( blessed $_ && $_->can('rethrow') ) {
-            return $c->render(
-                status  => 500,
-                openapi => { error => "Something went wrong, check Koha logs for details." }
-            );
-        }
-
-        return $c->render(
-            status  => 500,
-            openapi => { error => "$_" }
-        );
+        $c->unhandled_exception($_);
     };
 }
 

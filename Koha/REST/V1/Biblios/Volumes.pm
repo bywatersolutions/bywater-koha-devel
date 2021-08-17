@@ -52,19 +52,7 @@ sub list {
         );
     }
     catch {
-        unless ( blessed $_ && $_->can('rethrow') ) {
-            return $c->render(
-                status  => 500,
-                openapi => {
-                    error =>
-                      "Something went wrong, check Koha logs for details."
-                }
-            );
-        }
-        return $c->render(
-            status  => 500,
-            openapi => { error => "$_" }
-        );
+        $c->unhandled_exception($_);
     };
 }
 
@@ -100,12 +88,7 @@ sub get {
         }
     }
     catch {
-        return $c->render(
-            status  => 500,
-            openapi => {
-                error => "Something went wrong, check the logs ($_)."
-            }
-        );
+        $c->unhandled_exception($_);
     };
 }
 
@@ -137,22 +120,16 @@ sub add {
         if ( blessed($_) ) {
             my $to_api_mapping = Koha::Biblio::Volume->new->to_api_mapping;
 
-            if ( $_->isa('Koha::Exceptions::Object::FKConstraint') ) {
+            if ( $_->isa('Koha::Exceptions::Object::FKConstraint') and
+                 $to_api_mapping->{ $_->broken_fk } eq 'biblio_id') {
                 return $c->render(
-                    status  => 409,
-                    openapi => {
-                        error => "Given " . $to_api_mapping->{ $_->broken_fk } . " does not exist"
-                    }
+                    status  => 404,
+                    openapi => { error => "Biblio not found" }
                 );
             }
         }
 
-        return $c->render(
-            status  => 500,
-            openapi => {
-                error => "Unhandled exception ($_)"
-            }
-        );
+        $c->unhandled_exception($_);
     };
 }
 
@@ -202,12 +179,7 @@ sub update {
             }
         }
 
-        return $c->render(
-            status  => 500,
-            openapi => {
-                error => "Unhandled exception ($_)"
-            }
-        );
+        $c->unhandled_exception($_);
     };
 }
 
@@ -235,17 +207,7 @@ sub delete {
         return $c->render( status => 204, openapi => '');
     }
     catch {
-        unless ( blessed $_ && $_->can('rethrow') ) {
-            return $c->render(
-                status  => 500,
-                openapi => { error => "Something went wrong, check Koha logs for details." }
-            );
-        }
-
-        return $c->render(
-            status  => 500,
-            openapi => { error => "$_" }
-        );
+        $c->unhandled_exception($_);
     };
 }
 
