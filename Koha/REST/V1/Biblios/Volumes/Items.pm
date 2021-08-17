@@ -56,6 +56,15 @@ sub add {
             );
         }
 
+        unless ( $volume->biblionumber eq $c->validation->param('biblio_id') ) {
+            return $c->render(
+                status  => 409,
+                openapi => {
+                    error => 'Volume does not belong to passed biblio_id'
+                }
+            );
+        }
+
         # All good, add the item
         my $body    = $c->validation->param('body');
         my $item_id = $body->{item_id};

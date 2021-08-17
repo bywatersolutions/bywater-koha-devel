@@ -210,7 +210,7 @@ subtest 'volumes delete() tests' => sub {
 };
 
 subtest 'volume items add() + delete() tests' => sub {
-    plan tests => 11;
+    plan tests => 14;
 
     $schema->storage->txn_begin;
 
@@ -234,8 +234,12 @@ subtest 'volume items add() + delete() tests' => sub {
     my $item_1 = $builder->build_sample_item({ biblionumber => $biblio->biblionumber });
     my $item_1_id = $item_1->id;
 
-    $t->post_ok( "//$userid:$password@/api/v1/biblios/{biblio_id}/volumes/$volume_id/items" => json => { item_id => $item_1->id } )
-        ->status_is( 201, 'SWAGGER3.2.1' );
+    $t->post_ok( "//$userid:$password@/api/v1/biblios/XXX/volumes/$volume_id/items" => json => { item_id => $item_1->id } )
+      ->status_is( 409 )
+      ->json_is( { error => 'Volume does not belong to passed biblio_id' } );
+
+    $t->post_ok( "//$userid:$password@/api/v1/biblios/$biblio_id/volumes/$volume_id/items" => json => { item_id => $item_1->id } )
+      ->status_is( 201, 'SWAGGER3.2.1' );
 
     @items = $volume->items;
     is( scalar(@items), 1, 'Volume now has one item');
@@ -243,7 +247,7 @@ subtest 'volume items add() + delete() tests' => sub {
     my $item_2 = $builder->build_sample_item({ biblionumber => $biblio->biblionumber });
     my $item_2_id = $item_2->id;
 
-    $t->post_ok( "//$userid:$password@/api/v1/biblios/{biblio_id}/volumes/$volume_id/items" => json => { item_id => $item_2->id } )
+    $t->post_ok( "//$userid:$password@/api/v1/biblios/$biblio_id/volumes/$volume_id/items" => json => { item_id => $item_2->id } )
       ->status_is( 201, 'SWAGGER3.2.1' );
 
     @items = $volume->items;
