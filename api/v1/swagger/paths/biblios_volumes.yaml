@@ -44,7 +44,7 @@
           "$ref": "../definitions.json#/error"
     x-koha-authorization:
       permissions:
-        catalogue: "CAN_user_editcatalogue_manage_volumes"
+        catalogue: "manage_volumes"
     x-koha-embed:
     - items
   post:
@@ -110,7 +110,7 @@
           "$ref": "../definitions.json#/error"
     x-koha-authorization:
       permissions:
-        catalogue: "CAN_user_editcatalogue_manage_volumes"
+        catalogue: "manage_volumes"
 "/biblios/{biblio_id}/volumes/{volume_id}":
   get:
     x-mojo-to: Biblios::Volumes#get
@@ -157,7 +157,7 @@
     - items
     x-koha-authorization:
       permissions:
-        catalogue: "CAN_user_editcatalogue_manage_volumes"
+        catalogue: "manage_volumes"
   put:
     x-mojo-to: Biblios::Volumes#update
     operationId: updateVolume
@@ -222,7 +222,7 @@
           "$ref": "../definitions.json#/error"
     x-koha-authorization:
       permissions:
-        catalogue: "CAN_user_editcatalogue_manage_volumes"
+        catalogue: "manage_volumes"
     x-koha-embed:
     - items
   delete:
@@ -270,7 +270,7 @@
           "$ref": "../definitions.json#/error"
     x-koha-authorization:
       permissions:
-        catalogue: "CAN_user_editcatalogue_manage_volumes"
+        catalogue: "manage_volumes"
 "/biblios/{biblio_id}/volumes/{volume_id}/items":
   post:
     x-mojo-to: Biblios::Volumes::Items#add
@@ -331,7 +331,7 @@
           "$ref": "../definitions.json#/error"
     x-koha-authorization:
       permissions:
-        catalogue: "CAN_user_editcatalogue_manage_volumes"
+        catalogue: "manage_volumes"
     x-koha-embed:
     - items
 "/biblios/{biblio_id}/volumes/{volume_id}/items/{item_id}":
@@ -387,4 +387,4 @@
           "$ref": "../definitions.json#/error"
     x-koha-authorization:
       permissions:
-        catalogue: "CAN_user_editcatalogue_manage_volumes"
+        catalogue: "manage_volumes"
