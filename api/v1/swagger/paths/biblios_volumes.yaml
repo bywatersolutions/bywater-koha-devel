@@ -5,6 +5,7 @@
     operationId: listVolumes
     tags:
     - volumes
+    summary: List volumes
     parameters:
     - name: biblio_id
       in: path
@@ -15,6 +16,9 @@
     - "$ref": "../parameters.json#/order_by"
     - "$ref": "../parameters.json#/page"
     - "$ref": "../parameters.json#/per_page"
+    - "$ref": "../parameters.json#/q_param"
+    - "$ref": "../parameters.json#/q_body"
+    - "$ref": "../parameters.json#/q_header"
     consumes:
     - application/json
     produces:
@@ -52,6 +56,7 @@
     operationId: addVolume
     tags:
     - volumes
+    summary: Add volume
     parameters:
     - name: biblio_id
       in: path
@@ -117,6 +122,7 @@
     operationId: getVolume
     tags:
     - volumes
+    summary: Get volume
     parameters:
     - name: biblio_id
       in: path
@@ -163,6 +169,7 @@
     operationId: updateVolume
     tags:
     - volumes
+    summary: Update volume
     parameters:
     - name: biblio_id
       in: path
@@ -230,6 +237,7 @@
     operationId: deleteVolume
     tags:
     - volumes
+    summary: Delete volume
     parameters:
     - name: biblio_id
       in: path
@@ -277,6 +285,7 @@
     operationId: addVolumeItem
     tags:
     - volumes
+    summary: Add item to volume
     parameters:
     - name: biblio_id
       in: path
@@ -340,6 +349,7 @@
     operationId: deleteVolumeItems
     tags:
     - volumes
+    summary: Delete item from volume
     parameters:
     - name: biblio_id
       in: path
