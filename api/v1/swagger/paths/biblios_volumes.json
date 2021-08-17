@@ -3,9 +3,8 @@
         "get": {
             "x-mojo-to": "Biblios::Volumes#list",
             "operationId": "listVolumes",
-            "tags": [
-                "volumes"
-            ],
+            "tags": [ "volumes" ],
+            "summary": "List volumes",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -25,6 +24,15 @@
                 },
                 {
                     "$ref": "../parameters.json#/per_page"
+                },
+                {
+                    "$ref": "../parameters.json#/q_param"
+                },
+                {
+                    "$ref": "../parameters.json#/q_body"
+                },
+                {
+                    "$ref": "../parameters.json#/q_header"
                 }
             ],
             "consumes": [
@@ -80,9 +88,8 @@
         "post": {
             "x-mojo-to": "Biblios::Volumes#add",
             "operationId": "addVolume",
-            "tags": [
-                "volumes"
-            ],
+            "tags": [ "volumes" ],
+            "summary": "Add volume",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -178,9 +185,8 @@
         "get": {
             "x-mojo-to": "Biblios::Volumes#get",
             "operationId": "getVolume",
-            "tags": [
-                "volumes"
-            ],
+            "tags": [ "volumes" ],
+            "summary": "Get volume",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -247,9 +253,8 @@
         "put": {
             "x-mojo-to": "Biblios::Volumes#update",
             "operationId": "updateVolume",
-            "tags": [
-                "volumes"
-            ],
+            "tags": [ "volumes" ],
+            "summary": "Update volume",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -347,9 +352,8 @@
         "delete": {
             "x-mojo-to": "Biblios::Volumes#delete",
             "operationId": "deleteVolume",
-            "tags": [
-                "volumes"
-            ],
+            "tags": ["volumes"],
+            "summary": "Delete volume",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -418,9 +422,8 @@
         "post": {
             "x-mojo-to": "Biblios::Volumes::Items#add",
             "operationId": "addVolumeItem",
-            "tags": [
-                "volumes"
-            ],
+            "tags": [ "volumes" ],
+            "summary": "Add item to volume",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -513,9 +516,8 @@
         "delete": {
             "x-mojo-to": "Biblios::Volumes::Items#delete",
             "operationId": "deleteVolumeItems",
-            "tags": [
-                "volumes"
-            ],
+            "tags": ["volumes"],
+            "summary": "Delete item from volume",
             "parameters": [
                 {
                     "name": "biblio_id",
