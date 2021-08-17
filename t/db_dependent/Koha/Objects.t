@@ -1283,7 +1283,7 @@ subtest 'prefetch_whitelist() tests' => sub {
 
 subtest 'empty() tests' => sub {
 
-    plan tests => 6;
+    plan tests => 7;
 
     $schema->storage->txn_begin;
 
@@ -1305,6 +1305,9 @@ subtest 'empty() tests' => sub {
         'Exception thrown if not instantiated class';
 
     is( "$@", 'Tried to access the \'empty\' method, but Koha::Patrons is not instantiated', 'Exception stringified correctly' );
+
+    my @patrons = Koha::Patrons->new->empty;
+    is( scalar @patrons, 0, 'List context makes ->empty return an empty list' );
 
     $schema->storage->txn_rollback;
 };
