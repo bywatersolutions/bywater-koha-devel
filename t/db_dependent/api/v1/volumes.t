@@ -110,8 +110,13 @@ subtest 'volumes add() tests' => sub {
       ->status_is( 201, 'SWAGGER3.2.1' );
 
     # Invalid biblio id
-    $t->post_ok( "//$auth_userid:$password@/api/v1/biblios/XXX/volumes" => json => $volume )
-        ->status_is( 409, 'SWAGGER3.2.1' );
+    {   # hide useless warnings
+        local *STDERR;
+        open STDERR, '>', '/dev/null';
+        $t->post_ok( "//$auth_userid:$password@/api/v1/biblios/XXX/volumes" => json => $volume )
+            ->status_is( 404 );
+        close STDERR;
+    }
 
     $schema->storage->txn_rollback;
 };
@@ -196,10 +201,10 @@ subtest 'volumes delete() tests' => sub {
       ->status_is(403);
 
     $t->delete_ok( "//$auth_userid:$password@/api/v1/biblios/XXX/volumes/$volume_id" )
-        ->status_is(404);
+      ->status_is(404);
 
     $t->delete_ok( "//$auth_userid:$password@/api/v1/biblios/$biblio_id/volumes/XXX" )
-        ->status_is(404);
+      ->status_is(404);
 
     $schema->storage->txn_rollback;
 };
@@ -239,13 +244,11 @@ subtest 'volume items add() + delete() tests' => sub {
     my $item_2_id = $item_2->id;
 
     $t->post_ok( "//$userid:$password@/api/v1/biblios/{biblio_id}/volumes/$volume_id/items" => json => { item_id => $item_2->id } )
-        ->status_is( 201, 'SWAGGER3.2.1' );
+      ->status_is( 201, 'SWAGGER3.2.1' );
 
     @items = $volume->items;
     is( scalar(@items), 2, 'Volume now has two items');
 
-    warn "A VOLUME ID: $volume_id";
-    warn "A ITEM ID: $item_1_id";
     $t->delete_ok( "//$userid:$password@/api/v1/biblios/$biblio_id/volumes/$volume_id/items/$item_1_id" )
         ->status_is(204, 'SWAGGER3.2.4')
         ->content_is('', 'SWAGGER3.3.4');
