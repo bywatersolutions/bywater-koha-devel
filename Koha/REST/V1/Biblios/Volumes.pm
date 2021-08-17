@@ -69,13 +69,12 @@ sub get {
         my $volume_id = $c->validation->param('volume_id');
         my $biblio_id = $c->validation->param('biblio_id');
 
-        my $volume = Koha::Biblio::Volumes->find( $volume_id );
-        my $embed = $c->stash('koha.embed');
+        my $volume = $c->objects->find( Koha::Biblio::Volumes->new, $volume_id );
 
-        if ( $volume && $volume->biblionumber eq $biblio_id ) {
+        if ( $volume && $volume->{biblio_id} eq $biblio_id ) {
             return $c->render(
                 status  => 200,
-                openapi => $volume->to_api({ embed => $embed })
+                openapi => $volume
             );
         }
         else {
