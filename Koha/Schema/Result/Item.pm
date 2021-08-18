@@ -729,6 +729,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 item_group_items
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ItemGroupItem>
+
+=cut
+
+__PACKAGE__->has_many(
+  "item_group_items",
+  "Koha::Schema::Result::ItemGroupItem",
+  { "foreign.item_id" => "self.itemnumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 items_last_borrower
 
 Type: might_have
