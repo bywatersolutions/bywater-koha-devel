@@ -69,30 +69,30 @@ $(document).ready(function(){
         multiCopyControl.toggle();
     });
 
-    // Add new item to volume
-    if ( has_volumes ) {
-        $('#volume-add-or-create-form-description-block').hide();
-        $('#volume-add-or-create-form-no-add').attr('selected', 'selected' );
+    // Add new item to an item group
+    if ( has_item_groups ) {
+        $('#item-add-or-create-form-description-block').hide();
+        $('#item-group-add-or-create-form-no-add').attr('selected', 'selected' );
 
-        $('#volume-add-or-create-form-select').on('change', function(){
+        $('#item-group-add-or-create-form-select').on('change', function(){
             if ( $(this).val() == 'create' ) {
-                $('#volume-add-or-create-form-description')
+                $('#item-group-add-or-create-form-description')
                     .addClass('required')
                     .attr( 'required', 'required' );
-                $('#volume-add-or-create-form-description-block').show();
+                $('#item-group-add-or-create-form-description-block').show();
             } else {
-                $('#volume-add-or-create-form-description')
+                $('#item-group-add-or-create-form-description')
                     .removeClass('required')
                     .removeAttr('required');
-                $('#volume-add-or-create-form-description-block').hide();
+                $('#item-group-add-or-create-form-description-block').hide();
             }
         });
     }
 
-    $('#volume-add-or-create-form-select').on('change', function() {
+    $('#item-group-add-or-create-form-select').on('change', function() {
         if ( ! $('input.items-enumchron').val() ) {
-            let volume_selector = '#volume-' + $(this).val();
-            let enumchron = $(volume_selector).val();
+            let item_group_selector = '#item-group-' + $(this).val();
+            let enumchron = $(item_group_selector).val();
             $('input.items-enumchron').val( enumchron );
         }
     });

@@ -335,9 +335,9 @@
             Fast cataloging
         </span>
         <span class="permissioncode">([% name | html %])</span>
-    [%- CASE 'manage_volumes' -%]
-        <span class="sub_permission manage_volumes_subpermission">
-            Create, update and delete volumes, add or remove items from a volume
+    [%- CASE 'manage_item_groups' -%]
+        <span class="sub_permission manage_item_groups_subpermission">
+            Create, update and delete item groups, add or remove items from an item group
         </span>
         <span class="permissioncode">([% name | html %])</span>
     [%- CASE 'remaining_permissions' -%]

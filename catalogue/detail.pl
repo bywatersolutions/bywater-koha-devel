@@ -46,8 +46,9 @@ use Koha::DateUtils qw( format_sqldatetime );
 use C4::HTML5Media;
 use C4::CourseReserves qw( GetItemCourseReservesInfo );
 use Koha::AuthorisedValues;
-use Koha::Biblio::Volume::Items;
 use Koha::Biblios;
+use Koha::Biblio::ItemGroup::Items;
+use Koha::Biblio::ItemGroups;
 use Koha::CoverImages;
 use Koha::DateUtils;
 use Koha::Illrequests;
@@ -101,37 +102,35 @@ my $marc_record = eval { $biblio->metadata->record };
 $template->param( decoding_error => $@ );
 
 my $op = $query->param('op') || q{};
-if ( $op eq 'set_volume' ) {
-    my $volume_id   = $query->param('volume_id');
-    my @itemnumbers = $query->multi_param('itemnumber');
+if ( $op eq 'set_item_group' ) {
+    my $item_group_id = $query->param('item_group_id');
+    my @itemnumbers   = $query->multi_param('itemnumber');
 
-    foreach my $itemnumber (@itemnumbers) {
-        my $volume_item =
-          Koha::Biblio::Volume::Items->find( { itemnumber => $itemnumber } );
+    foreach my $item_id (@itemnumbers) {
+        my $item_group_item = Koha::Biblio::ItemGroup::Items->find( { item_id => $item_id } );
 
-        if ($volume_item) {
-            $volume_item->volume_id($volume_id);
+        if ($item_group_item) {
+            $item_group_item->item_group_id($item_group_id);
         }
         else {
-            $volume_item = Koha::Biblio::Volume::Item->new(
+            $item_group_item = Koha::Biblio::ItemGroup::Item->new(
                 {
-                    itemnumber => $itemnumber,
-                    volume_id  => $volume_id,
+                    item_id        => $item_id,
+                    item_group_id  => $item_group_id,
                 }
             );
         }
 
-        $volume_item->store();
+        $item_group_item->store();
     }
 }
-elsif ( $op eq 'unset_volume' ) {
-    my $volume_id   = $query->param('volume_id');
+elsif ( $op eq 'unset_item_group' ) {
+    my $item_group_id   = $query->param('item_group_id');
     my @itemnumbers = $query->multi_param('itemnumber');
 
-    foreach my $itemnumber (@itemnumbers) {
-        my $volume_item =
-          Koha::Biblio::Volume::Items->find( { itemnumber => $itemnumber } );
-        $volume_item->delete() if $volume_item;
+    foreach my $item_id (@itemnumbers) {
+        my $item_group_item = Koha::Biblio::ItemGroup::Items->find( { item_id => $item_id } );
+        $item_group_item->delete() if $item_group_item;
     }
 }
 
