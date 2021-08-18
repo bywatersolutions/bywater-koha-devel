@@ -1,10 +1,10 @@
 {
     "type": "object",
     "properties": {
-        "volume_id": {
+        "item_group_id": {
             "type": "integer",
             "readOnly": true,
-            "description": "Internal identifier for the volume"
+            "description": "Internal identifier for the item group"
         },
         "biblio_id": {
             "type": "integer",
@@ -13,23 +13,23 @@
         },
         "description": {
             "type": "string",
-            "description": "Volume description"
+            "description": "Item group description"
         },
         "display_order": {
             "type": "integer",
-            "description": "Volume description"
+            "description": "Display order"
         },
         "creation_date": {
             "type": "string",
             "format": "date-time",
             "readOnly": true,
-            "description": "Date and time the volume was created"
+            "description": "Date and time the item group was created"
         },
         "modification_date": {
             "type": "string",
             "format": "date-time",
             "readOnly": true,
-            "description": "Date and time the volume was last modified"
+            "description": "Date and time the item group was last modified"
         },
         "items": {
             "type": [
@@ -37,12 +37,12 @@
                 "null"
             ],
             "readOnly": true,
-            "description": "A list of items that belong to the volume (x-koha-embed)"
+            "description": "A list of items that belong to the item group (x-koha-embed)"
         }
     },
     "additionalProperties": false,
     "required": [
-        "volume_id",
+        "item_group_id",
         "biblio_id"
     ]
 }

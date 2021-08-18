@@ -164,30 +164,30 @@
         <input type="hidden" name="itemnumber" value="[% itemnumber | html %]" />
     [% END %]
 
-[% IF volumes.count && op != 'saveitem' && CAN_user_editcatalogue_manage_volumes %]
+[% IF item_groups.count && op != 'saveitem' && CAN_user_editcatalogue_manage_item_groups %]
     <fieldset class="rows">
-        <legend><i class="fa fa-plus"></i> Add to volume</legend>
-        [% FOREACH v IN volumes %]
-            <input type="hidden" id="volume-[% v.id | html %]" value="[% v.description | html %]" />
+        <legend><i class="fa fa-plus"></i> Add to item group</legend>
+        [% FOREACH ig IN item_groups %]
+            <input type="hidden" id="item-group-[% ig.id | html %]" value="[% ig.description | html %]" />
         [% END %]
         <p>
-            <label for="select_volume">Options: </label>
-            <select name="volume" id="volume-add-or-create-form-select">
-                <optgroup label="Use existing volume">
-                    [% FOREACH v IN volumes %]
-                        <option value="[% v.id | html %]">Use: [% v.description | html %]</option>
+            <label for="select_item_group">Options: </label>
+            <select name="item_group" id="item-group-add-or-create-form-select">
+                <optgroup label="Use existing item group">
+                    [% FOREACH ig IN item_groups %]
+                        <option value="[% ig.id | html %]">Use: [% ig.description | html %]</option>
                     [% END %]
                 </optgroup>
                 <optgroup label="Other options">
-                    <option id="volume-add-or-create-form-no-add" value="">Do not add to volume</option>
-                    <option value="create">Create new volume</option>
+                    <option id="item-group-add-or-create-form-no-add" value="">Do not add to item group</option>
+                    <option value="create">Create new item group</option>
                 </optgroup>
             </select>
         </p>
 
-        <p id="volume-add-or-create-form-description-block">
-            <label for="volume_description" class="required">Name: </label>
-            <input name="volume_description" id="volume-add-or-create-form-description" type="text" size="30" class="required" />
+        <p id="item-group-add-or-create-form-description-block">
+            <label for="item_group_description" class="required">Name: </label>
+            <input name="item_group_description" id="item-group-add-or-create-form-description" type="text" size="30" class="required" />
             <span class="required">Required</span>
         </p>
     </fieldset>
@@ -244,7 +244,7 @@
 
 [% MACRO jsinclude BLOCK %]
     <script>
-      var has_volumes = [% volumes.count | html %];
+      var has_item_groups = [% item_groups.count | html %];
     </script>
 [% END %]
 

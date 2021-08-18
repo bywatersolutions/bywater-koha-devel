@@ -33,8 +33,8 @@ use base qw(Koha::Object);
 
 use Koha::Acquisition::Orders;
 use Koha::ArticleRequests;
+use Koha::Biblio::ItemGroups;
 use Koha::Biblio::Metadatas;
-use Koha::Biblio::Volumes;
 use Koha::Biblioitems;
 use Koha::Checkouts;
 use Koha::CirculationRules;
@@ -119,19 +119,19 @@ sub active_orders {
     return $self->orders->search({ datecancellationprinted => undef });
 }
 
-=head3 volumes
+=head3 item_groups
 
-my $volumes = $biblio->volumes();
+my $item_groups = $biblio->item_groups();
 
-Returns a Koha::Biblio::Volumes object
+Returns a Koha::Biblio::ItemGroups object
 
 =cut
 
-sub volumes {
+sub item_groups {
     my ( $self ) = @_;
 
-    my $volumes = $self->_result->volumes;
-    return Koha::Biblio::Volumes->_new_from_dbic($volumes);
+    my $item_groups = $self->_result->item_groups;
+    return Koha::Biblio::ItemGroups->_new_from_dbic($item_groups);
 }
 
 =head3 can_article_request

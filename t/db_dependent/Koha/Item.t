@@ -1158,5 +1158,24 @@ subtest 'columns_to_str' => sub {
     $cache->clear_from_cache("MarcSubfieldStructure-");
 
     $schema->storage->txn_rollback;
+};
 
+subtest 'item_group() tests' => sub {
+    my $biblio = $builder->build_sample_biblio();
+    my $item_1 = $builder->build_sample_item({ biblionumber => $biblio->biblionumber });
+    my $item_2 = $builder->build_sample_item({ biblionumber => $biblio->biblionumber });
+
+    is( $item_1->item_group, undef, 'Item 1 has no item group');
+    is( $item_2->item_group, undef, 'Item 2 has no item group');
+
+    my $item_group_1 = Koha::Biblio::ItemGroup->new( { biblio_id => $biblio->id } )->store();
+    my $item_group_2 = Koha::Biblio::ItemGroup->new( { biblio_id => $biblio->id } )->store();
+
+    $item_group_1->add_item({ item_id => $item_1->id });
+    $item_group_2->add_item({ item_id => $item_2->id });
+
+    is( $item_1->item_group->id, $item_group_1->id, 'Got item group 1 correctly' );
+    is( $item_2->item_group->id, $item_group_2->id, 'Got item group 2 correctly' );
+
+    $schema->storage->txn_rollback;
 };

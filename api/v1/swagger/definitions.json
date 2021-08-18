@@ -29,6 +29,9 @@
   "item": {
     "$ref": "definitions/item.yaml"
   },
+  "item_group": {
+    "$ref": "definitions/item_group.json"
+  },
   "checkouts": {
     "$ref": "definitions/checkouts.json"
   },
@@ -82,9 +85,6 @@
   },
   "vendor": {
     "$ref": "definitions/vendor.json"
-  },
-  "volume": {
-    "$ref": "definitions/volume.json"
   },
   "return_claim": {
     "$ref": "definitions/return_claim.json"

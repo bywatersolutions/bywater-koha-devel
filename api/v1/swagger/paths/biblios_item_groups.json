@@ -1,10 +1,10 @@
 {
-    "/biblios/{biblio_id}/volumes": {
+    "/biblios/{biblio_id}/item_groups": {
         "get": {
-            "x-mojo-to": "Biblios::Volumes#list",
-            "operationId": "listVolumes",
-            "tags": [ "volumes" ],
-            "summary": "List volumes",
+            "x-mojo-to": "Biblios::ItemGroups#list",
+            "operationId": "listItemGroups",
+            "tags": [ "item_groups" ],
+            "summary": "List item groups",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -43,11 +43,11 @@
             ],
             "responses": {
                 "200": {
-                    "description": "A list of volumes",
+                    "description": "A list of item groups",
                     "schema": {
                         "type": "array",
                         "items": {
-                            "$ref": "../definitions.json#/volume"
+                            "$ref": "../definitions.json#/item_group"
                         }
                     }
                 },
@@ -78,7 +78,7 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "manage_volumes"
+                    "catalogue": "manage_item_groups"
                 }
             },
             "x-koha-embed": [
@@ -86,10 +86,10 @@
             ]
         },
         "post": {
-            "x-mojo-to": "Biblios::Volumes#add",
-            "operationId": "addVolume",
-            "tags": [ "volumes" ],
-            "summary": "Add volume",
+            "x-mojo-to": "Biblios::ItemGroups#add",
+            "operationId": "addItemGroup",
+            "tags": [ "item_groups" ],
+            "summary": "Add item group",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -101,18 +101,18 @@
                 {
                     "name": "body",
                     "in": "body",
-                    "description": "A JSON object representing a volume",
+                    "description": "A JSON object representing an item group",
                     "required": true,
                     "schema": {
                         "type": "object",
                         "properties": {
                             "description": {
                                 "type": "string",
-                                "description": "Volume description"
+                                "description": "Item group description"
                             },
                             "display_order": {
                                 "type": "integer",
-                                "description": "Position in waiting queue"
+                                "description": "Display order"
                             }
                         }
                     }
@@ -126,9 +126,9 @@
             ],
             "responses": {
                 "201": {
-                    "description": "A successfully created volume",
+                    "description": "A successfully created item group",
                     "schema": {
-                        "$ref": "../definitions.json#/volume"
+                        "$ref": "../definitions.json#/item_group"
                     }
                 },
                 "400": {
@@ -176,17 +176,17 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "manage_volumes"
+                    "catalogue": "manage_item_groups"
                 }
             }
         }
     },
-    "/biblios/{biblio_id}/volumes/{volume_id}": {
+    "/biblios/{biblio_id}/item_groups/{item_group_id}": {
         "get": {
-            "x-mojo-to": "Biblios::Volumes#get",
-            "operationId": "getVolume",
-            "tags": [ "volumes" ],
-            "summary": "Get volume",
+            "x-mojo-to": "Biblios::ItemGroups#get",
+            "operationId": "getItemGroup",
+            "tags": [ "item_groups" ],
+            "summary": "Get item group",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -196,9 +196,9 @@
                     "type": "string"
                 },
                 {
-                    "name": "volume_id",
+                    "name": "item_group_id",
                     "in": "path",
-                    "description": "Internal identifier for the volume",
+                    "description": "Internal identifier for the item group",
                     "required": true,
                     "type": "string"
                 }
@@ -211,9 +211,9 @@
             ],
             "responses": {
                 "200": {
-                    "description": "A volume",
+                    "description": "An item group",
                     "schema": {
-                        "$ref": "../definitions.json#/volume"
+                        "$ref": "../definitions.json#/item_group"
                     }
                 },
                 "400": {
@@ -223,7 +223,7 @@
                     }
                 },
                 "404": {
-                    "description": "Volume not found",
+                    "description": "Item group not found",
                     "schema": {
                         "$ref": "../definitions.json#/error"
                     }
@@ -246,15 +246,15 @@
             ],
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "manage_volumes"
+                    "catalogue": "manage_item_groups"
                 }
             }
         },
         "put": {
-            "x-mojo-to": "Biblios::Volumes#update",
-            "operationId": "updateVolume",
-            "tags": [ "volumes" ],
-            "summary": "Update volume",
+            "x-mojo-to": "Biblios::ItemGroups#update",
+            "operationId": "updateItemGroup",
+            "tags": [ "item_groups" ],
+            "summary": "Update item group",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -264,23 +264,23 @@
                     "type": "string"
                 },
                 {
-                    "name": "volume_id",
+                    "name": "item_group_id",
                     "in": "path",
-                    "description": "Internal identifier for the volume",
+                    "description": "Internal identifier for the item group",
                     "required": true,
                     "type": "string"
                 },
                 {
                     "name": "body",
                     "in": "body",
-                    "description": "A JSON object with the new values for the volume",
+                    "description": "A JSON object with the new values for the item group",
                     "required": true,
                     "schema": {
                         "type": "object",
                         "properties": {
                             "description": {
                                 "type": "string",
-                                "description": "Volume description"
+                                "description": "Item group description"
                             },
                             "display_order": {
                                 "type": "integer",
@@ -298,9 +298,9 @@
             ],
             "responses": {
                 "200": {
-                    "description": "The updated volume",
+                    "description": "The updated item group",
                     "schema": {
-                        "$ref": "../definitions.json#/volume"
+                        "$ref": "../definitions.json#/item_group"
                     }
                 },
                 "400": {
@@ -322,7 +322,7 @@
                     }
                 },
                 "404": {
-                    "description": "Volume not found",
+                    "description": "Item group not found",
                     "schema": {
                         "$ref": "../definitions.json#/error"
                     }
@@ -342,7 +342,7 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "manage_volumes"
+                    "catalogue": "manage_item_groups"
                 }
             },
             "x-koha-embed": [
@@ -350,10 +350,10 @@
             ]
         },
         "delete": {
-            "x-mojo-to": "Biblios::Volumes#delete",
-            "operationId": "deleteVolume",
-            "tags": ["volumes"],
-            "summary": "Delete volume",
+            "x-mojo-to": "Biblios::ItemGroups#delete",
+            "operationId": "deleteItemGroup",
+            "tags": ["item_groups"],
+            "summary": "Delete item group",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -363,9 +363,9 @@
                     "type": "string"
                 },
                 {
-                    "name": "volume_id",
+                    "name": "item_group_id",
                     "in": "path",
-                    "description": "Internal identifier for the volume",
+                    "description": "Internal identifier for the item group",
                     "required": true,
                     "type": "string"
                 }
@@ -375,7 +375,7 @@
             ],
             "responses": {
                 "204": {
-                    "description": "Volume deleted",
+                    "description": "Item group deleted",
                     "schema": {
                         "type": "string"
                     }
@@ -393,7 +393,7 @@
                     }
                 },
                 "404": {
-                    "description": "Volume not found",
+                    "description": "Item group not found",
                     "schema": {
                         "$ref": "../definitions.json#/error"
                     }
@@ -413,17 +413,17 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "manage_volumes"
+                    "catalogue": "manage_item_groups"
                 }
             }
         }
     },
-    "/biblios/{biblio_id}/volumes/{volume_id}/items": {
+    "/biblios/{biblio_id}/item_groups/{item_group_id}/items": {
         "post": {
-            "x-mojo-to": "Biblios::Volumes::Items#add",
-            "operationId": "addVolumeItem",
-            "tags": [ "volumes" ],
-            "summary": "Add item to volume",
+            "x-mojo-to": "Biblios::ItemGroups::Items#add",
+            "operationId": "addItemGroupItem",
+            "tags": [ "item_groups" ],
+            "summary": "Add item to item group",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -433,9 +433,9 @@
                     "type": "string"
                 },
                 {
-                    "name": "volume_id",
+                    "name": "item_group_id",
                     "in": "path",
-                    "description": "Internal identifier for the volume",
+                    "description": "Internal identifier for the item group",
                     "required": true,
                     "type": "string"
                 },
@@ -463,7 +463,7 @@
             ],
             "responses": {
                 "201": {
-                    "description": "Item linked to volume"
+                    "description": "Item linked to item group"
                 },
                 "400": {
                     "description": "Bad request",
@@ -504,7 +504,7 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "manage_volumes"
+                    "catalogue": "manage_item_groups"
                 }
             },
             "x-koha-embed": [
@@ -512,12 +512,12 @@
             ]
         }
     },
-    "/biblios/{biblio_id}/volumes/{volume_id}/items/{item_id}": {
+    "/biblios/{biblio_id}/item_groups/{item_group_id}/items/{item_id}": {
         "delete": {
-            "x-mojo-to": "Biblios::Volumes::Items#delete",
-            "operationId": "deleteVolumeItems",
-            "tags": ["volumes"],
-            "summary": "Delete item from volume",
+            "x-mojo-to": "Biblios::ItemGroups::Items#delete",
+            "operationId": "deleteItemGroupItems",
+            "tags": ["item_groups"],
+            "summary": "Delete item from item group",
             "parameters": [
                 {
                     "name": "biblio_id",
@@ -527,9 +527,9 @@
                     "type": "string"
                 },
                 {
-                    "name": "volume_id",
+                    "name": "item_group_id",
                     "in": "path",
-                    "description": "Internal identifier for the volume",
+                    "description": "Internal identifier for the item group",
                     "required": true,
                     "type": "string"
                 },
@@ -549,7 +549,7 @@
             ],
             "responses": {
                 "204": {
-                    "description": "Item unlinked from volume",
+                    "description": "Item unlinked from item group",
                     "schema": {
                         "type": "string"
                     }
@@ -567,7 +567,7 @@
                     }
                 },
                 "404": {
-                    "description": "Item not linked to volume",
+                    "description": "Item not linked to item group",
                     "schema": {
                         "$ref": "../definitions.json#/error"
                     }
@@ -587,7 +587,7 @@
             },
             "x-koha-authorization": {
                 "permissions": {
-                    "catalogue": "manage_volumes"
+                    "catalogue": "manage_item_groups"
                 }
             }
         }

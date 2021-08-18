@@ -32,6 +32,7 @@ use C4::ClassSource qw( GetClassSort );
 use C4::Log qw( logaction );
 use C4::Reserves;
 
+use Koha::Biblio::ItemGroups;
 use Koha::Checkouts;
 use Koha::CirculationRules;
 use Koha::CoverImages;
@@ -227,13 +228,7 @@ sub delete {
     # FIXME check the item has no current issues
     # i.e. raise the appropriate exception
 
-    # Get the volume so we can delete it later if it has no items left
-    my $volume = C4::Context->preference('EnableVolumes') ? $self->volume : undef;
-
     my $result = $self->SUPER::delete;
-
-    # Delete the volume if it has no items left
-    $volume->delete if ( $volume && $volume->items->count == 0 );
 
     my $indexer = Koha::SearchEngine::Indexer->new({ index => $Koha::SearchEngine::BIBLIOS_INDEX });
     $indexer->index_records( $self->biblionumber, "specialUpdate", "biblioserver" )
@@ -404,25 +399,25 @@ sub checkout {
     return Koha::Checkout->_new_from_dbic( $checkout_rs );
 }
 
-=head3 volume
+=head3 item_group
 
-my $volume = $item->volume;
+my $item_group = $item->item_group;
 
-Return the volume for this item
+Return the item group for this item
 
 =cut
 
-sub volume {
+sub item_group {
     my ( $self ) = @_;
 
-    my $volume_item = $self->_result->volume_items->first;
-    return unless $volume_item;
+    my $item_group_item = $self->_result->item_group_item;
+    return unless $item_group_item;
 
-    my $volume_rs = $volume_item->volume;
-    return unless $volume_rs;
+    my $item_group_rs = $item_group_item->item_group;
+    return unless $item_group_rs;
 
-    my $volume = Koha::Biblio::Volume->_new_from_dbic( $volume_rs );
-    return $volume;
+    my $item_group = Koha::Biblio::ItemGroup->_new_from_dbic( $item_group_rs );
+    return $item_group;
 }
 
 =head3 holds

@@ -1,4 +1,4 @@
-package Koha::Biblio::Volume;
+package Koha::Biblio::ItemGroup;
 
 # This file is part of Koha.
 #
@@ -19,13 +19,13 @@ use Modern::Perl;
 
 use base qw(Koha::Object);
 
-use Koha::Biblio::Volume::Items;
+use Koha::Biblio::ItemGroup::Items;
 use Koha::Exceptions::Object;
 use Koha::Items;
 
 =head1 NAME
 
-Koha::Volume - Koha Volume Object class
+Koha::Biblio::ItemGroup - Koha ItemGroup Object class
 
 =head1 API
 
@@ -33,7 +33,7 @@ Koha::Volume - Koha Volume Object class
 
 =head3 store
 
-    $volume->store;
+    $item_group->store;
 
 Overloaded I<store> method that takes care of creation date handling.
 
@@ -56,24 +56,24 @@ sub store {
 
 =head3 items
 
-    my $items = $volume->items;
+    my $items = $item_group->items;
 
-Returns all the items linked to the volume.
+Returns all the items linked to the item group.
 
 =cut
 
 sub items {
     my ($self) = @_;
 
-    my $items_rs = $self->_result->volume_items;
-    my @item_numbers = $items_rs->get_column('itemnumber')->all;
+    my $items_rs = $self->_result->item_group_items;
+    my @item_ids = $items_rs->get_column('item_id')->all;
 
-    return Koha::Items->new->empty unless @item_numbers;
+    return Koha::Items->new->empty unless @item_ids;
 
     return Koha::Items->search(
         {
             itemnumber => {
-                -in => \@item_numbers
+                -in => \@item_ids
             }
         }
     );
@@ -81,7 +81,7 @@ sub items {
 
 =head3 add_item
 
-    $volume->add_item({ item_id => $item_id });
+    $item_group->add_item({ item_id => $item_id });
 
 =cut
 
@@ -91,16 +91,16 @@ sub add_item {
     my $item_id = $params->{item_id};
 
     my $item = Koha::Items->find( $item_id );
-    unless ( $item->biblionumber == $self->biblionumber ) {
+    unless ( $item->biblionumber == $self->biblio_id ) {
         Koha::Exceptions::Object::FKConstraint->throw(
-            broken_fk => 'biblionumber'
+            broken_fk => 'biblio_id'
         );
     }
 
-    Koha::Biblio::Volume::Item->new(
+    Koha::Biblio::ItemGroup::Item->new(
         {
-            itemnumber => $item_id,
-            volume_id  => $self->id
+            item_group_id => $self->id,
+            item_id       => $item_id,
         }
     )->store;
 
@@ -109,15 +109,13 @@ sub add_item {
 
 =head3 to_api_mapping
 
-This method returns the mapping for representing a Koha::Biblio::Volume object
+This method returns the mapping for representing a Koha::Biblio::ItemGroup object
 on the API.
 
 =cut
 
 sub to_api_mapping {
     return {
-        id           => 'volume_id',
-        biblionumber => 'biblio_id',
         created_on   => 'creation_date',
         updated_on   => 'modification_date'
     };
@@ -130,7 +128,7 @@ sub to_api_mapping {
 =cut
 
 sub _type {
-    return 'Volume';
+    return 'ItemGroup';
 }
 
 =head3 object_class
@@ -138,7 +136,7 @@ sub _type {
 =cut
 
 sub object_class {
-    return 'Koha::Biblio::Volume';
+    return 'Koha::Biblio::ItemGroup';
 }
 
 1;

@@ -1,4 +1,4 @@
-package Koha::REST::V1::Biblios::Volumes::Items;
+package Koha::REST::V1::Biblios::ItemGroups::Items;
 
 # This file is part of Koha.
 #
@@ -19,14 +19,14 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 
-use Koha::Biblio::Volume::Items;
+use Koha::Biblio::ItemGroup::Items;
 
 use Scalar::Util qw(blessed);
 use Try::Tiny;
 
 =head1 NAME
 
-Koha::REST::V1::Biblios::Volumes::Items - Koha REST API for handling volume items (V1)
+Koha::REST::V1::Biblios::ItemGroups::Items - Koha REST API for handling item group items (V1)
 
 =head1 API
 
@@ -34,7 +34,7 @@ Koha::REST::V1::Biblios::Volumes::Items - Koha REST API for handling volume item
 
 =head3 add
 
-Controller function to handle adding a Koha::Biblio::Volume object
+Controller function to handle linking an item to a Koha::Biblio::ItemGroup object
 
 =cut
 
@@ -43,24 +43,24 @@ sub add {
 
     return try {
 
-        my $volume = Koha::Biblio::Volumes->find(
-            $c->validation->param('volume_id')
+        my $item_group = Koha::Biblio::ItemGroups->find(
+            $c->validation->param('item_group_id')
         );
 
-        unless ( $volume ) {
+        unless ( $item_group ) {
             return $c->render(
                 status  => 404,
                 openapi => {
-                    error => 'Volume not found'
+                    error => 'Item group not found'
                 }
             );
         }
 
-        unless ( $volume->biblionumber eq $c->validation->param('biblio_id') ) {
+        unless ( $item_group->biblio_id eq $c->validation->param('biblio_id') ) {
             return $c->render(
                 status  => 409,
                 openapi => {
-                    error => 'Volume does not belong to passed biblio_id'
+                    error => 'Item group does not belong to passed biblio_id'
                 }
             );
         }
@@ -69,7 +69,7 @@ sub add {
         my $body    = $c->validation->param('body');
         my $item_id = $body->{item_id};
 
-        $volume->add_item({ item_id => $item_id });
+        $item_group->add_item({ item_id => $item_id });
 
         $c->res->headers->location( $c->req->url->to_string . '/' . $item_id );
 
@@ -77,7 +77,7 @@ sub add {
 
         return $c->render(
             status  => 201,
-            openapi => $volume->to_api({ embed => $embed })
+            openapi => $item_group->to_api({ embed => $embed })
         );
     }
     catch {
@@ -92,11 +92,11 @@ sub add {
                         }
                     );
                 }
-                elsif ( $_->broken_fk eq 'biblionumber' ) {
+                elsif ( $_->broken_fk eq 'biblio_id' ) {
                     return $c->render(
                         status  => 409,
                         openapi => {
-                            error => "Given item_id does not belong to the volume's biblio"
+                            error => "Given item_id does not belong to the item group's biblio"
                         }
                     );
                 }
@@ -106,7 +106,7 @@ sub add {
                 return $c->render(
                     status  => 409,
                     openapi => {
-                        error => "The given item_id is already linked to the volume"
+                        error => "The given item_id is already linked to the item group"
                     }
                 );
             }
@@ -118,20 +118,20 @@ sub add {
 
 =head3 delete
 
-Controller function that handles deleting a Koha::Biblio::Volume object
+Controller function that handles unlinking an item from a Koha::Biblio::ItemGroup object
 
 =cut
 
 sub delete {
     my $c = shift->openapi->valid_input or return;
 
-    my $volume_id = $c->validation->param('volume_id');
-    my $item_id   = $c->validation->param('item_id');
+    my $item_group_id = $c->validation->param('item_group_id');
+    my $item_id       = $c->validation->param('item_id');
 
-    my $item_link = Koha::Biblio::Volume::Items->find(
+    my $item_link = Koha::Biblio::ItemGroup::Items->find(
         {
-            itemnumber => $item_id,
-            volume_id  => $volume_id
+            item_id       => $item_id,
+            item_group_id => $item_group_id
         }
     );
 
@@ -139,7 +139,7 @@ sub delete {
         return $c->render(
             status  => 404,
             openapi => {
-                error => 'No such volume <-> item relationship'
+                error => 'No such item group <-> item relationship'
             }
         );
     }

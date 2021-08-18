@@ -36,6 +36,7 @@ use C4::Context;
 use C4::Circulation qw( barcodedecode LostItem );
 use C4::Barcodes;
 use C4::Barcodes::ValueBuilder;
+use Koha::Biblio::ItemGroups;
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Items;
 use Koha::ItemTypes;
@@ -58,32 +59,26 @@ use List::MoreUtils qw( any uniq );
 
 our $dbh = C4::Context->dbh;
 
-sub add_item_to_volume {
-    my ( $biblionumber, $itemnumber, $volume, $volume_description ) = @_;
 
-    return unless $volume;
+sub add_item_to_item_group {
+    my ( $biblio_id, $item_id, $item_group_param, $description ) = @_;
 
-    my $volume_id;
-    if ( $volume eq 'create' ) {
-        my $volume = Koha::Biblio::Volume->new(
-            {
-                biblionumber => $biblionumber,
-                description  => $volume_description,
-            }
-        )->store();
-
-        $volume_id = $volume->id;
-    }
-    else {
-        $volume_id = $volume;
-    }
-
-    my $volume_item = Koha::Biblio::Volume::Item->new(
-        {
-            itemnumber => $itemnumber,
-            volume_id  => $volume_id,
+    if ( $item_group_param ) {
+        # item group passed, deal with it
+        my $item_group;
+        if ( $item_group_param eq 'create' ) {
+            $item_group = Koha::Biblio::ItemGroup->new(
+                {
+                    biblio_id   => $biblio_id,
+                    description => $description,
+                }
+            );
         }
-    )->store();
+        else {
+            $item_group = Koha::Biblio::ItemGroups->find( $item_group_param );
+        }
+        $item_group->add_item({ item_id => $item_id });
+    }
 }
 
 sub get_item_from_cookie {
@@ -127,13 +122,13 @@ my $hostitemnumber = $input->param('hostitemnumber');
 my $marcflavour  = C4::Context->preference("marcflavour");
 my $searchid     = $input->param('searchid');
 # fast cataloguing datas
-my $fa_circborrowernumber = $input->param('circborrowernumber');
-my $fa_barcode            = $input->param('barcode');
-my $fa_branch             = $input->param('branch');
-my $fa_stickyduedate      = $input->param('stickyduedate');
-my $fa_duedatespec        = $input->param('duedatespec');
-my $volume                = $input->param('volume');
-my $volume_description    = $input->param('volume_description');
+my $fa_circborrowernumber  = $input->param('circborrowernumber');
+my $fa_barcode             = $input->param('barcode');
+my $fa_branch              = $input->param('branch');
+my $fa_stickyduedate       = $input->param('stickyduedate');
+my $fa_duedatespec         = $input->param('duedatespec');
+my $item_group_param       = $input->param('item_group_id');
+my $item_group_description = $input->param('item_group_description');
 
 our $frameworkcode = &GetFrameworkCode($biblionumber);
 
@@ -239,7 +234,7 @@ if ($op eq "additem") {
         else {
             $item->store->discard_changes;
 
-            add_item_to_volume( $oldbiblionumber, $oldbibitemnum, $volume, $volume_description );
+            add_item_to_item_group( $item->biblionumber, $item->itemnumber, $item_group_param, $item_group_description );
 
             # This is a bit tricky : if there is a cookie for the last created item and
             # we just added an item, the cookie value is not correct yet (it will be updated
@@ -350,7 +345,7 @@ if ($op eq "additem") {
                     $current_item->discard_changes; # Cannot chain discard_changes
                     $current_item = $current_item->unblessed;
 
-                    add_item_to_volume( $current_item->biblionumber, $current_item->itemnumber, $volume, $volume_description );
+                    add_item_to_volume( $current_item->biblionumber, $current_item->itemnumber, $item_group_param, $item_group_description );
 
 # We count the item only if it was really added
 # That way, all items are added, even if there was some already existing barcodes
@@ -644,7 +639,7 @@ if( my $default_location = C4::Context->preference('NewItemsDefaultLocation') ) 
 $template->param(
     biblio       => $biblio,
     items        => \@items,
-    volumes      => scalar Koha::Biblio::Volumes->search({ biblionumber => $biblionumber }),
+    item_groups  => scalar Koha::Biblio::ItemGroups->search({ biblio_id => $biblionumber }),
     item_header_loop => \@header_value_loop,
     subfields        => $subfields,
     itemnumber       => $itemnumber,

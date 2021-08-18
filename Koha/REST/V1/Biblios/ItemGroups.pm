@@ -1,4 +1,4 @@
-package Koha::REST::V1::Biblios::Volumes;
+package Koha::REST::V1::Biblios::ItemGroups;
 
 # This file is part of Koha.
 #
@@ -19,14 +19,14 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 
-use Koha::Biblio::Volumes;
+use Koha::Biblio::ItemGroups;
 
 use Scalar::Util qw(blessed);
 use Try::Tiny;
 
 =head1 NAME
 
-Koha::REST::V1::Biblios::Volumes - Koha REST API for handling volumes (V1)
+Koha::REST::V1::Biblios::ItemGroups - Koha REST API for handling item groups (V1)
 
 =head1 API
 
@@ -36,7 +36,7 @@ Koha::REST::V1::Biblios::Volumes - Koha REST API for handling volumes (V1)
 
 =head3 list
 
-Controller function that handles listing Koha::Biblio::Volume objects
+Controller function that handles listing Koha::Biblio::ItemGroup objects
 
 =cut
 
@@ -44,11 +44,11 @@ sub list {
     my $c = shift->openapi->valid_input or return;
 
     return try {
-        my $volumes_set = Koha::Biblio::Volumes->new;
-        my $volumes     = $c->objects->search( $volumes_set );
+        my $item_groups_set = Koha::Biblio::ItemGroups->new;
+        my $item_groups     = $c->objects->search( $item_groups_set );
         return $c->render(
             status  => 200,
-            openapi => $volumes
+            openapi => $item_groups
         );
     }
     catch {
@@ -58,7 +58,7 @@ sub list {
 
 =head3 get
 
-Controller function that handles retrieving a single Koha::Biblio::Volume
+Controller function that handles retrieving a single Koha::Biblio::ItemGroup
 
 =cut
 
@@ -66,22 +66,22 @@ sub get {
     my $c = shift->openapi->valid_input or return;
 
     try {
-        my $volume_id = $c->validation->param('volume_id');
+        my $item_group_id = $c->validation->param('item_group_id');
         my $biblio_id = $c->validation->param('biblio_id');
 
-        my $volume = $c->objects->find( Koha::Biblio::Volumes->new, $volume_id );
+        my $item_group = $c->objects->find( Koha::Biblio::ItemGroups->new, $item_group_id );
 
-        if ( $volume && $volume->{biblio_id} eq $biblio_id ) {
+        if ( $item_group && $item_group->{biblio_id} eq $biblio_id ) {
             return $c->render(
                 status  => 200,
-                openapi => $volume
+                openapi => $item_group
             );
         }
         else {
             return $c->render(
                 status  => 404,
                 openapi => {
-                    error => 'Volume not found'
+                    error => 'Item group not found'
                 }
             );
         }
@@ -93,7 +93,7 @@ sub get {
 
 =head3 add
 
-Controller function to handle adding a Koha::Biblio::Volume object
+Controller function to handle adding a Koha::Biblio::ItemGroup object
 
 =cut
 
@@ -101,26 +101,27 @@ sub add {
     my $c = shift->openapi->valid_input or return;
 
     return try {
-        my $volume_data = $c->validation->param('body');
+        my $item_group_data = $c->validation->param('body');
         # biblio_id comes from the path
-        $volume_data->{biblio_id} = $c->validation->param('biblio_id');
+        $item_group_data->{biblio_id} = $c->validation->param('biblio_id');
 
-        my $volume = Koha::Biblio::Volume->new_from_api($volume_data);
-        $volume->store->discard_changes();
+        my $item_group = Koha::Biblio::ItemGroup->new_from_api($item_group_data);
+        $item_group->store->discard_changes();
 
-        $c->res->headers->location( $c->req->url->to_string . '/' . $volume->id );
+        $c->res->headers->location( $c->req->url->to_string . '/' . $item_group->id );
 
         return $c->render(
             status  => 201,
-            openapi => $volume->to_api
+            openapi => $item_group->to_api
         );
     }
     catch {
         if ( blessed($_) ) {
-            my $to_api_mapping = Koha::Biblio::Volume->new->to_api_mapping;
+            my $to_api_mapping = Koha::Biblio::ItemGroup->new->to_api_mapping;
 
-            if ( $_->isa('Koha::Exceptions::Object::FKConstraint') and
-                 $to_api_mapping->{ $_->broken_fk } eq 'biblio_id') {
+            if (    $_->isa('Koha::Exceptions::Object::FKConstraint')
+                and $_->broken_fk eq 'biblio_id' )
+            {
                 return $c->render(
                     status  => 404,
                     openapi => { error => "Biblio not found" }
@@ -134,7 +135,7 @@ sub add {
 
 =head3 update
 
-Controller function to handle updating a Koha::Biblio::Volume object
+Controller function to handle updating a Koha::Biblio::ItemGroup object
 
 =cut
 
@@ -142,31 +143,31 @@ sub update {
     my $c = shift->openapi->valid_input or return;
 
     return try {
-        my $volume_id = $c->validation->param('volume_id');
-        my $biblio_id = $c->validation->param('biblio_id');
+        my $item_group_id = $c->validation->param('item_group_id');
+        my $biblio_id     = $c->validation->param('biblio_id');
 
-        my $volume = Koha::Biblio::Volumes->find( $volume_id );
+        my $item_group = Koha::Biblio::ItemGroups->find( $item_group_id );
 
-        unless ( $volume && $volume->biblionumber eq $biblio_id ) {
+        unless ( $item_group && $item_group->biblio_id eq $biblio_id ) {
             return $c->render(
                 status  => 404,
                 openapi => {
-                    error => 'Volume not found'
+                    error => 'Item group not found'
                 }
             );
         }
 
-        my $volume_data = $c->validation->param('body');
-        $volume->set_from_api( $volume_data )->store->discard_changes();
+        my $item_group_data = $c->validation->param('body');
+        $item_group->set_from_api( $item_group_data )->store->discard_changes();
 
         return $c->render(
             status  => 200,
-            openapi => $volume->to_api
+            openapi => $item_group->to_api
         );
     }
     catch {
         if ( blessed($_) ) {
-            my $to_api_mapping = Koha::Biblio::Volume->new->to_api_mapping;
+            my $to_api_mapping = Koha::Biblio::ItemGroup->new->to_api_mapping;
 
             if ( $_->isa('Koha::Exceptions::Object::FKConstraint') ) {
                 return $c->render(
@@ -184,7 +185,7 @@ sub update {
 
 =head3 delete
 
-Controller function that handles deleting a Koha::Biblio::Volume object
+Controller function that handles deleting a Koha::Biblio::ItemGroup object
 
 =cut
 
@@ -192,18 +193,22 @@ sub delete {
 
     my $c = shift->openapi->valid_input or return;
 
-    my $volume_id = $c->validation->param( 'volume_id' );
-    my $biblio_id = $c->validation->param( 'biblio_id' );
+    my $item_group_id = $c->validation->param('item_group_id');
+    my $biblio_id     = $c->validation->param('biblio_id');
 
-    my $volume = Koha::Biblio::Volumes->find({ id => $volume_id, biblionumber => $biblio_id });
+    my $item_group = Koha::Biblio::ItemGroups->find(
+        { item_group_id => $item_group_id, biblio_id => $biblio_id } );
 
-    if ( not defined $volume ) {
-        return $c->render( status => 404, openapi => { error => "Volume not found" } );
+    if ( not defined $item_group ) {
+        return $c->render(
+            status  => 404,
+            openapi => { error => "Item group not found" }
+        );
     }
 
     return try {
-        $volume->delete;
-        return $c->render( status => 204, openapi => '');
+        $item_group->delete;
+        return $c->render( status => 204, openapi => '' );
     }
     catch {
         $c->unhandled_exception($_);

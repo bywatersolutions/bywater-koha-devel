@@ -1,4 +1,4 @@
-package Koha::Biblio::Volume::Item;
+package Koha::Biblio::ItemGroups;
 
 # This file is part of Koha.
 #
@@ -17,11 +17,13 @@ package Koha::Biblio::Volume::Item;
 
 use Modern::Perl;
 
-use base qw(Koha::Object);
+use Koha::Biblio::ItemGroup;
+
+use base qw(Koha::Objects);
 
 =head1 NAME
 
-Koha::Volume::Item - Koha Volume Item Object class
+Koha::Biblio::ItemGroups - Koha ItemGroup Object set class
 
 =head1 API
 
@@ -32,7 +34,7 @@ Koha::Volume::Item - Koha Volume Item Object class
 =cut
 
 sub _type {
-    return 'VolumeItem';
+    return 'ItemGroup';
 }
 
 =head3 object_class
@@ -40,7 +42,7 @@ sub _type {
 =cut
 
 sub object_class {
-    return 'Koha::Biblio::Volume::Item';
+    return 'Koha::Biblio::ItemGroup';
 }
 
 1;

@@ -17,7 +17,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 19;
+use Test::More tests => 20;
 use Test::Warn;
 
 use C4::Biblio qw( AddBiblio ModBiblio ModBiblioMarc );
@@ -887,3 +887,30 @@ sub host_record {
     );
     return $marc;
 }
+
+subtest 'item_groups() tests' => sub {
+
+    plan tests => 6;
+
+    $schema->storage->txn_begin;
+
+    my $biblio = $builder->build_sample_biblio();
+
+    my @item_groups = $biblio->item_groups;
+    is( scalar(@item_groups), 0, 'Got zero item groups');
+
+    my $item_group_1 = Koha::Biblio::ItemGroup->new( { biblio_id => $biblio->id } )->store();
+
+    @item_groups = $biblio->item_groups;
+    is( scalar(@item_groups), 1, 'Got one item group');
+    is( $item_groups[0]->id, $item_group_1->id, 'Got correct item group');
+
+    my $item_group_2 = Koha::Biblio::ItemGroup->new( { biblio_id => $biblio->id } )->store();
+
+    @item_groups = $biblio->item_groups;
+    is( scalar(@item_groups), 2, 'Got two item groups');
+    is( $item_groups[0]->id, $item_group_1->id, 'Got correct item group 1');
+    is( $item_groups[1]->id, $item_group_2->id, 'Got correct item group 2');
+
+    $schema->storage->txn_rollback;
+};
