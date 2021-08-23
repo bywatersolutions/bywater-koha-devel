@@ -729,16 +729,16 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 item_group_items
+=head2 item_group_item
 
-Type: has_many
+Type: might_have
 
 Related object: L<Koha::Schema::Result::ItemGroupItem>
 
 =cut
 
-__PACKAGE__->has_many(
-  "item_group_items",
+__PACKAGE__->might_have(
+  "item_group_item",
   "Koha::Schema::Result::ItemGroupItem",
   { "foreign.item_id" => "self.itemnumber" },
   { cascade_copy => 0, cascade_delete => 0 },
