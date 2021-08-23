@@ -729,16 +729,16 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 item_group_items
+=head2 item_group_item
 
-Type: has_many
+Type: might_have
 
 Related object: L<Koha::Schema::Result::ItemGroupItem>
 
 =cut
 
-__PACKAGE__->has_many(
-  "item_group_items",
+__PACKAGE__->might_have(
+  "item_group_item",
   "Koha::Schema::Result::ItemGroupItem",
   { "foreign.item_id" => "self.itemnumber" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -880,12 +880,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2021-09-01 12:37:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1mLs4vLD2LsJGkBKZCZbXg
-=======
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2021-08-18 14:00:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WG9AuZsBgTMEWjlfwFQdeA
->>>>>>> Bug 24857: Rename Volumes => Item groups (DB)
+# Created by DBIx::Class::Schema::Loader v0.07049 @ 2021-09-01 12:52:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WeRY0B6a1D94WckYmUgWpQ
 
 __PACKAGE__->belongs_to( biblioitem => "Koha::Schema::Result::Biblioitem", "biblioitemnumber" );
 

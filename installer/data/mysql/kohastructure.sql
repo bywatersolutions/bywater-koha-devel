@@ -1868,9 +1868,9 @@ CREATE TABLE `item_group_items` (
   `item_group_id` INT(11) NOT NULL DEFAULT 0 COMMENT "foreign key making this table a 1 to 1 join from items to item groups",
   `item_id` INT(11) NOT NULL DEFAULT 0 COMMENT "foreign key linking this table to the items table",
   PRIMARY KEY  (`item_group_items_id`),
-  UNIQUE KEY (item_group_id,item_id),
+  UNIQUE KEY (`item_id`),
   CONSTRAINT `item_group_items_iifk_1` FOREIGN KEY (`item_id`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `item_group_items_vifk_1` FOREIGN KEY (`item_group_id`) REFERENCES `item_groups` (`item_group_id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `item_group_items_gifk_1` FOREIGN KEY (`item_group_id`) REFERENCES `item_groups` (`item_group_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
