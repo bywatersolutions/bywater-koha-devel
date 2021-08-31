@@ -61,8 +61,18 @@ $data->{branchcode} = $branchcode;
 ( $data->{renew_okay}, $data->{error} ) =
   CanBookBeRenewed( $borrowernumber, $itemnumber, $override_limit );
 
+my $override =
+     $data->{error}
+  && $data->{error} eq 'on_reserve'
+  && C4::Context->preference('AllowRenewalOnHoldOverride');
+
+$override ||=
+     $data->{error}
+  && $data->{error} eq 'item_denied_renewal'
+  && C4::Context->preference('AllowRenewalLimitOverride');
+
 # If we're allowing reserved items to be renewed...
-if ( $data->{error} && $data->{error} eq 'on_reserve' && C4::Context->preference('AllowRenewalOnHoldOverride')) {
+if ( $override ) {
     $data->{renew_okay} = 1;
     $data->{error} = undef;
 }
