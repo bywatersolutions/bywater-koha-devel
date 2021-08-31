@@ -1577,7 +1577,7 @@ sub libraries_where_can_see_patrons {
 
 my $libraries = $thing-libraries_where_can_see_things;
 
-Returns a list of libraries where an aribitarary action is allowd to be taken by the logged in librarian
+Returns a list of libraries where an aribitarary action is allowed to be taken by the logged in librarian
 against an object based on some branchcode related to the object ( patron branchcode, item homebranch, etc ).
 
 We are supposing here that the object is related to the logged in librarian (use of C4::Context::only_my_library)
