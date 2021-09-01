@@ -213,6 +213,12 @@ Circulation:
                   0: "Don't allow"
             - staff to renew items that are on hold by manually specifying a due date.
         -
+            - pref: AllowRenewalItemsDeniedOverride
+              choices:
+                  1: Allow
+                  0: "Don't allow"
+            - staff to renew items that should not be renewable because they have a match in ItemsDeniedRenewal.
+        -
             - pref: AllowItemsOnHoldCheckoutSIP
               choices:
                   1: Allow

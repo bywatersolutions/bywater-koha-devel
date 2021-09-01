@@ -69,7 +69,7 @@ my $override =
 $override ||=
      $data->{error}
   && $data->{error} eq 'item_denied_renewal'
-  && C4::Context->preference('AllowRenewalLimitOverride');
+  && C4::Context->preference('AllowRenewalItemsDeniedOverride');
 
 # If we're allowing reserved items to be renewed...
 if ( $override ) {

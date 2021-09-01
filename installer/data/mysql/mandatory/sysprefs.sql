@@ -44,6 +44,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('AllowRenewalIfOtherItemsAvailable','0',NULL,'If enabled, allow a patron to renew an item with unfilled holds if other available items can fill that hold.','YesNo'),
 ('AllowRenewalLimitOverride','0',NULL,'if ON, allows renewal limits to be overridden on the circulation screen','YesNo'),
 ('AllowRenewalOnHoldOverride','0',NULL,'If ON, allow items on hold to be renewed with a specified due date','YesNo'),
+('AllowRenewalItemsDeniedOverride','0',NULL,'If ON, allow items on hold to be renewed by staff even if disallowed by ItemsDeniedRenewal','YesNo'),
 ('AllowReturnToBranch','anywhere','anywhere|homebranch|holdingbranch|homeorholdingbranch','Where an item may be returned','Choice'),
 ('AllowStaffToSetCheckoutsVisibilityForGuarantor','0',NULL,'If enabled, library staff can set a patron''s checkouts to be visible to linked patrons from the opac.',  'YesNo'),
 ('AllowStaffToSetFinesVisibilityForGuarantor','0',NULL,'If enabled, library staff can set a patron''s fines to be visible to linked patrons from the opac.',  'YesNo'),
