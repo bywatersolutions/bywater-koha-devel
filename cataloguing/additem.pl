@@ -194,7 +194,7 @@ sub generate_subfield_form {
             elsif ( $subfieldlib->{authorised_value} eq "branches" ) {
                 my @allowed = $patron->libraries_where_can_edit_items;
                 foreach my $thisbranch (@$branches) {
-                    next unless any { /^$thisbranch->{branchcode}$/ } @allowed;
+                    next unless !@allowed || any { /^$thisbranch->{branchcode}$/ } @allowed;
                     push @authorised_values, $thisbranch->{branchcode};
                     $authorised_lib{$thisbranch->{branchcode}} = $thisbranch->{branchname};
                     $value = $thisbranch->{branchcode} if $thisbranch->{selected} && !$value;
