@@ -892,18 +892,18 @@ subtest 'item_groups() tests' => sub {
 
     my $biblio = $builder->build_sample_biblio();
 
-    my @item_groups = $biblio->item_groups;
+    my @item_groups = $biblio->item_groups->as_list;
     is( scalar(@item_groups), 0, 'Got zero item groups');
 
     my $item_group_1 = Koha::Biblio::ItemGroup->new( { biblio_id => $biblio->id } )->store();
 
-    @item_groups = $biblio->item_groups;
+    @item_groups = $biblio->item_groups->as_list;
     is( scalar(@item_groups), 1, 'Got one item group');
     is( $item_groups[0]->id, $item_group_1->id, 'Got correct item group');
 
     my $item_group_2 = Koha::Biblio::ItemGroup->new( { biblio_id => $biblio->id } )->store();
 
-    @item_groups = $biblio->item_groups;
+    @item_groups = $biblio->item_groups->as_list;
     is( scalar(@item_groups), 2, 'Got two item groups');
     is( $item_groups[0]->id, $item_group_1->id, 'Got correct item group 1');
     is( $item_groups[1]->id, $item_group_2->id, 'Got correct item group 2');
