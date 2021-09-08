@@ -66,6 +66,26 @@
         <div class="results">[% total | html %] items found for
             [% IF ( branchlimit ) %][% Branches.GetName( branchlimit ) | html %][% ELSE %]All libraries[% END %]
         </div>
+
+		<form action="view_holdsqueue.pl" method="get" id="limitselect">
+			<input type="hidden" name="page" value="[% page | html %]"/>
+            <input type="hidden" name="branchlimit" value="[% branchlimit | html %]"/>
+			<input type="hidden" name="run_report" value="1"/>
+
+			<label for="limit">Rows per page: </label>
+			<select name="limit" id="limit">
+				[% limits = [ 10, 20, 50, 100, 200, 300, 400, 500, 1000 ] %]
+				[% FOREACH l IN limits %]
+					[% IF l == limit %]
+						<option value="[% l | html %]" selected="selected">[% l | html %]</option>
+					[% ELSE %]
+						<option value="[% l | html %]">[% l | html %]</option>
+					[% END %]
+				[% END %]
+			</select>
+		</form> <!-- /#limitselect -->
+        <div class="pages">[% pagination_bar | $raw %]</div>
+
     [% ELSE %]
         <div class="dialog message">No items found.</div>
     [% END %]
@@ -236,6 +256,10 @@
     <script>
         $(document).ready(function() {
             var holdst;
+
+            $('#limit').change(function() {
+                $('#limitselect').submit();
+            });
 
             // Setup filters before DataTables initialisation, in case some columns are
             // hidden by default

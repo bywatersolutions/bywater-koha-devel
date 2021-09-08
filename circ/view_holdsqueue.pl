@@ -25,7 +25,7 @@ This script displays items in the tmp_holdsqueue table
 use Modern::Perl;
 use CGI qw ( -utf8 );
 use C4::Auth qw( get_template_and_user );
-use C4::Output qw( output_html_with_http_headers );
+use C4::Output qw( output_html_with_http_headers pagination_bar );
 use C4::HoldsQueue qw( GetHoldsQueueItems );
 use Koha::BiblioFrameworks;
 use Koha::ItemTypes;
@@ -43,16 +43,29 @@ my ( $template, $loggedinuser, $cookie, $flags ) = get_template_and_user(
 my $params = $query->Vars;
 my $run_report     = $params->{'run_report'};
 my $branchlimit    = $params->{'branchlimit'};
-my $itemtypeslimit = $params->{'itemtypeslimit'};
+my $limit          = $params->{'limit'} || 20;
+my $page           = $params->{'page'}  || 1;
 
 if ( $run_report ) {
-    # XXX GetHoldsQueueItems() does not support $itemtypeslimit!
-    my $items = GetHoldsQueueItems($branchlimit, $itemtypeslimit);
+    my ( $items, $total ) = GetHoldsQueueItems( $branchlimit, $limit, $page );
+
+    my $pages = int( $total / $limit ) + ( ( $total % $limit ) > 0 ? 1 : 0 );
+    warn "LIMIT: $limit";
+    warn "PAGES: $pages";
     $template->param(
-        branchlimit     => $branchlimit,
-        total      => scalar @$items,
-        itemsloop  => $items,
-        run_report => $run_report,
+        branchlimit    => $branchlimit,
+        total          => $total,
+        itemsloop      => $items,
+        run_report     => $run_report,
+        page           => $page,
+        limit          => $limit,
+        pagination_bar => pagination_bar(
+            'view_holdsqueue.pl',
+            $pages,
+            $page,
+            'page',
+            { branchlimit => $branchlimit, limit => $limit, run_report => 1, }
+        ),
     );
 }
 
