@@ -274,8 +274,8 @@ done
 
 db_stop
 
-rabbitmq-plugins enable rabbitmq_stomp
-service rabbitmq-server restart
+#rabbitmq-plugins enable rabbitmq_stomp
+#service rabbitmq-server restart
 
 # Bug 35242: Force memcache restart after koha install/upgrade
 service memcached restart
