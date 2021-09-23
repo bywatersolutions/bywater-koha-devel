@@ -2361,6 +2361,14 @@ td {
     display: block;
 }
 
+.bundled {
+    display: block;
+}
+
+td.bundle {
+    background-color: #FFC !important;
+}
+
 .datedue {
     color: #999;
     display: block;

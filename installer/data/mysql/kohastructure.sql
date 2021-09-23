@@ -3101,6 +3101,23 @@ CREATE TABLE `items` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table item_bundles
+--
+
+DROP TABLE IF EXISTS `item_bundles`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `item_bundles` (
+  `item` int(11) NOT NULL,
+  `host` int(11) NOT NULL,
+  PRIMARY KEY (`host`, `item`),
+  UNIQUE KEY `item_bundles_uniq_1` (`item`),
+  CONSTRAINT `item_bundles_ibfk_1` FOREIGN KEY (`item`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `item_bundles_ibfk_2` FOREIGN KEY (`host`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `items_last_borrower`
 --
 
@@ -4421,7 +4438,6 @@ CREATE TABLE `return_claims` (
   `resolved_on` timestamp NULL DEFAULT NULL COMMENT 'Time and date the claim was resolved',
   `resolved_by` int(11) DEFAULT NULL COMMENT 'ID of the staff member that resolved the claim',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `issue_id` (`issue_id`),
   KEY `itemnumber` (`itemnumber`),
   KEY `rc_borrowers_ibfk` (`borrowernumber`),
   KEY `rc_created_by_ibfk` (`created_by`),

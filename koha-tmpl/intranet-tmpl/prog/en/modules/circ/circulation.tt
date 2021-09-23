@@ -819,7 +819,7 @@
                             </li>
                         [% END %]
 
-                        [% IF Koha.Preference('ClaimReturnedLostValue') %]
+                        [% IF Koha.Preference('ClaimReturnedLostValue') || Koha.Preference('BundleLostValue') %]
                             <li>
                                 [% IF ( patron.return_claims.count ) %]
                                     <a href="#return-claims" id="return-claims-tab">
@@ -945,7 +945,7 @@
                         </div>
                     [% END %]
 
-                    [% IF Koha.Preference('ClaimReturnedLostValue') %]
+                    [% IF Koha.Preference('ClaimReturnedLostValue') || Koha.Preference('BundleLostValue') %]
                         [% INCLUDE 'patron-return-claims.inc' %]
                     [% END %]
 
@@ -981,7 +981,7 @@
             </div> <!-- /.row -->
         </main>
 
-        [% IF Koha.Preference('ClaimReturnedLostValue') %]
+        [% IF Koha.Preference('ClaimReturnedLostValue') || Koha.Preference('BundleLostValue') %]
             [% INCLUDE 'modals/resolve_return_claim.inc' %]
         [% END %]
 
