@@ -120,7 +120,13 @@ if ($findborrower) {
     if ( $patron ) {
         $borrowernumber_hold = $patron->borrowernumber;
     } else {
-        my $dt_params = { iDisplayLength => -1 };
+        my $dt_params = {
+            iDisplayLength => 20,
+            iSortCol_0   => '0',
+            sSortDir_0  => 'asc',
+            mDataProp_0 => 'name',
+            name_sorton => 'borrowers.surname borrowers.firstname'
+        };
         my $results = C4::Utils::DataTables::Members::search(
             {
                 searchmember => $findborrower,
