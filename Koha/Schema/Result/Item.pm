@@ -880,8 +880,11 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2021-08-27 08:42:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SjZn3haOtUZWu1jrMigjNQ
+# Created by DBIx::Class::Schema::Loader v0.07049 @ 2021-10-26 18:56:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:i9d3bIXZVgCLSHRwVu7NWQ
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 
 __PACKAGE__->belongs_to( biblioitem => "Koha::Schema::Result::Biblioitem", "biblioitemnumber" );
 
