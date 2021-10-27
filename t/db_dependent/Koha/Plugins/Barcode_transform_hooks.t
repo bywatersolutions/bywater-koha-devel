@@ -53,10 +53,12 @@ subtest 'patron_barcode_transform() and item_barcode_transform() hook tests' => 
 
     my $plugins = Koha::Plugins->new;
 
-    warnings_are
-     { $plugins->InstallPlugins; }
-     [ "Calling 'install' died for plugin Koha::Plugin::BrokenInstall",
-       "Calling 'upgrade' died for plugin Koha::Plugin::BrokenUpgrade" ];
+    warnings_are { $plugins->InstallPlugins; }
+    [
+        "Calling 'install' died for plugin Koha::Plugin::BrokenInstall",
+        "Calling 'upgrade' died for plugin Koha::Plugin::BrokenUpgrade",
+        "Calling 'install' died for plugin Koha::Plugin::Com::ByWaterSolutions::AuthCheck",
+    ];
 
     C4::Context->dbh->do("DELETE FROM plugin_methods WHERE plugin_class LIKE '%TestBarcodes%'");
 
