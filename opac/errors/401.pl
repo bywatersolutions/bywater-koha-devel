@@ -39,6 +39,6 @@ $template->param (
 );
 my $status = '401 Unauthorized';
 if ( any { /(^psgi\.|^plack\.)/i } keys %ENV ) {
-    $status = '200 OK';
+    $status = '401 Unauthorized';
 }
 output_with_http_headers $query, $cookie, $template->output, 'html', $status;
