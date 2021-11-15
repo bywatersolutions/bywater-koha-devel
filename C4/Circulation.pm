@@ -2789,7 +2789,6 @@ sub CanBookBeRenewed {
                 ]
             }
         );
-        $soonest_renew_date = GetSoonestRenewDate($borrowernumber, $itemnumber, $branchcode, $issuing_rule);
 
         return ( 0, "too_many" )
           if not $issuing_rule->{renewalsallowed} or $issuing_rule->{renewalsallowed} <= $issue->renewals;
@@ -2811,6 +2810,7 @@ sub CanBookBeRenewed {
             return ( 0, 'overdue');
         }
 
+        $soonest_renew_date = GetSoonestRenewDate($borrowernumber, $itemnumber, $branchcode, $issuing_rule);
 
         $auto_renew = _CanBookBeAutoRenewed({
             patron     => $patron,
