@@ -2770,7 +2770,7 @@ sub CanBookBeRenewed {
     return ( 0, 'item_denied_renewal') if _item_denied_renewal({ item => $item });
 
     my $patron = $issue->patron or return;
-
+    my $soonest_renew_date;
     # override_limit will override anything else except on_reserve
     unless ( $override_limit ){
         my $branchcode = _GetCircControlBranch( $item->unblessed, $patron->unblessed );
@@ -2782,10 +2782,14 @@ sub CanBookBeRenewed {
                 rules => [
                     'renewalsallowed',
                     'lengthunit',
-                    'unseen_renewals_allowed'
+                    'unseen_renewals_allowed',
+                    'no_auto_renewal_after',
+                    'no_auto_renewal_after_hard_limit',
+                    'norenewalbefore'
                 ]
             }
         );
+        $soonest_renew_date = GetSoonestRenewDate($borrowernumber, $itemnumber, $branchcode, $issuing_rule);
 
         return ( 0, "too_many" )
           if not $issuing_rule->{renewalsallowed} or $issuing_rule->{renewalsallowed} <= $issue->renewals;
@@ -2807,12 +2811,16 @@ sub CanBookBeRenewed {
             return ( 0, 'overdue');
         }
 
+
         $auto_renew = _CanBookBeAutoRenewed({
             patron     => $patron,
             item       => $item,
             branchcode => $branchcode,
-            issue      => $issue
-        });
+            issue      => $issue,
+            issuing_rule => $issuing_rule,
+            soonest    => $soonest_renew_date
+        }) if $issue->auto_renew && $patron->autorenew_checkouts;
+
         return ( 0, $auto_renew  ) if $auto_renew =~ 'auto_too_soon' && $cron;
         # cron wants 'too_soon' over 'on_reserve' for performance and to avoid
         # extra notices being sent. Cron also implies no override
@@ -2881,12 +2889,11 @@ sub CanBookBeRenewed {
     }
 
     return ( 0, "on_reserve" ) if $resfound;    # '' when no hold was found
-    return ( 0, $auto_renew  ) if $auto_renew =~ 'too_soon';#$auto_renew ne "no" && $auto_renew ne "ok";
-    if ( GetSoonestRenewDate($borrowernumber, $itemnumber) > dt_from_string() ){
-        return (0, "too_soon") unless $override_limit;
-    }
+    return ( 0, $auto_renew  ) if $auto_renew =~ 'auto_too_soon';
+    return (0, "too_soon") if !$override_limit && $soonest_renew_date > dt_from_string();
 
-    return ( 0, "auto_renew" ) if $auto_renew eq "ok" && !$override_limit; # 0 if auto-renewal should not succeed
+    return ( 0, "auto_renew" ) if $auto_renew eq "ok";
+    # scheduled for automatic renewal, if overridden auto_renew is 'no'
 
     return ( 1, undef );
 }
@@ -3179,7 +3186,7 @@ cannot be found.
 =cut
 
 sub GetSoonestRenewDate {
-    my ( $borrowernumber, $itemnumber ) = @_;
+    my ( $borrowernumber, $itemnumber, $branchcode, $issuing_rule ) = @_;
 
     my $dbh = C4::Context->dbh;
 
@@ -3190,8 +3197,8 @@ sub GetSoonestRenewDate {
     my $patron = Koha::Patrons->find( $borrowernumber )
       or return;
 
-    my $branchcode = _GetCircControlBranch( $item->unblessed, $patron->unblessed );
-    my $issuing_rule = Koha::CirculationRules->get_effective_rules(
+    $branchcode = _GetCircControlBranch( $item->unblessed, $patron->unblessed ) unless $branchcode;
+    $issuing_rule = Koha::CirculationRules->get_effective_rules(
         {   categorycode => $patron->categorycode,
             itemtype     => $item->effective_itemtype,
             branchcode   => $branchcode,
@@ -3200,7 +3207,7 @@ sub GetSoonestRenewDate {
                 'lengthunit',
             ]
         }
-    );
+    ) unless $issuing_rule;
 
     my $now = dt_from_string;
     return $now unless $issuing_rule;
@@ -4280,22 +4287,8 @@ sub _CanBookBeAutoRenewed {
     my $item = $params->{item};
     my $branchcode = $params->{branchcode};
     my $issue = $params->{issue};
-
-    return "no" unless $issue->auto_renew && $patron->autorenew_checkouts;
-
-    my $issuing_rule = Koha::CirculationRules->get_effective_rules(
-        {
-            categorycode => $patron->categorycode,
-            itemtype     => $item->effective_itemtype,
-            branchcode   => $branchcode,
-            rules => [
-                'no_auto_renewal_after',
-                'no_auto_renewal_after_hard_limit',
-                'lengthunit',
-                'norenewalbefore',
-            ]
-        }
-    );
+    my $soonest_renew_date = $params->{soonest};
+    my $issuing_rule = $params->{issuing_rule};
 
     if ( $patron->category->effective_BlockExpiredPatronOpacActions and $patron->is_expired ) {
         return 'auto_account_expired';
@@ -4335,7 +4328,7 @@ sub _CanBookBeAutoRenewed {
 
     if ( defined $issuing_rule->{norenewalbefore}
         and $issuing_rule->{norenewalbefore} ne "" ) {
-        if ( GetSoonestRenewDate($patron->id, $item->id) > dt_from_string()) {
+        if ( $soonest_renew_date > dt_from_string()) {
             return "auto_too_soon";
         } else {
             return "ok";
