@@ -71,9 +71,6 @@ jobs:
             - name: Run tests
               run: |
                   docker-compose -f docker-compose.yml -p koha up --abort-on-container-exit --no-color
-                  echo "`date`: Installing extra perl libraries"
-                  docker exec koha_koha_1 apt-get install -y libemail-valid-perl
-                  while [ $? -ne 0 ]; do echo "INSTALL PACKAGES" && docker exec koha_koha_1 apt-get install -y libemail-valid-perl; done
                   cat $GITHUB_WORKSPACE/testing.success
 
             - name: Post test cleanup
