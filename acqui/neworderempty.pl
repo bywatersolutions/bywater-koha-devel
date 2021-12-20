@@ -84,6 +84,7 @@ use C4::Biblio qw(
 use C4::Output qw( output_and_exit output_html_with_http_headers );
 use C4::Members;
 use C4::Search qw( FindDuplicate );
+use C4::Items qw( PrepareItemrecordDisplay );
 
 #needed for z3950 import:
 use C4::ImportBatch qw( SetImportRecordStatus SetMatchedBiblionumber GetImportRecordMarc );
