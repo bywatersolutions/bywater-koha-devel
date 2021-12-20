@@ -1,0 +1,66 @@
+name: CI
+on:
+    push:
+        branches:
+            - "**"
+        tags-ignore:
+            - "**"
+    schedule:
+      - cron: "0 6 * * *"
+jobs:
+    attempt_rebase:
+        name: Attempt rebase to master
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+              with:
+                fetch-depth: 0
+
+            - name: Get bug number
+              id: get_bug_number
+              run: |
+                  export BUG_NUMBER="$(git log --format=%s -n 1 HEAD | sed -r 's/^([^.]+).*$/\1/; s/^[^0-9]*([0-9]+).*$/\1/')"
+                  echo "BUG NUMBER: $BUG_NUMBER"
+                  echo ::set-output name=BUG_NUMBER::$BUG_NUMBER 
+
+            - name: Get bug author
+              id: get_bug_author
+              run: |
+                  export BUG_AUTHOR="$(git log -1 --pretty=format:'%an')"
+                  echo "BUG AUTHOR: $BUG_AUTHOR"
+                  echo ::set-output name=BUG_AUTHOR::$BUG_AUTHOR 
+
+            - name: Get bug status
+              id: get_bug_status
+              run: |
+                  export BUG_STATUS="$(curl 'https://bugs.koha-community.org/bugzilla3/rest/bug/${{ steps.get_bug_number.outputs.BUG_NUMBER }}?include_fields=status' | jq -r '.bugs[0].status')"
+                  echo "BUG STATUS: $BUG_STATUS"
+                  echo ::set-output name=BUG_STATUS::$BUG_STATUS 
+
+            - name: Add community repo remote
+              id: add_community_repo
+              if: |
+                  contains(steps.get_bug_status.outputs.BUG_STATUS, 'Needs Signoff') || 
+                  contains(steps.get_bug_status.outputs.BUG_STATUS, 'Signed Off') || 
+                  contains(steps.get_bug_status.outputs.BUG_STATUS, 'Passed QA') || 
+                  contains(steps.get_bug_status.outputs.BUG_STATUS, 'Failed QA')
+              run: |
+                  git remote add community https://github.com/Koha-Community/Koha.git
+
+            - name: Fetch community repo remote
+              if: ${{ steps.add_community_repo.conclusion == 'success' }}
+              run: |
+                  git fetch community --progress
+
+            - name: Rebase to community master
+              if: ${{ steps.add_community_repo.conclusion == 'success' }}
+              run: |
+                  git rebase community/master
+
+            - name: Alert rebase failure
+              uses: rtCamp/action-slack-notify@v2
+              if: ${{ failure() }}
+              env:
+                SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+                SLACK_TITLE: "${{ steps.get_bug_author.outputs.BUG_AUTHOR }}, bug ${{ steps.get_bug_number.outputs.BUG_NUMBER }} no longer applies to master }} :cry:"
