@@ -888,6 +888,18 @@
         });
         [% ELSIF multiple_orders %]
 
+        function display_attribute_with_av ( item, attribute ) {
+            var value;
+            if ( item._authorised_values && item._authorised_values[attribute] ) {
+                value = item._authorised_values.not_for_loan_status.lib || item[attribute];
+            }
+            else {
+                value = item[attribute] || '';
+            }
+
+            return value;
+        }
+
         var _build_item = function(item, tr) {
             var chb = $('<input type="checkbox" name="items_to_receive" value="'+item.item_id+'" />')
                 .prop('checked', item._checked)
@@ -899,15 +911,14 @@
             tr.append('<td>'+(item.external_id||'')+'</td>');
             tr.append('<td>'+(item.home_branch && item.home_branch.name||'')+'</td>');
             tr.append('<td>'+(item.holding_branch && item.holding_branch.name||'')+'</td>');
-            tr.append('<td>'+(item._authorised_values.not_for_loan_status && item._authorised_values.not_for_loan_status.lib||'')+'</td>');
-            tr.append('<td>'+(item._authorised_values.restricted_status && item._authorised_values.restricted_status.lib||'')+'</td>');
-            tr.append('<td><span class="shelvingloc">'+(item._authorised_values.location && item._authorised_values.location.lib||'')+'</span></td>');
+            tr.append('<td>'+ display_attribute_with_av(item, 'not_for_loan_status') || '' + '</td>');
+            tr.append('<td>'+ display_attribute_with_av(item, 'restricted_status') || '' + '</td>');
+            tr.append('<td><span class="shelvingloc">'+ display_attribute_with_av(item, 'location') || '' +'</span></td>');
             tr.append('<td>'+(item.callnumber||'')+'</td>');
             tr.append('<td>'+(item.copy_number||'')+'</td>');
             tr.append('<td>'+(item.inventory_number||'')+'</td>');
-            tr.append('<td>'+(item._authorised_values.collection_code && item._authorised_values.collection_code.lib||'')+'</td>');
+            tr.append('<td>'+ display_attribute_with_av(item, 'collection_code') ||'' +'</td>');
             tr.append('<td>'+(item.itemtype && item.itemtype.description || '')+'</td>');
-            tr.append('<td>'+(item._authorised_values.materials_notes && item._authorised_values.materials_notes.lib||'')+'</td>')
             tr.append('<td>'+(item.public_notes||'')+'</td>');
         };
 
@@ -1496,7 +1507,7 @@
                                     .filter(function(name){
                                         return name
                                     })
-                                    .join(', ')+' (<a href="http://localhost:8081/cgi-bin/koha/suggestion/suggestion.pl?suggestionid='+row.biblio.suggestions[0].suggestionid+'&op=show">'+SUGGESTION.format(row.biblio.suggestions[0].suggestionid)+'</a>)'
+                                    .join(', ')+' (<a href="/cgi-bin/koha/suggestion/suggestion.pl?suggestionid='+row.biblio.suggestions[0].suggestionid+'&op=show">'+SUGGESTION.format(row.biblio.suggestions[0].suggestionid)+'</a>)'
                             );
                     } else {
                         $("#biblio_suggestion_suggester").parent().hide();
