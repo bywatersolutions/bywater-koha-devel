@@ -156,8 +156,10 @@ use Koha::SearchEngine::Search;
 use Koha::SearchEngine::QueryBuilder;
 use Koha::Virtualshelves;
 use Koha::SearchFields;
+use Koha::SearchFilters;
 
 use URI::Escape;
+use JSON qw( decode_json encode_json );
 
 my $DisplayMultiPlaceHold = C4::Context->preference("DisplayMultiPlaceHold");
 # create a new CGI object
@@ -479,6 +481,7 @@ $template->param ( QUERY_INPUTS => \@query_inputs,
 
 ## parse the limit_cgi string and put it into a form suitable for <input>s
 my @limit_inputs;
+my %active_filters;
 if ($limit_cgi) {
     for my $this_cgi ( split('&', $limit_cgi) ) {
         next unless $this_cgi;
@@ -492,6 +495,13 @@ if ($limit_cgi) {
         my $input_value = $2;
         $input_name =~ s/=$//;
         push @limit_inputs, { input_name => $input_name, input_value => Encode::decode_utf8( uri_unescape($input_value) ) };
+        if( $input_value =~ /search_filter/ ){
+            warn "inpval $input_value";
+            my ($filter_id) = ( uri_unescape($input_value) =~ /^search_filter:(.*)$/ );
+            warn "filid $filter_id";
+            $active_filters{$filter_id} = 1;
+        }
+
     }
 }
 $template->param ( LIMIT_INPUTS => \@limit_inputs );
@@ -576,9 +586,19 @@ for (my $i=0;$i<@servers;$i++) {
         $template->param (z3950_search_params => C4::Search::z3950_search_args($z3950par || $query_desc));
         $template->param(limit_cgi => $limit_cgi);
         $template->param(query_cgi => $query_cgi);
+        $template->param(query_json => encode_json({
+            operators => \@operators,
+            operands => \@operands,
+            indexes => \@indexes
+        }));
+        $template->param(limit_json => encode_json({
+            limits => \@limits
+        }));
         $template->param(query_desc => $query_desc);
         $template->param(limit_desc => $limit_desc);
         $template->param(offset     => $offset);
+        $template->param(offset     => $offset);
+
 
         if ($hits) {
             $template->param(total => $hits);
@@ -666,6 +686,12 @@ for my $facet ( @$facets ) {
         $entry->{active} = grep { $_->{input_value} eq qq{$index:$value} } @limit_inputs;
     }
 }
+
+
+$template->param(
+    search_filters => Koha::SearchFilters->search(),
+    active_filters => \%active_filters,
+) if C4::Context->preference('SavedSearchFilters');
 
 $template->param(
             #classlist => $classlist,

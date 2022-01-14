@@ -15,7 +15,7 @@ package Koha::SearchFilter;
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
-
+use JSON qw( encode_json decode_json );
 
 use Koha::Database;
 
@@ -41,6 +41,42 @@ sub to_api_mapping {
     };
 }
 
+=head3 expand_filter
+
+    my $expanded_filter = $filter->expand_filter;
+
+    Returns the filter as an arrayref of limit queries suitable to
+    be passed to QueryBuilder
+
+=cut
+
+sub expand_filter {
+    my $self = shift;
+
+    my $query_part = $self->query;
+    my $limits_part = $self->limits;
+
+    my $limits = decode_json($limits_part)->{limits};
+
+    my $query = decode_json($query_part);
+    my $operators = $query->{operators};
+    my $operands = $query->{operands};
+    my $indexes = $query->{indexes};
+
+    my $query_limit;
+    for( my $i = 0; $i < scalar @$operands; $i++ ){
+        next unless @$operands[$i];
+        my $index = @$indexes[$i] ? @$indexes[$i] . "=" : "";
+        my $query = "(" . @$operands[$i] . ")";
+        my $operator = @$operators[$i-1] ? " " . @$operators[$i-1] . " " : scalar @$operands > $i ? " AND " : "" if $i > 0;
+        my $limit = $operator . $index . $query;
+        $query_limit .= $limit;
+    }
+
+    push @$limits, "(".$query_limit.")" if $query_limit;
+
+    return $limits;
+}
 
 =head2 Internal methods
 
