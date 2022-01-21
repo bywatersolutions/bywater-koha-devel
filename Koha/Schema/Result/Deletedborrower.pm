@@ -294,6 +294,14 @@ date the patron was added to Koha (YYYY-MM-DD)
 
 date the patron/borrower's card is set to expire (YYYY-MM-DD)
 
+=head2 password_expiration_date
+
+  data_type: 'date'
+  datetime_undef_if_invalid: 1
+  is_nullable: 1
+
+date the patron/borrower's password is set to expire (YYYY-MM-DD)
+
 =head2 date_renewed
 
   data_type: 'date'
@@ -681,6 +689,8 @@ __PACKAGE__->add_columns(
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
   "dateexpiry",
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
+  "password_expiration_date",
+  { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
   "date_renewed",
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
   "gonenoaddress",
@@ -785,8 +795,8 @@ __PACKAGE__->add_columns(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2021-07-12 13:40:00
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9q8LmKrfO6bAAFaJ4Z3Jrg
+# Created by DBIx::Class::Schema::Loader v0.07049 @ 2022-01-20 11:53:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:r7UpUE2yUjCf6OAnObzlew
 
 __PACKAGE__->add_columns(
     '+anonymized'    => { is_boolean => 1 },
