@@ -328,6 +328,13 @@ properties:
     description: patron's extended attributes
     items:
       $ref: patron_extended_attribute.yaml
+  password_expiration_date:
+    type:
+      - string
+      - "null"
+    format: date
+    readOnly: true
+    description: day a patron's password expires and must be changed/reset
 additionalProperties: false
 required:
   - surname
