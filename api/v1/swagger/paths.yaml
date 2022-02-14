@@ -97,6 +97,8 @@
   $ref: paths/patrons_holds.yaml#/~1patrons~1{patron_id}~1holds
 "/patrons/{patron_id}/password":
   $ref: paths/patrons_password.yaml#/~1patrons~1{patron_id}~1password
+"/patrons/{patron_id}/password/expiration":
+  $ref: paths/patrons_password_expiration.yaml#/~1patrons~1{patron_id}~1password~1expiration
 /ill_backends:
   $ref: paths/ill_backends.yaml#/~1ill_backends
 "/ill_backends/{ill_backend_id}":
