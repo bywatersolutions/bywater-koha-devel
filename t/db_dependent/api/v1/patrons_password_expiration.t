@@ -74,7 +74,6 @@ subtest 'basic tests' => sub {
           { expiration_date => '13/01/2021' } )
       ->status_is(500)->json_is({
           error => 'Something went wrong, check Koha logs for details.',
-          error_code => "internal_server_error"
       });
 
     $privileged_patron->flags(0)->store();
