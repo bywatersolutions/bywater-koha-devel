@@ -37,6 +37,8 @@ invoice:
   $ref: definitions/invoice.yaml
 item:
   $ref: definitions/item.yaml
+item_group:
+  $ref: definitions/item_group.yaml
 library:
   $ref: definitions/library.yaml
 order:
@@ -61,5 +63,3 @@ transfer_limit:
   $ref: definitions/transfer_limit.yaml
 vendor:
   $ref: definitions/vendor.yaml
-volume:
-  $ref: definitions/volume.yaml

@@ -240,7 +240,7 @@
 
 [% MACRO jsinclude BLOCK %]
     <script>
-      var has_item_groups = [% item_groups.count | html %];
+      var has_item_groups = "[% item_groups.count | html %]";
     </script>
 [% END %]
 
