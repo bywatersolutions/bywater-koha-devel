@@ -268,7 +268,7 @@
             <a href="#holdings">Holdings ([% itemloop.size() || 0 | html %])</a>
         </li>
     [% END %]
-[% IF Koha.Preference('EnableVolumes') %]<li><a href="#volumes">Volumes</a></li>[% END %]
+[% IF Koha.Preference('EnableItemGroups') %]<li><a href="#item_groups">Item Groups</a></li>[% END %]
 [% IF ( MARCNOTES || notes ) %]<li><a href="#description">Descriptions ([% ( MARCNOTES.size || 1 ) | html %])</a></li>[% END %]
 [% IF ComponentParts && ComponentParts.size %]<li id="components_tab"><a href="#components">Components ([% ComponentParts.size | html %])</a></li>[% END %]
 [% IF ( subscriptionsnumber ) %]<li><a href="#subscriptions">Subscriptions</a></li>[% END %]

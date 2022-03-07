@@ -4,7 +4,7 @@
 [% USE Branches %]
 [% USE KohaDates %]
 [% USE TablesSettings %]
-[% SET footerjs = 1 %]
+[%# SET footerjs = 1 %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Items &rsaquo; [% biblio.title | html %] [% IF ( biblio.author ) %] by [% biblio.author | html %][% END %] (Record #[% biblio.biblionumber | html %]) &rsaquo; Cataloging &rsaquo; Koha</title>
 [% INCLUDE 'doc-head-close.inc' %]
@@ -23,7 +23,7 @@
 [% Asset.js("js/browser.js") | $raw %]
 [% INCLUDE 'calendar.inc' %]
 [% INCLUDE 'str/cataloging_additem.inc' %]
-[% Asset.js("js/cataloging_additem.js") | $raw %]
+[%# Asset.js("js/cataloging_additem.js") | $raw %]
 </head>
 
 <body id="cat_additem" class="cat">
@@ -239,6 +239,7 @@
     </div> <!-- /.row -->
 
 [% MACRO jsinclude BLOCK %]
+[% Asset.js("js/cataloging_additem.js") | $raw %]
     <script>
       var has_item_groups = "[% item_groups.count | html %]";
     </script>

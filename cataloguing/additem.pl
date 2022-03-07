@@ -636,11 +636,12 @@ if( my $default_location = C4::Context->preference('NewItemsDefaultLocation') ) 
     $location_field->{marc_value}->{value} ||= $default_location;
 }
 
+my @ig = Koha::Biblio::ItemGroups->search({ biblio_id => $biblionumber })->as_list();
 # what's the next op ? it's what we are not in : an add if we're editing, otherwise, and edit.
 $template->param(
     biblio       => $biblio,
     items        => \@items,
-    volumes      => scalar Koha::Biblio::ItemGroups->search({ biblionumber => $biblionumber }),
+    item_groups      => \@ig,
     item_header_loop => \@header_value_loop,
     subfields        => $subfields,
     itemnumber       => $itemnumber,
