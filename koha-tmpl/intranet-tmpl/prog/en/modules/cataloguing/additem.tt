@@ -4,7 +4,6 @@
 [% USE Branches %]
 [% USE KohaDates %]
 [% USE TablesSettings %]
-[%# SET footerjs = 1 %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Items &rsaquo; [% biblio.title | html %] [% IF ( biblio.author ) %] by [% biblio.author | html %][% END %] (Record #[% biblio.biblionumber | html %]) &rsaquo; Cataloging &rsaquo; Koha</title>
 [% INCLUDE 'doc-head-close.inc' %]
@@ -23,7 +22,10 @@
 [% Asset.js("js/browser.js") | $raw %]
 [% INCLUDE 'calendar.inc' %]
 [% INCLUDE 'str/cataloging_additem.inc' %]
-[%# Asset.js("js/cataloging_additem.js") | $raw %]
+[% Asset.js("js/cataloging_additem.js") | $raw %]
+    <script>
+      var has_item_groups = "[% item_groups.size | html %]";
+    </script>
 </head>
 
 <body id="cat_additem" class="cat">
@@ -160,7 +162,7 @@
         <input type="hidden" name="itemnumber" value="[% itemnumber | html %]" />
     [% END %]
 
-[% IF item_groups.count && op != 'saveitem' && CAN_user_editcatalogue_manage_item_groups %]
+[% IF item_groups.size && op != 'saveitem' && CAN_user_editcatalogue_manage_item_groups %]
     <fieldset class="rows">
         <legend><i class="fa fa-plus"></i> Add to item group</legend>
         [% FOREACH ig IN item_groups %]
@@ -239,10 +241,6 @@
     </div> <!-- /.row -->
 
 [% MACRO jsinclude BLOCK %]
-[% Asset.js("js/cataloging_additem.js") | $raw %]
-    <script>
-      var has_item_groups = "[% item_groups.count | html %]";
-    </script>
 [% END %]
 
 [% INCLUDE 'intranet-bottom.inc' %]

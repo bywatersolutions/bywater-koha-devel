@@ -71,7 +71,7 @@ $(document).ready(function(){
 
     // Add new item to an item group
     if ( has_item_groups ) {
-        $('#item-add-or-create-form-description-block').hide();
+        $('#item-group-add-or-create-form-description-block').hide();
         $('#item-group-add-or-create-form-no-add').attr('selected', 'selected' );
 
         $('#item-group-add-or-create-form-select').on('change', function(){
