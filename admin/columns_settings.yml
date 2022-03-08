@@ -359,6 +359,8 @@ modules:
             -
               columnname: holdings_ccode
             -
+              columnname: holdings_volume
+            -
               columnname: holdings_itemcallnumber
             -
               columnname: holdings_status
@@ -415,6 +417,8 @@ modules:
               columnname: otherholdings_homebranch
             -
               columnname: otherholdings_ccode
+            -
+              columnname: otherholdings_volume
             -
               columnname: otherholdings_itemcallnumber
             -
