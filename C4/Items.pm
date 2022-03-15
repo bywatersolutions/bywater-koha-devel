@@ -1262,7 +1262,7 @@ sub _find_value {
 
 =head2 PrepareItemrecordDisplay
 
-  PrepareItemrecordDisplay($bibnum,$itemumber,$defaultvalues,$frameworkcode);
+  PrepareItemrecordDisplay($bibnum,$itemumber,$defaultvalues,$frameworkcode, $use_defaults);
 
 Returns a hash with all the fields for Display a given item data in a template
 
@@ -1270,11 +1270,13 @@ $defaultvalues should either contain a hashref of values for the new item, or be
 
 The $frameworkcode returns the item for the given frameworkcode, ONLY if bibnum is not provided
 
+If $use_defaults is true, the returned item values will be generated from the default values only.
+
 =cut
 
 sub PrepareItemrecordDisplay {
 
-    my ( $bibnum, $itemnum, $defaultvalues, $frameworkcode ) = @_;
+    my ( $bibnum, $itemnum, $defaultvalues, $frameworkcode, $use_defaults ) = @_;
 
     my $dbh = C4::Context->dbh;
     $frameworkcode = C4::Biblio::GetFrameworkCode($bibnum) if $bibnum;
@@ -1294,10 +1296,11 @@ sub PrepareItemrecordDisplay {
     # return nothing if we don't have found an existing framework.
     return q{} unless $tagslib;
     my $itemrecord;
-    if ($itemnum) {
-        $itemrecord = C4::Items::GetMarcItem( $bibnum, $itemnum );
-    }elsif ($defaultvalues && $defaultvalues->{'itemrecord'} ) {
+    if ($use_defaults) {
         $itemrecord = $defaultvalues->{'itemrecord'};
+    }
+    elsif ($itemnum) {
+        $itemrecord = C4::Items::GetMarcItem( $bibnum, $itemnum );
     }
     my @loop_data;
 

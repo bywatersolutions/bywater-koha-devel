@@ -675,7 +675,7 @@ sub staged_items_field {
                     'branchcode'=>_trim($iteminfos->{homebranch})
                 );
                 $all_items_quantity++;
-                my $itemprocessed = PrepareItemrecordDisplay('', '', \%defaultvalues , 'ACQ');
+                my $itemprocessed = PrepareItemrecordDisplay('', '', \%defaultvalues , 'ACQ', 1);
                 push @itemlist, $itemprocessed->{'iteminformation'};
             }
         }
