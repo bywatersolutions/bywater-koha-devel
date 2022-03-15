@@ -31,12 +31,9 @@ Koha::Acquisition::Utils - Additional Koha functions for dealing with orders and
 
 my $data = Koha::Acquisition::Utils::GetMarcFieldsToOrderValues('MarcFieldsToOrder', $marcrecord, ['price', 'quantity', 'budget_code', etc.]);
 
-This subroutine accepts a syspref ( MarcFieldsToOrder ),
-a marc record, and an arrayref of fields to retrieve.
-
 The return value is a hashref of key value pairs, where the keys are the field list parameters,
 and the values are extracted from the MARC record based on the key to MARC field mapping from the
-given system preference.
+system preference MarcFieldsToOrder.
 
 =cut
 
@@ -71,12 +68,9 @@ sub GetMarcFieldsToOrderValues {
 
 my $data = GetMarcItemFieldsToOrderValues('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
 
-This subroutine accepts a syspref ( MarcItemFieldsToOrder ),
-a marc record, and an arrayref of fields to retrieve.
-
 The return value is a hashref of key value pairs, where the keys are the field list parameters,
 and the values are extracted from the MARC record based on the key to MARC field mapping from the
-given system preference.
+system preference MarcFieldsToOrder.
 
 The largest difference between GetMarcFieldsToOrderValues and GetMarcItemFieldsToOrderValues is that the former deals
 with singular marc fields, while the latter works on multiple matching marc fields and returns -1 if it cannot
