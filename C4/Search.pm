@@ -21,6 +21,7 @@ use C4::Biblio qw( TransformMarcToKoha GetMarcFromKohaField GetFrameworkCode Get
 use C4::Koha qw( getFacets GetVariationsOfISBN GetNormalizedUPC GetNormalizedEAN GetNormalizedOCLCNumber GetNormalizedISBN getitemtypeimagelocation );
 use Koha::DateUtils;
 use Koha::Libraries;
+use Koha::SearchEngine::QueryBuilder;
 use Lingua::Stem;
 use XML::Simple;
 use C4::XSLT qw( XSLTParse4Display );
@@ -33,6 +34,7 @@ use Koha::Logger;
 use Koha::Patrons;
 use Koha::Recalls;
 use Koha::RecordProcessor;
+use Koha::SearchFilters;
 use URI::Escape;
 use Business::ISBN;
 use MARC::Record;
@@ -1507,6 +1509,16 @@ sub buildQuery {
             }
             $limit .= "$this_limit";
             $limit_desc .= " $this_limit";
+        } elsif ( $this_limit =~ '^search_filter:' ) {
+            $limit_cgi  .= "&limit=" . uri_escape_utf8($this_limit);
+            $limit_desc .= " $this_limit";
+            my ($filter_id) = ( $this_limit =~ /^search_filter:(.*)$/ );
+            my $search_filter = Koha::SearchFilters->find( $filter_id );
+            next unless $search_filter;
+            my $expanded = $search_filter->expand_filter;
+            my ( $error, undef, undef, undef, undef, $fixed_limit, undef, undef, undef ) = buildQuery ( undef, undef, undef, $expanded, undef, undef, $lang);
+            $limit .= " and " if $limit || $query;
+            $limit .= "$fixed_limit";
         }
 
         # Regular old limits
