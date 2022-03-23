@@ -453,5 +453,9 @@ __END_SRU_PUBLICSERVER__
      <parallel_loops_count>1</parallel_loops_count>
  </holds_queue_builder>
 
+ <auto_renew_cronjob>
+     <parallel_loops_count>1</parallel_loops_count>
+ </auto_renew_cronjob>
+
 </config>
 </yazgfs>
