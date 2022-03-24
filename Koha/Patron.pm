@@ -311,6 +311,10 @@ sub store {
                     $self->guarantor_relationships->delete
                       unless ( $self->category->can_be_guarantee );
 
+                    # Only these patron types can be guarantors,
+                    # remove guarantee relationships otherwise
+                    $self->guarantee_relationships->delete
+                      unless $self->category->category_type =~ /A|I|S|X/;
                 }
 
                 # Actionlogs

@@ -106,7 +106,7 @@ foreach my $b ( $patrons->as_list() ) {
 }
 
 subtest "Update patron categories" => sub {
-    plan tests => 26;
+    plan tests => 30;
     t::lib::Mocks::mock_preference( 'borrowerRelationship', 'test' );
     my $c_categorycode = $builder->build({ source => 'Category', value => {
             category_type=>'C',
@@ -212,6 +212,26 @@ subtest "Update patron categories" => sub {
     is( Koha::Patrons->search_patrons_to_update_category({from=>$p_categorycode})->update_category_to({category=>$a_categorycode}),1,'One professional patron updated to adult category');
     is( Koha::Patrons->find($inst->borrowernumber)->guarantee_relationships->guarantees->count,0,'Guarantee was removed when made adult');
 
+    my $adult4 = $builder->build_object({class => 'Koha::Patrons', value => {
+            categorycode=>$a_categorycode,
+            branchcode=>$branchcode2,
+            dateenrolled=>'2017-01-01',
+        }
+    });
+    my $child4 = $builder->build_object({class => 'Koha::Patrons', value => {
+            dateofbirth => dt_from_string->add(years=>-18),
+            categorycode=>$c_categorycode,
+            branchcode=>$branchcode1,
+        }
+    });
+    $child4->add_guarantor({guarantor_id => $adult4->borrowernumber, relationship => 'test'});
+
+    is( $adult4->guarantee_relationships->count, 1, "Adult has guarantee relationship" );
+    is( $child4->guarantor_relationships->count, 1, "Child has guarantor relationship" );
+    $adult4->categorycode($c_categorycode);
+    $adult4->store();
+    is( $adult4->guarantee_relationships->count, 0, "Adult turned child now has no guarantee relationship" );
+    is( $child4->guarantor_relationships->count, 0, "Child of adult now turned child has no guarantor relationship" );
 };
 
 
