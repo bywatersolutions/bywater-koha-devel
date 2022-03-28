@@ -402,6 +402,12 @@ sub payin_amount {
             # Add payin credit
             $credit = $self->add_credit($params);
 
+            if ( $params->{type} eq 'PAYMENT' ) {
+                my $logger = Koha::Logger->get( { prefix => 0, interface => 'offlinecirc', category => 'issue' } );
+                my $b      = C4::Context->userenv ? C4::Context->userenv->{branch} : "NOBRANCH";
+                Koha::Logger::koc_line( "payment", Koha::Patrons->find( $self->{patron_id} )->cardnumber, $amount, $b );
+            }
+
             # Offset debts passed first
             if ( exists( $params->{debits} ) ) {
                 $credit = $credit->apply( { debits => $params->{debits} } );
