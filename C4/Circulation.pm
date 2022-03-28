@@ -1676,6 +1676,10 @@ sub AddIssue {
                     }
                 )->store;
             }
+
+            my $logger = Koha::Logger->get({ interface => 'offlinecirc', category => 'issue' });
+            $logger->error("\tissue\t" . $patron->cardnumber . "\t" . $item_object->barcode . "\t" . C4::Context->userenv->{branch} . "\n");
+
             $issue->discard_changes;
             C4::Auth::track_login_daily( $borrower->{userid} );
             if ( $item_object->location && $item_object->location eq 'CART'
@@ -2185,6 +2189,9 @@ sub AddReturn {
     if ($doreturn) {
         die "The item is not issed and cannot be returned" unless $issue; # Just in case...
         $patron or warn "AddReturn without current borrower";
+
+        my $logger = Koha::Logger->get({ interface => 'offlinecirc', category => 'issue' });
+        $logger->error("\treturn\t" . $item->barcode . "\t$branch" . "\n");
 
         if ($patron) {
             eval {
