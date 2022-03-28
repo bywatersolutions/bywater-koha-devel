@@ -1824,6 +1824,12 @@ sub AddIssue {
                     }
                 }
             );
+
+            Koha::Logger::koc_line(
+                "issue", $patron->cardnumber, $item_object->barcode,
+                C4::Context->userenv->{branch}
+            );
+
             $issue->discard_changes;
 
             #Update borrowers.lastseen
@@ -2388,6 +2394,9 @@ sub AddReturn {
     if ($doreturn) {
         die "The item is not issed and cannot be returned" unless $issue;    # Just in case...
         $patron or warn "AddReturn without current borrower";
+
+        my $logger = Koha::Logger->get( { prefix => 0, interface => 'offlinecirc', category => 'issue' } );
+        $logger->error( "\treturn\t" . $item->barcode . "\t$branch" . "\n" );
 
         if ($patron) {
             eval {
