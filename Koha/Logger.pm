@@ -231,6 +231,14 @@ Marcel de Rooy, Rijksmuseum
 
 =cut
 
+sub koc_line {
+    my @elements = @_;
+
+    my $line   = join( "\t", map { $_ || q{} } @_ );
+    my $logger = Koha::Logger->get( { prefix => 0, interface => 'offlinecirc', category => 'issue' } );
+    $logger->error("\t$line");
+}
+
 1;
 
 __END__
