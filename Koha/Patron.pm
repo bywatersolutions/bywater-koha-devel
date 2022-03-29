@@ -1653,30 +1653,6 @@ sub can_log_into {
    return $can;
 }
 
-=head3 libraries_where_can_see_patrons
-
-my $libraries = $patron-libraries_where_can_see_patrons;
-
-Return the list of branchcodes(!) of libraries the patron is allowed to see other patron's infos.
-The branchcodes are arbitrarily returned sorted.
-We are supposing here that the object is related to the logged in patron (use of C4::Context::only_my_library)
-
-An empty array means no restriction, the patron can see patron's infos from any libraries.
-
-=cut
-
-sub libraries_where_can_see_patrons {
-    my ($self) = @_;
-
-    return $self->libraries_where_can_see_things(
-        {
-            permission    => 'borrowers',
-            subpermission => 'view_borrower_infos_from_any_libraries',
-            group_feature => 'ft_hide_patron_info',
-        }
-    );
-}
-
 =head3 libraries_where_can_see_things
 
 my $libraries = $thing-libraries_where_can_see_things;
