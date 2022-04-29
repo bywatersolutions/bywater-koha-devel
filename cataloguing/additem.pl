@@ -635,8 +635,8 @@ if ($op) {
 my @items;
 for my $item ( $biblio->items->as_list, $biblio->host_items->as_list ) {
     my $i = $item->columns_to_str;
-    $item->{nomod} = 1 unless $patron->can_edit_item($item);
-    push @items, $item->columns_to_str;
+    $i->{nomod} = 1 unless $patron->can_edit_item($item);
+    push @items, $i;
 }
 
 my @witness_attributes = uniq map {
