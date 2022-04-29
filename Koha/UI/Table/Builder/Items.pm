@@ -72,7 +72,7 @@ Use it with:
 sub build_table {
     my ( $self, $params ) = @_;
 
-    my $patron = $self->params;
+    my $patron = $params->{patron};
 
     my %itemnumbers_to_idx = map { $self->{itemnumbers}->[$_] => $_ } 0..$#{$self->{itemnumbers}};
 
@@ -89,7 +89,7 @@ sub build_table {
             holds          => $item->biblio->holds->count,
             item_holds     => $item->holds->count,
             is_checked_out => $item->checkout || 0,
-            nomod          => $patron ? 0 : $patron->can_edit_item($item),
+            nomod          => $patron ? !$patron->can_edit_item($item) : 0,
         };
         push @items, $item_info;
     }
