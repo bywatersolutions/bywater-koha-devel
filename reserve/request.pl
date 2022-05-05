@@ -546,6 +546,8 @@ if (   ( $findborrower && $borrowernumber_hold || $findclub && $club_hold )
                             else {
                                 $item->{available} = 0;
                                 $item->{not_holdable} = "no_valid_pickup_location";
+                                $item->{override} = 1;
+                                $num_override++;
                             }
                         } else { $num_alreadyheld++ }
 
