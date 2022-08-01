@@ -1092,7 +1092,7 @@ subtest 'change_type() tests' => sub {
 
 subtest 'cancel() tests' => sub {
 
-    plan tests => 12;
+    plan tests => 11;
 
     $schema->storage->txn_begin;
 
@@ -1172,8 +1172,6 @@ subtest 'cancel() tests' => sub {
 
     $get_prepared_letter_called = 0;
     $hold->cancel({ notify_patron => 1 });
-    is( $get_prepared_letter_called, 0, 'GetPreparedLetter not called if notify_patron passed and no cancellation_reason passed' );
-
     isnt( $hold->cancellationdate, undef, 'cancellationdate gets set to the passed value' );
     is( $hold->priority, 0, 'priority gets set to 0' );
     is( $hold->cancellation_reason, undef, 'cancellation_reason not passed' );
