@@ -34,6 +34,7 @@ my $help = 0;
 my $verbose = 0;
 my @type;
 my @letter_code;
+my $exit_on_plugin_failure = 0;
 
 my $command_line_options = join(" ",@ARGV);
 
@@ -46,6 +47,7 @@ GetOptions(
     'v|verbose'         => \$verbose,
     't|type:s'          => \@type,
     'c|code:s'          => \@letter_code,
+    'e|exit-on-plugin-failure' => \$exit_on_plugin_failure,
 );
 my $usage = << 'ENDUSAGE';
 
@@ -64,6 +66,7 @@ This script has the following parameters :
     -m --method: authentication method required by SMTP server (See perldoc Sendmail.pm for supported authentication types.)
     -h --help: this message
     -v --verbose: provides verbose output to STDOUT
+    -e --exit-on-plugin-failure: if enabled, script will exit prematurely if any plugin before_send_messages hook fails
 ENDUSAGE
 
 die $usage if $help;
@@ -102,6 +105,7 @@ if ( C4::Context->config("enable_plugins") ) {
             }
             catch {
                 warn "$_";
+                exit 1 if $exit_on_plugin_failure;
             };
         }
     }
