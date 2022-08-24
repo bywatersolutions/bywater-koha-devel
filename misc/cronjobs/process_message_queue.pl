@@ -34,6 +34,7 @@ my $help = 0;
 my $verbose = 0;
 my $type = q{};
 my $letter_code;
+my $content_not_like;
 
 GetOptions(
     'u|username:s'      => \$username,
@@ -44,6 +45,7 @@ GetOptions(
     'v|verbose'         => \$verbose,
     't|type:s'          => \$type,
     'c|code:s'          => \$letter_code,
+    'content-not-like:s'=> \$content_not_like,
 );
 my $usage = << 'ENDUSAGE';
 
@@ -62,6 +64,7 @@ This script has the following parameters :
     -m --method: authentication method required by SMTP server (See perldoc Sendmail.pm for supported authentication types.)
     -h --help: this message
     -v --verbose: provides verbose output to STDOUT
+    --content-not-like: Message will not be processed if it contains this value
 ENDUSAGE
 
 die $usage if $help;
@@ -101,6 +104,7 @@ C4::Letters::SendQueuedMessages(
         limit       => $limit,
         type        => $type,
         letter_code => $letter_code,
+        content_not_like => $content_not_like,
     }
 );
 
