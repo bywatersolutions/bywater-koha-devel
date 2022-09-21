@@ -2514,6 +2514,7 @@ sub MarkIssueReturned {
 
     # Retrieve the issue
     my $issue = Koha::Checkouts->find( { itemnumber => $itemnumber } ) or return;
+    my $issue_branchcode = $issue->branchcode;
 
     return unless $issue->borrowernumber == $borrowernumber; # If the item is checked out to another patron we do not return it
 
@@ -2560,18 +2561,17 @@ sub MarkIssueReturned {
         # The reason this is here, and not in Koha::Patron->has_overdues() is
         # to make sure it will not cause any side effects elsewhere, since this
         # is only relevant for removal of debarments.
-        my $has_overdue_ignore_unrestricted = 0;
-        if(C4::Context->preference('ODueDebarmentRemovalAllowUnrestricted')) {
-            $has_overdue_ignore_unrestricted = 1;
-        }
+        my $has_overdue_ignore_unrestricted = C4::Context->preference('AutoRemoveOverduesRestrictions') eq 'when_no_overdue_causing_debarment';
 
-        # Remove any OVERDUES related debarment if the borrower has no overdues
-        if ( C4::Context->preference('AutoRemoveOverduesRestrictions')
-          && $patron->debarred
-          && !$patron->has_overdues({
-              ignore_unrestricted => $has_overdue_ignore_unrestricted,
-              issue_branch => $issue->{'branchcode'} })
-          && @{ GetDebarments({ borrowernumber => $borrowernumber, type => 'OVERDUES' }) }
+        # Possibly remove any OVERDUES related debarment
+        if (
+            C4::Context->preference('AutoRemoveOverduesRestrictions') ne 'no'
+            && $patron->debarred
+            && !$patron->has_overdues({
+                    ignore_unrestricted => $has_overdue_ignore_unrestricted,
+                    issue_branchcode => $issue_branchcode
+                })
+            && @{ GetDebarments({ borrowernumber => $borrowernumber, type => 'OVERDUES' }) }
         ) {
             DelUniqueDebarment({ borrowernumber => $borrowernumber, type => 'OVERDUES' });
         }
