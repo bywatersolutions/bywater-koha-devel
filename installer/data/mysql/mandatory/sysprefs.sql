@@ -645,6 +645,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('SelfCheckReceiptPrompt','1','NULL','If ON, print receipt dialog pops up when self checkout is finished','YesNo'),
 ('SelfCheckTimeout','120','','Define the number of seconds before the Web-based Self Checkout times out a patron','Integer'),
 ('SendAllEmailsTo','',NULL,'All emails will be redirected to this email if it is not empty','free'),
+('SendLetterIdInEmailNotices','0',NULL,'Add template id to bottom of emailed notices','YesNo'),
 ('SeparateHoldings','0',NULL,'Separate current branch holdings from other holdings','YesNo'),
 ('SeparateHoldingsBranch','homebranch','homebranch|holdingbranch','Branch used to separate holdings','Choice'),
 ('SessionRestrictionByIP','1','Check for change in remote IP address for session security. Disable only when remote IP address changes frequently.','','YesNo'),

@@ -1249,7 +1249,7 @@ sub _get_unsent_messages {
 
     my $dbh = C4::Context->dbh();
     my $statement = qq{
-        SELECT mq.message_id, mq.borrowernumber, mq.subject, mq.content, mq.message_transport_type, mq.status, mq.time_queued, mq.from_address, mq.reply_address, mq.to_address, mq.content_type, b.branchcode, mq.letter_code, mq.failure_code
+        SELECT mq.message_id, mq.borrowernumber, mq.subject, mq.content, mq.message_transport_type, mq.status, mq.time_queued, mq.from_address, mq.reply_address, mq.to_address, mq.content_type, b.branchcode, mq.letter_code, mq.failure_code, mq.letter_id
         FROM message_queue mq
         LEFT JOIN borrowers b ON b.borrowernumber = mq.borrowernumber
         WHERE status = ?
@@ -1385,8 +1385,10 @@ sub _send_message_by_email {
         } else {
             $email = Koha::Email->create($params);
             if ($is_html) {
+                $content .= "<br/>$message->{letter_id}" if $message->{id} && C4::Context->preference('SendLetterIdInEmailNotices');
                 $email->html_body( _wrap_html( $content, $subject ) );
             } else {
+                $content .= "\n$message->{letter_id}" if $message->{id} && C4::Context->preference('SendLetterIdInEmailNotices');
                 $email->text_body($content);
             }
         }

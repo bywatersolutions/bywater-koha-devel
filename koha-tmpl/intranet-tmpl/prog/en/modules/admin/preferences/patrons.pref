@@ -167,6 +167,12 @@ Patrons:
                0: "Don't notify"
          - patrons whenever their password is changed.
      -
+         - pref: SendLetterIdInEmailNotices
+           choices:
+               1: Add
+               0: "Don't add"
+         - the template id for a notice to the bottom of any emailed notices.
+     -
          - pref: UseEmailReceipts
            choices:
                1: Send
