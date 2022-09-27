@@ -202,6 +202,11 @@ if ($op eq ""){
 
         SetMatchedBiblionumber( $biblio->{import_record_id}, $biblionumber );
 
+        # Update suggestions
+        my @suggestions_selected = $input->multi_param('attach_suggestion_record_' . $biblio->{import_record_id});
+        my $suggestions = Koha::Suggestions->search({ suggestionid => { -in => \@suggestions_selected } });
+        $suggestions->update({ biblionumber => $biblionumber });
+
         # Add items from MarcItemFieldsToOrder
         my @homebranches = $input->multi_param('homebranch_' . $biblio_count);
         my $count = scalar @homebranches;

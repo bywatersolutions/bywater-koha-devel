@@ -11,6 +11,32 @@ $(document).ready(function() {
         "aaSorting": []
     }) );
 
+    $(".add_suggestions").click(function(){
+        let the_button = $(this);
+        let modal_title = $("#search_suggestion_modal_title");
+        modal_title.text( the_button.data('title') );
+        modal_title.data('import_record_id',the_button.data('biblionumber') );
+        let the_table = $("#suggestions_search_table").DataTable();
+        the_table.draw();
+        $("#suggestion_search_modal").modal().show();
+    });
+    $("body").on("click", ".select_suggestion", function(){
+        let suggestion_id = $(this).data('suggestionid');
+        let import_record_id =  $("#search_suggestion_modal_title").data('import_record_id');
+        $("ul#link_suggestions_"+import_record_id).append(`
+            <li>
+            <input name="attach_suggestion_record_`+import_record_id+`" type="hidden" value="`+suggestion_id+`" >
+            <label for="attach_suggestion_record_`+import_record_id+`">Attach suggestion: </label>
+            <span>`+$(this).data('title')+`</span>
+            <a class="remove_suggestion">Remove</a>
+            </li>
+        `);
+        $(this).remove();
+    });
+    $("body").on("click", ".remove_suggestion", function(){
+        $(this).parent('li').remove();
+    });
+
     checkOrderBudgets();
     var all_budget_id = $("#all_budget_id");
 

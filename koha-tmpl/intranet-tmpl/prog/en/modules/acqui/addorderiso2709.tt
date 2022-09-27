@@ -25,6 +25,7 @@
 <body id="acq_addorderiso2709" class="acq">
     [% INCLUDE 'header.inc' %]
     [% INCLUDE 'acquisitions-search.inc' %]
+    [% INCLUDE 'suggestions-search.inc' %]
 
     <nav id="breadcrumbs" aria-label="Breadcrumb" class="breadcrumb">
         <ol>
@@ -188,6 +189,21 @@
                                                     <li class="sort2">
                                                         <label for="sort2_record_[% biblio.import_record_id | html %]">Statistic 2: </label>
                                                         <input id="sort2_record_[% biblio.import_record_id | html %]" type="text" size="20" name="sort2" value="[% biblio.sort2 | html %]" />
+                                                    </li>
+                                                    <li class="suggestions">
+                                                        <fieldset>
+                                                            <legend>Suggestions</legend>
+                                                            <ul id="link_suggestions_[% biblio.import_record_id | html %]">
+                                                                [% FOREACH suggestion IN biblio.suggestions %]
+                                                                    <li>
+                                                                        <label for="attach_suggestion_record_[% biblio.import_record_id | html %]">Link suggestion: </label>
+                                                                        <input name="attach_suggestion_record_[% biblio.import_record_id | html %]" value="[% suggestion.suggestionid %]" type="checkbox">
+                                                                        <span>[% suggestion.title | html %] <em>[% suggestion.author | html %]</em> [% IF suggestion.isbn %]([% suggestion.isbn | html %])[% END %]</span>
+                                                                    </li>
+                                                                [% END %]
+                                                            </ul>
+                                                            <button type="button" class="add_suggestions btn btn-sm" data-title="[% biblio.citation | html %]" data-biblionumber="[% biblio.import_record_id | html %]">Link suggestions</button>
+                                                        </fieldset>
                                                     </li>
                                                 </ol>
                                             </div>
