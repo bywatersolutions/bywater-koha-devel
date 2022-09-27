@@ -70,6 +70,8 @@ properties:
       - CHECKED
       - ACCEPTED
       - REJECTED
+      - ORDERED
+      - AVAILABLE
   note:
     type:
       - string
