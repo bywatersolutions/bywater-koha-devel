@@ -540,10 +540,10 @@
                                 [%- IF ( books_loo.publicationyear ) %], [% books_loo.publicationyear | html -%]
                                 [%- ELSIF ( books_loo.copyrightdate ) %] [% books_loo.copyrightdate | html %][% END -%]
                                 [%- IF ( books_loo.editionstatement ) %], [% books_loo.editionstatement | html %][% END -%]
-                                [%- IF ( books_loo.suggestionid ) %]
+                                [% FOREACH suggestion IN books_loo.suggestions %]
                                     <br/>
-                                    Suggested by: [% books_loo.surnamesuggestedby | html %][% IF ( books_loo.firstnamesuggestedby ) %], [% books_loo.firstnamesuggestedby | html %] [% END %]
-                                    (<a href="/cgi-bin/koha/suggestion/suggestion.pl?suggestionid=[% books_loo.suggestionid | uri %]&amp;op=show">suggestion #[% books_loo.suggestionid | html %]</a>)
+                                    Suggested by: [% suggestion.suggester.surname | html %][% IF ( suggestion.suggester.firstname ) %], [% suggestion.suggester.firstname | html %] [% END %]
+                                    (<a href="/cgi-bin/koha/suggestion/suggestion.pl?suggestionid=[% suggestion.suggestionid | uri %]&amp;op=show">suggestion #[% suggestion.suggestionid | html %]</a>)
                                 [% END %]
                             </p>
                                 [% IF ( books_loo.order_internalnote ) %]

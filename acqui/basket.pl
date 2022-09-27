@@ -497,10 +497,8 @@ sub get_order_infos {
     }
 
 
-    my $suggestion   = GetSuggestionInfoFromBiblionumber($line{biblionumber});
-    $line{suggestionid}         = $$suggestion{suggestionid};
-    $line{surnamesuggestedby}   = $$suggestion{surnamesuggestedby};
-    $line{firstnamesuggestedby} = $$suggestion{firstnamesuggestedby};
+    my @suggestions   = Koha::Suggestions->search({ biblionumber => $line{biblionumber} })->as_list;
+    $line{suggestions}         = \@suggestions;
 
     foreach my $key (qw(transferred_from transferred_to)) {
         if ($line{$key}) {
