@@ -37,8 +37,9 @@ $(document).ready(function(){
 
     suggestions_table = $("#suggestions_search_table").kohaTable({
         "ajax": {
-            "url": "/api/v1/suggestions"
+            "url": "/api/v1/suggestions?q=[{\"archived\":false}]"
         },
+        "embed": ["suggester.library"],
         "stateSave": true,
         "columns": [
             {
@@ -46,6 +47,12 @@ $(document).ready(function(){
                 "searchable": true,
                 "orderable": true,
                 "max-width": "20%",
+                "render": function( data, type, row, meta ) {
+                    let title_row = "";
+                    title_row += "<a target=\"_blank\"  href=\"/cgi-bin/koha/suggestion/suggestion.pl?&op=editsuggestionid=" + row.suggestion_id + "\">" ;
+                    title_row += row.title ? row.title : ('Suggestion #' + row.suggestion_id) + '</a>';
+                    return title_row;
+                }
             },
             {
                 "data": "author",
@@ -68,14 +75,31 @@ $(document).ready(function(){
                 "orderable": true,
             },
             {
-                "data": "suggested_by",
+                "data": "suggested_by:suggester.firstname:suggester.surname:suggester.library_id",
                 "searchable": true,
                 "orderable": true,
+                "render": function( data, type, row, meta ) {
+                    let suggester_info = "";
+                    if( row.suggester ){
+                        suggester_info += row.suggester.surname;
+                        suggester_info += row.suggester.firstname ? (", " + row.suggester.firstname) : "";
+                        suggester_info += row.suggester.library ? ("</br> " + row.suggester.library.name + " (" + row.suggester.library_id + ")") : "";
+                    }
+                    return suggester_info;
+                }
             },
             {
-                "data": "status",
+                "data": "status:biblionumber",
                 "searchable": true,
                 "orderable": true,
+                "render": function( data, type, row, meta ) {
+                    let addl_info = "";
+                    if( row.biblio_id > 0 ){
+                        addl_info += "Biblionumber: " + row.biblio_id + "</br>";
+                    }
+                    addl_info += row.status;
+                    return addl_info;
+                }
             },
             {
                 "data": "suggestionid",
