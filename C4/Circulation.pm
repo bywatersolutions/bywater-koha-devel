@@ -2558,24 +2558,19 @@ sub MarkIssueReturned {
             $item->last_returned_by( $patron );
         }
 
-        # The reason this is here, and not in Koha::Patron->has_overdues() is
-        # to make sure it will not cause any side effects elsewhere, since this
-        # is only relevant for removal of debarments.
-        my $has_overdue_ignore_unrestricted = C4::Context->preference('AutoRemoveOverduesRestrictions') eq 'when_no_overdue_causing_debarment';
-
         # Possibly remove any OVERDUES related debarment
-        if (
-            C4::Context->preference('AutoRemoveOverduesRestrictions') ne 'no'
-            && $patron->debarred
-            && !$patron->has_overdues({
-                    ignore_unrestricted => $has_overdue_ignore_unrestricted,
-                    issue_branchcode => $issue_branchcode
-                })
-            && @{ GetDebarments({ borrowernumber => $borrowernumber, type => 'OVERDUES' }) }
-        ) {
-            DelUniqueDebarment({ borrowernumber => $borrowernumber, type => 'OVERDUES' });
+        if (C4::Context->preference('AutoRemoveOverduesRestrictions') ne 'no' && $patron->is_debarred) {
+            my $remove_restrictions =
+                C4::Context->preference('AutoRemoveOverduesRestrictions') eq 'when_no_overdue_causing_debarment' ?
+                    !$patron->has_debarring_overdues({ issue_branchcode => $issue_branchcode }) :
+                    !$patron->has_overdues;
+            if (
+                $remove_restrictions &&
+                @{ GetDebarments({ borrowernumber => $borrowernumber, type => 'OVERDUES' }) }
+            ) {
+                DelUniqueDebarment({ borrowernumber => $borrowernumber, type => 'OVERDUES' });
+            }
         }
-
     });
 
     return $issue_id;
