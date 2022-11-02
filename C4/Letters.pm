@@ -1385,7 +1385,7 @@ sub _send_message_by_email {
         } else {
             $email = Koha::Email->create($params);
             if ($is_html) {
-                $content .= "<br/>$message->{letter_id}" if $message->{id} && C4::Context->preference('SendLetterIdInEmailNotices');
+                $content .= "<span id='letter_id' style='display:none'>$message->{letter_id}</span>" if $message->{id} && C4::Context->preference('SendLetterIdInEmailNotices');
                 $email->html_body( _wrap_html( $content, $subject ) );
             } else {
                 $content .= "\n$message->{letter_id}" if $message->{id} && C4::Context->preference('SendLetterIdInEmailNotices');
