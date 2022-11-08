@@ -79,7 +79,7 @@ Circulation:
               choices:
                   1: Allow
                   0: "Don't allow"
-            - staff to delete messages added from other libraries.
+            - staff to edit and delete messages added from other libraries.
         -
             - Show the
             - pref: numReturnedItemsToShow
