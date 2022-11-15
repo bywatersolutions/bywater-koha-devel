@@ -306,7 +306,7 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
                                       itemnumber     => $upcoming->{'itemnumber'},
                                       substitute     => {
                                           'items.content' => $title,
-                                          issue           => $item_info,
+                                          checkout        => $item_info,
                                       },
                                       message_transport_type => $transport,
                                     } )
@@ -355,7 +355,7 @@ UPCOMINGITEM: foreach my $upcoming ( @$upcoming_dues ) {
                                       itemnumber     => $upcoming->{'itemnumber'},
                                       substitute     => {
                                           'items.content' => $title,
-                                          issue           => $item_info,
+                                          checkout        => $item_info,
                                       },
                                       message_transport_type => $transport,
                                     } )
@@ -608,11 +608,11 @@ sub send_digests {
                 {
                     letter_code    => $params->{letter_code},
                     borrowernumber => $borrowernumber,
-                    issues         => \@issues,
+                    checkouts      => \@issues,
                     substitute     => {
                         count           => $count,
                         'items.content' => $titles,
-                        issues          => \@issues,
+                        checkouts       => \@issues,
                         %branch_info
                     },
                     itemnumbers    => \@itemnumbers,
