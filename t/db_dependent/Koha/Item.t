@@ -706,7 +706,7 @@ subtest 'pickup_locations' => sub {
 };
 
 subtest 'request_transfer' => sub {
-    plan tests => 13;
+    plan tests => 17;
     $schema->storage->txn_begin;
 
     my $library1 = $builder->build_object( { class => 'Koha::Libraries' } );
@@ -727,11 +727,29 @@ subtest 'request_transfer' => sub {
     'Koha::Exceptions::MissingParameter',
       'Exception thrown if `to` parameter is missing';
 
-    # Successful request
+    $schema->resultset('ActionLog')->search()->delete();
+    t::lib::Mocks::mock_preference( 'TransfersLog', 0 );
     my $transfer = $item->request_transfer({ to => $library1, reason => 'Manual' });
     is( ref($transfer), 'Koha::Item::Transfer',
         'Koha::Item->request_transfer should return a Koha::Item::Transfer object'
     );
+    is( $schema->resultset('ActionLog')->count(), 0, 'False value for TransfersLog does not trigger logging' );
+    $transfer->delete;
+    t::lib::Mocks::mock_preference( 'TransfersLog', 1 );
+    $transfer = $item->request_transfer({ to => $library1, reason => 'Manual' });
+    is( ref($transfer), 'Koha::Item::Transfer',
+        'Koha::Item->request_transfer should return a Koha::Item::Transfer object'
+    );
+    is( $schema->resultset('ActionLog')->count(), 1, 'True value for TransfersLog does trigger logging' );
+    $transfer->delete;
+    t::lib::Mocks::mock_preference( 'TransfersLog', 0 );
+
+    # Successful request
+    $transfer = $item->request_transfer({ to => $library1, reason => 'Manual' });
+    is( ref($transfer), 'Koha::Item::Transfer',
+        'Koha::Item->request_transfer should return a Koha::Item::Transfer object'
+    );
+
     my $original_transfer = $transfer->get_from_storage;
 
     # Transfer already in progress

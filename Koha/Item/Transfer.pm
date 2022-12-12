@@ -17,8 +17,10 @@ package Koha::Item::Transfer;
 
 use Modern::Perl;
 
+use JSON;
 
 use C4::Items qw( CartToShelf ModDateLastSeen );
+use C4::Log qw( logaction );
 
 use Koha::Database;
 use Koha::DateUtils qw( dt_from_string );
@@ -168,6 +170,30 @@ sub cancel {
         { datecancelled => dt_from_string, cancellation_reason => $params->{reason} } )
       ->store;
 
+    return $self;
+}
+
+
+=head3 store
+
+Transfer specific store method to log transfer createion
+
+=cut
+
+sub store {
+    my ($self) = @_;
+
+    $self->_result->result_source->schema->txn_do(
+        sub {
+            $self = $self->SUPER::store;
+
+            my $action = $self->in_storage ? 'UPDATE' : 'CREATE';
+
+            logaction( "TRANSFERS", $action, $self->itemnumber,
+                JSON->new->utf8(1)->pretty(1)->encode($self->TO_JSON) )
+              if C4::Context->preference("TransfersLog");
+        }
+    );
     return $self;
 }
 

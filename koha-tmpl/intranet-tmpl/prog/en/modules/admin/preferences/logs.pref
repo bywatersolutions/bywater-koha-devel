@@ -114,6 +114,12 @@ Logging:
                   1: Log
                   0: "Don't log"
             - any actions on recalls (create, cancel, expire, fulfill).
+        -
+            - pref: TransfersLog
+              choices:
+                  1: Log
+                  0: "Don't log"
+            - " item transfers."
 
     Debugging:
         -
