@@ -52,15 +52,24 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Pod::Usage;
 use Getopt::Long;
+use Parallel::ForkManager;
 
 use Koha::Logger;
 use Koha::BackgroundJobs;
+use C4::Context;
 
 my ( $help, @queues );
+
+my $max_processes = $ENV{MAX_PROCESSES};
+$max_processes ||= C4::Context->config('background_jobs_worker')->{max_processes} if C4::Context->config('background_jobs_worker');
+$max_processes ||= 1;
+
 GetOptions(
+    'm|max-processes=i' => \$max_processes,
     'h|help' => \$help,
     'queue=s' => \@queues,
 ) || pod2usage(1);
+
 
 pod2usage(0) if $help;
 
@@ -74,6 +83,8 @@ try {
 } catch {
     warn sprintf "Cannot connect to the message broker, the jobs will be processed anyway (%s)", $_;
 };
+
+my $pm = Parallel::ForkManager->new($max_processes);
 
 if ( $conn ) {
     # FIXME cf note in Koha::BackgroundJob about $namespace
@@ -115,7 +126,9 @@ while (1) {
             next;
         }
 
+        $pm->start and next;
         process_job( $job, $args );
+        $pm->finish;
 
     } else {
         my $jobs = Koha::BackgroundJobs->search({ status => 'new', queue => \@queues });
@@ -130,7 +143,9 @@ while (1) {
 
             next unless $args;
 
+            $pm->start and next;
             process_job( $job, { job_id => $job->id, %$args } );
+            $pm->finish;
 
         }
         sleep 10;
