@@ -45,10 +45,11 @@ sub new {
 }
 
 sub do_checkin {
-    my $self = shift;
-    my $branch = shift;
+    my $self        = shift;
+    my $branch      = shift;
     my $return_date = shift;
-    my $account = shift;
+    my $account     = shift;
+    my $no_block    = shift;
 
     my $checked_in_ok       = $account->{checked_in_ok};
     my $cv_triggers_alert   = $account->{cv_triggers_alert};

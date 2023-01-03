@@ -196,7 +196,7 @@ sub test_cardnumber_compare {
 }
 
 sub checkin {
-    my ( $self, $item_id, $trans_date, $return_date, $current_loc, $item_props, $cancel, $account ) = @_;
+    my ( $self, $item_id, $trans_date, $return_date, $current_loc, $item_props, $cancel, $account, $no_block ) = @_;
 
     my $checked_in_ok     = $account->{checked_in_ok};
     my $cv_triggers_alert = $account->{cv_triggers_alert};
@@ -211,7 +211,7 @@ sub checkin {
 
     my $data;
     if ($item) {
-        $data = $circ->do_checkin( $current_loc, $return_date, $account );
+        $data = $circ->do_checkin( $current_loc, $return_date, $account, $no_block );
     }
     else {
         $circ->alert(1);
