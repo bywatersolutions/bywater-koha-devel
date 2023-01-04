@@ -16,7 +16,8 @@
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
-use Test::More tests => 1;
+use Test::More tests => 2;
+use FindBin;
 
 my $pid = qx[ps ax | grep 'background_jobs_worker.pl --queue default' | grep -v grep | tail -n1 | awk '{print \$1}'];
 
@@ -34,3 +35,6 @@ SKIP: {
         pass("background_jobs_worker.pl is consuming $memory_usage in memory");
     }
 }
+
+my $output = qx{$FindBin::Bin/../misc/background_jobs_worker.pl -m | grep 'Koha/Plugins.pm'};
+is( $output, q{}, "Koha::Plugins not loaded by background_jobs_worker.pl" );

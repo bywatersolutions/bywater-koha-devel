@@ -21,7 +21,7 @@ background_jobs_worker.pl - Worker script that will process background jobs
 
 =head1 SYNOPSIS
 
-./background_jobs_worker.pl [--queue QUEUE]
+./background_jobs_worker.pl [--queue QUEUE] [-m]
 
 =head1 DESCRIPTION
 
@@ -30,6 +30,7 @@ or if a Stomp server is not active it will poll the database every 10s for new j
 
 You can specify some queues only (using --queue, which is repeatable) if you want to run several workers that will handle their own jobs.
 
+-m or --modules will cause the script to print the included Perl modules and exit.
 =head1 OPTIONS
 
 =over
@@ -55,13 +56,16 @@ use Getopt::Long;
 
 use Koha::BackgroundJobs;
 
-my ( $help, @queues );
+my ( $help, @queues, $modules );
 GetOptions(
     'h|help' => \$help,
     'queue=s' => \@queues,
+    'm|modules' => \$modules,
 ) || pod2usage(1);
 
 pod2usage(0) if $help;
+
+if ($modules) { print join "\n", %INC; print "\n"; exit 0; }
 
 unless (@queues) {
     push @queues, 'default';
