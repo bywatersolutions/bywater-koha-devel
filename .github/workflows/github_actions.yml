@@ -35,7 +35,7 @@ jobs:
 
             - name: Check to see if there is a matching NCIP server tag on Docker Hub
               run: |
-                  wget -q https://registry.hub.docker.com/v1/repositories/bywater/koha-ncip-server/tags -O -  | sed -e 's/[][]//g' -e 's/"//g' -e 's/ //g' | tr '}' '\n'  | awk -F: '{print $3}' | grep "v${{ steps.extracted_variables.outputs.MAJOR_MINOR_VERSION }}-latest"
+                  curl --silent "https://registry.hub.docker.com/v2/repositories/bywater/koha-ncip-server/tags?page_size=1000" | jq -r ".results[].name" | sort --version-sort | grep "v${{ steps.extracted_variables.outputs.MAJOR_MINOR_VERSION }}-latest"
 
     unit-test:
         if: github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future'
