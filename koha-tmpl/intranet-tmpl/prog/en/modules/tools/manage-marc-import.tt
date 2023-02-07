@@ -238,9 +238,9 @@
                                             [% IF ( item_action == 'always_add' ) %]
                                                 <span>Always add items</span>
                                             [% ELSIF ( item_action == 'add_only_for_matches' ) %]
-                                                <span>Add items only if matching bib was found</span>
+                                                <span>Add items only if matching record was found</span>
                                             [% ELSIF ( item_action == 'add_only_for_new' ) %]
-                                                <span>Add items only if no matching bib was found</span>
+                                                <span>Add items only if no matching record was found</span>
                                             [% ELSIF ( item_action == 'ignore' ) %]
                                                 <span>Ignore items</span>
                                             [% ELSE %]

@@ -14,19 +14,19 @@
             [% ELSE %]
                 <option value="add_only_for_matches">
             [% END %]
-                Add items only if matching bib was found</option>
+                Add items only if matching record was found</option>
             [% IF ( item_action_add_only_for_new ) %]
                 <option value="add_only_for_new" selected="selected">
             [% ELSE %]
                 <option value="add_only_for_new">
             [% END %]
-                Add items only if no matching bib was found</option>
+                Add items only if no matching record was found</option>
             [% IF ( item_action_replace ) %]
                 <option value="replace" selected="selected">
             [% ELSE %]
                 <option value="replace">
             [% END %]
-                Replace items if matching bib was found (only for existing items)</option>
+                Replace items if matching record was found (only for existing items)</option>
             [% IF ( item_action_ignore ) %]
                 <option value="ignore" selected="selected">
             [% ELSE %]
