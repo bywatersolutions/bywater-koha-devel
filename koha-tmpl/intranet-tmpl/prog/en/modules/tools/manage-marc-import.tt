@@ -243,6 +243,10 @@
                                                 <span>Add items only if no matching record was found</span>
                                             [% ELSIF ( item_action == 'ignore' ) %]
                                                 <span>Ignore items</span>
+                                            [% ELSIF ( item_action == 'replace' ) %]
+                                                <span>Replace matching items if any matching record was found (only for existing items)</span>
+                                            [% ELSIF ( item_action == 'replace_if_bib_match' ) %]
+                                                <span>Replace matching items if matching item is on matching record (only for existing items)</span>
                                             [% ELSE %]
                                                 <span>[% item_action | html %]</span>
                                             [% END %]

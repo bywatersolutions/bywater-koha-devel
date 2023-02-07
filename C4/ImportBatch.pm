@@ -764,40 +764,59 @@ sub _batchCommitItems {
 
         my $item = TransformMarcToKoha({ record => $item_marc, kohafields => ['items.barcode','items.itemnumber'] });
 
-        my $item_match;
         my $duplicate_barcode = exists( $item->{'barcode'} );
         my $duplicate_itemnumber = exists( $item->{'itemnumber'} );
 
         # We assume that when replaicing tiems we do not want to move them - the onus is on the importer to
         # ensure the correct items/records are being updated
         my $updsth = $dbh->prepare("UPDATE import_items SET status = ?, itemnumber = ?, import_error = ? WHERE import_items_id = ?");
+        my $matched_itemnumber_item = Koha::Items->find( $item->{itemnumber} );
+        my $matched_barcode_item = Koha::Items->find({ barcode => $item->{barcode} });
         if (
-            $action eq "replace" &&
+            rindex( $action, 'replace', 0 ) &&
             $duplicate_itemnumber &&
-            ( $item_match = Koha::Items->find( $item->{itemnumber} ))
+            $matched_itemnumber_item
         ) {
-            # Duplicate itemnumbers have precedence, that way we can update barcodes by overlaying
-            ModItemFromMarc( $item_marc, $item_match->biblionumber, $item->{itemnumber}, { skip_record_index => 1 } );
-            $updsth->bind_param( 1, 'imported' );
-            $updsth->bind_param( 2, $item->{itemnumber} );
-            $updsth->bind_param( 3, undef );
-            $updsth->bind_param( 4, $row->{'import_items_id'} );
-            $updsth->execute();
-            $updsth->finish();
-            $num_items_replaced++;
+            if ( $action eq 'replace_if_bib_match' && $matched_itemnumber_item->biblionumber != $biblionumber ) {
+                $updsth->bind_param( 1, 'error' );
+                $updsth->bind_param( 2, undef );
+                $updsth->bind_param( 3, 'matched itemnumber on different record' );
+                $updsth->bind_param( 4, $row->{'import_items_id'} );
+                $updsth->execute();
+                $num_items_errored++;
+            } else {
+                # Duplicate itemnumbers have precedence, that way we can update barcodes by overlaying
+                ModItemFromMarc( $item_marc, $matched_itemnumber_item->biblionumber, $item->{itemnumber}, { skip_record_index => 1 } );
+                $updsth->bind_param( 1, 'imported' );
+                $updsth->bind_param( 2, $item->{itemnumber} );
+                $updsth->bind_param( 3, undef );
+                $updsth->bind_param( 4, $row->{'import_items_id'} );
+                $updsth->execute();
+                $updsth->finish();
+                $num_items_replaced++;
+            }
         } elsif (
             $action eq "replace" &&
             $duplicate_barcode &&
-            ( $item_match = Koha::Items->find({ barcode => $item->{'barcode'} }) )
+            $matched_barcode_item
         ) {
-            ModItemFromMarc( $item_marc, $item_match->biblionumber, $item_match->itemnumber, { skip_record_index => 1 } );
-            $updsth->bind_param( 1, 'imported' );
-            $updsth->bind_param( 2, $item->{itemnumber} );
-            $updsth->bind_param( 3, undef );
-            $updsth->bind_param( 4, $row->{'import_items_id'} );
-            $updsth->execute();
-            $updsth->finish();
-            $num_items_replaced++;
+            if ( $action eq 'replace_if_bib_match' && $matched_barcode_item->biblionumber != $biblionumber ) {
+                $updsth->bind_param( 1, 'error' );
+                $updsth->bind_param( 2, undef );
+                $updsth->bind_param( 3, 'matched barcode on different record' );
+                $updsth->bind_param( 4, $row->{'import_items_id'} );
+                $updsth->execute();
+                $num_items_errored++;
+            } else {
+                ModItemFromMarc( $item_marc, $matched_barcode_item->biblionumber, $matched_barcode_item->itemnumber, { skip_record_index => 1 } );
+                $updsth->bind_param( 1, 'imported' );
+                $updsth->bind_param( 2, $item->{itemnumber} );
+                $updsth->bind_param( 3, undef );
+                $updsth->bind_param( 4, $row->{'import_items_id'} );
+                $updsth->execute();
+                $updsth->finish();
+                $num_items_replaced++;
+            }
         } elsif ($duplicate_barcode) {
             $updsth->bind_param( 1, 'error' );
             $updsth->bind_param( 2, undef );
@@ -1748,11 +1767,18 @@ sub _get_commit_action {
 
             $bib_result = $overlay_action;
 
-            if($item_action eq 'always_add' or $item_action eq 'add_only_for_matches'){
+            if (   $item_action eq 'always_add'
+                or $item_action eq 'add_only_for_matches' )
+            {
                 $item_result = 'create_new';
-            } elsif($item_action eq 'replace'){
+            }
+            elsif ( $item_action eq 'replace' ) {
                 $item_result = 'replace';
-            } else {
+            }
+            elsif ( $item_action eq 'replace_if_bib_match' ) {
+                $item_result = 'replace_if_bib_match';
+            }
+            else {
                 $item_result = 'ignore';
             }
 

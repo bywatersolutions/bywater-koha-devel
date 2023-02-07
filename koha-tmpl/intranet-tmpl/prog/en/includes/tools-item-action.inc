@@ -26,7 +26,13 @@
             [% ELSE %]
                 <option value="replace">
             [% END %]
-                Replace items if matching record was found (only for existing items)</option>
+                Replace matching items if any matching record was found (only for existing items)</option>
+            [% IF ( item_action_replace_if_bib_match ) %]
+                <option value="replace_if_bib_match" selected="selected">
+            [% ELSE %]
+                <option value="replace_if_bib_match">
+            [% END %]
+                Replace matching items if matching item is on matching record (only for existing items)</option>
             [% IF ( item_action_ignore ) %]
                 <option value="ignore" selected="selected">
             [% ELSE %]

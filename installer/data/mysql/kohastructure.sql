@@ -3328,7 +3328,7 @@ CREATE TABLE `import_batches` (
   `upload_timestamp` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'date and time the file was uploaded',
   `overlay_action` enum('replace','create_new','use_template','ignore') NOT NULL DEFAULT 'create_new' COMMENT 'how to handle duplicate records',
   `nomatch_action` enum('create_new','ignore') NOT NULL DEFAULT 'create_new' COMMENT 'how to handle records where no match is found',
-  `item_action` enum('always_add','add_only_for_matches','add_only_for_new','ignore','replace') NOT NULL DEFAULT 'always_add' COMMENT 'what to do with item records',
+  `item_action` enum('always_add','add_only_for_matches','add_only_for_new','ignore','replace','replace_if_bib_match') NOT NULL DEFAULT 'always_add' COMMENT 'what to do with item records',
   `import_status` enum('staging','staged','importing','imported','reverting','reverted','cleaned') NOT NULL DEFAULT 'staging' COMMENT 'the status of the imported file',
   `batch_type` enum('batch','z3950','webservice') NOT NULL DEFAULT 'batch' COMMENT 'where this batch has come from',
   `record_type` enum('biblio','auth','holdings') NOT NULL DEFAULT 'biblio' COMMENT 'type of record in the batch',
