@@ -96,7 +96,7 @@ how to handle records where no match is found
 
   data_type: 'enum'
   default_value: 'always_add'
-  extra: {list => ["always_add","add_only_for_matches","add_only_for_new","ignore","replace"]}
+  extra: {list => ["always_add","add_only_for_matches","add_only_for_new","ignore","replace","replace_if_bib_match"]}
   is_nullable: 0
 
 what to do with item records
@@ -196,6 +196,7 @@ __PACKAGE__->add_columns(
         "add_only_for_new",
         "ignore",
         "replace",
+        "replace_if_bib_match",
       ],
     },
     is_nullable => 0,
@@ -289,8 +290,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2021-01-21 13:39:29
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+/u1tQQzT5ygzGwVgWxxwg
+# Created by DBIx::Class::Schema::Loader v0.07049 @ 2023-02-07 18:07:34
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fqoF/wel36kluHa1iTFzGw
 
 =head2 koha_object_class
 
