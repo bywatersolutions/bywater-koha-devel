@@ -38,6 +38,11 @@ sub filter {
         output_pref({ dt => $dt, dateonly => !$config->{with_hours}, dateformat => $config->{dateformat} });
 }
 
+sub datetime_from_string {
+    my ( $self, @params ) = @_;
+    return dt_from_string( @params );
+}
+
 sub output_preference {
     my ( $self, @params ) = @_;
     return output_pref( @params );

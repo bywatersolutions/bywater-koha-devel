@@ -1188,6 +1188,32 @@ EOF
     is( $letter->{content}, $expected_content );
 };
 
+subtest 'KohaDates::dt_from_string' => sub {
+    plan tests => 1;
+    my $code = 'TEST_DATE';
+    t::lib::Mocks::mock_preference('dateformat', 'metric'); # MM/DD/YYYY
+    my $biblio = $builder->build_object(
+        {
+            class => 'Koha::Biblios',
+            value => {
+                timestamp   => '2018-12-13 20:21:22',
+                datecreated => '2018-12-13'
+            }
+        }
+    );
+    my $template = q{[% USE KohaDates %][% KohaDates.datetime_from_string('2000-12-01').dmy %]};
+
+    reset_template({ template => $template, code => $code, module => 'test' });
+    my $letter = GetPreparedLetter(
+        module => 'test',
+        letter_code => $code,
+        tables => {
+            biblio => $biblio->biblionumber,
+        }
+    );
+    is( $letter->{content}, '01-12-2000' );
+};
+
 subtest 'Execute TT process in a DB transaction' => sub {
     plan tests => 2;
     my $code = 'TEST_TXN';
