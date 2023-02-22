@@ -330,6 +330,7 @@ sub redirect_add_subscription {
     my $previousitemtype  = $query->param('previousitemtype');
     my $skip_serialseq    = $query->param('skip_serialseq');
     my $ccode             = $query->param('ccode');
+    my $published_on_template = $query->param('published_on_template');
 
     my $mana_id;
     if ( $query->param('mana_id') ne "" ) {
@@ -356,7 +357,7 @@ sub redirect_add_subscription {
         join(";",@irregularity), $numberpattern, $locale, $callnumber,
         $manualhistory, $internalnotes, $serialsadditems,
         $staffdisplaycount, $opacdisplaycount, $graceperiod, $location, $enddate,
-        $skip_serialseq, $itemtype, $previousitemtype, $mana_id, $ccode
+        $skip_serialseq, $itemtype, $previousitemtype, $mana_id, $ccode, $published_on_template
     );
     if ( (C4::Context->preference('Mana') == 1) and ( grep { $_ eq "subscription" } split(/,/, C4::Context->preference('AutoShareWithMana'))) ){
         my $result = Koha::SharedContent::send_entity( $query->param('mana_language') || '', $loggedinuser, $subscriptionid, 'subscription');
@@ -445,6 +446,7 @@ sub redirect_mod_subscription {
     my $previousitemtype  = $query->param('previousitemtype');
     my $skip_serialseq    = $query->param('skip_serialseq');
     my $ccode             = $query->param('ccode');
+    my $published_on_template = $query->param('published_on_template');
 
     my $mana_id;
     if ( $query->param('mana_id') ne "" ) {
@@ -480,7 +482,7 @@ sub redirect_mod_subscription {
         $status, $biblionumber, $callnumber, $notes, $letter,
         $manualhistory, $internalnotes, $serialsadditems, $staffdisplaycount,
         $opacdisplaycount, $graceperiod, $location, $enddate, $subscriptionid,
-        $skip_serialseq, $itemtype, $previousitemtype, $mana_id, $ccode
+        $skip_serialseq, $itemtype, $previousitemtype, $mana_id, $ccode, $published_on_template
     );
 
     my @additional_fields;
