@@ -26,6 +26,7 @@ use C4::Auth qw(checkpw);
 use Koha::Items;
 use Koha::Libraries;
 use Koha::Patrons;
+use Koha::TemplateUtils qw( process_tt );
 
 our $kp;    # koha patron
 
@@ -253,22 +254,10 @@ sub format {
     my ( $self, $template ) = @_;
 
     if ($template) {
-        require Template;
         require Koha::Patrons;
 
-        my $tt = Template->new();
-
         my $patron = Koha::Patrons->find( $self->{borrowernumber} );
-
-        my $output;
-        eval {
-            $tt->process( \$template, { patron => $patron }, \$output );
-        };
-        if ( $@ ){
-            siplog("LOG_DEBUG", "Error processing template: $template");
-            return "";
-        }
-        return $output;
+        return process_tt( $template, { patron => $patron } );
     }
 }
 
@@ -410,8 +399,7 @@ sub fine_items {
 
         next unless $fee;
 
-        my $output;
-        $tt->process( \$av_field_template, { accountline => $fee }, \$output );
+        my $output = process_tt( $av_field_template, { accountline => $fee } );
         push( @return_values, { barcode => $output } );
     }
 
