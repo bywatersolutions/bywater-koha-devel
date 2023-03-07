@@ -34,7 +34,7 @@ our $kp;    # koha patron
 =cut
 
 sub new {
-    my ($class, $patron_id) = @_;
+    my ($class, $patron_id, $server) = @_;
     my $type = ref($class) || $class;
     my $self;
 
@@ -97,6 +97,13 @@ sub new {
         $fines_msg .= " -- " . "Patron blocked by fines ($fines_amount) on guaranteed accounts" if $fine_blocked;
     }
 
+    my $too_many_lost = 0;
+    if ( my $lost_block_checkout = $server->{account}->{lost_block_checkout} ) {
+        my $lost_block_checkout_value = $server->{account}->{lost_block_checkout_value} // 1;
+        my $lost_checkouts = Koha::Checkouts->search({ borrowernumber => $patron->borrowernumber, 'itemlost' => { '>=', $lost_block_checkout_value } }, { join => 'item'} )->count;
+        $too_many_lost = $lost_checkouts >= $lost_block_checkout;
+    }
+
     my $circ_blocked =( C4::Context->preference('OverduesBlockCirc') ne "noblock" &&  defined $flags->{ODUES}->{itemlist} ) ? 1 : 0;
     {
     no warnings;    # any of these $kp->{fields} being concat'd could be undef
@@ -140,6 +147,7 @@ sub new {
         fine_blocked    => $fine_blocked,
         fee_limit       => $fee_limit,
         userid          => $kp->{userid},
+        too_many_lost   => $too_many_lost,
     );
     }
 

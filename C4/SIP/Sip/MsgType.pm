@@ -501,7 +501,7 @@ sub handle_patron_status {
     my $fields = $self->{fields};
 
     $ils->check_inst_id( $fields->{ (FID_INST_ID) }, "handle_patron_status" );
-    $patron = $ils->find_patron( $fields->{ (FID_PATRON_ID) } );
+    $patron = $ils->find_patron( $fields->{ (FID_PATRON_ID) }, $server );
     $resp = build_patron_status( $patron, $lang, $fields, $server );
     $self->write_msg( $resp, undef, $server->{account}->{terminator}, $server->{account}->{encoding} );
     return (PATRON_STATUS_REQ);
@@ -769,7 +769,7 @@ sub handle_block_patron {
     # FIXME ???
 
     $ils->check_inst_id( $inst_id, "block_patron" );
-    $patron = $ils->find_patron($patron_id);
+    $patron = $ils->find_patron( $patron_id, $server );
 
     # The correct response for a "Block Patron" message is a
     # "Patron Status Response", so use that handler to generate
@@ -988,7 +988,7 @@ sub handle_patron_info {
 
     Koha::Plugins->call('patron_barcode_transform', \$patron_id );
 
-    $patron = $ils->find_patron($patron_id);
+    $patron = $ils->find_patron( $patron_id, $server );
 
     $resp = (PATRON_INFO_RESP);
     if ($patron) {
@@ -1359,7 +1359,7 @@ sub handle_patron_enable {
 
     siplog( "LOG_DEBUG", "handle_patron_enable: patron_id: '%s', patron_pwd: '%s'", $patron_id, $patron_pwd );
 
-    $patron = $ils->find_patron($patron_id);
+    $patron = $ils->find_patron( $patron_id, $server );
 
     if ( !defined($patron) ) {
 
@@ -1717,13 +1717,6 @@ sub patron_status_string {
 
     my $patron_status;
 
-    my $too_many_lost = 0;
-    if ( my $lost_block_checkout = $server->{account}->{lost_block_checkout} ) {
-        my $lost_block_checkout_value = $server->{account}->{lost_block_checkout_value} // 1;
-        my $lost_checkouts = Koha::Checkouts->search({ borrowernumber => $patron->borrowernumber, 'itemlost' => { '>=', $lost_block_checkout_value } }, { join => 'item'} )->count;
-        $too_many_lost = $lost_checkouts >= $lost_block_checkout;
-    }
-
     siplog( "LOG_DEBUG", "patron_status_string: %s charge_ok: %s", $patron->id, $patron->charge_ok );
     $patron_status = sprintf(
         '%s%s%s%s%s%s%s%s%s%s%s%s%s%s',
@@ -1736,7 +1729,7 @@ sub patron_status_string {
         $server->{account}->{overdues_block_checkout} ? boolspace( $patron->too_many_overdue ) : q{ },
         boolspace( $patron->too_many_renewal ),
         boolspace( $patron->too_many_claim_return ),
-        boolspace( $too_many_lost ),
+        boolspace( $patron->too_many_lost ),
         boolspace( $patron->excessive_fines ),
         boolspace( $patron->excessive_fees ),
         boolspace( $patron->recall_overdue ),

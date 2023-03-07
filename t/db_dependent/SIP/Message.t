@@ -289,32 +289,39 @@ subtest "Test patron_status_string" => sub {
     is( Koha::Checkouts->search({ borrowernumber => $patron->{borrowernumber}, 'itemlost' => { '>', 0 } }, { join => 'item'} )->count, 2, "Found 2 lost checkouts for this patron" );
 
     my $server->{account}->{lost_block_checkout} = undef;
+    $sip_patron = C4::SIP::ILS::Patron->new( $patron->{cardnumber}, $server );
     my $patron_status_string = C4::SIP::Sip::MsgType::patron_status_string( $sip_patron, $server );
     is( substr($patron_status_string, 9, 1), q{ }, "lost_block_checkout = 0 does not block checkouts with 2 lost checkouts" );;
 
     $server->{account}->{lost_block_checkout} = 0;
+    $sip_patron = C4::SIP::ILS::Patron->new( $patron->{cardnumber}, $server );
     $patron_status_string = C4::SIP::Sip::MsgType::patron_status_string( $sip_patron, $server );
     is( substr($patron_status_string, 9, 1), q{ }, "lost_block_checkout = 0 does not block checkouts with 2 lost checkouts" );;
 
     $server->{account}->{lost_block_checkout} = 1;
+    $sip_patron = C4::SIP::ILS::Patron->new( $patron->{cardnumber}, $server );
     $patron_status_string = C4::SIP::Sip::MsgType::patron_status_string( $sip_patron, $server );
     is( substr($patron_status_string, 9, 1), q{Y}, "lost_block_checkout = 1 does block checkouts with 2 lost checkouts" );;
 
     $server->{account}->{lost_block_checkout} = 2;
+    $sip_patron = C4::SIP::ILS::Patron->new( $patron->{cardnumber}, $server );
     $patron_status_string = C4::SIP::Sip::MsgType::patron_status_string( $sip_patron, $server );
     is( substr($patron_status_string, 9, 1), q{Y}, "lost_block_checkout = 2 does block checkouts with 2 lost checkouts" );;
 
     $server->{account}->{lost_block_checkout} = 3;
+    $sip_patron = C4::SIP::ILS::Patron->new( $patron->{cardnumber}, $server );
     $patron_status_string = C4::SIP::Sip::MsgType::patron_status_string( $sip_patron, $server );
     is( substr($patron_status_string, 9, 1), q{ }, "lost_block_checkout = 3 does not block checkouts with 2 lost checkouts" );;
 
     $server->{account}->{lost_block_checkout} = 2;
     $server->{account}->{lost_block_checkout_value} = 2;
+    $sip_patron = C4::SIP::ILS::Patron->new( $patron->{cardnumber}, $server );
     $patron_status_string = C4::SIP::Sip::MsgType::patron_status_string( $sip_patron, $server );
     is( substr($patron_status_string, 9, 1), q{ }, "lost_block_checkout = 2, lost_block_checkout_value = 2 does not block checkouts with 2 lost checkouts where only 1 has itemlost = 2" );
 
     $server->{account}->{lost_block_checkout} = 1;
     $server->{account}->{lost_block_checkout_value} = 2;
+    $sip_patron = C4::SIP::ILS::Patron->new( $patron->{cardnumber}, $server );
     $patron_status_string = C4::SIP::Sip::MsgType::patron_status_string( $sip_patron, $server );
     is( substr($patron_status_string, 9, 1), q{Y}, "lost_block_checkout = 2, lost_block_checkout_value = 2 does block checkouts with 2 lost checkouts where only 1 has itemlost = 2" );
 
