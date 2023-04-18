@@ -66,7 +66,7 @@ my $patron         = Koha::Patrons->find( $borrowernumber );
 output_and_exit_if_error( $input, $cookie, $template, { module => 'members', logged_in_user => $logged_in_user, current_patron => $patron } );
 
 my $branch=C4::Context->userenv->{'branch'};
-my ($slip, $is_html);
+my $slip;
 if ( $print eq 'checkinslip' ) {
     my $checkinslip_branch = $session->param('branch') ? $session->param('branch') : $branch;
 
@@ -91,17 +91,14 @@ if ( $print eq 'checkinslip' ) {
         message_transport_type => 'print'
     );
 
-    $slip    = $letter->{content};
-    $is_html = $letter->{is_html};
+    $slip    = $letter;
 
 } elsif (my $letter = IssueSlip ($session->param('branch') || $branch, $borrowernumber, $print eq "qslip")) {
-    $slip = $letter->{content};
-    $is_html = $letter->{is_html};
+    $slip = $letter;
 }
 
 $template->param(
     slip => $slip,
-    plain => !$is_html,
     borrowernumber => $borrowernumber,
     caller => 'members',
     stylesheet => C4::Context->preference("SlipCSS"),

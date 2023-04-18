@@ -43,6 +43,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 
 my $ars         = Koha::ArticleRequests->search( { id => { '-in' => \@ids } } );
 my $slipContent = '';
+my $joined_slip = ();
 my $first       = 1;
 while ( my $ar = $ars->next ) {
     if ( !$first ) {
@@ -71,12 +72,14 @@ while ( my $ar = $ars->next ) {
         $slip->{is_html}
       ? $slip->{content}
       : '<pre>' . $slip->{content} . '</pre>';
+    $joined_slip = $slip;
 }
+$joined_slip->{content} = $slipContent;
+$joined_slip->{is_html} = 1;
 
 $template->param(
-    slip => $slipContent,
+    slip => $joined_slip,
     caller => 'article-request',
-    plain  => 0,
 );
 
 output_html_with_http_headers $cgi, $cookie, $template->output;

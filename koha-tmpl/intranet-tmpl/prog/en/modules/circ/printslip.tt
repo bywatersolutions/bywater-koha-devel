@@ -23,15 +23,21 @@
 
 [% INCLUDE 'slip-print.inc' #printThenClose %]
 </head>
+
+[% PROCESS 'notice_format_translations.inc' %]
+
 <body id="circ_printslip" class="circ">
 <div id="receipt">
-
-[% IF plain %]
-<pre>
-[% IF ( slip ) %][% slip | html %][% ELSE %]No slip template found[% END %]
-</pre>
-[% ELSE %]
-[% IF ( slip ) %][% slip | $raw %][% ELSE %]No slip template found[% END %]
-[% END %]
+    [% IF ( slips ) %]
+        [% FOREACH slip IN slips %]
+            [% PROCESS 'slip_content.inc' notice=slip %]
+            <hr>
+        [% END %]
+    [% ELSIF ( slip ) %]
+        [% PROCESS 'slip_content.inc' notice=slip %]
+    [% ELSE %]
+        No slip template found
+    [% END %]
+</div>
 
 [% INCLUDE 'intranet-bottom.inc' %]

@@ -14,20 +14,15 @@
 [% INCLUDE 'blocking_errors.inc' %]
 </head>
 
-<body id="printinvoice" class="pat">
+[% PROCESS 'notice_format_translations.inc' %]
 
+<body id="printinvoice" class="pat">
 <div id="receipt">
-  [% IF slip %]
-    [% IF plain %]
-    <pre>
-      [% slip | html %]
-    </pre>
+    [% IF ( slip ) %]
+        [% PROCESS 'slip_content.inc' notice=slip %]
     [% ELSE %]
-      [% slip | $raw %]
+        No print template found
     [% END %]
-  [% ELSE %]
-    <span>No print template found</span>
-  [% END %]
 </div>
 
 [% MACRO jsinclude BLOCK %]

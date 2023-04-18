@@ -395,6 +395,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('NoticeBcc','','','Email address to bcc outgoing notices sent by email','free'),
 ('NoticeCSS','',NULL,'Notices CSS url.','free'),
 ('NoticesLog','0',NULL,'If enabled, log changes to notice templates','YesNo'),
+('NoticesManagement','0',NULL,'Enable the interface to view and print generated notices','YesNo'),
 ('NotifyBorrowerDeparture','30',NULL,'Define number of days before expiry where circulation is warned about patron account expiry','Integer'),
 ('NotifyPasswordChange','1',NULL,'Notify patrons whenever their password is changed.','YesNo'),
 ('NovelistSelectEnabled','0',NULL,'Enable Novelist Select content.  Requires Novelist Profile and Password','YesNo'),

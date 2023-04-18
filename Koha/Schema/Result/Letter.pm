@@ -119,6 +119,56 @@ lang of the notice
 
 last modification
 
+=head2 font_size
+
+  data_type: 'integer'
+  default_value: 14
+  is_nullable: 0
+
+font size used when notice is printed
+
+=head2 text_justify
+
+  data_type: 'enum'
+  default_value: 'L'
+  extra: {list => ["L","C","R"]}
+  is_nullable: 0
+
+text justification used when notice is printed
+
+=head2 units
+
+  data_type: 'enum'
+  default_value: 'INCH'
+  extra: {list => ["POINT","INCH","MM","CM"]}
+  is_nullable: 0
+
+units to use for print measurements
+
+=head2 notice_width
+
+  data_type: 'float'
+  default_value: 8.5
+  is_nullable: 0
+
+width of notice
+
+=head2 top_margin
+
+  data_type: 'float'
+  default_value: 0
+  is_nullable: 0
+
+top margin for notice
+
+=head2 left_margin
+
+  data_type: 'float'
+  default_value: 0
+  is_nullable: 0
+
+left margin for notice
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -160,6 +210,28 @@ __PACKAGE__->add_columns(
     default_value => \"current_timestamp",
     is_nullable => 0,
   },
+  "font_size",
+  { data_type => "integer", default_value => 14, is_nullable => 0 },
+  "text_justify",
+  {
+    data_type => "enum",
+    default_value => "L",
+    extra => { list => ["L", "C", "R"] },
+    is_nullable => 0,
+  },
+  "units",
+  {
+    data_type => "enum",
+    default_value => "INCH",
+    extra => { list => ["POINT", "INCH", "MM", "CM"] },
+    is_nullable => 0,
+  },
+  "notice_width",
+  { data_type => "float", default_value => 8.5, is_nullable => 0 },
+  "top_margin",
+  { data_type => "float", default_value => 0, is_nullable => 0 },
+  "left_margin",
+  { data_type => "float", default_value => 0, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -232,8 +304,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2022-10-18 12:50:14
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MA3WvXK/1ZBc407iU7ZcrA
+# Created by DBIx::Class::Schema::Loader v0.07049 @ 2023-04-27 04:16:22
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6UU3qiPymxx0QY3G9SvD2Q
 
 sub koha_object_class {
     'Koha::Notice::Template';

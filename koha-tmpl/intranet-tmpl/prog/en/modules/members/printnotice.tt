@@ -16,14 +16,16 @@
 [% END %]
 </head>
 
+[% PROCESS 'notice_format_translations.inc' %]
+
 <body id="members_printslip" class="member">
-    <div id="slip">
-        [% IF plain %]
-            <pre>[% IF ( slip ) %][% slip | html %][% ELSE %]No slip template found[% END %]</pre>
-        [% ELSE %]
-            [% IF ( slip ) %][% slip | $raw %][% ELSE %]No slip template found[% END %]
-        [% END %]
-    </div>
+<div id="slip">
+    [% IF ( slip ) %]
+        [% PROCESS 'slip_content.inc' notice=slip %]
+    [% ELSE %]
+        No slip template found
+    [% END %]
+</div>
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'slip-print.inc' #printThenClose %]

@@ -49,6 +49,25 @@
 [% END %]
 </head>
 
+[% text_justification_types = [ 'L','C','R' ] %]
+[% BLOCK translate_justification_types %]
+    [%  SWITCH type %]
+        [%   CASE 'L' %]<span>Left</span>
+        [%   CASE 'C' %]<span>Center</span>
+        [%   CASE 'R' %]<span>Right</span>
+    [%  END %]
+[% END %]
+
+[% units = [ 'POINT','INCH','MM','CM' ] %]
+[% BLOCK translate_unit_types %]
+    [% SWITCH type %]
+        [%   CASE 'POINT' %]<span>PostScript points</span>
+        [%   CASE 'INCH' %]<span>US Inches</span>
+        [%   CASE 'MM' %]<span>SI Millimeters</span>
+        [%   CASE 'CM' %]<span>SI Centimeters</span>
+    [% END %]
+[% END %]
+
 <body id="tools_letter" class="tools">
     [% WRAPPER 'header.inc' %]
     [% INCLUDE 'letters-search.inc' %]
@@ -648,6 +667,78 @@
                 </div> <!-- /.panel-collapse -->
             </div> <!-- /.panel.panel-default -->
         [% END # /FOR mtt %]
+
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="format_[% lang | html %]Heading">
+                <h3 class="panel-title">
+                    <a role="button" class="collapsed" data-toggle="collapse" data-parent="#group_[% lang | html %]" href="#format_[% lang | html %]" aria-expanded="false" aria-controls="format_[% lang | html %]">
+                        <span>Format</span>
+                    </a>
+                </h3>
+            </div> <!-- /.panel-heading -->
+            <div id="format_[% lang | html %]" class="panel-collapse collapse" role="tabpanel" aria-labelledby="format_[% lang | html %]Heading">
+                <div class="panel-body">
+                    <fieldset class="rows">
+                    <div class="dialog message">These format settings apply when a notice is printed.</div>
+                        [% SET param = letters.$lang.params %]
+                        <div class="col-md-6">
+                            <ol>
+                                <li>
+                                    <label for="text_justify">Text justification: </label>
+                                    <select name="text_justify" id="text_justify">
+                                        [% FOREACH text_justification_type IN text_justification_types %]
+                                            [% IF ( text_justification_type == param.text_justify ) %]
+                                            <option value="[% text_justification_type | html %]" selected="selected">[% PROCESS translate_justification_types type=text_justification_type %]</option>
+                                            [% ELSE %]
+                                            <option value="[% text_justification_type | html %]">[% PROCESS translate_justification_types type=text_justification_type %]</option>
+                                            [% END %]
+                                        [% END %]
+                                    </select>
+                                </li>
+                                <li>
+                                    <label for="font_size">Font size: </label>
+                                    <input type="text" name="font_size" id="font_size" size="2" value="[% param.font_size | html %]" />
+                                </li>
+                                <li>
+                                    <label for="format_all">Apply format settings to all notices:</label>
+                                    <input type="checkbox" name="format_all" id="format_all" value="1" />
+                                    <span class="hint">Existing format settings will be overwritten.</span>
+                                </li>
+                            </ol>
+                        </div>
+                        <div class="col-md-6">
+                            <ol>
+                                <li>
+                                    <label for="units">Units:</label>
+                                    <select id="units" name="units">
+                                        [% FOREACH unit IN units %]
+                                            [% IF ( unit == param.units ) %]
+                                            <option value="[% unit | html %]" selected="selected">[% PROCESS translate_unit_types type=unit %]</option>
+                                            [% ELSE %]
+                                            <option value="[% unit | html %]">[% PROCESS translate_unit_types type=unit %]</option>
+                                            [% END %]
+                                        [% END %]
+                                    </select>
+                                </li>
+                                <li>
+                                    <label for="notice_width">Notice width:</label>
+                                    <input type="text" size="4" name="notice_width" id="notice_width" value="[% param.notice_width | html %]" />
+                                </li>
+                                <li>
+                                    <label for="top_margin">Top margin:</label>
+                                    <input type="text" size="4" name="top_margin" id="top_margin" value="[% param.top_margin | html %]" />
+                                </li>
+                                <li>
+                                    <label for="left_margin">Left margin:</label>
+                                    <input type="text" size="4" name="left_margin" id="left_margin" value="[% param.left_margin | html %]" />
+                                </li>
+                            </ol>
+                        </div>
+                    </fieldset> <!-- /.rows.mtt -->
+                </div> <!-- /.panel-body -->
+            </div> <!-- /.panel-collapse -->
+        </div> <!-- /.panel.panel-default -->
+
     </div> <!-- /.panel-group#lang_lang -->
 [% END %]
 

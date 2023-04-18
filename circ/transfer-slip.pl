@@ -47,15 +47,13 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 my $userenv = C4::Context->userenv;
 my ($slip, $is_html);
 if ( my $letter = TransferSlip ($session->param('branch') || $userenv->{branch}, $itemnumber, $barcode, $branchcode) ) {
-    $slip = $letter->{content};
-    $is_html = $letter->{is_html};
+    $slip = $letter;
 }
 else {
     $slip = "Item not found";
 }
 $template->param(
     slip => $slip,
-    plain => !$is_html,
     caller => 'transfer',
     stylesheet => C4::Context->preference("SlipCSS"),
 );

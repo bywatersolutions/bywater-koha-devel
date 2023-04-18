@@ -18,7 +18,7 @@
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
-use Test::More tests => 87;
+use Test::More tests => 88;
 use Test::MockModule;
 use Test::Warn;
 use Test::Exception;
@@ -155,7 +155,9 @@ is( $messages->[0]->{failure_code}, '', 'Failure code for successful message cor
 
 # Setting time_queued to something else than now
 my $yesterday = dt_from_string->subtract( days => 1 );
-Koha::Notice::Messages->find($messages->[0]->{message_id})->time_queued($yesterday)->store;
+my $message_obj = Koha::Notice::Messages->find($messages->[0]->{message_id})->time_queued($yesterday)->store;
+my $patron_obj = Koha::Patrons->find( $borrowernumber );
+is_deeply( $message_obj->patron, $patron_obj, "Koha::Notice::Message->patron sub correctly returns patron object");
 
 # SendQueuedMessages
 my $messages_processed = C4::Letters::SendQueuedMessages( { type => 'email' });

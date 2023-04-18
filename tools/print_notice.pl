@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright 2020 Aleisha Amohia <aleisha@catalyst.net.nz>
+# Copyright 2023 Aleisha Amohia <aleisha@catalyst.net.nz>
 #
 # This file is part of Koha.
 #
@@ -30,42 +30,24 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         template_name   => "circ/printslip.tt",
         query           => $input,
         type            => "intranet",
-        flagsrequired   => { circulate => "circulate_remaining_permissions" },
+        flagsrequired   => { tools => 'view_generated_notices' },
     }
 );
 
-my $recallid = $input->param('recall_id');
-my $recall = Koha::Recalls->find($recallid);
+my @message_ids = $input->multi_param('message_ids');
+my $joined_notices;
+foreach my $message_id ( @message_ids ) {
+    my $message = Koha::Notice::Messages->find( $message_id );
 
-my $itemnumber;
-if ( $recall->item_id ){
-    $itemnumber = $recall->item_id;
-} else {
-    $itemnumber = $recall->checkout->itemnumber;
+    my $template = Koha::Notice::Templates->find( $message->letter_id )->unblessed;
+    $template->{content} = $message->content;
+
+    push @$joined_notices, $template;
+
+    $message->update({ status => 'sent' });
 }
-
-# Print slip to inform library staff of details of recall requester, so the item can be put aside for requester
-my $letter = C4::Letters::GetPreparedLetter(
-    module => 'circulation',
-    letter_code => 'RECALL_REQUESTER_DET',
-    message_transport_type => 'print',
-    tables => {
-         'branches' => $recall->pickup_library_id,
-         'borrowers' => $recall->patron_id,
-         'biblio'   => $recall->biblio_id,
-         'items'   => $itemnumber,
-         'recalls'  => $recall->id,
-    }
-);
-
-my $slip;
-if ($letter) {
-    $slip = $letter;
-}
-
 $template->param(
-    slip => $slip,
-    caller => 'recall',
+    slips => $joined_notices,
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;

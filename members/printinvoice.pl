@@ -80,8 +80,7 @@ $letter //= C4::Letters::GetPreparedLetter(
 );
 
 $template->param(
-    slip   => $letter->{content},
-    plain  => !$letter->{is_html},
+    slip   => $letter,
     patron => $patron,
 );
 

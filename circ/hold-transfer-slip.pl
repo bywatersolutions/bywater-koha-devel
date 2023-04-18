@@ -46,9 +46,10 @@ if ( my $letter = ReserveSlip ({
     branchcode     => $session->param('branch') || $userenv->{branch},
     reserve_id => $reserve_id,
 }) ) {
-    $slip = $letter->{content};
+    $slip = $letter;
     $is_html = $letter->{is_html};
 }
+
 $template->param( slip => $slip ) if ($slip);
 $template->param( caller => 'hold-transfer' );
 $template->param( plain => !$is_html );

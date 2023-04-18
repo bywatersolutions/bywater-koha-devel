@@ -63,9 +63,8 @@ my $letter = parse_overdues_letter(
 );
 
 $template->param(
-    slip           => $letter->{content},
+    slip           => $letter,
     title          => $letter->{name},
-    plain          => !$letter->{is_html},
     borrowernumber => $borrowernumber,
 );
 
