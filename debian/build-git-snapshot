@@ -129,9 +129,11 @@ sub adjust_debian_changelog {
 
     sys_command_output( qq{dch --force-distribution -D "$distribution" -v "$newversion" "Building git snapshot."} );
     sys_command_output( qq{dch -r "Building git snapshot."} );
+    sys_command_output( qq{dpkg-source --commit} );
 }
 
 sub reset_debian_changelog {
+    sys_command_output( qq{git reset -hard HEAD~1} );
     sys_command_output( qq{git checkout -- debian/changelog} );
 }
 
@@ -141,7 +143,10 @@ sub build_package {
 
     my $pdebuildopts = $buildresult ? "--buildresult $buildresult" : "";
     my $pdebuildbasetgz = $basetgz ? "-- --basetgz /var/cache/pbuilder/" . $basetgz . ".tgz" : "";
+    sys_command_output( qq{dpkg-source --commit} );
+    warn "A" x 20;
     sys_command_output_screen( "pdebuild $pdebuildbasetgz $pdebuildopts" );
+    warn "B" x 20;
 }
 
 everything_is_committed() or die "cannot build: uncommited changes";
@@ -149,8 +154,10 @@ everything_is_committed() or die "cannot build: uncommited changes";
 my $newversion = $auto_version
   ? sprintf ('%s%s.%s', $version, strftime("+%Y%m%d%H%M%S", localtime), latest_sha1())
   : $version;
+warn "VERSION: $version";
+warn "NEW VERSION: $newversion";
 
-adjust_debian_changelog( $newversion );
+#adjust_debian_changelog( $newversion );
 build_package( $newversion );
-reset_debian_changelog();
+#reset_debian_changelog();
 
