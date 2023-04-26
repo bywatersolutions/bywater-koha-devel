@@ -97,8 +97,12 @@
                 <div class="col-md-8 col-md-offset-2">
 
                     <div id="toolbar" class="btn-toolbar">
-                        <a class="btn btn-default" id="editsuggestion" href="suggestion.pl?op=edit&amp;csrf_token=[% csrf_token | html %]&amp;suggestionid=[% suggestionid | html %]"><i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit</a>
-                        <a class="btn btn-default deletesuggestion" href="suggestion.pl?op=delete&amp;csrf_token=[% csrf_token | html %]&amp;suggestionid=[% suggestionid | html %]"><i class="fa fa-trash-can"></i> Delete</a>
+                        [% IF CAN_user_suggestions_suggestions_manage %]
+                            <a class="btn btn-default" id="editsuggestion" href="suggestion.pl?op=edit&amp;csrf_token=[% csrf_token | html %]&amp;suggestionid=[% suggestionid | html %]"><i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit</a>
+                        [% END %]
+                        [% IF CAN_user_suggestions_suggestions_delete %]
+                            <a class="btn btn-default deletesuggestion" href="suggestion.pl?op=delete&amp;csrf_token=[% csrf_token | html %]&amp;suggestionid=[% suggestionid | html %]"><i class="fa fa-trash-can"></i> Delete</a>
+                        [% END %]
                     </div>
 
                     <fieldset class="rows">
@@ -331,6 +335,12 @@
                         <span>A similar document already exists: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% m.id | uri %]">[% m.title | html %]</a>. Click on "Confirm your suggestion" to ignore this message.</span>
                     [%  CASE 'manager_not_enough_permissions' %]
                         <span>The manager you selected does not have sufficient permissions.</span>
+                    [% CASE 'no_manage_permission' %]
+                        <span>You do not have permissions to manage suggestions</span>
+                    [% CASE 'no_create_permission' %]
+                        <span>You do not have permissions to create suggestions</span>
+                    [% CASE 'no_delete_permission' %]
+                        <span>You do not have permissions to delete suggestions</span>
                     [% CASE %]
                         <span>[% m.code | html %]</span>
                     [% END %]
@@ -551,7 +561,11 @@
                             <label for="managedby_name">by:</label>
                             <div>
                                 <span id="managedby_name" name="managedby_name">
-                                    <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% logged_in_user.borrowernumber | uri %]">You</a>
+                                    [% IF CAN_user_suggestions_suggestions_manage %]
+                                        <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% logged_in_user.borrowernumber | uri %]">You</a>
+                                    [% ELSE %]
+                                        Nobody
+                                    [% END %]
                                 </span>
                                 [% IF managedby_patron.borrowernumber && logged_in_user.borrowernumber != managedby_patron.borrowernumber %]
                                     | Previously was [% INCLUDE 'patron-title.inc' patron=managedby_patron hide_patron_infos_if_needed=1 %] [% Branches.GetName( managedby_patron.branchcode ) | html %] ([% managedby_patron.category.description | html %])
@@ -561,7 +575,10 @@
                                 [% IF managedby_patron.borrowernumber && logged_in_user.borrowernumber != managedby_patron.borrowernumber %]
                                     <a id="restore_previous_manager" href="#"><i class="fa fa-trash-can"></i> Keep existing manager</a>
                                 [% END %]
-                                <input type="hidden" name="managedby" id="managedby" value="[% logged_in_user.borrowernumber | html %]" />
+
+                                [% IF CAN_user_suggestions_suggestions_manage %]
+                                    <input type="hidden" name="managedby" id="managedby" value="[% logged_in_user.borrowernumber | html %]" />
+                                [% END %]
 
                                 <br/>
                                 <label for="notify">Notify manager:</label>
@@ -655,7 +672,9 @@
 
         [% IF op == 'else' %]
             <div id="toolbar" class="btn-toolbar">
-                <a class="btn btn-default" id="newsuggestion" href="suggestion.pl?op=add&branchcode=[% branchcode | uri %]"><i class="fa fa-plus"></i> New purchase suggestion</a>
+                [% IF CAN_user_suggestions_suggestions_create %]
+                    <a class="btn btn-default" id="newsuggestion" href="suggestion.pl?op=add&branchcode=[% branchcode | uri %]"><i class="fa fa-plus"></i> New purchase suggestion</a>
+                [% END %]
             </div>
 
             <h1>Suggestions management</h1>
@@ -844,13 +863,21 @@
                                                     </td>
                                                     <td class="actions">
                                                         <div class="btn-group dropup">
-                                                            <a class="btn btn-default btn-xs" role="button" href="suggestion.pl?suggestionid=[% s.suggestionid | html %]&amp;csrf_token=[% csrf_token | html %]&amp;op=edit"><i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit</a><a class="btn btn-default btn-xs dropdown-toggle" id="more_actions_[% s.suggestionid | html %]" role="button" data-toggle="dropdown" href="#"><b class="caret"></b></a>
+                                                            [% IF CAN_user_suggestions_suggestions_manage %]
+                                                                <a class="btn btn-default btn-xs" role="button" href="suggestion.pl?suggestionid=[% s.suggestionid | html %]&amp;csrf_token=[% csrf_token | html %]&amp;op=edit"><i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit</a><a class="btn btn-default btn-xs dropdown-toggle" id="more_actions_[% s.suggestionid | html %]" role="button" data-toggle="dropdown" href="#"><b class="caret"></b></a>
+                                                            [% ELSIF CAN_user_suggestions_suggestions_delete %]
+                                                                <a class="deletesuggestion" href="suggestion.pl?op=delete&amp;suggestionid=[% s.suggestionid | html %]&amp;csrf_token=[% csrf_token | html %]"><i class="fa fa-trash-can"></i> Delete</a>
+                                                            [% END %]
                                                             <ul class="dropdown-menu pull-right" role="menu" aria-labelledby="more_actions_[% s.suggestionid | html %]">
-                                                                <li><a class="deletesuggestion" href="suggestion.pl?op=delete&amp;suggestionid=[% s.suggestionid | html %]&amp;csrf_token=[% csrf_token | html %]"><i class="fa fa-trash-can"></i> Delete</a></li>
-                                                                [% UNLESS s.archived %]
-                                                                    <li><a class="archivesuggestion" href="suggestion.pl?op=archive&amp;suggestionid=[% s.suggestionid | html %]"><i class="fa fa-archive"></i> Archive</a></li>
-                                                                [% ELSE %]
-                                                                    <li><a class="unarchivesuggestion" href="suggestion.pl?op=unarchive&amp;suggestionid=[% s.suggestionid | html %]"><i class="fa fa-archive"></i> Unarchive</a></li>
+                                                                [% IF CAN_user_suggestions_suggestions_delete %]
+                                                                    <li><a class="deletesuggestion" href="suggestion.pl?op=delete&amp;suggestionid=[% s.suggestionid | html %]&amp;csrf_token=[% csrf_token | html %]"><i class="fa fa-trash-can"></i> Delete</a></li>
+                                                                [% END %]
+                                                                [% IF CAN_user_suggestions_suggestions_manage %]
+                                                                    [% UNLESS s.archived %]
+                                                                        <li><a class="archivesuggestion" href="suggestion.pl?op=archive&amp;suggestionid=[% s.suggestionid | html %]"><i class="fa fa-archive"></i> Archive</a></li>
+                                                                    [% ELSE %]
+                                                                        <li><a class="unarchivesuggestion" href="suggestion.pl?op=unarchive&amp;suggestionid=[% s.suggestionid | html %]"><i class="fa fa-archive"></i> Unarchive</a></li>
+                                                                    [% END %]
                                                                 [% END %]
                                                             </ul>
                                                         </div>
@@ -865,120 +892,127 @@
                                             <h2>Change selected suggestions</h2>
                                         </div>
                                     </div>
+
                                     <div class="suggestions_batch_ops row">
-                                        <div class="col-sm-4">
-                                            <fieldset class="brief">
-                                                <div id="select-reason[% loop.index | html %]">
-                                                    <label for="STATUSreason[% loop.index | html %]">Mark selected as: </label>
-                                                    <select name="STATUS" id="STATUSreason[% loop.index | html %]">
-                                                        <option value=""> -- Choose a status --</option>
+                                        [% IF CAN_user_suggestions_suggestions_manage %]
+                                            <div class="col-sm-4">
+                                                <fieldset class="brief">
+                                                    <div id="select-reason[% loop.index | html %]">
+                                                        <label for="STATUSreason[% loop.index | html %]">Mark selected as: </label>
+                                                        <select name="STATUS" id="STATUSreason[% loop.index | html %]">
+                                                            <option value=""> -- Choose a status --</option>
 
-                                                        [% IF (statusselected_ASKED ) %]
-                                                            <option value="ASKED" selected="selected">Pending</option>
-                                                        [% ELSE %]
-                                                            <option value="ASKED">Pending</option>
-                                                        [% END %]
+                                                            [% IF (statusselected_ASKED ) %]
+                                                                <option value="ASKED" selected="selected">Pending</option>
+                                                            [% ELSE %]
+                                                                <option value="ASKED">Pending</option>
+                                                            [% END %]
 
-                                                        [% IF (statusselected_ACCEPTED ) %]
-                                                            <option value="ACCEPTED" selected="selected">Accepted</option>
-                                                        [% ELSE %]
-                                                            <option value="ACCEPTED">Accepted</option>
-                                                        [% END %]
+                                                            [% IF (statusselected_ACCEPTED ) %]
+                                                                <option value="ACCEPTED" selected="selected">Accepted</option>
+                                                            [% ELSE %]
+                                                                <option value="ACCEPTED">Accepted</option>
+                                                            [% END %]
 
-                                                        [% IF (statusselected_CHECKED ) %]
-                                                            <option value="CHECKED" selected="selected">Checked</option>
-                                                        [% ELSE %]
-                                                            <option value="CHECKED">Checked</option>
-                                                        [% END %]
+                                                            [% IF (statusselected_CHECKED ) %]
+                                                                <option value="CHECKED" selected="selected">Checked</option>
+                                                            [% ELSE %]
+                                                                <option value="CHECKED">Checked</option>
+                                                            [% END %]
 
-                                                        [% IF ( statusselected_REJECTED ) %]
-                                                            <option value="REJECTED" selected="selected">Rejected</option>
-                                                        [% ELSE %]
-                                                            <option value="REJECTED">Rejected</option>
-                                                        [% END %]
+                                                            [% IF ( statusselected_REJECTED ) %]
+                                                                <option value="REJECTED" selected="selected">Rejected</option>
+                                                            [% ELSE %]
+                                                                <option value="REJECTED">Rejected</option>
+                                                            [% END %]
 
-                                                        [% IF ( statusselected_ORDERED ) %]
-                                                            <option value="ORDERED" selected="selected">Ordered</option>
-                                                        [% ELSE %]
-                                                            <option value="ORDERED">Ordered</option>
-                                                        [% END %]
+                                                            [% IF ( statusselected_ORDERED ) %]
+                                                                <option value="ORDERED" selected="selected">Ordered</option>
+                                                            [% ELSE %]
+                                                                <option value="ORDERED">Ordered</option>
+                                                            [% END %]
 
-                                                        [% FOREACH s IN SuggestionStatuses %]
-                                                            <option value="[% s.authorised_value | html %]">[% s.lib | html %]</option>
-                                                        [% END %]
-                                                    </select>
+                                                            [% FOREACH s IN SuggestionStatuses %]
+                                                                <option value="[% s.authorised_value | html %]">[% s.lib | html %]</option>
+                                                            [% END %]
+                                                        </select>
 
-                                                    <label for="choosereason[% loop.index | html %]">with this reason:</label>
-                                                    <select name="reason" id="choosereason[% loop.index | html %]">
-                                                        <option value=""> -- Choose a reason -- </option>
-                                                        [% FOREACH reasonsloo IN suggestion.reasonsloop %]
-                                                            <option value="[% reasonsloo.lib | html %]">[% reasonsloo.lib | html %]</option>
-                                                        [% END %]
-                                                        <option value="other">Others...</option>
-                                                    </select>
+                                                        <label for="choosereason[% loop.index | html %]">with this reason:</label>
+                                                        <select name="reason" id="choosereason[% loop.index | html %]">
+                                                            <option value=""> -- Choose a reason -- </option>
+                                                            [% FOREACH reasonsloo IN suggestion.reasonsloop %]
+                                                                <option value="[% reasonsloo.lib | html %]">[% reasonsloo.lib | html %]</option>
+                                                            [% END %]
+                                                            <option value="other">Others...</option>
+                                                        </select>
 
-                                                    <span class="other_reason">
-                                                        <input type="text" size="31" name="other_reason" placeholder="please note your reason here..." />
-                                                        <a href="#" class="cancel_note">Cancel</a>
-                                                    </span>
-                                                </div>
+                                                        <span class="other_reason">
+                                                            <input type="text" size="31" name="other_reason" placeholder="please note your reason here..." />
+                                                            <a href="#" class="cancel_note">Cancel</a>
+                                                        </span>
+                                                    </div>
 
-                                                <input type="hidden" name="branchcode" value="[% branchfilter | html %]" />
-                                                <input type="hidden" name="filter_archived" value="[% filter_archived | html %]" />
-                                            </fieldset>
-                                            <fieldset class="action">
-                                                <button type="submit" class="btn btn-primary" value="update_status">Submit</button>
-                                            </fieldset>
-                                        </div> <!-- /.col-sm-4 -->
-
-                                        <div class="col-sm-2">
-                                            <fieldset class="brief">
-                                                <label id="suggestion_itemtype">
-                                                    Update item types with:
-                                                </label>
-                                                [% PROCESS 'av-build-dropbox.inc' name="suggestion_itemtype", category="SUGGEST_FORMAT", size = 20  %]
-                                                <input type="hidden" name="branchcode" value="[% branchfilter | html %]" />
-                                                <input type="hidden" name="filter_archived" value="[% filter_archived | html %]" />
-                                            </fieldset>
-                                            <fieldset class="action">
-                                                <button type="submit" class="btn btn-primary" value="update_itemtype">Submit</button>
-                                            </fieldset>
-                                        </div> <!-- /.col-sm-4 -->
-
-                                        <div class="col-sm-2">
-                                            <fieldset class="brief">
-                                                <span class="label">Update manager</span>
-                                                <a id="set_manager_[% loop.count | html %]" data-tab="[% loop.count | html %]" class="set_manager" href="#"><i class="fa fa-search"></i> Select manager</a>
-                                                <span id="managedby_name[% loop.count | html %]"></span>
-                                                <input type="hidden" name="suggestion_managedby" id="managedby[% loop.count | html %]" value="[% logged_in_user.borrowernumber | html %]" />
-                                                <input type="hidden" name="branchcode" value="[% branchfilter | html %]" />
-                                                <input type="hidden" name="filter_archived" value="[% filter_archived | html %]" />
-                                            </fieldset>
-                                            <fieldset class="action">
-                                                <button type="submit" class="btn btn-primary" value="update_manager">Submit</button>
-                                            </fieldset>
-                                        </div> <!-- /.col-sm-2 -->
-
-                                        <div class="col-sm-2">
-                                            <fieldset class="brief">
-                                                <span class="label">Delete selected</span>
-                                                <input type="hidden" name="branchcode" value="[% branchfilter | html %]" />
-                                                <input type="hidden" name="filter_archived" value="[% filter_archived | html %]" />
-                                            </fieldset>
-                                            <fieldset class="action">
-                                                <button type="submit" class="btn btn-primary" value="delete">Delete</button>
-                                            </fieldset>
-                                        </div> <!-- /.col-sm-2 -->
-                                        <div class="col-sm-2">
-                                            <fieldset class="brief">
-                                                <span class="label">Archive selected</span>
-                                                <input type="hidden" name="branchcode" value="[% branchfilter | html %]" />
-                                                <input type="hidden" name="filter_archived" value="[% filter_archived | html %]" />
-                                                <fieldset class="action">
-                                                    <button type="submit" class="btn btn-primary" value="archive">Archive</button>
+                                                    <input type="hidden" name="branchcode" value="[% branchfilter | html %]" />
+                                                    <input type="hidden" name="filter_archived" value="[% filter_archived | html %]" />
                                                 </fieldset>
-                                            </fieldset>
-                                        </div> <!-- /.col-sm-2 -->
+                                                <fieldset class="action">
+                                                    <button type="submit" class="btn btn-primary" value="update_status">Submit</button>
+                                                </fieldset>
+                                            </div> <!-- /.col-sm-4 -->
+
+                                            <div class="col-sm-2">
+                                                <fieldset class="brief">
+                                                    <label id="suggestion_itemtype">
+                                                        Update item types with:
+                                                    </label>
+                                                    [% PROCESS 'av-build-dropbox.inc' name="suggestion_itemtype", category="SUGGEST_FORMAT", size = 20  %]
+                                                    <input type="hidden" name="branchcode" value="[% branchfilter | html %]" />
+                                                    <input type="hidden" name="filter_archived" value="[% filter_archived | html %]" />
+                                                </fieldset>
+                                                <fieldset class="action">
+                                                    <button type="submit" class="btn btn-primary" value="update_itemtype">Submit</button>
+                                                </fieldset>
+                                            </div> <!-- /.col-sm-4 -->
+
+                                            <div class="col-sm-2">
+                                                <fieldset class="brief">
+                                                    <span class="label">Update manager</span>
+                                                    <a id="set_manager_[% loop.count | html %]" data-tab="[% loop.count | html %]" class="set_manager" href="#"><i class="fa fa-search"></i> Select manager</a>
+                                                    <span id="managedby_name[% loop.count | html %]"></span>
+                                                    <input type="hidden" name="suggestion_managedby" id="managedby[% loop.count | html %]" value="[% logged_in_user.borrowernumber | html %]" />
+                                                    <input type="hidden" name="branchcode" value="[% branchfilter | html %]" />
+                                                    <input type="hidden" name="filter_archived" value="[% filter_archived | html %]" />
+                                                </fieldset>
+                                                <fieldset class="action">
+                                                    <button type="submit" class="btn btn-primary" value="update_manager">Submit</button>
+                                                </fieldset>
+                                            </div> <!-- /.col-sm-2 -->
+                                        [% END %]
+
+                                        [% IF CAN_user_suggestions_suggestions_delete %]
+                                            <div class="col-sm-2">
+                                                <fieldset class="brief">
+                                                    <span class="label">Delete selected</span>
+                                                    <input type="hidden" name="branchcode" value="[% branchfilter | html %]" />
+                                                    <input type="hidden" name="filter_archived" value="[% filter_archived | html %]" />
+                                                </fieldset>
+                                                <fieldset class="action">
+                                                    <button type="submit" class="btn btn-primary" value="delete">Delete</button>
+                                                </fieldset>
+                                            </div> <!-- /.col-sm-2 -->
+                                        [% END %]
+                                        [% IF CAN_user_suggestions_suggestions_manage %]
+                                            <div class="col-sm-2">
+                                                <fieldset class="brief">
+                                                    <span class="label">Archive selected</span>
+                                                    <input type="hidden" name="branchcode" value="[% branchfilter | html %]" />
+                                                    <input type="hidden" name="filter_archived" value="[% filter_archived | html %]" />
+                                                    <fieldset class="action">
+                                                        <button type="submit" class="btn btn-primary" value="archive">Archive</button>
+                                                    </fieldset>
+                                                </fieldset>
+                                            </div> <!-- /.col-sm-2 -->
+                                        [% END %]
                                     </div> <!-- /.row -->
 
                                 [% ELSE %]

@@ -110,7 +110,7 @@
 [% BLOCK patron_search_table %]
 
     [% IF filter == 'suggestions_managers' %]
-        <div class="hint">Only staff with superlibrarian or suggestions_manage permissions are returned in the search results</div>
+        <div class="hint">Only staff with superlibrarian or full suggestions permissions are returned in the search results</div>
     [% ELSIF filter == 'orders_managers' %]
         <div class="hint">Only staff with superlibrarian or acquisitions permissions (or order_manage permission if granular permissions are enabled) are returned in the search results</div>
     [% ELSIF filter == 'funds_owners' OR filter == 'funds_users' %]

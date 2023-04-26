@@ -170,7 +170,7 @@
         [% END %]
     [% END %]
 
-    [% IF CAN_user_suggestions_suggestions_manage %]
+    [% IF CAN_user_suggestions_suggestions_create || CAN_user_suggestions_suggestions_manage || CAN_user_suggestions_suggestions_delete %]
         [% IF ( suggestionsview ) %]<li class="active">[% ELSE %]<li>[% END %]<a href="/cgi-bin/koha/members/purchase-suggestions.pl?borrowernumber=[% patron.borrowernumber | uri %]">Purchase suggestions</a></li>
     [% END %]
     [% IF CAN_user_borrowers_edit_borrowers && useDischarge %]

@@ -125,9 +125,11 @@ my ( $template, $borrowernumber, $cookie, $userflags ) = get_template_and_user(
             template_name   => "suggestion/suggestion.tt",
             query           => $input,
             type            => "intranet",
-            flagsrequired   => { suggestions => 'suggestions_manage' },
+            flagsrequired   => { suggestions => '*' },
         }
     );
+
+my $librarian = Koha::Patrons->find($borrowernumber);
 
 $borrowernumber = $input->param('borrowernumber') if ( $input->param('borrowernumber') );
 $template->param('borrowernumber' => $borrowernumber);
@@ -137,9 +139,12 @@ my $branchfilter = $input->param('branchcode') || C4::Context->userenv->{'branch
 ##  Operations
 ##
 
+my @messages;
 if ( $op =~ /save/i ) {
     output_and_exit_if_error($input, $cookie, $template, { check => 'csrf_token' });
+
     my @messages;
+
     my $biblio = MarcRecordFromNewSuggestion({
             title => $suggestion_only->{title},
             author => $suggestion_only->{author},
@@ -198,7 +203,13 @@ if ( $op =~ /save/i ) {
               if exists $suggestion_only->{branchcode}
               && $suggestion_only->{branchcode} eq "";
 
-            &ModSuggestion($suggestion_only);
+            if ( $librarian->has_permission( { 'suggestions' => 'suggestions_manage' } ) ) {
+                &ModSuggestion($suggestion_only);
+            }
+            else {
+                push @messages, { type => 'error', code => 'no_manage_permission' };
+                $template->param( messages => \@messages, );
+            }
 
             if ( $notify ) {
                 my $patron = Koha::Patrons->find( $suggestion_only->{managedby} );
@@ -238,7 +249,13 @@ if ( $op =~ /save/i ) {
             }
             else {
                 ## Adding some informations related to suggestion
-                Koha::Suggestion->new($suggestion_only)->store();
+                if ( $librarian->has_permission({ 'suggestions' => 'suggestions_create' }) ) {
+                    Koha::Suggestion->new($suggestion_only)->store();
+                }
+                else {
+                    push @messages, { type => 'error', code => 'no_delete_permission' };
+                    $template->param( messages => \@messages );
+                }
             }
             # empty fields, to avoid filter in "SearchSuggestion"
         }
@@ -302,18 +319,29 @@ elsif ($op eq "update_status" ) {
         $suggestion->{reason} = $reason;
     }
 
-    foreach my $suggestionid (@editsuggestions) {
-        next unless $suggestionid;
-        $suggestion->{suggestionid} = $suggestionid;
-        &ModSuggestion($suggestion);
+    if ( $librarian->has_permission( { 'suggestions' => 'suggestions_manage' } ) ) {
+        foreach my $suggestionid (@editsuggestions) {
+            next unless $suggestionid;
+            $suggestion->{suggestionid} = $suggestionid;
+            &ModSuggestion($suggestion);
+        }
+        redirect_with_params($input);
     }
-    redirect_with_params($input);
-}elsif ($op eq "delete" ) {
-    output_and_exit_if_error($input, $cookie, $template, { check => 'csrf_token' });
-    foreach my $delete_field (@editsuggestions) {
-        &DelSuggestion( $borrowernumber, $delete_field,'intranet' );
+    else {
+        push @messages, { type => 'error', code => 'no_manage_permission' };
+        $template->param( messages => \@messages, );
     }
-    redirect_with_params($input);
+} elsif ($op eq "delete" ) {
+    output_and_exit_if_error( $input, $cookie, $template, { check => 'csrf_token' } );
+    if ( $librarian->has_permission( { 'suggestions' => 'suggestions_delete' } ) ) {
+        foreach my $delete_field (@editsuggestions) {
+            &DelSuggestion( $borrowernumber, $delete_field, 'intranet' );
+        }
+        redirect_with_params($input);
+    } else {
+        push @messages, { type => 'error', code => 'no_delete_permission' };
+        $template->param( messages => \@messages, );
+    }
 }
 elsif ($op eq "archive" ) {
     Koha::Suggestions->find($_)->update({ archived => 1 }) for @editsuggestions;
@@ -326,20 +354,32 @@ elsif ($op eq "unarchive" ) {
     redirect_with_params($input);
 }
 elsif ( $op eq 'update_itemtype' ) {
-    my $new_itemtype = $input->param('suggestion_itemtype');
-    foreach my $suggestionid (@editsuggestions) {
-        next unless $suggestionid;
-        &ModSuggestion({ suggestionid => $suggestionid, itemtype => $new_itemtype });
+    if ( $librarian->has_permission( { 'suggestions' => 'suggestions_manage' } ) ) {
+        my $new_itemtype = $input->param('suggestion_itemtype');
+        foreach my $suggestionid (@editsuggestions) {
+            next unless $suggestionid;
+            &ModSuggestion({ suggestionid => $suggestionid, itemtype => $new_itemtype });
+        }
+        redirect_with_params($input);
     }
-    redirect_with_params($input);
+    else {
+        push @messages, { type => 'error', code => 'no_manage_permission' };
+        $template->param( messages => \@messages, );
+    }
 }
 elsif ( $op eq 'update_manager' ) {
-    my $managedby = $input->param('suggestion_managedby');
-    foreach my $suggestionid (@editsuggestions) {
-        next unless $suggestionid;
-        &ModSuggestion({ suggestionid => $suggestionid, managedby => $managedby });
+    if ( $librarian->has_permission( { 'suggestions' => 'suggestions_manage' } ) ) {
+        my $managedby = $input->param('suggestion_managedby');
+        foreach my $suggestionid (@editsuggestions) {
+            next unless $suggestionid;
+            &ModSuggestion({ suggestionid => $suggestionid, managedby => $managedby });
+        }
+        redirect_with_params($input);
     }
-    redirect_with_params($input);
+    else {
+        push @messages, { type => 'error', code => 'no_manage_permission' };
+        $template->param( messages => \@messages, );
+    }
 }
 elsif ( $op eq 'show' ) {
     $suggestion_ref=&GetSuggestion($$suggestion_ref{'suggestionid'});
