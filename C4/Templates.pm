@@ -88,6 +88,9 @@ sub new {
             ENCODING     => 'UTF-8',
         }
     ) or die Template->error();
+
+    $Template::Stash::PRIVATE = undef; ## Enable access to private methods like _result/_resultset
+
     my $self = {
         TEMPLATE => $template,
         VARS     => {},
