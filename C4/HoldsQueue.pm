@@ -596,10 +596,6 @@ sub MapItemsToHoldRequests {
 
                 my $holding_branch_items = $items_by_branch{$holdingbranch};
                 foreach my $item (@$holding_branch_items) {
-                    next unless $items_by_itemnumber{ $item->{itemnumber} }->{_object}->can_be_transferred( { to => $libraries->{ $request->{branchcode} } } );
-
-                    # Don't fill item level holds that contravene the hold pickup policy at this time
-                    next unless _checkHoldPolicy($item, $request);
 
                     # If hold itemtype is set, item's itemtype must match
                     next unless ( !$request->{itemtype}
@@ -611,6 +607,12 @@ sub MapItemsToHoldRequests {
                         || (   $item->{_object}->item_group
                             && $item->{_object}->item_group->id eq $request->{item_group_id} )
                     );
+
+                    # Don't fill a hold with a non-transferrable item
+                    next unless $items_by_itemnumber{ $item->{itemnumber} }->{_object}->can_be_transferred( { to => $libraries->{ $request->{branchcode} } } );
+
+                    # Don't fill item level holds that contravene the hold pickup policy at this time
+                    next unless _checkHoldPolicy($item, $request);
 
                     $itemnumber = $item->{itemnumber};
                     last;
