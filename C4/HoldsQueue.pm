@@ -596,7 +596,6 @@ sub MapItemsToHoldRequests {
 
                 my $holding_branch_items = $items_by_branch{$holdingbranch};
                 foreach my $item (@$holding_branch_items) {
-                    next if $request->{borrowerbranch} ne $item->{$priority_branch};
                     next unless $items_by_itemnumber{ $item->{itemnumber} }->{_object}->can_be_transferred( { to => $libraries->{ $request->{branchcode} } } );
 
                     # Don't fill item level holds that contravene the hold pickup policy at this time
