@@ -1,5 +1,7 @@
 use Modern::Perl;
 
+use Koha::CirculationRules;
+
 return {
     bug_number => "29012",
     description => "Some rules are not saved when left blank while editing a 'rule' line in smart-rules.pl",
@@ -13,29 +15,46 @@ return {
             rentaldiscount          => 0,
             decreaseloanholds       => '',
         );
-        while (my ($rule_name, $rule_value) = each (%default_rule_values)) {
-            $dbh->do(q{
-                INSERT IGNORE INTO circulation_rules (branchcode, categorycode, itemtype, rule_name, rule_value)
-                    SELECT branchcode, categorycode, itemtype, ?, ? FROM circulation_rules cr
-                        WHERE EXISTS (
-                            SELECT * FROM circulation_rules cr2
-                                WHERE
-                                    cr2.rule_name="suspension_chargeperiod"
-                                    AND ( (cr2.branchcode=cr.branchcode) OR ( ISNULL(cr2.branchcode) AND ISNULL(cr.branchcode) ) )
-                                    AND ( (cr2.categorycode=cr.categorycode) OR ( ISNULL(cr2.categorycode) AND ISNULL(cr.categorycode) ) )
-                                    AND ( (cr2.itemtype=cr.itemtype) OR ( ISNULL(cr2.itemtype) AND ISNULL(cr.itemtype) ) )
-                        )
-                        AND NOT EXISTS (
-                            SELECT * FROM circulation_rules cr2
-                                WHERE
-                                    cr2.rule_name=?
-                                    AND ( (cr2.branchcode=cr.branchcode) OR ( ISNULL(cr2.branchcode) AND ISNULL(cr.branchcode) ) )
-                                    AND ( (cr2.categorycode=cr.categorycode) OR ( ISNULL(cr2.categorycode) AND ISNULL(cr.categorycode) ) )
-                                    AND ( (cr2.itemtype=cr.itemtype) OR ( ISNULL(cr2.itemtype) AND ISNULL(cr.itemtype) ) )
-                        )
-                        GROUP BY branchcode, categorycode, itemtype
-            }, undef, $rule_name, $rule_value, $rule_name);
+
+        my $rules = Koha::CirculationRules->search( { rule_name => 'suspension_chargeperiod' } );
+        while ( my $rule = $rules->next ) {
+            foreach my $key ( keys %default_rule_values ) {
+                next
+                  if # If there is a rule matching these criteria with defined value, we can skip it.
+                  Koha::CirculationRules->search(
+                    {
+                        branchcode   => $rule->branchcode,
+                        categorycode => $rule->categorycode,
+                        itemtype     => $rule->itemtype,
+                        rule_name    => $key,
+                    }
+                )->count;
+
+                my $derived_rule = Koha::CirculationRules->get_effective_rule(
+                    {
+                        branchcode   => $rule->branchcode,
+                        categorycode => $rule->categorycode,
+                        itemtype     => $rule->itemtype,
+                        rule_name    => $key,
+                    }
+                );
+                my $value =
+                    $derived_rule
+                  ? $derived_rule->rule_value // $default_rule_values{$key}
+                  : $default_rule_values{$key};
+
+                Koha::CirculationRule->new(
+                    {
+                        branchcode   => $rule->branchcode,
+                        categorycode => $rule->categorycode,
+                        itemtype     => $rule->itemtype,
+                        rule_name    => $key,
+                        rule_value   => $value,
+                    }
+                )->store();
+            }
         }
-        say $out "Add default values for blank circulation rules that weren't saved to the database";
+
+        say $out "Set derived values for blank circulation rules that weren't saved to the database";
     },
 }
