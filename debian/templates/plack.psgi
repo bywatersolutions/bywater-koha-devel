@@ -22,6 +22,8 @@ use Plack::App::CGIBin;
 use Plack::App::Directory;
 use Plack::App::URLMap;
 use Plack::Request;
+use Net::Prometheus;
+use Net::Prometheus::ProcessCollector;
 
 use Mojo::Server::PSGI;
 
@@ -66,6 +68,20 @@ my $apiv1  = builder {
     $server->to_psgi_app;
 };
 
+my $client = Net::Prometheus->new;
+$client->register( Net::Prometheus::ProcessCollector->new(
+   prefix => "parent_process",
+   pid => getppid(),
+) );
+my $response_times_opac = $client->new_histogram(
+        name => "response_times_opac",
+        help => "OPAC response times",
+);
+my $response_times_staff = $client->new_histogram(
+        name => "response_times_staff",
+        help => "Staff response times",
+);
+
 Koha::Logger->_init;
 
 builder {
@@ -93,6 +109,7 @@ builder {
             enable 'Log4perl', category => 'plack-opac';
             enable 'LogWarn';
         }
+        enable 'Prometheus::RequestTimes', observer => $response_times_opac;
         $opac;
     };
     mount '/intranet'      => builder {
@@ -112,6 +129,7 @@ builder {
             enable 'Log4perl', category => 'plack-intranet';
             enable 'LogWarn';
         }
+        enable 'Prometheus::RequestTimes', observer => $response_times_staff;
         $intranet;
     };
     mount '/api/v1/app.pl' => builder {
@@ -121,4 +139,5 @@ builder {
         }
         $apiv1;
     };
+    mount "/metrics" => $client->psgi_app;
 };
