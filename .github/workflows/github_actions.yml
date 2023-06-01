@@ -330,8 +330,7 @@ jobs:
 
 
     build-docker:
-        #if: github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-futureNOT'
-        if: false
+        if: github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future'
         name: Build Docker image
         needs: build-debs
         runs-on: ubuntu-latest
