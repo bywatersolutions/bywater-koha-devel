@@ -157,6 +157,7 @@ while (1) {
 
         }
         sleep 10;
+        $pm->reap_finished_children();
     }
 }
 $conn->disconnect;
