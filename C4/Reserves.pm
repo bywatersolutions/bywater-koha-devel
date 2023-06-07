@@ -930,13 +930,21 @@ sub CheckReserves {
             } elsif ($res->{'found'} && $res->{'found'} eq 'T') {
                 return ( "Transferred", $res, \@reserves ); # Found determinated hold, e. g. the transferred one
             } else {
+                my $patrons;
+                my $items;
+
                 my $patron;
                 my $item;
                 my $local_hold_match;
 
+                my $borrowernumber = $res->{borrowernumber};
+
                 if ($LocalHoldsPriority) {
-                    $patron = Koha::Patrons->find( $res->{borrowernumber} );
-                    $item = Koha::Items->find($itemnumber);
+                    $patron = $patrons->{$borrowernumber} || Koha::Patrons->find($borrowernumber);
+                    $patrons->{$borrowernumber} ||= $patron;
+
+                    $item = $items->{$itemnumber} || Koha::Items->find($itemnumber);
+                    $items->{$itemnumber} ||= $item;
 
                     unless ($item->exclude_from_local_holds_priority || $patron->category->exclude_from_local_holds_priority) {
                         my $local_holds_priority_item_branchcode =
