@@ -17,7 +17,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 18;
+use Test::More tests => 19;
 use Test::Warn;
 
 use C4::Context;
@@ -214,7 +214,60 @@ subtest "Update patron categories" => sub {
 
 };
 
+subtest "Never re-use cardnumbers of deleted patrons for autoMemberNum" => sub {
+    plan tests => 4;
 
+    t::lib::Mocks::mock_preference( 'autoMemberNum', 1 );
+    Koha::Patrons->search()->delete();
+
+    # We cannot mock this value because it is altered by the tests
+    my $autoMemberNumValue = Koha::Config::SysPrefs->find('autoMemberNumValue');
+    $autoMemberNumValue->value(1)->store();
+
+    my $b1 = Koha::Patron->new(
+        {
+            surname      => 'Test 1',
+            branchcode   => $branchcode,
+            categorycode => $categorycode
+        }
+    );
+    $b1->store();
+    is( $b1->cardnumber, 1, "First patron got cardnumber of 1" );
+
+    my $b2 = Koha::Patron->new(
+        {
+            surname      => 'Test 2',
+            branchcode   => $branchcode,
+            categorycode => $categorycode
+        }
+    );
+    $b2->store();
+    is( $b2->cardnumber, 2, "Cardnumber was incremented correctly for patron 2" );
+
+    my $b3 = Koha::Patron->new(
+        {
+            surname      => 'Test 3',
+            branchcode   => $branchcode,
+            categorycode => $categorycode,
+            updated_on   => $three_days_ago,
+        }
+    );
+    $b3->store();
+    is( $b3->cardnumber, 3, "Cardnumber was incremented correctly for patron 3" );
+
+    $b3->delete();
+
+    my $b4 = Koha::Patron->new(
+        {
+            surname      => 'Test 4',
+            branchcode   => $branchcode,
+            categorycode => $categorycode,
+            updated_on   => $three_days_ago,
+        }
+    );
+    $b4->store();
+    is( $b4->cardnumber, 4, "Cardnumber was incremented correctly for patron 4" );
+};
 
 $schema->storage->txn_rollback();
 
