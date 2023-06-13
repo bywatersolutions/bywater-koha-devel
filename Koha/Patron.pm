@@ -118,18 +118,32 @@ Autogenerate next cardnumber from highest value found in database
 =cut
 
 sub fixup_cardnumber {
-    my ( $self ) = @_;
+    my ($self) = @_;
 
     my $max = $self->cardnumber;
     Koha::Plugins->call( 'patron_barcode_transform', \$max );
 
-    $max ||= Koha::Patrons->search({
-        cardnumber => {-regexp => '^-?[0-9]+$'}
-    }, {
-        select => \'CAST(cardnumber AS SIGNED)',
-        as => ['cast_cardnumber']
-    })->_resultset->get_column('cast_cardnumber')->max;
-    $self->cardnumber(($max || 0) +1);
+    my $autoMemberNumValue = Koha::Config::SysPrefs->find('autoMemberNumValue');
+    my $cardnumber         = $autoMemberNumValue->value;
+
+    # autoMemberNumValue has not been intitialized, find the highest existing cardnumber
+    unless ( $cardnumber ) {
+        $cardnumber ||= Koha::Patrons->search({
+            cardnumber => {-regexp => '^-?[0-9]+$'}
+        }, {
+            select => \'CAST(cardnumber AS SIGNED)',
+            as => ['cast_cardnumber']
+        })->_resultset->get_column('cast_cardnumber')->max || 0;
+        $cardnumber++;
+    }
+
+    while ( Koha::Patrons->search( { cardnumber => $cardnumber } )->count ) {
+        $cardnumber++;
+    }
+
+    $self->cardnumber($cardnumber);
+
+    $autoMemberNumValue->value(++$cardnumber)->store();
 }
 
 =head3 trim_whitespace
