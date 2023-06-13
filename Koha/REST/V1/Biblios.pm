@@ -322,6 +322,10 @@ sub add_item {
                 ($barcode) =
                   C4::Barcodes::ValueBuilder::incremental::get_barcode;
             }
+            elsif ( $autoBarcode eq 'stored' ) {
+                ($barcode) =
+                  C4::Barcodes::ValueBuilder::stored::get_barcode;
+            }
             elsif ( $autoBarcode eq 'annual' ) {
                 my $year = Koha::DateUtils::dt_from_string()->year();
                 ($barcode) =

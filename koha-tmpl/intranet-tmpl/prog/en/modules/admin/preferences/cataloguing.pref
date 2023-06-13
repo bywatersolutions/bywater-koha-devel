@@ -134,10 +134,16 @@ Cataloging:
             - pref: autoBarcode
               choices:
                   incremental: generated in the form 1, 2, 3.
+                  stored: generated based on the value of autoBarcodeValue
                   annual: generated in the form <year>-0001, <year>-0002.
                   hbyymmincr: generated in the form <branchcode>yymm0001.
                   EAN13: incremental EAN-13 barcodes.
                   "OFF": not generated automatically.
+        -
+            - If autoBarcode is set to "generated based on the value of autoBarcodeValue", Use the barcode
+            - pref: autoBarcodeValue
+              class: integer
+            - for the next auto-barcoded item, then increment it.
         -
             - When a new item is added,
             - pref: PrefillItem

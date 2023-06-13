@@ -275,11 +275,17 @@ if ($op eq "additem") {
         }
     }
 
-    # if autoBarcode is set to 'incremental', calculate barcode...
+    # if autoBarcode is set to 'incremental'/'stored', calculate barcode...
     my $submitted_barcode = $item->barcode;
-    if ( ! defined $item->barcode && C4::Context->preference('autoBarcode') eq 'incremental' ) {
-        my ( $barcode ) = C4::Barcodes::ValueBuilder::incremental::get_barcode;
-        $item->barcode($barcode);
+    if ( !defined $item->barcode ) {
+        my $pref = C4::Context->preference('autoBarcode');
+        if ( $pref eq 'incremental' ) {
+            my ($barcode) = C4::Barcodes::ValueBuilder::incremental::get_barcode;
+            $item->barcode($barcode);
+        } elsif ( $pref eq 'stored' ) {
+            my ($barcode) = C4::Barcodes::ValueBuilder::stored::get_barcode;
+            $item->barcode($barcode);
+        }
     }
 
     $item->barcode(barcodedecode($item->barcode));

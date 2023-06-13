@@ -38,6 +38,25 @@ sub get_barcode {
 
 1;
 
+package C4::Barcodes::ValueBuilder::stored;
+use Modern::Perl;
+use C4::Context;
+use Koha::Config::SysPrefs;
+
+sub get_barcode {
+    my $autoBarcodeValue = Koha::Config::SysPrefs->find('autoBarcodeValue');
+    my $barcode = $autoBarcodeValue->value|| 1;
+    while ( Koha::Items->count({ barcode => $barcode }) > 0 ) {
+        $barcode++;
+    }
+
+    $autoBarcodeValue->value($barcode)->store();
+
+    return $barcode;
+}
+
+1;
+
 package C4::Barcodes::ValueBuilder::hbyymmincr;
 use C4::Context;
 

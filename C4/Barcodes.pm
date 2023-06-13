@@ -154,11 +154,12 @@ sub default_self {
 }
 
 our $types = {
-	annual      => sub {C4::Barcodes::annual->new_object(@_);     },
-	incremental => sub {C4::Barcodes::incremental->new_object(@_);},
-	hbyymmincr  => sub {C4::Barcodes::hbyymmincr->new_object(@_); },
-	OFF         => sub {C4::Barcodes::OFF->new_object(@_);        },
-    EAN13       => sub {C4::Barcodes::EAN13->new_object(@_);      },
+    annual      => sub { C4::Barcodes::annual->new_object(@_); },
+    incremental => sub { C4::Barcodes::incremental->new_object(@_); },
+    stored      => sub { C4::Barcodes::stored->new_object(@_); },
+    hbyymmincr  => sub { C4::Barcodes::hbyymmincr->new_object(@_); },
+    OFF         => sub { C4::Barcodes::OFF->new_object(@_); },
+    EAN13       => sub { C4::Barcodes::EAN13->new_object(@_); },
 };
 
 sub new {
