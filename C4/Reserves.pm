@@ -1095,20 +1095,20 @@ sub ModReserve {
     # FIXME Other calls may fail
     Koha::Exceptions::ObjectNotFound->throw( 'No hold with id ' . $reserve_id ) unless $hold;
 
+    my $original = C4::Context->preference('HoldsLog') ? $hold->unblessed : undef;
+
     if ( $rank eq "del" ) {
         $hold->cancel({ cancellation_reason => $cancellation_reason });
     }
     elsif ($hold->found && $hold->priority eq '0' && $date) {
-        logaction( 'HOLDS', 'MODIFY', $hold->reserve_id, $hold )
-            if C4::Context->preference('HoldsLog');
 
         # The only column that can be updated for a found hold is the expiration date
         $hold->expirationdate($date)->store();
+
+        logaction( 'HOLDS', 'MODIFY', $hold->reserve_id, $hold, undef, $original )
+            if C4::Context->preference('HoldsLog');
     }
     elsif ($rank =~ /^\d+/ and $rank > 0) {
-        logaction( 'HOLDS', 'MODIFY', $hold->reserve_id, $hold )
-            if C4::Context->preference('HoldsLog');
-
         my $properties = {
             priority    => $rank,
             branchcode  => $branchcode,
@@ -1135,7 +1135,10 @@ sub ModReserve {
             }
         }
 
-        _FixPriority({ reserve_id => $reserve_id, rank =>$rank });
+        _FixPriority( { reserve_id => $reserve_id, rank => $rank } );
+
+        logaction( 'HOLDS', 'MODIFY', $hold->reserve_id, $hold, undef, $original )
+            if C4::Context->preference('HoldsLog');
     }
 }
 
@@ -1209,6 +1212,8 @@ sub ModReserveAffect {
 
     return unless $hold;
 
+    my $original = $hold->unblessed;
+
     my $already_on_shelf = $hold->found && $hold->found eq 'W';
 
     $hold->itemnumber($itemnumber);
@@ -1249,7 +1254,7 @@ sub ModReserveAffect {
     });
     $std->execute($hold->reserve_id);
 
-    logaction( 'HOLDS', 'MODIFY', $hold->reserve_id, $hold )
+    logaction( 'HOLDS', 'MODIFY', $hold->reserve_id, $hold, undef, $original )
         if C4::Context->preference('HoldsLog');
 
     return;
