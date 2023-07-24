@@ -308,6 +308,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 marc_order_accounts
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::MarcOrderAccount>
+
+=cut
+
+__PACKAGE__->has_many(
+  "marc_order_accounts",
+  "Koha::Schema::Result::MarcOrderAccount",
+  { "foreign.budget_id" => "self.budget_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 suggestions
 
 Type: has_many
