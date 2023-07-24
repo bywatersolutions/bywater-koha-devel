@@ -19,6 +19,7 @@ package Koha::MarcOrder;
 
 use Modern::Perl;
 use Try::Tiny qw( catch try );
+use Net::FTP;
 
 use base qw(Koha::Object);
 
@@ -41,15 +42,14 @@ use C4::ImportBatch qw(
     GetImportBatchRangeDesc
     GetNumberOfNonZ3950ImportBatches
 );
-use C4::Search      qw( FindDuplicate );
+use C4::Search qw( FindDuplicate );
 use C4::Acquisition qw( NewBasket );
-use C4::Biblio      qw(
+use C4::Biblio qw(
     AddBiblio
     GetMarcFromKohaField
     TransformHtmlToXml
-    GetMarcQuantity
 );
-use C4::Items   qw( AddItemFromMarc );
+use C4::Items qw( AddItemFromMarc );
 use C4::Budgets qw( GetBudgetByCode );
 
 use Koha::Database;
@@ -70,6 +70,93 @@ Koha::MarcOrder - Koha Marc Order Object class
 
 =cut
 
+=head3 create_order_lines_from_file
+
+    my $result = Koha::MarcOrder->create_order_lines_from_file($args);
+
+    Controller for file staging, basket creation and order line creation when using the cronjob in marc_ordering_process.pl
+
+=cut
+
+sub create_order_lines_from_file {
+    my ( $self, $args ) = @_;
+
+    my $filename = $args->{filename};
+    my $filepath = $args->{filepath};
+    my $profile  = $args->{profile};
+    my $agent    = $args->{agent};
+
+    my $success;
+    my $error;
+
+    my $vendor_id = $profile->vendor_id;
+    my $budget_id = $profile->budget_id;
+
+    my $vendor_record = Koha::Acquisition::Booksellers->find({ id => $vendor_id });
+
+    my $basket_id = _create_basket_for_file({
+        filename  => $filename,
+        vendor_id => $vendor_id
+    });
+
+    my $format = index($filename, '.mrc') != -1 ? 'ISO2709' : 'MARCXML';
+    my $params = {
+        record_type                => $profile->record_type,
+        encoding                   => $profile->encoding,
+        format                     => $format,
+        filepath                   => $filepath,
+        filename                   => $filename,
+        comments                   => undef,
+        parse_items                => $profile->parse_items,
+        matcher_id                 => $profile->matcher_id,
+        overlay_action             => $profile->overlay_action,
+        nomatch_action             => $profile->nomatch_action,
+        item_action                => $profile->item_action,
+    };
+
+    try {
+        my $import_batch_id = _stage_file($params);
+
+        my $import_records = Koha::Import::Records->search({
+            import_batch_id => $import_batch_id,
+        });
+
+        while( my $import_record = $import_records->next ){
+            my $result = add_biblios_from_import_record({
+                import_batch_id => $import_batch_id,
+                import_record   => $import_record,
+                matcher_id      => $params->{matcher_id},
+                overlay_action  => $params->{overlay_action},
+                agent           => $agent,
+            });
+            warn "Duplicates found in $result->{duplicates_in_batch}, record was skipped." if $result->{duplicates_in_batch};
+            next if $result->{skip};
+
+            my $order_line_details = add_items_from_import_record({
+                record_result   => $result->{record_result},
+                basket_id       => $basket_id,
+                vendor          => $vendor_record,
+                budget_id       => $budget_id,
+                agent           => $agent,
+            });
+
+            my $order_lines = create_order_lines({
+                order_line_details => $order_line_details
+            });
+        };
+        SetImportBatchStatus( $import_batch_id, 'imported' )
+            if Koha::Import::Records->search({import_batch_id => $import_batch_id, status => 'imported' })->count
+            == Koha::Import::Records->search({import_batch_id => $import_batch_id})->count;
+
+        $success = 1;
+    } catch {
+        $success = 0;
+        $error = $_;
+    };
+
+    return $success ? { success => 1, error => ''} : { success => 0, error => $error };
+}
+
 =head3 import_record_and_create_order_lines
 
     my $result = Koha::MarcOrder->import_record_and_create_order_lines($args);
@@ -82,7 +169,7 @@ sub import_record_and_create_order_lines {
     my ( $self, $args ) = @_;
 
     my $import_batch_id           = $args->{import_batch_id};
-    my $import_record_id_selected = $args->{import_record_id_selected} || ();
+    my @import_record_id_selected = $args->{import_record_id_selected} || ();
     my $matcher_id                = $args->{matcher_id};
     my $overlay_action            = $args->{overlay_action};
     my $import_record             = $args->{import_record};
@@ -108,22 +195,141 @@ sub import_record_and_create_order_lines {
         skip                => $result->{skip}
     } if $result->{skip};
 
-    my $order_line_details = add_items_from_import_record(
-        {
-            record_result      => $result->{record_result},
-            basket_id          => $basket_id,
-            vendor             => $vendor,
-            budget_id          => $budget_id,
-            agent              => $agent,
-            client_item_fields => $client_item_fields
-        }
-    );
+    my $order_line_details = add_items_from_import_record({
+        record_result      => $result->{record_result},
+        basket_id          => $basket_id,
+        vendor             => $vendor,
+        budget_id          => $budget_id,
+        agent              => $agent,
+        client_item_fields => $client_item_fields
+    });
 
-    my $order_lines = create_order_lines( { order_line_details => $order_line_details } );
+    my $order_lines = create_order_lines({
+        order_line_details => $order_line_details
+    });
 
     return {
         duplicates_in_batch => 0,
         skip                => 0
+    }
+}
+
+=head3 _create_basket_for_file
+
+    my $basket_id = _create_basket_for_file({
+        filename  => $filename,
+        vendor_id => $vendor_id
+    });
+
+    Creates a basket ready to receive order lines based on the imported file
+
+=cut
+
+sub _create_basket_for_file {
+    my ( $args ) = @_;
+
+    my $filename = $args->{filename};
+    my $vendor_id = $args->{vendor_id};
+
+    # aqbasketname.basketname has a max length of 50 characters so long file names will need to be truncated
+    my $basketname = length($filename) > 50 ? substr( $filename, 0, 50 ): $filename;
+
+    my $basketno =
+        NewBasket( $vendor_id, 0, $basketname, q{},
+        q{} . q{} );
+
+    return $basketno;
+}
+
+=head3 _stage_file
+
+    $file->_stage_file($params)
+
+    Stages a file directly using parameters from a marc ordering account and without using the background job
+    This function is a mirror of Koha::BackgroundJob::StageMARCForImport->process but with the background job functionality removed
+
+=cut
+
+sub _stage_file {
+    my ( $args ) = @_;
+
+    my $record_type                = $args->{record_type};
+    my $encoding                   = $args->{encoding};
+    my $format                     = $args->{format};
+    my $filepath                   = $args->{filepath};
+    my $filename                   = $args->{filename};
+    my $marc_modification_template = $args->{marc_modification_template};
+    my $comments                   = $args->{comments};
+    my $parse_items                = $args->{parse_items};
+    my $matcher_id                 = $args->{matcher_id};
+    my $overlay_action             = $args->{overlay_action};
+    my $nomatch_action             = $args->{nomatch_action};
+    my $item_action                = $args->{item_action};
+
+    my @messages;
+    my ( $batch_id, $num_valid, $num_items, @import_errors );
+    my $num_with_matches = 0;
+    my $checked_matches  = 0;
+    my $matcher_failed   = 0;
+    my $matcher_code     = "";
+
+    my $schema = Koha::Database->new->schema;
+    try {
+        $schema->storage->txn_begin;
+
+        my ( $errors, $marcrecords );
+        if ( $format eq 'MARCXML' ) {
+            ( $errors, $marcrecords ) =
+              C4::ImportBatch::RecordsFromMARCXMLFile( $filepath, $encoding );
+        }
+        elsif ( $format eq 'ISO2709' ) {
+            ( $errors, $marcrecords ) =
+              C4::ImportBatch::RecordsFromISO2709File( $filepath, $record_type,
+                $encoding );
+        }
+        else {    # plugin based
+            $errors = [];
+            $marcrecords =
+              C4::ImportBatch::RecordsFromMarcPlugin( $filepath, $format,
+                $encoding );
+        }
+
+        ( $batch_id, $num_valid, $num_items, @import_errors ) = BatchStageMarcRecords(
+            $record_type,                $encoding,
+            $marcrecords,                $filename,
+            $marc_modification_template, $comments,
+            '',                          $parse_items,
+            0
+        );
+
+        if ($matcher_id) {
+            my $matcher = C4::Matcher->fetch($matcher_id);
+            if ( defined $matcher ) {
+                $checked_matches = 1;
+                $matcher_code    = $matcher->code();
+                $num_with_matches =
+                  BatchFindDuplicates( $batch_id, $matcher, 10);
+                SetImportBatchMatcher( $batch_id, $matcher_id );
+                SetImportBatchOverlayAction( $batch_id, $overlay_action );
+                SetImportBatchNoMatchAction( $batch_id, $nomatch_action );
+                SetImportBatchItemAction( $batch_id, $item_action );
+                $schema->storage->txn_commit;
+            }
+            else {
+                $matcher_failed = 1;
+                $schema->storage->txn_rollback;
+            }
+        } else {
+            $schema->storage->txn_commit;
+        }
+
+        return $batch_id;
+    }
+    catch {
+        warn $_;
+        $schema->storage->txn_rollback;
+        die "Something terrible has happened!"
+          if ( $_ =~ /Rollback failed/ );    # TODO Check test: Rollback failed
     };
 }
 
@@ -152,8 +358,9 @@ sub _get_syspref_mappings {
     }
     @tags_list = List::MoreUtils::uniq(@tags_list);
 
-    my $tags_count = _verify_number_of_fields( \@tags_list, $record );
+    die "System preference $syspref_to_read has not been filled in. Please set the mapping values to use this cron script." if scalar(@tags_list == 0);
 
+    my $tags_count = _verify_number_of_fields(\@tags_list, $record);
     # Return if the number of these fields in the record is not the same.
     die "Invalid number of fields detected on field $tags_count->{key}, please check this file" if $tags_count->{error};
 
@@ -161,7 +368,7 @@ sub _get_syspref_mappings {
     my $fields_hash;
     foreach my $tag (@tags_list) {
         my @tmp_fields;
-        foreach my $field ( $record->field($tag) ) {
+        foreach my $field ($record->field($tag)) {
             push @tmp_fields, $field;
         }
         $fields_hash->{$tag} = \@tmp_fields;
@@ -196,7 +403,7 @@ sub _get_syspref_mappings {
 =cut
 
 sub _verify_number_of_fields {
-    my ( $tags_list, $record ) = @_;
+    my ($tags_list, $record) = @_;
     my $tag_fields_count;
     for my $tag (@$tags_list) {
         my @fields = $record->field($tag);
@@ -205,13 +412,12 @@ sub _verify_number_of_fields {
 
     my $tags_count;
     foreach my $key ( keys %$tag_fields_count ) {
-        if ( $tag_fields_count->{$key} > 0 ) {    # Having 0 of a field is ok
-            $tags_count //= $tag_fields_count->{$key};    # Start with the count from the first occurrence
-            return { error => 1, key => $key }
-                if $tag_fields_count->{$key} !=
-                $tags_count;                              # All counts of various fields should be equal if they exist
+        if ( $tag_fields_count->{$key} > 0 ) { # Having 0 of a field is ok
+            $tags_count //= $tag_fields_count->{$key}; # Start with the count from the first occurrence
+            return { error => 1, key => $key } if $tag_fields_count->{$key} != $tags_count; # All counts of various fields should be equal if they exist
         }
     }
+
     return { error => 0, count => $tags_count };
 }
 
@@ -236,7 +442,7 @@ sub add_biblio_from_import_record {
     my ($args) = @_;
 
     my $import_batch_id           = $args->{import_batch_id};
-    my $import_record_id_selected = $args->{import_record_id_selected} || ();
+    my @import_record_id_selected = $args->{import_record_id_selected} || ();
     my $matcher_id                = $args->{matcher_id};
     my $overlay_action            = $args->{overlay_action};
     my $import_record             = $args->{import_record};
@@ -244,31 +450,32 @@ sub add_biblio_from_import_record {
     my $duplicates_in_batch;
 
     my $duplicates_found = 0;
-    if ( $agent eq 'client' ) {
+    if($agent eq 'client') {
         return {
             record_result       => 0,
             duplicates_in_batch => 0,
             skip                => 1
-        } if not grep { $_ eq $import_record->import_record_id } @{$import_record_id_selected};
+        } if not grep { $_ eq $import_record->import_record_id } @import_record_id_selected;
     }
 
     my $marcrecord   = $import_record->get_marc_record || die "Couldn't translate marc information";
-    my $matches      = $import_record->get_import_record_matches( { chosen => 1 } );
-    my $match        = $matches->count ? $matches->next             : undef;
-    my $biblionumber = $match          ? $match->candidate_match_id : 0;
+    my $matches      = $import_record->get_import_record_matches({ chosen => 1 });
+    my $match        = $matches->count ? $matches->next : undef;
+    my $biblionumber = $match ? $match->candidate_match_id : 0;
 
-    if ($biblionumber) {
+    if ( $biblionumber ) {
         $import_record->status('imported')->store;
-        if ( $overlay_action eq 'replace' ) {
-            my $biblio = Koha::Biblios->find($biblionumber);
-            $import_record->replace( { biblio => $biblio } );
+        if( $overlay_action eq 'replace' ){
+            my $biblio = Koha::Biblios->find( $biblionumber );
+            $import_record->replace({ biblio => $biblio });
         }
     } else {
         if ($matcher_id) {
             if ( $matcher_id eq '_TITLE_AUTHOR_' ) {
                 my @matches = FindDuplicate($marcrecord);
                 $duplicates_found = 1 if @matches;
-            } else {
+            }
+            else {
                 my $matcher = C4::Matcher->fetch($matcher_id);
                 my @matches = $matcher->get_matches( $marcrecord, my $max_matches = 1 );
                 $duplicates_found = 1 if @matches;
@@ -281,7 +488,7 @@ sub add_biblio_from_import_record {
         }
 
         # add the biblio if no matches were found
-        if ( !$duplicates_found ) {
+        if( !$duplicates_found ) {
             ( $biblionumber, undef ) = AddBiblio( $marcrecord, '' );
             $import_record->status('imported')->store;
         }
@@ -319,7 +526,7 @@ sub add_biblio_from_import_record {
 =cut
 
 sub add_items_from_import_record {
-    my ($args) = @_;
+    my ( $args ) = @_;
 
     my $record_result      = $args->{record_result};
     my $basket_id          = $args->{basket_id};
@@ -335,29 +542,13 @@ sub add_items_from_import_record {
         my $marc_fields_to_order      = _get_syspref_mappings( $marcrecord, 'MarcFieldsToOrder' );
         my $marc_item_fields_to_order = _get_syspref_mappings( $marcrecord, 'MarcItemFieldsToOrder' );
 
-        my $item_fields = {
-            homebranch       => $marc_item_fields_to_order->{homebranch},
-            holdingbranch    => $marc_item_fields_to_order->{holdingbranch},
-            itype            => $marc_item_fields_to_order->{itype},
-            nonpublic_note   => $marc_item_fields_to_order->{nonpublic_note},
-            public_note      => $marc_item_fields_to_order->{public_note},
-            loc              => $marc_item_fields_to_order->{loc},
-            ccode            => $marc_item_fields_to_order->{ccode},
-            notforloan       => $marc_item_fields_to_order->{notforloan},
-            uri              => $marc_item_fields_to_order->{uri},
-            copyno           => $marc_item_fields_to_order->{copyno},
-            quantity         => $marc_item_fields_to_order->{quantity},
-            price            => $marc_item_fields_to_order->{price},
-            replacementprice => $marc_item_fields_to_order->{replacementprice},
-            itemcallnumber   => $marc_item_fields_to_order->{itemcallnumber},
-            budget_code      => $marc_item_fields_to_order->{budget_code},
-            c_quantity       => $marc_fields_to_order->{quantity},
-            c_budget_code    => $marc_fields_to_order->{budget_code},
-            c_price          => $marc_fields_to_order->{price},
-            c_discount       => $marc_fields_to_order->{discount},
-            c_sort1          => $marc_fields_to_order->{sort1},
-            c_sort2          => $marc_fields_to_order->{sort2},
-        };
+        my $item_fields = _create_item_fields_from_syspref(
+            {
+                marc_fields_to_order      => $marc_fields_to_order,
+                marc_item_fields_to_order => $marc_item_fields_to_order,
+                budget_id                 => $budget_id
+            }
+        );
 
         my $order_line_fields = parse_input_into_order_line_fields(
             {
@@ -418,19 +609,19 @@ sub add_items_from_import_record {
 =cut
 
 sub create_order_lines {
-    my ($args) = @_;
+    my ( $args ) = @_;
 
     my $order_line_details = $args->{order_line_details};
 
-    foreach my $order_detail ( @{$order_line_details} ) {
-        my @itemnumbers = $order_detail->{itemnumbers} || ();
-        delete( $order_detail->{itemnumbers} );
-        my $order = Koha::Acquisition::Order->new( \%{$order_detail} );
+    foreach  my $order_detail ( @{ $order_line_details } ) {
+        my @itemnumbers = $order_detail->{itemnumbers};
+        delete($order_detail->{itemnumber});
+        my $order = Koha::Acquisition::Order->new( \%{ $order_detail } );
         $order->populate_with_prices_for_ordering();
         $order->populate_with_prices_for_receiving();
         $order->store;
-        foreach my $itemnumber (@itemnumbers) {
-            $order->add_item($itemnumber);
+        foreach my $itemnumber ( @itemnumbers ) {
+            $order->add_item( $itemnumber );
         }
     }
     return;
@@ -698,7 +889,6 @@ my $order_line_fields = parse_input_into_order_line_fields(
     }
 );
 
-
 =cut
 
 sub parse_input_into_order_line_fields {
@@ -713,78 +903,70 @@ sub parse_input_into_order_line_fields {
     my $marcrecord   = $args->{marcrecord};
 
     my $quantity        = $fields->{quantity} || 1;
-    my @homebranches    = $client ? @{ $fields->{homebranches} }    : ( ( $fields->{homebranch} ) x $quantity );
-    my @holdingbranches = $client ? @{ $fields->{holdingbranches} } : ( ( $fields->{holdingbranch} ) x $quantity );
-    my @itypes          = $client ? @{ $fields->{itypes} }          : ( ( $fields->{itype} ) x $quantity );
-    my @nonpublic_notes = $client ? @{ $fields->{nonpublic_notes} } : ( ( $fields->{nonpublic_note} ) x $quantity );
-    my @public_notes    = $client ? @{ $fields->{public_notes} }    : ( ( $fields->{public_note} ) x $quantity );
-    my @locs            = $client ? @{ $fields->{locs} }            : ( ( $fields->{loc} ) x $quantity );
-    my @ccodes          = $client ? @{ $fields->{ccodes} }          : ( ( $fields->{ccode} ) x $quantity );
-    my @notforloans     = $client ? @{ $fields->{notforloans} }     : ( ( $fields->{notforloan} ) x $quantity );
-    my @uris            = $client ? @{ $fields->{uris} }            : ( ( $fields->{uri} ) x $quantity );
-    my @copynos         = $client ? @{ $fields->{copynos} }         : ( ( $fields->{copyno} ) x $quantity );
-    my @itemprices      = $client ? @{ $fields->{itemprices} }      : ( ( $fields->{price} ) x $quantity );
-    my @replacementprices =
-        $client ? @{ $fields->{replacementprices} } : ( ( $fields->{replacementprice} ) x $quantity );
-    my @itemcallnumbers = $client ? @{ $fields->{itemcallnumbers} } : ( ( $fields->{itemcallnumber} ) x $quantity );
-    my @coded_location_qualifiers =
-        $client ? @{ $fields->{coded_location_qualifiers} } : ( ( $fields->{coded_location_qualifier} ) x $quantity );
-    my @barcodes            = $client ? @{ $fields->{barcodes} }       : ( ( $fields->{barcode} ) x $quantity );
-    my @enumchrons          = $client ? @{ $fields->{enumchrons} }     : ( ( $fields->{enumchron} ) x $quantity );
-    my $c_quantity          = $client ? $fields->{c_quantity}          : $fields->{c_quantity};
-    my $c_budget_id         = $client ? $fields->{c_budget_id}         : $fields->{c_budget_id};
-    my $c_discount          = $client ? $fields->{c_discount}          : $fields->{c_discount};
-    my $c_sort1             = $client ? $fields->{c_sort1}             : $fields->{c_sort1};
-    my $c_sort2             = $client ? $fields->{c_sort2}             : $fields->{c_sort2};
-    my $c_replacement_price = $client ? $fields->{c_replacement_price} : $fields->{c_replacement_price};
-    my $c_price             = $client ? $fields->{c_price}             : $fields->{c_price};
+    # my @homebranches    = $client ? @{ $fields->{homebranches} }    : ( ( $fields->{homebranch} ) x $quantity );
+    # my @holdingbranches = $client ? @{ $fields->{holdingbranches} } : ( ( $fields->{holdingbranch} ) x $quantity );
+    # my @itypes          = $client ? @{ $fields->{itypes} }          : ( ( $fields->{itype} ) x $quantity );
+    # my @nonpublic_notes = $client ? @{ $fields->{nonpublic_notes} } : ( ( $fields->{nonpublic_note} ) x $quantity );
+    # my @public_notes    = $client ? @{ $fields->{public_notes} }    : ( ( $fields->{public_note} ) x $quantity );
+    # my @locs            = $client ? @{ $fields->{locs} }            : ( ( $fields->{loc} ) x $quantity );
+    # my @ccodes          = $client ? @{ $fields->{ccodes} }          : ( ( $fields->{ccode} ) x $quantity );
+    # my @notforloans     = $client ? @{ $fields->{notforloans} }     : ( ( $fields->{notforloan} ) x $quantity );
+    # my @uris            = $client ? @{ $fields->{uris} }            : ( ( $fields->{uri} ) x $quantity );
+    # my @copynos         = $client ? @{ $fields->{copynos} }         : ( ( $fields->{copyno} ) x $quantity );
+    # my @itemprices      = $client ? @{ $fields->{itemprices} }      : ( ( $fields->{price} ) x $quantity );
+    # my @replacementprices =
+    #     $client ? @{ $fields->{replacementprices} } : ( ( $fields->{replacementprice} ) x $quantity );
+    # my @itemcallnumbers     = $client ? @{ $fields->{itemcallnumbers} } : ( ( $fields->{itemcallnumber} ) x $quantity );
+    # my $c_quantity          = $client ? $fields->{c_quantity}           : $fields->{c_quantity};
+    # my $c_budget_id         = $client ? $fields->{c_budget_id}          : $fields->{c_budget_id};
+    # my $c_discount          = $client ? $fields->{c_discount}           : $fields->{c_discount};
+    # my $c_sort1             = $client ? $fields->{c_sort1}              : $fields->{c_sort1};
+    # my $c_sort2             = $client ? $fields->{c_sort2}              : $fields->{c_sort2};
+    # my $c_replacement_price = $client ? $fields->{c_replacement_price}  : $fields->{c_replacement_price};
+    # my $c_price             = $client ? $fields->{c_price}              : $fields->{c_price};
 
     # If using the cronjob, we want to default to the account budget if not mapped on the record
-    my $item_budget_id;
-    if ( !$client && ( $fields->{budget_code} || $fields->{c_budget_code} ) ) {
-        my $budget_code = $fields->{budget_code} || $fields->{c_budget_code};
-        my $item_budget = GetBudgetByCode($budget_code);
-        if ($item_budget) {
-            $item_budget_id = $item_budget->{budget_id};
-        } else {
-            $item_budget_id = $budget_id;
-        }
-    } else {
-        $item_budget_id = $budget_id;
-    }
-    my @budget_codes = $client ? @{ $fields->{budget_codes} } : ($item_budget_id);
-    my $loop_limit   = $client ? scalar(@homebranches)        : $quantity;
+    # my $item_budget_id;
+    # if ( !$client && ( $fields->{budget_code} || $fields->{c_budget_code} ) ) {
+    #     my $budget_code = $fields->{budget_code} || $fields->{c_budget_code};
+    #     my $item_budget = GetBudgetByCode($budget_code);
+    #     if ($item_budget) {
+    #         $item_budget_id = $item_budget->{budget_id};
+    #     } else {
+    #         $item_budget_id = $budget_id;
+    #     }
+    # } else {
+    #     $item_budget_id = $budget_id;
+    # }
+    # my @budget_codes = $client ? @{ $fields->{budget_codes} } : ($item_budget_id);
+    # my $loop_limit   = $client ? scalar(@homebranches)        : $quantity;
 
     my $order_line_fields = {
-        biblionumber             => $biblionumber,
-        homebranch               => \@homebranches,
-        holdingbranch            => \@holdingbranches,
-        itemnotes_nonpublic      => \@nonpublic_notes,
-        itemnotes                => \@public_notes,
-        location                 => \@locs,
-        ccode                    => \@ccodes,
-        itype                    => \@itypes,
-        notforloan               => \@notforloans,
-        uri                      => \@uris,
-        copynumber               => \@copynos,
-        price                    => \@itemprices,
-        replacementprice         => \@replacementprices,
-        itemcallnumber           => \@itemcallnumbers,
-        coded_location_qualifier => \@coded_location_qualifiers,
-        barcode                  => \@barcodes,
-        enumchron                => \@enumchrons,
-        budget_code              => \@budget_codes,
-        loop_limit               => $loop_limit,
-        basket_id                => $basket_id,
-        budget_id                => $budget_id,
-        c_quantity               => $c_quantity,
-        c_budget_id              => $c_budget_id,
-        c_discount               => $c_discount,
-        c_sort1                  => $c_sort1,
-        c_sort2                  => $c_sort2,
-        c_replacement_price      => $c_replacement_price,
-        c_price                  => $c_price,
-        marcrecord               => $marcrecord,
+        biblionumber        => $biblionumber,
+        homebranch          => $fields->{homebranches},
+        holdingbranch       => $fields->{holdingbranches},
+        itemnotes_nonpublic => $fields->{nonpublic_notes},
+        itemnotes           => $fields->{public_notes},
+        location            => $fields->{locs},
+        ccode               => $fields->{ccodes},
+        itype               => $fields->{itypes},
+        notforloan          => $fields->{notforloans},
+        uri                 => $fields->{uris},
+        copynumber          => $fields->{copynos},
+        price               => $fields->{itemprices},
+        replacementprice    => $fields->{replacementprices},
+        itemcallnumber      => $fields->{itemcallnumbers},
+        budget_code         => $fields->{budget_codes},
+        loop_limit          => $quantity,
+        basket_id           => $basket_id,
+        budget_id           => $budget_id,
+        c_quantity          => $fields->{c_quantity},
+        c_budget_id         => $fields->{c_budget_id},
+        c_discount          => $fields->{c_discount},
+        c_sort1             => $fields->{c_sort1},
+        c_sort2             => $fields->{c_sort2},
+        c_replacement_price => $fields->{c_replacement_price},
+        c_price             => $fields->{c_price},
     };
 
     if($client) {
@@ -985,6 +1167,106 @@ sub _format_price_to_CurrencyFormat_syspref {
 
     $price =~ s/\./,/ if C4::Context->preference("CurrencyFormat") eq "FR";
     return $price;
+}
+
+=head3 _create_item_fields_from_syspref
+
+Takes the two sysprefs and returns the item fields required to process and create orderlines
+
+my $item_fields = _create_item_fields_from_syspref(
+    {
+        marc_fields_to_order      => $marc_fields_to_order,
+        marc_item_fields_to_order => $marc_item_fields_to_order
+    }
+);
+
+=cut
+
+sub _create_item_fields_from_syspref {
+    my ($args) = @_;
+
+    my $marc_item_fields_to_order = $args->{marc_item_fields_to_order};
+    my $marc_fields_to_order      = $args->{marc_fields_to_order};
+    my $budget_id                 = $args->{budget_id};
+
+    my @homebranches      = ();
+    my @holdingbranches   = ();
+    my @itypes            = ();
+    my @nonpublic_notes   = ();
+    my @public_notes      = ();
+    my @locs              = ();
+    my @ccodes            = ();
+    my @notforloans       = ();
+    my @uris              = ();
+    my @copynos           = ();
+    my @budget_codes      = ();
+    my @itemprices        = ();
+    my @replacementprices = ();
+    my @itemcallnumbers   = ();
+
+    foreach my $infoset (@$marc_item_fields_to_order) {
+        my $quantity = $infoset->{quantity} || 1;
+        for ( my $i = 0 ; $i < $quantity ; $i++ ) {
+            my $budget_code;
+            if(!$infoset->{budget_code}) {
+                if($marc_fields_to_order->{budget_code}) {
+                    $budget_code = $marc_fields_to_order->{budget_code};
+                }
+            } else {
+                $budget_code = $infoset->{budget_code};
+            }
+
+            my $item_budget_id;
+            my $item_budget = GetBudgetByCode($budget_code);
+            if ($item_budget) {
+                $item_budget_id = $item_budget->{budget_id};
+            } else {
+                $item_budget_id = $budget_id;
+            }
+
+            push @homebranches,      $infoset->{homebranch};
+            push @holdingbranches,   $infoset->{holdingbranch};
+            push @itypes,            $infoset->{itype};
+            push @nonpublic_notes,   $infoset->{nonpublic_note};
+            push @public_notes,      $infoset->{public_note};
+            push @locs,              $infoset->{loc};
+            push @ccodes,            $infoset->{ccode};
+            push @notforloans,       $infoset->{notforloan};
+            push @uris,              $infoset->{uri};
+            push @copynos,           $infoset->{copyno};
+            push @budget_codes,      $item_budget_id;
+            push @itemprices,        $infoset->{itemprice};
+            push @replacementprices, $infoset->{replacementprice};
+            push @itemcallnumbers,   $infoset->{itemcallnumber};
+        }
+    }
+
+    my $item_fields = {
+        quantity          => scalar(@homebranches),
+        homebranches      => \@homebranches,
+        holdingbranches   => \@holdingbranches,
+        itypes            => \@itypes,
+        nonpublic_notes   => \@nonpublic_notes,
+        public_notes      => \@public_notes,
+        locs              => \@locs,
+        ccodes            => \@ccodes,
+        notforloans       => \@notforloans,
+        uris              => \@uris,
+        copynos           => \@copynos,
+        budget_codes      => \@budget_codes,
+        itemprices        => \@itemprices,
+        replacementprices => \@replacementprices,
+        itemcallnumbers   => \@itemcallnumbers,
+        c_quantity        => $marc_fields_to_order->{quantity},
+        c_budget_code     => $marc_fields_to_order->{budget_code},
+        c_price           => $marc_fields_to_order->{price},
+        c_discount        => $marc_fields_to_order->{discount},
+        c_sort1           => $marc_fields_to_order->{sort1},
+        c_sort2           => $marc_fields_to_order->{sort2},
+    };
+
+    return $item_fields;
+>>>>>>> Bug 34355: Add cronjob, MarcOrder object and refactored addorderiso2709 script
 }
 
 1;
