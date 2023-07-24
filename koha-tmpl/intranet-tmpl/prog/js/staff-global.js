@@ -155,7 +155,6 @@ $(document).ready(function() {
         $("#catalog-search-dropdown a").toggleClass("catalog-search-dropdown-hover");
     });
 
-    console.log("HIDDEN BORROWER: " + $("#hiddenborrowernumber").val() );
     if ( localStorage.getItem("previousPatrons") || $("#hiddenborrowernumber").val() ){
         var previous_patrons = [];
         if ( localStorage.getItem("previousPatrons") ) {
