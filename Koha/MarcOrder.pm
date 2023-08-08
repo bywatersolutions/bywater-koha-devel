@@ -122,7 +122,7 @@ sub create_order_lines_from_file {
         });
 
         while( my $import_record = $import_records->next ){
-            my $result = add_biblios_from_import_record({
+            my $result = add_biblio_from_import_record({
                 import_batch_id => $import_batch_id,
                 import_record   => $import_record,
                 matcher_id      => $params->{matcher_id},
@@ -358,8 +358,6 @@ sub _get_syspref_mappings {
     }
     @tags_list = List::MoreUtils::uniq(@tags_list);
 
-    die "System preference $syspref_to_read has not been filled in. Please set the mapping values to use this cron script." if scalar(@tags_list == 0);
-
     my $tags_count = _verify_number_of_fields(\@tags_list, $record);
     # Return if the number of these fields in the record is not the same.
     die "Invalid number of fields detected on field $tags_count->{key}, please check this file" if $tags_count->{error};
@@ -552,7 +550,6 @@ sub add_items_from_import_record {
 
         my $order_line_fields = parse_input_into_order_line_fields(
             {
-                agent        => $agent,
                 biblionumber => $biblionumber,
                 budget_id    => $budget_id,
                 basket_id    => $basket_id,
@@ -576,7 +573,6 @@ sub add_items_from_import_record {
     if ( $agent eq 'client' ) {
         my $order_line_fields = parse_input_into_order_line_fields(
             {
-                agent        => $agent,
                 biblionumber => $biblionumber,
                 budget_id    => $budget_id,
                 basket_id    => $basket_id,
@@ -614,7 +610,7 @@ sub create_order_lines {
     my $order_line_details = $args->{order_line_details};
 
     foreach  my $order_detail ( @{ $order_line_details } ) {
-        my @itemnumbers = $order_detail->{itemnumbers};
+        my @itemnumbers = $order_detail->{itemnumbers} || ();
         delete($order_detail->{itemnumber});
         my $order = Koha::Acquisition::Order->new( \%{ $order_detail } );
         $order->populate_with_prices_for_ordering();
@@ -894,8 +890,6 @@ my $order_line_fields = parse_input_into_order_line_fields(
 sub parse_input_into_order_line_fields {
     my ($args) = @_;
 
-    my $agent        = $args->{agent};
-    my $client       = $agent eq 'client' ? 1 : 0;
     my $biblionumber = $args->{biblionumber};
     my $budget_id    = $args->{budget_id};
     my $basket_id    = $args->{basket_id};
@@ -903,43 +897,6 @@ sub parse_input_into_order_line_fields {
     my $marcrecord   = $args->{marcrecord};
 
     my $quantity        = $fields->{quantity} || 1;
-    # my @homebranches    = $client ? @{ $fields->{homebranches} }    : ( ( $fields->{homebranch} ) x $quantity );
-    # my @holdingbranches = $client ? @{ $fields->{holdingbranches} } : ( ( $fields->{holdingbranch} ) x $quantity );
-    # my @itypes          = $client ? @{ $fields->{itypes} }          : ( ( $fields->{itype} ) x $quantity );
-    # my @nonpublic_notes = $client ? @{ $fields->{nonpublic_notes} } : ( ( $fields->{nonpublic_note} ) x $quantity );
-    # my @public_notes    = $client ? @{ $fields->{public_notes} }    : ( ( $fields->{public_note} ) x $quantity );
-    # my @locs            = $client ? @{ $fields->{locs} }            : ( ( $fields->{loc} ) x $quantity );
-    # my @ccodes          = $client ? @{ $fields->{ccodes} }          : ( ( $fields->{ccode} ) x $quantity );
-    # my @notforloans     = $client ? @{ $fields->{notforloans} }     : ( ( $fields->{notforloan} ) x $quantity );
-    # my @uris            = $client ? @{ $fields->{uris} }            : ( ( $fields->{uri} ) x $quantity );
-    # my @copynos         = $client ? @{ $fields->{copynos} }         : ( ( $fields->{copyno} ) x $quantity );
-    # my @itemprices      = $client ? @{ $fields->{itemprices} }      : ( ( $fields->{price} ) x $quantity );
-    # my @replacementprices =
-    #     $client ? @{ $fields->{replacementprices} } : ( ( $fields->{replacementprice} ) x $quantity );
-    # my @itemcallnumbers     = $client ? @{ $fields->{itemcallnumbers} } : ( ( $fields->{itemcallnumber} ) x $quantity );
-    # my $c_quantity          = $client ? $fields->{c_quantity}           : $fields->{c_quantity};
-    # my $c_budget_id         = $client ? $fields->{c_budget_id}          : $fields->{c_budget_id};
-    # my $c_discount          = $client ? $fields->{c_discount}           : $fields->{c_discount};
-    # my $c_sort1             = $client ? $fields->{c_sort1}              : $fields->{c_sort1};
-    # my $c_sort2             = $client ? $fields->{c_sort2}              : $fields->{c_sort2};
-    # my $c_replacement_price = $client ? $fields->{c_replacement_price}  : $fields->{c_replacement_price};
-    # my $c_price             = $client ? $fields->{c_price}              : $fields->{c_price};
-
-    # If using the cronjob, we want to default to the account budget if not mapped on the record
-    # my $item_budget_id;
-    # if ( !$client && ( $fields->{budget_code} || $fields->{c_budget_code} ) ) {
-    #     my $budget_code = $fields->{budget_code} || $fields->{c_budget_code};
-    #     my $item_budget = GetBudgetByCode($budget_code);
-    #     if ($item_budget) {
-    #         $item_budget_id = $item_budget->{budget_id};
-    #     } else {
-    #         $item_budget_id = $budget_id;
-    #     }
-    # } else {
-    #     $item_budget_id = $budget_id;
-    # }
-    # my @budget_codes = $client ? @{ $fields->{budget_codes} } : ($item_budget_id);
-    # my $loop_limit   = $client ? scalar(@homebranches)        : $quantity;
 
     my $order_line_fields = {
         biblionumber        => $biblionumber,
@@ -1235,7 +1192,7 @@ sub _create_item_fields_from_syspref {
             push @uris,              $infoset->{uri};
             push @copynos,           $infoset->{copyno};
             push @budget_codes,      $item_budget_id;
-            push @itemprices,        $infoset->{itemprice};
+            push @itemprices,        $infoset->{price};
             push @replacementprices, $infoset->{replacementprice};
             push @itemcallnumbers,   $infoset->{itemcallnumber};
         }
@@ -1266,7 +1223,6 @@ sub _create_item_fields_from_syspref {
     };
 
     return $item_fields;
->>>>>>> Bug 34355: Add cronjob, MarcOrder object and refactored addorderiso2709 script
 }
 
 1;
