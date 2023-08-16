@@ -63,6 +63,8 @@ unless ( in_iprange(C4::Context->preference('SelfCheckAllowByIPRanges')) ) {
 if (C4::Context->preference('AutoSelfCheckAllowed'))
 {
     my $AutoSelfCheckID = C4::Context->preference('AutoSelfCheckID');
+    die "Cannot auto login to self checkout, user $AutoSelfCheckID does not exist!"
+        unless Koha::Patrons->search( { userid => $AutoSelfCheckID } )->count();
     my $AutoSelfCheckPass = C4::Context->preference('AutoSelfCheckPass');
     $query->param(-name=>'userid',-values=>[$AutoSelfCheckID]);
     $query->param(-name=>'password',-values=>[$AutoSelfCheckPass]);
