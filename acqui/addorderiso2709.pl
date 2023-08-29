@@ -513,7 +513,7 @@ sub import_biblios_list {
         # Items
         my @itemlist = ();
         my $all_items_quantity = 0;
-        my $alliteminfos = get_infos_syspref_on_item('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code']);
+        my $alliteminfos = get_infos_syspref_on_item('MarcItemFieldsToOrder', $marcrecord, ['homebranch', 'holdingbranch', 'itype', 'nonpublic_note', 'public_note', 'loc', 'ccode', 'notforloan', 'uri', 'copyno', 'price', 'replacementprice', 'itemcallnumber', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2']);
         if ($alliteminfos != -1) {
             foreach my $iteminfos (@$alliteminfos) {
                 my $item_homebranch = $iteminfos->{homebranch};
@@ -528,6 +528,9 @@ sub import_biblios_list {
                 my $item_copyno = $iteminfos->{copyno};
                 my $item_quantity = $iteminfos->{quantity} || 1;
                 my $item_budget_code = $iteminfos->{budget_code};
+                my $item_discount = $iteminfos->{discount};
+                my $item_sort1 = $iteminfos->{sort1};
+                my $item_sort2 = $iteminfos->{sort2};
                 my $item_budget_id;
                 if ( $iteminfos->{budget_code} ) {
                     my $item_budget = GetBudgetByCode( $iteminfos->{budget_code} );
@@ -556,6 +559,9 @@ sub import_biblios_list {
                         'copyno' => $item_copyno,
                         'quantity' => $item_quantity,
                         'budget_id' => $item_budget_id || $budget_id,
+                        'discount' => $item_discount || $discount,
+                        'sort1' => $item_sort1 || $sort1,
+                        'sort2' => $item_sort2 || $sort2,
                         'itemprice' => $item_price || $price,
                         'replacementprice' => $item_replacement_price || $replacementprice,
                         'itemcallnumber' => $item_callnumber,
