@@ -147,7 +147,7 @@ if ( $patron && $op eq "cud-returnbook" && $allowselfcheckreturns ) {
 
 
     my $item = Koha::Items->find( { barcode => $barcode } );
-    if ( $success && C4::Context->preference("CircConfirmItemParts") ) {
+    if ( $success && C4::Context->preference("CircConfirmItemPartsSCI") ) {
         if ( defined($item)
             && $item->materials )
         {
@@ -179,6 +179,9 @@ elsif ( $patron && ( $op eq 'cud-checkout' ) ) {
         0,
         C4::Context->preference("AllowItemsOnHoldCheckoutSCO")
     );
+
+    delete $needconfirm->{ADDITIONAL_MATERIALS} unless C4::Context->preference("CircConfirmItemPartsSCO");
+
     my $issue_error;
     if ( $confirm_required = scalar keys %$needconfirm ) {
         for my $error ( qw( UNKNOWN_BARCODE max_loans_allowed ISSUED_TO_ANOTHER NO_MORE_RENEWALS NOT_FOR_LOAN DEBT WTHDRAWN RESTRICTED RESERVED ITEMNOTSAMEBRANCH EXPIRED DEBARRED CARD_LOST GNA INVALID_DATE UNKNOWN_BARCODE TOO_MANY DEBT_GUARANTEES DEBT_GUARANTORS USERBLOCKEDOVERDUE PATRON_CANT PREVISSUE NOT_FOR_LOAN_FORCING ITEM_LOST ADDITIONAL_MATERIALS ) ) {
