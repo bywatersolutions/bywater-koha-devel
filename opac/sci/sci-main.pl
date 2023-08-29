@@ -68,7 +68,7 @@ if ( $op eq 'cud-check_in' ) {
             my ( $success, $messages, $checkout, $patron );
             my $item = Koha::Items->find( { barcode => $barcode } );
             my $human_required = 0;
-            if (   C4::Context->preference("CircConfirmItemParts")
+            if (   C4::Context->preference("CircConfirmItemPartsSCI")
                 && defined($item)
                 && $item->materials )
             {

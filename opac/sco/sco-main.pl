@@ -161,7 +161,7 @@ if ( $patron && $op eq "cud-returnbook" && $allowselfcheckreturns ) {
 
     foreach my $barcode (@$barcodes) {
         my $item = Koha::Items->find( { barcode => $barcode } );
-        if ( $success && C4::Context->preference("CircConfirmItemParts") ) {
+        if ( $success && C4::Context->preference("CircConfirmItemPartsSCI") ) {
             if ( defined($item)
                 && $item->materials )
             {
@@ -200,6 +200,9 @@ if ( $patron && $op eq "cud-returnbook" && $allowselfcheckreturns ) {
             0,
             C4::Context->preference("AllowItemsOnHoldCheckoutSCO")
         );
+
+        delete $needconfirm->{ADDITIONAL_MATERIALS} unless C4::Context->preference("CircConfirmItemPartsSCO");
+
         my $issue_error;
         if ( $confirm_required = scalar keys %$needconfirm ) {
             for my $error (
