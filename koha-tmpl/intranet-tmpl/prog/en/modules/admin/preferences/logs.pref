@@ -114,7 +114,19 @@ Logging:
                   1: Log
                   0: "Don't log"
             - any actions on recalls (create, cancel, expire, fulfill).
-
+    Scans:
+        -
+            - pref: LogInvalidPatrons
+              choices:
+                  1: Log
+                  0: Do not log
+            - scanned invalid patron identifiers as statistics.
+        -
+            - pref: LogInvalidItems
+              choices:
+                  1: Log
+                  0: Do not log
+            - scanned invalid item identifiers as statistics.
     Debugging:
         -
             - "When logging actions, store a stack trace that goes at most"
