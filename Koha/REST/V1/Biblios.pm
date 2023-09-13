@@ -152,6 +152,91 @@ sub delete {
     };
 }
 
+=head3 populate_empty_callnumbers
+
+Controller function that handles deleting a biblio object
+
+=cut
+
+sub populate_empty_callnumbers {
+    my $c = shift->openapi->valid_input or return;
+
+    my $biblio = Koha::Biblios->find( $c->param('biblio_id') );
+
+    if ( not defined $biblio ) {
+        return $c->render(
+            status  => 404,
+            openapi => { error => "Biblio not found" }
+        );
+    }
+
+    my $items;
+    if ( $c->param('item_id') ) {
+        $items = Koha::Items->search(
+            {
+                -and => [
+                    biblionumber => $biblio->id,
+                    itemnumber   => $c->param('item_id'),
+                    -or          => [
+                        itemcallnumber => undef,
+                        itemcallnumber => q{},
+                    ]
+                ]
+            }
+        );
+    } else {
+        $items = Koha::Items->search(
+            {
+                -and => [
+                    biblionumber => $biblio->id,
+                    -or          => [
+                        itemcallnumber => undef,
+                        itemcallnumber => q{},
+                    ]
+                ]
+            }
+        );
+    }
+
+    my $cn_fields = C4::Context->preference('itemcallnumber');
+    return $c->render(
+        status  => 404,
+        openapi => { error => "Callnumber fields not found" }
+    ) unless $cn_fields;
+
+    my $record = $biblio->record;
+    my $callnumber;
+    foreach my $callnumber_marc_field ( split( /,/, $cn_fields ) ) {
+        my $callnumber_tag       = substr( $callnumber_marc_field, 0, 3 );
+        my $callnumber_subfields = substr( $callnumber_marc_field, 3 );
+
+        next unless $callnumber_tag && $callnumber_subfields;
+
+        my $field = $record->field($callnumber_tag);
+
+        next unless $field;
+
+        $callnumber = $field->as_string( $callnumber_subfields, ' ' );
+        last if $callnumber;
+    }
+
+    return $c->render(
+        status  => 200,
+        openapi => { items_updated => 0, callnumber => $callnumber },
+    ) unless $items->count;
+
+    return try {
+        my $items_updated = $items->update( { itemcallnumber => $callnumber }, { no_triggers => 1 } );
+
+        return $c->render(
+            status  => 200,
+            openapi => { items_updated => $items_updated, callnumber => $callnumber },
+        );
+    } catch {
+        $c->unhandled_exception($_);
+    };
+}
+
 =head3 get_public
 
 Controller function that handles retrieving a single biblio object

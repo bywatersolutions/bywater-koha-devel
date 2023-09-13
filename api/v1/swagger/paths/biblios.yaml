@@ -534,6 +534,125 @@
     x-koha-authorization:
       permissions:
         editcatalogue: edit_catalogue
+"/biblios/{biblio_id}/items/populate_empty_callnumbers":
+  post:
+    x-mojo-to: Biblios#populate_empty_callnumbers
+    operationId: itemsPopulateEmptyCallnumbers
+    tags:
+      - biblios
+      - items
+      - callnumbers
+    summary: Populate empty item callnumbers from biblio callnumber for all items on record with no callnumber
+    parameters:
+      - $ref: "../swagger.yaml#/parameters/biblio_id_pp"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Callnumbers updated
+        schema:
+          type: object
+          properties:
+            items_updated:
+              description: Number of items updated
+              type: integer
+            callnumber:
+              description: Callnumber added to updated items
+              type: string
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "409":
+        description: Conflict
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
+"/biblios/{biblio_id}/items/{item_id}/populate_empty_callnumbers":
+  post:
+    x-mojo-to: Biblios#populate_empty_callnumbers
+    operationId: itemPopulateEmptyCallnumbers
+    tags:
+      - biblios
+      - items
+      - callnumbers
+    summary: Populate empty item callnumber from biblio callnumber for a given item
+    parameters:
+      - $ref: "../swagger.yaml#/parameters/biblio_id_pp"
+      - $ref: "../swagger.yaml#/parameters/item_id_pp"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Callnumbers updated
+        schema:
+          type: object
+          properties:
+            items_updated:
+              description: Number of items updated
+              type: integer
+            callnumber:
+              description: Callnumber added to updated items
+              type: string
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "409":
+        description: Conflict
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
 "/biblios/{biblio_id}/items/{item_id}":
   put:
     x-mojo-to: Biblios#update_item

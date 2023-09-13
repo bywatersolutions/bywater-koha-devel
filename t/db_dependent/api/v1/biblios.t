@@ -20,7 +20,7 @@ use Modern::Perl;
 use utf8;
 use Encode;
 
-use Test::More tests => 13;
+use Test::More tests => 14;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warn;
@@ -1810,4 +1810,81 @@ subtest 'update_item() tests' => sub {
     ->json_is('/replacement_price', 30);
 
   $schema->storage->txn_rollback;
+};
+
+subtest 'populate_empty_callnumbers() tests' => sub {
+    plan tests => 23;
+
+    t::lib::Mocks::mock_preference( 'itemcallnumber', '245a' );
+
+    $schema->storage->txn_begin;
+
+    my $biblio = $builder->build_sample_biblio();
+
+    my $patron = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => { flags => 0 }
+        }
+    );
+    my $password = 'thePassword123';
+    $patron->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $patron->userid;
+
+    my $biblio_id = $biblio->id;
+
+    $t->post_ok( "//$userid:$password@/api/v1/biblios/$biblio_id/items/populate_empty_callnumbers" => json =>
+            { external_id => 'something' } )->status_is( 403, 'Not enough permissions to update an item' );
+
+    # Add permissions
+    $builder->build(
+        {
+            source => 'UserPermission',
+            value  => {
+                borrowernumber => $patron->borrowernumber,
+                module_bit     => 9,
+                code           => 'edit_catalogue'
+            }
+        }
+    );
+
+    t::lib::Mocks::mock_preference( 'itemcallnumber', '245a' );
+    $t->post_ok( "//$userid:$password@/api/v1/biblios/$biblio_id/items/populate_empty_callnumbers" => json => {} )
+        ->status_is( 200, 'Item updated' )->json_is( '/items_updated', 0 );
+    t::lib::Mocks::mock_preference( 'itemcallnumber', '' );
+
+    my $item_1 = $builder->build_sample_item( { biblionumber => $biblio->id, itemcallnumber => q{} } );
+    my $item_2 = $builder->build_sample_item( { biblionumber => $biblio->id, itemcallnumber => q{} } );
+    my $item_3 = $builder->build_sample_item( { biblionumber => $biblio->id, itemcallnumber => q{} } );
+    my $item_4 = $builder->build_sample_item( { biblionumber => $biblio->id, itemcallnumber => q{someCallNumber} } );
+
+    my $item1_id = $item_1->id;
+
+    $t->post_ok(
+        "//$userid:$password@/api/v1/biblios/$biblio_id/items/$item1_id/populate_empty_callnumbers" => json => {} )
+        ->status_is( 404, 'Callnumber fields not found' );
+
+    t::lib::Mocks::mock_preference( 'itemcallnumber', '245$a' );
+
+    $t->post_ok(
+        "//$userid:$password@/api/v1/biblios/$biblio_id/items/$item1_id/populate_empty_callnumbers" => json => {} )
+        ->status_is( 200, 'Item updated' )->json_is( '/items_updated', 1 )
+        ->json_is( '/callnumber', 'Some boring read' );
+
+    $t->post_ok( "//$userid:$password@/api/v1/biblios/$biblio_id/items/populate_empty_callnumbers" => json => {} )
+        ->status_is( 200, 'Items updated' )->json_is( '/items_updated', 2 )
+        ->json_is( '/callnumber', 'Some boring read' );
+
+    $t->post_ok( "//$userid:$password@/api/v1/biblios/$biblio_id/items/populate_empty_callnumbers" => json => {} )
+        ->status_is( 200, 'Items updated' )->json_is( '/items_updated', 0 );
+
+    $t->post_ok(
+        "//$userid:$password@/api/v1/biblios/$biblio_id/items/$item1_id/populate_empty_callnumbers" => json => {} )
+        ->status_is( 200, 'Item updated' )->json_is( '/items_updated', 0 );
+
+    $t->post_ok( "//$userid:$password@/api/v1/biblios/0/items/$item1_id/populate_empty_callnumbers" => json => {} )
+        ->status_is( 404, 'Record not found' );
+
+    $schema->storage->txn_rollback;
+
 };
