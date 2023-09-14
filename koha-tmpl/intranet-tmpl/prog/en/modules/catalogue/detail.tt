@@ -1134,6 +1134,12 @@
         </div> <!-- /.modal-dialog -->
     </div> <!-- /#.modal -->
 
+    [% IF !item.itemcallnumber && Koha.Preference('EnablePopulateCallnumbers') %]
+        <button class="populate-callnumber-item" class="btn btn-default" href="#" data-itemnumber="[% item.itemnumber | html %]" data-biblionumber="[% item.biblionumber | html %]" data-toggle="tooltip" data-placement="top" title="Populate callnumber for this item.">
+            <i class="fa fa-bars"></i> Populate callnumber
+        </button>
+    [% END %]
+
     [% IF bundlesEnabled %]
         <div class="modal" id="addToBundleModal" tabindex="-1" role="dialog" aria-labelledby="addToBundleLabel">
             <div class="modal-dialog">
