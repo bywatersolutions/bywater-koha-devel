@@ -152,6 +152,53 @@ sub delete {
     };
 }
 
+=head3 default_item_callnumber
+
+Return the callnumber generated for the given record based on the "itemcallnumber" system preference.
+=cut
+
+sub default_item_callnumber {
+    my $c = shift->openapi->valid_input or return;
+
+    my $biblio = Koha::Biblios->find( $c->param('biblio_id') );
+
+    if ( not defined $biblio ) {
+        return $c->render(
+            status  => 404,
+            openapi => { error => "Biblio not found" }
+        );
+    }
+
+    my $cn_fields = C4::Context->preference('itemcallnumber');
+    return $c->render(
+        status  => 404,
+        openapi => { error => "Callnumber fields not found" }
+    ) unless $cn_fields;
+
+    my $record = $biblio->record;
+    my $callnumber;
+
+    foreach my $callnumber_marc_field ( split( /,/, $cn_fields ) ) {
+        my $callnumber_tag       = substr( $callnumber_marc_field, 0, 3 );
+        my $callnumber_subfields = substr( $callnumber_marc_field, 3 );
+
+        next unless $callnumber_tag && $callnumber_subfields;
+
+        my $field = $record->field($callnumber_tag);
+
+        next unless $field;
+
+        $callnumber = $field->as_string( $callnumber_subfields, ' ' );
+        last if $callnumber;
+    }
+
+    return $c->render(
+        status  => 200,
+        openapi => { callnumber => $callnumber },
+    );
+}
+
+>>>>>>> f201568497f (Bug 34784: (QA follow-up))
 =head3 get_public
 
 Controller function that handles retrieving a single biblio object

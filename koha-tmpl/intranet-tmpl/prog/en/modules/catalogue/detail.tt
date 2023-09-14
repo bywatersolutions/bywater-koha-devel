@@ -642,11 +642,18 @@
                 [% IF CAN_user_editcatalogue_edit_items %]
                     <td class="actions">
                         [% IF item.can_be_edited %]
-                            [% IF Koha.Preference('LocalCoverImages') OR Koha.Preference('OPACLocalCoverImages') %]
+                            [% SET show_itemcallnumber_link = !item.itemcallnumber && Koha.Preference('EnablePopulateCallnumbers') %]
+                            [% SET show_local_covers_link = Koha.Preference('LocalCoverImages') OR Koha.Preference('OPACLocalCoverImages') %]
+                            [% IF show_itemcallnumber_link || show_itemcallnumber_link %]
                                 <div class="btn-group">
                                     <a  class="btn btn-default btn-xs" href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=[% item.biblionumber | html %]&itemnumber=[% item.itemnumber | html %]#edititem"><i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit</a><a class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></a>
                                     <ul class="dropdown-menu pull-right">
-                                        <li><a href="/cgi-bin/koha/tools/upload-cover-image.pl?itemnumber=[% item.itemnumber | uri %]&amp;filetype=image"><i class="fa fa-upload"></i> Upload image</a></li>
+                                        [% IF show_local_covers_link %]
+                                            <li><a href="/cgi-bin/koha/tools/upload-cover-image.pl?itemnumber=[% item.itemnumber | uri %]&amp;filetype=image"><i class="fa fa-upload"></i> Upload image</a></li>
+                                        [% END %]
+                                        [% IF show_itemcallnumber_link %]
+                                            <li><a class="populate-callnumber-item" href="#" data-itemnumber="[% item.itemnumber | html %]" data-biblionumber="[% item.biblionumber | html %]" data-toggle="tooltip" data-placement="left" title="Populate callnumber for this item."><i class="fa fa-bars"></i> Populate callnumber</a></li>
+                                        [% END %]
                                     </ul>
                                 </div>
                             [% ELSE %]

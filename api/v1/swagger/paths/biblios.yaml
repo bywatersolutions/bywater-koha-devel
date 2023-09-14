@@ -831,3 +831,49 @@
         description: Under maintenance
         schema:
           $ref: "../swagger.yaml#/definitions/error"
+"/biblios/{biblio_id}/default_item_callnumber":
+  get:
+    x-mojo-to: Biblios#default_item_callnumber
+    operationId: getBiblioDefaultItemCallnumber
+    tags:
+      - biblios
+    summary: Get default item callnumber for a biblio
+    parameters:
+      - $ref: "../swagger.yaml#/parameters/biblio_id_pp"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Generated call number
+        schema:
+          type: object
+          properties:
+            callnumber:
+              description: Item call number benerated for biblio
+              type: string
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Biblio not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
