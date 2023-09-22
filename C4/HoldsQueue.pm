@@ -577,29 +577,7 @@ sub MapItemsToHoldRequests {
             $pull_branches = [keys %items_by_branch];
             $holdingbranch = least_cost_branch( $pickup_branch, $pull_branches, $transport_cost_matrix );
             if ( $holdingbranch ) {
-
-                my $holding_branch_items = $items_by_branch{$holdingbranch};
-                foreach my $item (@$holding_branch_items) {
-                    next if $request->{borrowerbranch} ne $item->{$priority_branch};
-                    next unless $items_by_itemnumber{ $item->{itemnumber} }->{_object}->can_be_transferred( { to => $libraries->{ $request->{branchcode} } } );
-
-                    # Don't fill item level holds that contravene the hold pickup policy at this time
-                    next unless _checkHoldPolicy($item, $request);
-
-                    # If hold itemtype is set, item's itemtype must match
-                    next unless ( !$request->{itemtype}
-                        || $item->{itype} eq $request->{itemtype} );
-
-                    # If hold item_group is set, item's item_group must match
-                    next unless (
-                        !$request->{item_group_id}
-                        || (   $item->{_object}->item_group
-                            && $item->{_object}->item_group->id eq $request->{item_group_id} )
-                    );
-
-                    $itemnumber = $item->{itemnumber};
-                    last;
-                }
+                $itemnumber = get_least_cost_item( $priority_branch, $holdingbranch, \%items_by_branch, \%items_by_itemnumber, $libraries, $request );
             }
             else {
                 next;
@@ -957,6 +935,34 @@ sub update_queue_for_biblio {
     }
 
     return $result;
+}
+
+sub get_least_cost_item {
+    my ( $priority_branch, $holdingbranch, $items_by_branch, $items_by_itemnumber, $libraries, $request ) = @_;
+    my $holding_branch_items = $items_by_branch->{$holdingbranch};
+    foreach my $item (@$holding_branch_items) {
+        next if $request->{borrowerbranch} ne $item->{$priority_branch};
+        next
+            unless $items_by_itemnumber->{ $item->{itemnumber} }->{_object}
+            ->can_be_transferred( { to => $libraries->{ $request->{branchcode} } } );
+
+        # Don't fill item level holds that contravene the hold pickup policy at this time
+        next unless _checkHoldPolicy( $item, $request );
+
+        # If hold itemtype is set, item's itemtype must match
+        next unless ( !$request->{itemtype}
+            || $item->{itype} eq $request->{itemtype} );
+
+        # If hold item_group is set, item's item_group must match
+        next
+            unless (
+            !$request->{item_group_id}
+            || (   $item->{_object}->item_group
+                && $item->{_object}->item_group->id eq $request->{item_group_id} )
+            );
+
+        return $item->{itemnumber};
+    }
 }
 
 1;
