@@ -938,8 +938,8 @@ sub update_queue_for_biblio {
 }
 
 sub get_least_cost_item {
-    my ( $priority_branch, $holdingbranch, $items_by_branch, $items_by_itemnumber, $libraries, $request ) = @_;
-    my $holding_branch_items = $items_by_branch->{$holdingbranch};
+    my ( $priority_branch, $pickup_branch, $items_by_branch, $items_by_itemnumber, $libraries, $request ) = @_;
+    my $holding_branch_items = $items_by_branch->{$pickup_branch};
     foreach my $item (@$holding_branch_items) {
         next if $request->{borrowerbranch} ne $item->{$priority_branch};
         next

@@ -8,7 +8,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 61;
+use Test::More tests => 62;
 use Data::Dumper;
 
 use C4::Calendar qw( new insert_single_holiday );
@@ -2090,4 +2090,62 @@ subtest "GetItemsAvailableToFillHoldsRequestsForBib" => sub {
     is( scalar @$items, 2, "Two items without active transfers correctly retrieved");
     is_deeply( [$items->[0]->{itemnumber},$items->[1]->{itemnumber}],[$item_2->itemnumber,$item_3->itemnumber],"Correct two items retrieved");
 
+    $schema->storage->txn_rollback;
+};
+
+subtest "MapItemsToHoldRequests" => sub {
+
+    plan tests => 1;
+
+    $schema->storage->txn_begin;
+
+    my $branch_closer  = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $branch_farther = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $branch_pickup = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    my $biblio = $builder->build_sample_biblio();
+    my $item_farther = $builder->build_sample_item(
+        {
+            biblionumber  => $biblio->biblionumber,
+            library    => $branch_farther->branchcode,
+        }
+    );
+    my $item_closer = $builder->build_sample_item(
+        {
+            biblionumber  => $biblio->biblionumber,
+            library    => $branch_closer->branchcode,
+        }
+    );
+
+    my $borrower = $builder->build({
+        source => 'Borrower',
+        value => {
+            branchcode    => $branch_pickup->branchcode,
+        }
+    });
+
+    my $res = AddReserve(
+        {
+            branchcode    => $branch_pickup->branchcode,
+            borrowernumber => $borrower->{borrowernumber},
+            biblionumber   => $item_farther->biblionumber,
+            priority       => 1,
+        }
+    );
+    my $hold = Koha::Holds->find( $res );
+
+    my $transport_cost_matrix = {};
+    $transport_cost_matrix->{$branch_pickup->id}->{$branch_closer->id}->{cost} = 5;
+    $transport_cost_matrix->{$branch_pickup->id}->{$branch_farther->id}->{cost} = 10;
+    my $map = C4::HoldsQueue::MapItemsToHoldRequests([$hold->unblessed], [$item_closer->unblessed, $item_farther->unblessed], undef, $transport_cost_matrix);
+
+    my $priority_branch = 'homebranch';
+    my $pickup_branch = $hold->branchcode;
+    my $items_by_branch = { $branch_farther->branchcode => [ $item_farther->unblessed ] };
+    my $items_by_itemnumber = { $item_farther->id => [ $item_farther->unblessed ] };
+    my $itemnumber = C4::HoldsQueue::get_least_cost_item( $priority_branch, $holdingbranch, $items_by_branch, $items_by_itemnumber, $libraries, $hold->unblessed );
+
+    is( $itemnumber, $item_farther->id, "Got the least cost item" );
+
+    $schema->storage->txn_rollback;
 };
