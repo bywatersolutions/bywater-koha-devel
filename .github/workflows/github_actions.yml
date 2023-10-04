@@ -406,14 +406,18 @@ jobs:
               run: docker push quay.io/bywatersolutions/koha:${{ steps.extracted_variables.outputs.SHORTNAME }}-${{ steps.extracted_variables.outputs.KOHA_MAJOR_MINOR }}-latest
 
     set-default-branch:
-        if: github.repository == 'bywatersolutions/bywater-koha'
-        name: Change the default branch in GitHub
-        needs: [build-debs]
-        runs-on: ubuntu-latest
-        steps:
-            - run: gh api repos/bywatersolutions/bywater-koha --method PATCH --field 'default_branch=${{ github.ref_name }}'
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      name: Set default branch
+      if: startsWith( github.ref, 'refs/heads/bywater-v' ) && github.repository == 'bywatersolutions/bywater-koha'
+      needs: [unit-test, is-a-mark]
+      runs-on: ubuntu-latest
+      steps:
+        - run: |
+              KOHA_BRANCH=${GITHUB_REF##*/}
+              echo "KOHA_BRANCH: $KOHA_BRANCH";
+              gh repo edit bywatersolutions/bywater-koha --default-branch $KOHA_BRANCH
+          env:
+            GITHUB_TOKEN: ${{ secrets.OUR_GITHUB_TOKEN }}
+            BRANCH: ${GITHUB_REF##*/}
 
     zap-scan-baseline-opac:
         name: ZAP Scan - Baseline - OPAC
