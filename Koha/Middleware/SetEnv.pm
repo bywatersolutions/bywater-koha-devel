@@ -80,6 +80,10 @@ sub call {
     my ( $self, $env ) = @_;
     my $req = Plack::Request->new($env);
 
+    Koha::Logger->get()
+        ->warn( $req->request_uri . " CALLED WITH " . Data::Dumper::Dumper( $req->parameters->as_hashref_mixed ) )
+        if $req->method eq 'POST';
+
     # First, we split the result only on unescaped commas.
     my @setenv_headers = split /(?<!\\),\s*/, $req->header('X-Koha-SetEnv') || '';
 
