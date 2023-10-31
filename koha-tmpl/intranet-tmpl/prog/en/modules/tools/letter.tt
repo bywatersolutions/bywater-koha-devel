@@ -616,7 +616,14 @@
                                 [% END %]
                             </li>
                             <li>
-                                <label for="title_[% letter.message_transport_type | html %]_[% lang | html %]">Message subject:</label><input type="text" id="title_[% letter.message_transport_type | html %]_[% lang | html %]" name="title" size="60" value="[% letter.title | html %]" />
+                                <label for="title_[% letter.message_transport_type | html %]_[% lang | html %]">
+                                    [% IF module == "report" %]
+                                        File name:
+                                    [% ELSE %]
+                                        Message subject:
+                                    [% END %]
+                                </label>
+                                <input type="text" id="title_[% letter.message_transport_type | html %]_[% lang | html %]" name="title" size="60" value="[% letter.title | html %]" />
                             </li>
                             <li>
                                 <label for="SQLfieldname_[% letter.message_transport_type | html %]_[% lang | html %]">Message body:</label>
