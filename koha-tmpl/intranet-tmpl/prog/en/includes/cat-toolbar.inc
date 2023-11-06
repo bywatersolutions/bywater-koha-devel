@@ -43,6 +43,10 @@
             <li><a id="modifybiblio" href="/cgi-bin/koha/tools/batch_record_modification.pl?recordtype=biblio&op=list&recordnumber_list=[% biblionumber | html %]">Modify record using template</a></li>
             [% END %]
 
+            [% IF Koha.Preference('EnablePopulateCallnumbers') && ( CAN_user_editcatalogue_edit_catalogue || CAN_user_editcatalogue_edit_items || CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel ) or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]
+                <li><a id="populate-callnumbers-biblio" href="#" data-biblionumber="[% biblionumber | html %]" data-toggle="tooltip" data-placement="left" title="Populate callnumbers for items with no call number.">Populate call numbers</a></li>
+            [% END %]
+
             [% IF CAN_user_editcatalogue_edit_items or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]
             <li><a id="edititems" href="/cgi-bin/koha/cataloguing/additem.pl?biblionumber=[% biblionumber | html %]">Edit items</a></li>
             [% END %]
@@ -209,14 +213,6 @@
             <a class="btn btn-default" href="/cgi-bin/koha/acqui/neworderempty.pl?booksellerid=[% searchtoorder_vendorid | uri %]&amp;basketno=[% searchtoorder_basketno | uri %]&amp;biblionumber=[% biblionumber | uri %]"><i class="fa fa-shopping-basket"></i> Add order</a>
         </div>
     [% END %]
-[% END %]
-
-[% IF Koha.Preference('EnablePopulateCallnumbers') %]
-[% IF ( CAN_user_editcatalogue_edit_catalogue || CAN_user_editcatalogue_edit_items || CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel ) or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]
-    <div class="btn-group">
-        <button id="populate-callnumbers-biblio" class="btn btn-default" href="#" data-biblionumber="[% biblionumber | html %]" data-toggle="tooltip" data-placement="top" title="Populate callnumbers for items with no callnumber."><i class="fa fa-bars"></i> Populate callnumbers</button>
-    </div>
-[% END %]
 [% END %]
 
 [% FOREACH p IN plugins %]

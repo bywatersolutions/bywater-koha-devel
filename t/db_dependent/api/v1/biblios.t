@@ -1813,7 +1813,7 @@ subtest 'update_item() tests' => sub {
 };
 
 subtest 'populate_empty_callnumbers() tests' => sub {
-    plan tests => 23;
+    plan tests => 26;
 
     t::lib::Mocks::mock_preference( 'itemcallnumber', '245a' );
 
@@ -1824,7 +1824,7 @@ subtest 'populate_empty_callnumbers() tests' => sub {
     my $patron = $builder->build_object(
         {
             class => 'Koha::Patrons',
-            value => { flags => 0 }
+            value => { flags => 2**2 }
         }
     );
     my $password = 'thePassword123';
@@ -1884,6 +1884,9 @@ subtest 'populate_empty_callnumbers() tests' => sub {
 
     $t->post_ok( "//$userid:$password@/api/v1/biblios/0/items/$item1_id/populate_empty_callnumbers" => json => {} )
         ->status_is( 404, 'Record not found' );
+
+    $t->get_ok( "//$userid:$password@/api/v1/biblios/$biblio_id/default_item_callnumber" => json => {} )
+        ->status_is( 200, 'Items updated' )->json_is( '/callnumber', 'Some boring read' );
 
     $schema->storage->txn_rollback;
 
