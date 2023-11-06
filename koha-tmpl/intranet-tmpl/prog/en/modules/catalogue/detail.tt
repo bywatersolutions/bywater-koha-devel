@@ -652,7 +652,7 @@
                                             <li><a href="/cgi-bin/koha/tools/upload-cover-image.pl?itemnumber=[% item.itemnumber | uri %]&amp;filetype=image"><i class="fa fa-upload"></i> Upload image</a></li>
                                         [% END %]
                                         [% IF show_itemcallnumber_link %]
-                                            <li><a class="populate-callnumber-item" href="#" data-itemnumber="[% item.itemnumber | html %]" data-biblionumber="[% item.biblionumber | html %]" data-toggle="tooltip" data-placement="left" title="Populate callnumber for this item."><i class="fa fa-bars"></i> Populate callnumber</a></li>
+                                            <li><a class="populate-callnumber-item" href="#" data-itemnumber="[% item.itemnumber | html %]" data-biblionumber="[% item.biblionumber | html %]" data-toggle="tooltip" data-placement="left" title="Populate call number for this item."><i class="fa fa-bars"></i> Populate call number</a></li>
                                         [% END %]
                                     </ul>
                                 </div>
@@ -794,7 +794,7 @@
             [% END %]
             [% IF ( subscription.closed ) %]<p>This subscription is closed.</p>[% END %]
             [% IF ( subscription.location ) %]<p class="subscription_location">Location: [% AuthorisedValues.GetDescriptionByKohaField( kohafield => 'items.location', authorised_value => subscription.location ) | html %]</p>[% END %]
-            [% IF ( subscription.callnumber ) %]<p>Callnumber: [% subscription.callnumber | html %] </p>[% END %]
+            [% IF ( subscription.callnumber ) %]<p>Call number: [% subscription.callnumber | html %] </p>[% END %]
             [% IF ( subscription.subscriptionnotes ) %]<p>[% subscription.subscriptionnotes | html | html_line_break %] </p>[% END %]
             [% IF ( subscription.missinglist ) %]<p>Missing issues: [% subscription.missinglist | html %] </p>[% END %]
             [% IF ( subscription.librariannote ) %]<p>([% subscription.librariannote | html %])</p>[% END %]
@@ -1902,7 +1902,7 @@
                         },
                         {
                             "data": "callnumber",
-                            "title": _("Callnumber"),
+                            "title": _("Call number"),
                             "searchable": true,
                             "orderable": true,
                         },

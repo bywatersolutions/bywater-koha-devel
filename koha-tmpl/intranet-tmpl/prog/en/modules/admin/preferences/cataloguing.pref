@@ -81,7 +81,7 @@ Cataloging:
               choices:
                   1: Show
                   0:  "Don't show"
-            - buttons on the bibliographic details page to populate empty item callnumbers from the record based on the <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=itemcallnumber">itemcallnumber</a> system preference.
+            - buttons on the catalog details page to populate empty item call numbers from the bibliographic record based on the <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=itemcallnumber">itemcallnumber</a> system preference.
         -
     Record structure:
         -
@@ -115,7 +115,7 @@ Cataloging:
         -
             - Map the MARC subfields
             - pref: itemcallnumber
-            - "to an item's callnumber. List multiple comma-separated fields to check them sequentially. Each field can include multiple subfields. The order of the subfields in the record will be preserved. For example: '082ab,092ab' will look in the 082$a and 082$b, then the 092$a and 092$b."
+            - "to an item's call number. List multiple comma-separated fields to check them sequentially. Each field can include multiple subfields. The order of the subfields in the record will be preserved. For example: '082ab,092ab' will look in the 082$a and 082$b, then the 092$a and 092$b."
             - "Examples for MARC21: Dewey: 082ab,092ab; LOC: 050ab,090ab; from the Koha record: 942hi. Examples for UNIMARC: Dewey: 676a; LOC: 680ab."
         -
             - Display MARC subfield

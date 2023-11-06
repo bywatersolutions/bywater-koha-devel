@@ -92,7 +92,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "406":
@@ -143,7 +143,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "406":
@@ -179,7 +179,7 @@
       - application/json
     responses:
       "204":
-        description: Biblio deleted
+        description: Bibliographic record deleted
         schema:
           type: string
       "401":
@@ -191,7 +191,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "409":
@@ -250,7 +250,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "406":
@@ -320,7 +320,7 @@
         schema:
           $ref: ../swagger.yaml#/definitions/error
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: ../swagger.yaml#/definitions/error
       "406":
@@ -387,7 +387,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":
@@ -455,7 +455,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "406":
@@ -597,7 +597,7 @@
     operationId: getBiblioPickupLocations
     tags:
       - biblios
-    summary: Get valid pickup locations for a biblio
+    summary: Get valid pickup locations for a bibliographic record
     parameters:
       - $ref: "../swagger.yaml#/parameters/biblio_id_pp"
       - name: patron_id
@@ -617,7 +617,7 @@
       - application/json
     responses:
       "200":
-        description: Biblio pickup locations
+        description: Pickup locations for bibliographic record
         schema:
           type: array
           items:
@@ -635,7 +635,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":
@@ -658,7 +658,7 @@
     operationId: getBiblioPublic
     tags:
       - biblios
-    summary: Get biblio (public)
+    summary: Get bibliograpic record (public)
     parameters:
       - $ref: "../swagger.yaml#/parameters/biblio_id_pp"
     produces:
@@ -678,7 +678,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "406":
@@ -744,7 +744,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "406":
@@ -817,7 +817,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliographic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":
@@ -837,7 +837,7 @@
     operationId: getBiblioDefaultItemCallnumber
     tags:
       - biblios
-    summary: Get default item callnumber for a biblio
+    summary: Get default item call number for a bibliographic record
     parameters:
       - $ref: "../swagger.yaml#/parameters/biblio_id_pp"
     produces:
@@ -849,7 +849,7 @@
           type: object
           properties:
             callnumber:
-              description: Item call number benerated for biblio
+              description: Item call number generated for bibliographic record
               type: string
       "401":
         description: Authentication required
@@ -860,7 +860,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
-        description: Biblio not found
+        description: Bibliograpic record not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":

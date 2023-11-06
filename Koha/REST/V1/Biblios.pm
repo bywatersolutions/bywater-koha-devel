@@ -154,7 +154,7 @@ sub delete {
 
 =head3 default_item_callnumber
 
-Return the callnumber generated for the given record based on the "itemcallnumber" system preference.
+Return the call number generated for the given record based on the "itemcallnumber" system preference.
 =cut
 
 sub default_item_callnumber {
