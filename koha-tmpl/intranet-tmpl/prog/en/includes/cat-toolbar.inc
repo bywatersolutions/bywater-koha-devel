@@ -44,7 +44,7 @@
             [% END %]
 
             [% IF Koha.Preference('EnablePopulateCallnumbers') && ( CAN_user_editcatalogue_edit_catalogue || CAN_user_editcatalogue_edit_items || CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel ) or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]
-                <li><a id="populate-callnumbers-biblio" href="#" data-biblionumber="[% biblionumber | html %]" data-toggle="tooltip" data-placement="left" title="Populate callnumbers for items with no call number.">Populate call numbers</a></li>
+                <li><a id="populate-callnumbers-biblio" href="#" data-biblionumber="[% biblionumber | html %]" data-toggle="tooltip" data-placement="left" title="Populate call numbers for items with no call number.">Populate call numbers</a></li>
             [% END %]
 
             [% IF CAN_user_editcatalogue_edit_items or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]

@@ -154,8 +154,8 @@ sub delete {
 
 =head3 populate_empty_callnumbers
 
-Controller function that populates the item callnumbers of any items
-for the record that currently have no callnumber. The generated callnumbers
+Controller function that populates the item call numbers of any items
+for the record that currently have no call number. The generated call numbers
 will be based on the 'itemcallnumber' system preference.
 
 =cut
@@ -241,7 +241,7 @@ sub populate_empty_callnumbers {
 
 =head3 default_item_callnumber
 
-Return the callnumber generated for the given record based on the "itemcallnumber" system preference.
+Return the call number generated for the given record based on the "itemcallnumber" system preference.
 =cut
 
 sub default_item_callnumber {

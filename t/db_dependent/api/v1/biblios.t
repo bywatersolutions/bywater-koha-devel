@@ -1862,7 +1862,7 @@ subtest 'populate_empty_callnumbers() tests' => sub {
 
     $t->post_ok(
         "//$userid:$password@/api/v1/biblios/$biblio_id/items/$item1_id/populate_empty_callnumbers" => json => {} )
-        ->status_is( 404, 'Callnumber fields not found' );
+        ->status_is( 404, 'Call number fields not found' );
 
     t::lib::Mocks::mock_preference( 'itemcallnumber', '245$a' );
 
