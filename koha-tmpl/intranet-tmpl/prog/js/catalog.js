@@ -124,20 +124,20 @@ $(document).ready(function() {
         })
         .tooltip();
 
-    $("#populate-callnumbers-biblio")
+        $("#populate-callnumbers-biblio")
         .on('click', function() {
-            $.getJSON( `/api/v1/biblios/${biblionumber}/default_item_callnumber`, function( cn ) {
+            const biblionumber = $(this).data('biblionumber');
+            $.getJSON(`/api/v1/biblios/${biblionumber}/default_item_callnumber`, function(cn) {
                 const callnumber = cn.callnumber;
-                if ( confirm(__(`Are you sure you want to populate call numbers for all items without a call number on this record to the following value: ${callnumber}`)) ) {
-                    const biblionumber = $(this).data('biblionumber');
-                    $.post( `/api/v1/biblios/${biblionumber}/items/populate_empty_callnumbers`, function( data ) {
+                if (confirm(__(`Are you sure you want to populate call numbers for all items without a call number on this record to the following value: ${callnumber}`))) {
+                    $.post(`/api/v1/biblios/${biblionumber}/items/populate_empty_callnumbers`, function(data) {
                         const items_updated = data.items_updated;
                         const callnumber = data.callnumber;
                         let msg = __('Items populated with the call number "%s": %s').format(callnumber, items_updated);
 
-                        if ( items_updated ) {
-                            msg += " " + __('Reload the page?');
-                            if( confirm(msg) ) {
+                        if (items_updated) {
+                            msg += "\n" + __('Reload the page?');
+                            if (confirm(msg)) {
                                 location.reload(true);
                             }
                         } else {
@@ -150,20 +150,17 @@ $(document).ready(function() {
 
     $(".populate-callnumber-item")
         .on('click', function() {
-            $.getJSON( `/api/v1/biblios/${biblionumber}/default_item_callnumber`, function( cn ) {
+            const biblionumber = $(this).data('biblionumber');
+            const itemnumber = $(this).data('itemnumber');
+            $.getJSON(`/api/v1/biblios/${biblionumber}/default_item_callnumber`, function(cn) {
                 const callnumber = cn.callnumber;
-                if ( confirm(__(`Are you sure you want to populate the call number for this item to the following value: ${callnumber}`)) ) {
-                    const biblionumber = $(this).data('biblionumber');
-                    const itemnumber  = $(this).data('itemnumber');
-                    const button = $(this);
-                    $.post( `/api/v1/biblios/${biblionumber}/items/${itemnumber}/populate_empty_callnumbers`, function( data ) {
+                if (confirm(__(`Are you sure you want to populate the call number for this item to the following value: ${callnumber}`))) {
+                    $.post(`/api/v1/biblios/${biblionumber}/items/${itemnumber}/populate_empty_callnumbers`, function(data) {
                         const callnumber = data.callnumber;
                         let msg = __('Item populated with the call number "%s"').format(callnumber);
-                        msg += " " + __('Reload the page?');
-                        if( confirm(msg) ) {
+                        msg += "\n" + __('Reload the page?');
+                        if (confirm(msg)) {
                             location.reload(true);
-                        } else {
-                            button.hide();
                         }
                     });
                 }
