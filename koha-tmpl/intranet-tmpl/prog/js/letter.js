@@ -75,7 +75,7 @@ $(document).ready(function() {
         });
     }
 
-    $("#newmodule").on("change",function(){
+    $("#newmodule, #module").on("change",function(){
         var branchcode;
         if( $("#branch").val() === ""){
             branchcode = "*";
