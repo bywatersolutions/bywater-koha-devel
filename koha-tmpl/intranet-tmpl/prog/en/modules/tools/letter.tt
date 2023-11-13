@@ -573,6 +573,7 @@
             [% SET letter = letters.$lang.templates.$mtt %]
             [% NEXT IF letter.message_transport_type == "itiva" && !Koha.Preference('TalkingTechItivaPhoneNotification') %]
             [% NEXT IF letter.message_transport_type == "phone" && !Koha.Preference('PhoneNotification') %]
+            [% NEXT IF letter.message_transport_type != "print" && module == "report" %]
             [% WRAPPER accordion_item %]
                 [% WRAPPER accordion_heading panel_id="${letter.message_transport_type}_${lang}" %]
                     [% SWITCH letter.message_transport_type %]
