@@ -63,6 +63,40 @@ sub list {
     };
 }
 
+=head3 list_old
+
+Controller function that handles listing Koha::Old::Hold objects for the requested patron
+
+=cut
+
+sub list_old {
+    my $c = shift->openapi->valid_input or return;
+
+    my $patron = Koha::Patrons->find( $c->param('patron_id') );
+
+    unless ( $patron ) {
+        return $c->render(
+            status  => 404,
+            openapi => {
+                error => 'Patron not found'
+            }
+        );
+    }
+
+    return try {
+
+        my $holds = $c->objects->search( $patron->old_holds );
+
+        return $c->render(
+            status  => 200,
+            openapi => $holds
+        );
+    }
+    catch {
+        $c->unhandled_exception($_);
+    };
+}
+
 
 =head3 delete_public
 

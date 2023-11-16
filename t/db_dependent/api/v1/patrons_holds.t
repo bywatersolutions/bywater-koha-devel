@@ -17,7 +17,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 2;
+use Test::More tests => 3;
 use Test::MockModule;
 use Test::Mojo;
 
@@ -64,6 +64,51 @@ subtest 'list() tests' => sub {
     $non_existent_patron->delete;
 
     $t->get_ok("//$userid:$password@/api/v1/patrons/" . $non_existent_patron_id . '/holds')
+      ->status_is( 404 )
+      ->json_is( '/error' => 'Patron not found' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'list_old() tests' => sub {
+
+    plan tests => 9;
+
+    $schema->storage->txn_begin;
+
+    my $patron = $builder->build_object({
+        class => 'Koha::Patrons',
+        value => { flags => 2 ** 4 } # 'borrowers' flag == 4
+    });
+    my $password = 'thePassword123';
+    $patron->set_password({ password => $password, skip_validation => 1 });
+    my $userid = $patron->userid;
+
+    $t->get_ok("//$userid:$password@/api/v1/patrons/" . $patron->id . '/holds/previous')
+      ->status_is( 200, 'SWAGGER3.2.2' )
+      ->json_is( [] );
+
+    my $hold_1 = $builder->build_object({ class => 'Koha::Holds', value => { borrowernumber => $patron->id } });
+    $hold_1->cancel();
+    my $cancellationdate = $hold_1->cancellationdate;
+    $cancellationdate =~ s/ \d\d:\d\d:\d\d//;
+    $hold_1->cancellationdate( $cancellationdate );
+    my $hold_2 = $builder->build_object({ class => 'Koha::Holds', value => { borrowernumber => $patron->id } });
+    $hold_2->cancel();
+    $cancellationdate = $hold_2->cancellationdate;
+    $cancellationdate =~ s/ \d\d:\d\d:\d\d//;
+    $hold_2->cancellationdate( $cancellationdate );
+
+    $t->get_ok("//$userid:$password@/api/v1/patrons/" . $patron->id . '/holds/previous?_order_by=+me.hold_id')
+      ->status_is( 200, 'SWAGGER3.2.2' )
+      ->json_is( '' => [ $hold_1->to_api, $hold_2->to_api ], 'Holds retrieved' );
+
+    my $non_existent_patron = $builder->build_object({ class => 'Koha::Patrons' });
+    my $non_existent_patron_id = $non_existent_patron->id;
+    # get rid of the patron
+    $non_existent_patron->delete;
+
+    $t->get_ok("//$userid:$password@/api/v1/patrons/" . $non_existent_patron_id . '/holds/previous')
       ->status_is( 404 )
       ->json_is( '/error' => 'Patron not found' );
 
