@@ -131,7 +131,7 @@ sub new {
         fees            => 0,             # currently not distinct from fines
         recall_overdue  => 0,
         items_billed    => 0,
-        screen_msg      => 'Greetings from Koha. ' . $kp->{opacnote} . $fines_msg,
+        screen_msg      => process_tt( C4::Context->preference('SIP2ScreenMessageGreeting'), { borrower => $patron, sip_borrower => $kp } ) . $kp->{opacnote} . $fines_msg,
         print_line      => '',
         items           => [],
         hold_items      => $flags->{WAITING}->{itemlist},

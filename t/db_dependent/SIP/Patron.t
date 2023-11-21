@@ -4,7 +4,7 @@
 # This needs to be extended! Your help is appreciated..
 
 use Modern::Perl;
-use Test::More tests => 10;
+use Test::More tests => 11;
 
 use t::lib::Mocks;
 use t::lib::TestBuilder;
@@ -31,6 +31,7 @@ is( defined $sip_patron, 1, "Patron is valid" );
 $schema->resultset('Borrower')->search({ cardnumber => $card })->delete;
 my $sip_patron2 = C4::SIP::ILS::Patron->new( $card );
 is( $sip_patron2, undef, "Patron is not valid (anymore)" );
+t::lib::Mocks::mock_preference( 'SIP2ScreenMessageGreeting', "Greetings from Koha. " );
 
 subtest "new tests" => sub {
 
@@ -418,6 +419,23 @@ subtest "Patron messages tests" => sub {
         $sip_patron->screen_msg, qr/Messages for you: $today: my message 1 \/ $today: my message 2/,
         "Screen message includes patron messages"
     );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest "Test SIP2ScreenMessageGreeting" => sub {
+    plan tests => 2;
+    $schema->storage->txn_begin;
+    my $today         = output_pref( { dt => dt_from_string(), dateonly => 1 } );
+    my $patron        = $builder->build_object( { class => 'Koha::Patrons', value => { opacnote => q{} } } );
+    my $library       = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    my $sip_patron = C4::SIP::ILS::Patron->new( $patron->cardnumber );
+    is( $sip_patron->screen_msg, 'Greetings from Koha. ' );
+
+    t::lib::Mocks::mock_preference( 'SIP2ScreenMessageGreeting', "Welcome to your local library! " );
+    $sip_patron = C4::SIP::ILS::Patron->new( $patron->cardnumber );
+    is( $sip_patron->screen_msg, 'Welcome to your local library! ' );
 
     $schema->storage->txn_rollback;
 };

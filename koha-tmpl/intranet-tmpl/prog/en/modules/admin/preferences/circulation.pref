@@ -1391,6 +1391,9 @@ Circulation:
                   1: Do
                   0: Don't
             - send OPAC patron messages in the SIP2 screen message field.
+        -
+            - Begin each SIP screen message with the phrase
+            - pref: SIP2AddOpacMessagesToScreenMessage
 
     Curbside pickup module:
         -

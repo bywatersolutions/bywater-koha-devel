@@ -694,6 +694,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('ShowReviewerPhoto','1','','If ON, photo of reviewer will be shown beside comments in OPAC','YesNo'),
 ('SIP2SortBinMapping','',NULL,'Use the following mappings to determine the sort_bin of a returned item. The mapping should be on the form \"branchcode:item field:item field value:sort bin number\", with one mapping per line.','free'),
 ('SIP2AddOpacMessagesToScreenMessage','1','','If enabled, patron OPAC messages will be included in the SIP2 screen message','YesNo'),
+('SIP2ScreenMessageGreeting','Greetings from Koha. ','','SIP greetings message that will being each SIP AF field','Free'),
 ('SkipHoldTrapOnNotForLoanValue','',NULL,'If set, Koha will never trap items for hold with this notforloan value','Integer'),
 ('SlipCSS','',NULL,'Slips CSS url.','free'),
 ('SMSSendDriver','','','Sets which SMS::Send driver is used to send SMS messages.','free'),
