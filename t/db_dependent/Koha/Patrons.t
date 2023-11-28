@@ -20,7 +20,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 48;
+use Test::More tests => 49;
 use Test::Warn;
 use Test::Exception;
 use Test::MockModule;
@@ -1549,6 +1549,165 @@ subtest 'search_patrons_to_anonymise' => sub {
 
     # Reset IndependentBranches for further tests
     t::lib::Mocks::mock_preference( 'IndependentBranches', 0 );
+};
+
+subtest 'anonymize items_last_borrower' => sub {
+    plan tests => 2;
+
+    my $anonymous = $builder->build_object( { class => 'Koha::Patrons', }, );
+
+    t::lib::Mocks::mock_preference( 'AnonymousPatron',       $anonymous->borrowernumber );
+    t::lib::Mocks::mock_preference( 'StoreLastBorrower',     1 );
+    t::lib::Mocks::mock_preference( 'AnonymizeLastBorrower', 1 );
+
+    subtest 'anonymize items_last_borrower by days' => sub {
+        plan tests => 4;
+
+        t::lib::Mocks::mock_preference( 'AnonymizeLastBorrowerDays', 5 );
+
+        my $patron = $builder->build_object(
+            {
+                class => 'Koha::Patrons',
+                value => { privacy => 1, }
+            }
+        );
+        my $item_1  = $builder->build_sample_item;
+        my $issue_1 = $builder->build_object(
+            {
+                class => 'Koha::Checkouts',
+                value => {
+                    borrowernumber => $patron->borrowernumber,
+                    itemnumber     => $item_1->itemnumber,
+                },
+            }
+        );
+        my $item_2  = $builder->build_sample_item;
+        my $issue_2 = $builder->build_object(
+            {
+                class => 'Koha::Checkouts',
+                value => {
+                    borrowernumber => $patron->borrowernumber,
+                    itemnumber     => $item_2->itemnumber,
+                },
+            }
+        );
+
+        my $dbh          = C4::Context->dbh;
+        my ($returned_1) = C4::Circulation::AddReturn( $item_1->barcode, undef, undef, dt_from_string );
+        my ($returned_2) = C4::Circulation::AddReturn( $item_2->barcode, undef, undef, dt_from_string );
+        is( $returned_1 && $returned_2, 1, 'The items should have been returned' );
+        my $stu = $dbh->prepare(q|UPDATE items_last_borrower set created_on = ? where itemnumber = ?|);
+        $stu->execute( DateTime->today( time_zone => C4::Context->tz() )->add( days => -6 ), $item_2->itemnumber );
+
+        my $nb_rows = Koha::Patrons->anonymize_last_borrowers();
+        is( $nb_rows, 1, 'anonymize_last_borrowers should have returned the number of last borrowers anonymized' );
+
+        my $sth = $dbh->prepare(q|SELECT borrowernumber FROM items_last_borrower where itemnumber = ?|);
+        $sth->execute( $item_1->itemnumber );
+        my ($borrowernumber_used_to_anonymize) = $sth->fetchrow_array;
+        is(
+            $borrowernumber_used_to_anonymize, $patron->borrowernumber,
+            'Last borrower less than 5 days old are not anonymized'
+        );
+        $sth->execute( $item_2->itemnumber );
+        ($borrowernumber_used_to_anonymize) = $sth->fetchrow_array;
+        is(
+            $borrowernumber_used_to_anonymize, $anonymous->borrowernumber,
+            'Last borrower older than 5 days are anonymized'
+        );
+
+    };
+
+    subtest 'withrawn, lost and damaged items' => sub {
+        plan tests => 6;
+
+        t::lib::Mocks::mock_preference( 'AnonymizeLastBorrowerDays', 0 );
+
+        my $patron = $builder->build_object(
+            {
+                class => 'Koha::Patrons',
+                value => { privacy => 1, }
+            }
+        );
+        my $item_1  = $builder->build_sample_item;
+        my $issue_1 = $builder->build_object(
+            {
+                class => 'Koha::Checkouts',
+                value => {
+                    borrowernumber => $patron->borrowernumber,
+                    itemnumber     => $item_1->itemnumber,
+                },
+            }
+        );
+        my $item_2  = $builder->build_sample_item;
+        my $issue_2 = $builder->build_object(
+            {
+                class => 'Koha::Checkouts',
+                value => {
+                    borrowernumber => $patron->borrowernumber,
+                    itemnumber     => $item_2->itemnumber,
+                },
+            }
+        );
+        my $item_3  = $builder->build_sample_item;
+        my $issue_3 = $builder->build_object(
+            {
+                class => 'Koha::Checkouts',
+                value => {
+                    borrowernumber => $patron->borrowernumber,
+                    itemnumber     => $item_3->itemnumber,
+                },
+            }
+        );
+        my $item_4  = $builder->build_sample_item;
+        my $issue_4 = $builder->build_object(
+            {
+                class => 'Koha::Checkouts',
+                value => {
+                    borrowernumber => $patron->borrowernumber,
+                    itemnumber     => $item_4->itemnumber,
+                },
+            }
+        );
+
+        my ($returned_1) = C4::Circulation::AddReturn( $item_1->barcode, undef, undef, dt_from_string('2010-10-11') );
+        my ($returned_2) = C4::Circulation::AddReturn( $item_2->barcode, undef, undef, dt_from_string('2010-10-11') );
+        my ($returned_3) = C4::Circulation::AddReturn( $item_3->barcode, undef, undef, dt_from_string('2010-10-11') );
+        my ($returned_4) = C4::Circulation::AddReturn( $item_4->barcode, undef, undef, dt_from_string('2010-10-11') );
+        is( $returned_1 && $returned_2 && $returned_3 && $returned_4, 1, 'The items should have been returned' );
+        $item_1->withdrawn(1)->store;
+        $item_2->itemlost(1)->store;
+        $item_3->damaged(1)->store;
+
+        my $dbh = C4::Context->dbh;
+        my $stu = $dbh->prepare(q|UPDATE items_last_borrower set created_on = ? where itemnumber in (?, ?, ?, ?)|);
+        $stu->execute(
+            DateTime->today( time_zone => C4::Context->tz() )->add( days => -1 ), $item_1->itemnumber,
+            $item_2->itemnumber, $item_3->itemnumber, $item_4->itemnumber
+        );
+
+        my $nb_rows = Koha::Patrons->anonymize_last_borrowers();
+        is( $nb_rows, 1, 'anonymise_last_borrowers should have returned the number of last borrowers anonymized' );
+
+        my $sth = $dbh->prepare(q|SELECT borrowernumber FROM items_last_borrower where itemnumber = ?|);
+        $sth->execute( $item_1->itemnumber );
+        my ($borrowernumber_used_to_anonymize) = $sth->fetchrow_array;
+        is( $borrowernumber_used_to_anonymize, $patron->borrowernumber, 'withrawn items should not be anonymized' );
+        $sth->execute( $item_2->itemnumber );
+        ($borrowernumber_used_to_anonymize) = $sth->fetchrow_array;
+        is( $borrowernumber_used_to_anonymize, $patron->borrowernumber, 'lost items should not be anonymized' );
+        $sth->execute( $item_3->itemnumber );
+        ($borrowernumber_used_to_anonymize) = $sth->fetchrow_array;
+        is( $borrowernumber_used_to_anonymize, $patron->borrowernumber, 'damaged items should not be anonymized' );
+        $sth->execute( $item_4->itemnumber );
+        ($borrowernumber_used_to_anonymize) = $sth->fetchrow_array;
+        is(
+            $borrowernumber_used_to_anonymize, $anonymous->borrowernumber,
+            'not withdrawn, lost or damaged items are anonymized'
+        );
+
+    };
+
 };
 
 subtest
