@@ -62,6 +62,8 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('AmazonCoverImages','0',NULL,'Display Cover Images in staff interface from Amazon Web Services','YesNo'),
 ('AmazonLocale','US','US|CA|DE|FR|IN|JP|UK','Use to set the Locale of your Amazon.com Web Services','Choice'),
 ('AnonSuggestions','0',NULL,'Set to enable Anonymous suggestions to AnonymousPatron borrowernumber','YesNo'),
+('AnonymizeLastBorrower','0',NULL,'If enabled, anonymise item\'s last borrower','YesNo'),
+('AnonymizeLastBorrowerDays','0',NULL,'Item\'s last borrower older than this preference will be anonymised','Integer'),
 ('AnonymousPatron','0',NULL,'Set the identifier (borrowernumber) of the anonymous patron. Used for suggestion and checkout history privacy',''),
 ('ApiKeyLog', '0', NULL, 'If enabled, log API key actions (create, revoke, activate, delete)', 'YesNo'),
 ('ApplyFrameworkDefaults', 'new', 'new|duplicate|changed|imported', 'Configure when to apply framework default values - when cataloguing a new record, or when editing a record as new (duplicating), or when changing framework, or when importing a record', 'multiple'),

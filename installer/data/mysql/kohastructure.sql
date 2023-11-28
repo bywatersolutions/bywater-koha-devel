@@ -4255,7 +4255,7 @@ DROP TABLE IF EXISTS `items_last_borrower`;
 CREATE TABLE `items_last_borrower` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `itemnumber` int(11) NOT NULL,
-  `borrowernumber` int(11) NOT NULL,
+  `borrowernumber` int(11) NULL,
   `created_on` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `borrowernumber` (`borrowernumber`),
