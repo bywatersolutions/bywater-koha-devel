@@ -1,0 +1,70 @@
+#!/usr/bin/perl
+
+# Copyright 2011, ByWater Solutions.
+#
+# This file is part of Koha.
+#
+# Koha is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Koha is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Koha; if not, see <https://www.gnu.org/licenses>.
+
+use Modern::Perl;
+
+BEGIN {
+
+    # find Koha's Perl modules
+    # test carefully before changing this
+    use FindBin;
+    eval { require "$FindBin::Bin/../kohalib.pl" };
+}
+
+use Koha::Script -cron;
+use C4::Context;
+use Koha::Patrons;
+use Getopt::Long;
+use C4::Log;
+
+sub usage {
+    print STDERR <<USAGE;
+Usage: $0  [-h|--help]
+   -v --verbose       gives a little more information
+   -h --help          prints this help message, and exits, ignoring all
+                      other options
+Note: If the system preference 'AnonymousPatron' is not defined, NULL will be used.
+USAGE
+    exit $_[0];
+}
+
+my ( $help, $verbose );
+
+GetOptions(
+    'h|help'    => \$help,
+    'v|verbose' => \$verbose,
+) || usage(1);
+
+if ($help) {
+    usage(0);
+}
+
+my $pref = C4::Context->preference("AnonymizeLastBorrower");
+
+if ( !$pref ) {
+    print "Preference 'AnonymizeLastBorrower' must be enabled to anonymize item's last borrower\n\n";
+    usage(1);
+}
+
+cronlogaction();
+
+my $rows = Koha::Patrons->anonymize_last_borrowers();
+$verbose and print int($rows) . " item's last borrowers anonymized.\n";
+
+exit(0);
