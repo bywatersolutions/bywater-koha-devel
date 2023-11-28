@@ -28,6 +28,7 @@ use Koha::Patron;
 use Koha::Exceptions::Patron;
 use Koha::Exceptions::SysPref;
 use Koha::Patron::Categories;
+use Date::Calc qw( Today Add_Delta_Days);
 
 use base qw(Koha::Objects::Mixin::ExtendedAttributes Koha::Objects);
 
@@ -188,6 +189,62 @@ sub search_patrons_to_anonymise {
         }
     );
     return Koha::Patrons->_new_from_dbic($rs);
+}
+
+=head3 anonymize_last_borrowers
+
+    Koha::Patrons->search->anonymize_last_borrowers();
+
+    Anonymize items last borrower for all items_last_borrower older
+    than AnonymizeLastBorrowerDays.
+
+=cut
+
+sub anonymize_last_borrowers {
+    my ( $self, $params ) = @_;
+
+    return unless C4::Context->preference("AnonymizeLastBorrower");
+    my $days = C4::Context->preference("AnonymizeLastBorrowerDays") || 0;
+    my ( $year, $month, $day )          = Today();
+    my ( $newyear, $newmonth, $newday ) = Add_Delta_Days( $year, $month, $day, (-1) * $days );
+    my $older_than_date = dt_from_string( sprintf "%4d-%02d-%02d", $newyear, $newmonth, $newday );
+
+    my $anonymous_patron = C4::Context->preference('AnonymousPatron') || undef;
+
+    my $dtf = Koha::Database->new->schema->storage->datetime_parser;
+    my $rs  = $self->_resultset->search(
+        {
+            created_on                            => { '<'   => $dtf->format_datetime($older_than_date), },
+            'items_last_borrowers.borrowernumber' => { 'not' => undef },    # Keep forever
+            ( $anonymous_patron ? ( 'items_last_borrowers.borrowernumber' => { '!=' => $anonymous_patron } ) : () ),
+        },
+        {
+            join     => ["items_last_borrowers"],
+            distinct => 1,
+        }
+    );
+    my $patrons = Koha::Patrons->_new_from_dbic($rs);
+
+    my $nb_rows = 0;
+    while ( my $patron = $patrons->next ) {
+        my $last_borrowers_to_anonymize = $patron->_result->items_last_borrowers->search(
+            {
+                (
+                    $older_than_date
+                    ? ( created_on => { '<' => $dtf->format_datetime($older_than_date) } )
+                    : (),
+                    "itemnumber.damaged"   => 0,
+                    "itemnumber.itemlost"  => 0,
+                    "itemnumber.withdrawn" => 0,
+                ),
+            },
+            { join => ['itemnumber'] }
+        );
+        $nb_rows +=
+            $last_borrowers_to_anonymize->update( { 'items_last_borrower.borrowernumber' => $anonymous_patron } );
+    }
+
+    return $nb_rows;
 }
 
 =head3 delete
