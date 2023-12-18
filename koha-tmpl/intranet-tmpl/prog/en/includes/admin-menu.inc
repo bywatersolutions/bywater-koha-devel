@@ -24,42 +24,40 @@
         </ul>
     [% END %]
 
-    [% IF ( CAN_user_parameters_manage_patron_categories || CAN_user_parameters_manage_circ_rules || CAN_user_parameters_manage_patron_attributes || CAN_user_parameters_manage_transfers || CAN_user_parameters_manage_item_circ_alerts || CAN_user_parameters_manage_cities || CAN_user_parameters_manage_curbside_pickups || CAN_user_parameters_manage_patron_restrictions ) %]
-        <h5>Patrons and circulation</h5>
-        <ul>
-            [% IF ( CAN_user_parameters_manage_patron_categories ) %]
-                <li><a href="/cgi-bin/koha/admin/categories.pl">Patron categories</a></li>
-            [% END %]
-            [% IF ( CAN_user_parameters_manage_circ_rules ) %]
-                <li><a href="/cgi-bin/koha/admin/smart-rules.pl">Circulation and fine rules</a></li>
-            [% END %]
-            [% IF ( CAN_user_parameters_manage_patron_attributes ) %]
-                <li><a href="/cgi-bin/koha/admin/patron-attr-types.pl">Patron attribute types</a></li>
-            [% END %]
-            [% IF ( CAN_user_parameters_manage_transfers ) %]
-                <li><a href="/cgi-bin/koha/admin/branch_transfer_limits.pl">Library transfer limits</a></li>
-                <li><a href="/cgi-bin/koha/admin/transport-cost-matrix.pl">Transport cost matrix</a></li>
-            [% END %]
-            [% IF ( CAN_user_sip2 ) %]
-                <li><a href="/cgi-bin/koha/sip2/sip2.pl">Self-service circulation (SIP2)</a></li>
-            [% END %]
-            [% IF ( CAN_user_parameters_manage_item_circ_alerts ) %]
-                <li><a href="/cgi-bin/koha/admin/item_circulation_alerts.pl">Item circulation alerts</a></li>
-            [% END %]
-            [% IF ( Koha.Preference('UseCirculationDesks') && CAN_user_parameters_manage_libraries ) %]
-                <li><a href="/cgi-bin/koha/admin/desks.pl">Desks</a></li>
-            [% END %]
-            [% IF ( CAN_user_parameters_manage_cities ) %]
-                <li><a href="/cgi-bin/koha/admin/cities.pl">Cities and towns</a></li>
-            [% END %]
-            [% IF ( CAN_user_parameters_manage_curbside_pickups ) %]
-                <li><a href="/cgi-bin/koha/admin/curbside_pickup.pl">Curbside pickup</a></li>
-            [% END %]
-            [% IF ( CAN_user_parameters_manage_patron_restrictions ) %]
-                <li><a href="/cgi-bin/koha/admin/restrictions.pl">Patron restriction types</a></li>
-            [% END %]
-        </ul>
-    [% END %]
+        [% IF ( CAN_user_parameters_manage_patron_categories || CAN_user_parameters_manage_circ_rules || CAN_user_parameters_manage_patron_attributes || CAN_user_parameters_manage_transfers || CAN_user_parameters_manage_item_circ_alerts || CAN_user_parameters_manage_cities || CAN_user_parameters_manage_curbside_pickups || CAN_user_parameters_manage_patron_restrictions ) %]
+            <h5>Patrons and circulation</h5>
+            <ul>
+                [% IF ( CAN_user_parameters_manage_patron_categories ) %]
+                    <li><a href="/cgi-bin/koha/admin/categories.pl">Patron categories</a></li>
+                [% END %]
+                [% IF ( CAN_user_parameters_manage_circ_rules ) %]
+                    <li><a href="/cgi-bin/koha/admin/smart-rules.pl">Circulation and fine rules</a></li>
+                [% END %]
+                [% IF ( CAN_user_parameters_manage_patron_attributes ) %]
+                    <li><a href="/cgi-bin/koha/admin/patron-attr-types.pl">Patron attribute types</a></li>
+                [% END %]
+                [% IF ( CAN_user_parameters_manage_transfers ) %]
+                    <li><a href="/cgi-bin/koha/admin/branch_transfer_limits.pl">Library transfer limits</a></li>
+                    <li><a href="/cgi-bin/koha/admin/transport-cost-matrix.pl">Transport cost matrix</a></li>
+                    <li><a href="/cgi-bin/koha/admin/float_limits.pl">Library float limits</a></li>
+                [% END %]
+                [% IF ( CAN_user_parameters_manage_item_circ_alerts ) %]
+                    <li><a href="/cgi-bin/koha/admin/item_circulation_alerts.pl">Item circulation alerts</a></li>
+                [% END %]
+                [% IF ( Koha.Preference('UseCirculationDesks') && CAN_user_parameters_manage_libraries ) %]
+                    <li><a href="/cgi-bin/koha/admin/desks.pl">Desks</a></li>
+                [% END %]
+                [% IF ( CAN_user_parameters_manage_cities ) %]
+                    <li><a href="/cgi-bin/koha/admin/cities.pl">Cities and towns</a></li>
+                [% END %]
+                [% IF ( CAN_user_parameters_manage_curbside_pickups ) %]
+                    <li><a href="/cgi-bin/koha/admin/curbside_pickup.pl">Curbside pickup</a></li>
+                [% END %]
+                [% IF ( CAN_user_parameters_manage_patron_restrictions ) %]
+                    <li><a href="/cgi-bin/koha/admin/restrictions.pl">Patron restriction types</a></li>
+                [% END %]
+            </ul>
+        [% END %]
 
     [% IF ( CAN_user_parameters_manage_accounts || ( Koha.Preference('UseCashRegisters') && CAN_user_parameters_manage_cash_registers ) ) %]
         <h5>Accounting</h5>
