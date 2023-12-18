@@ -17,7 +17,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 7;
+use Test::More tests => 8;
 use Test::MockModule;
 use Test::Warn;
 
@@ -374,6 +374,93 @@ subtest 'Backdated returns should reduce fine if needed' => sub {
 
     $fine = $fine->get_from_storage;
     is( $fine, undef, "Fine was removed correctly with a backdated return" );
+};
+
+subtest 'Test library float limits' => sub {
+    plan tests => 2;
+
+    my $library1 = $builder->build( { source => 'Branch' } );
+    my $library2 = $builder->build( { source => 'Branch' } );
+    my $library3 = $builder->build( { source => 'Branch' } );
+    my $itemtype = $builder->build_object( { class => 'Koha::ItemTypes' } );
+
+    my $biblio = $builder->build_sample_biblio();
+
+    for ( 1 .. 5 ) {
+        $builder->build_sample_item(
+            {
+                biblionumber  => $biblio->biblionumber,
+                homebranch    => $library1->{branchcode},
+                holdingbranch => $library1->{branchcode},
+                itype         => $itemtype->itemtype,
+            }
+        );
+    }
+
+    for ( 1 .. 10 ) {
+        $builder->build_sample_item(
+            {
+                biblionumber  => $biblio->biblionumber,
+                homebranch    => $library2->{branchcode},
+                holdingbranch => $library2->{branchcode},
+                itype         => $itemtype->itemtype,
+            }
+        );
+    }
+
+    for ( 1 .. 15 ) {
+        $builder->build_sample_item(
+            {
+                biblionumber  => $biblio->biblionumber,
+                homebranch    => $library3->{branchcode},
+                holdingbranch => $library3->{branchcode},
+                itype         => $itemtype->itemtype,
+            }
+        );
+    }
+
+    my $item = $builder->build_sample_item(
+        {
+            biblionumber  => $biblio->biblionumber,
+            homebranch    => $library1->{branchcode},
+            holdingbranch => $library1->{branchcode},
+            itype         => $itemtype->itemtype,
+        }
+    );
+
+    my $limit1 = Koha::Library::FloatLimit->new(
+        {
+            branchcode  => $library1->{branchcode},
+            itemtype    => $itemtype->itemtype,
+            float_limit => 1,
+        }
+    )->store();
+
+    my $limit2 = Koha::Library::FloatLimit->new(
+        {
+            branchcode  => $library2->{branchcode},
+            itemtype    => $itemtype->itemtype,
+            float_limit => 100,
+        }
+    )->store();
+
+    my $limit3 = Koha::Library::FloatLimit->new(
+        {
+            branchcode  => $library3->{branchcode},
+            itemtype    => $itemtype->itemtype,
+            float_limit => 1000,
+        }
+    )->store();
+
+    t::lib::Mocks::mock_preference( 'UseLibraryFloatLimits', '0' );
+
+    my ( $doreturn, $messages, $iteminformation, $borrower ) = AddReturn( $item->barcode, $item->holdingbranch );
+    is( $messages->{TransferTrigger}, undef, "Library float limit not triggered if syspref is not enabled" );
+
+    t::lib::Mocks::mock_preference( 'UseLibraryFloatLimits', '1' );
+
+    ( $doreturn, $messages, $iteminformation, $borrower ) = AddReturn( $item->barcode, $item->holdingbranch );
+    is( $messages->{TransferTrigger}, 'LibraryFloatLimit', "Library float limit is triggered if syspref is enabled" );
 };
 
 $schema->storage->txn_rollback;
