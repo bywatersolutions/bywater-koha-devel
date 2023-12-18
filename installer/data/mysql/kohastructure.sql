@@ -1702,7 +1702,7 @@ CREATE TABLE `branchtransfers` (
   `datecancelled` datetime DEFAULT NULL COMMENT 'the date the transfer was cancelled',
   `tobranch` varchar(10) NOT NULL DEFAULT '' COMMENT 'the branch the transfer was going to',
   `comments` longtext DEFAULT NULL COMMENT 'any comments related to the transfer',
-  `reason` enum('Manual','StockrotationAdvance','StockrotationRepatriation','ReturnToHome','ReturnToHolding','RotatingCollection','Reserve','LostReserve','CancelReserve','TransferCancellation','Recall','RecallCancellation') DEFAULT NULL COMMENT 'what triggered the transfer',
+  `reason` enum('Manual','StockrotationAdvance','StockrotationRepatriation','ReturnToHome','ReturnToHolding','RotatingCollection','Reserve','LostReserve','CancelReserve','TransferCancellation','Recall','RecallCancellation','LibraryFloatLimit') DEFAULT NULL COMMENT 'what triggered the transfer',
   `cancellation_reason` enum('Manual','StockrotationAdvance','StockrotationRepatriation','ReturnToHome','ReturnToHolding','RotatingCollection','Reserve','LostReserve','CancelReserve','ItemLost','WrongTransfer','RecallCancellation') DEFAULT NULL COMMENT 'what triggered the transfer cancellation',
   PRIMARY KEY (`branchtransfer_id`),
   KEY `frombranch` (`frombranch`),
@@ -6416,6 +6416,19 @@ CREATE TABLE `transport_cost` (
   KEY `transport_cost_ibfk_2` (`tobranch`),
   CONSTRAINT `transport_cost_ibfk_1` FOREIGN KEY (`frombranch`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `transport_cost_ibfk_2` FOREIGN KEY (`tobranch`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+DROP TABLE IF EXISTS `library_float_limits`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `library_float_limits` (
+  `branchcode` varchar(10) NOT NULL,
+  `itemtype` varchar(10) NOT NULL,
+  `float_limit` int(11) NULL DEFAULT NULL,
+  PRIMARY KEY (`branchcode`,`itemtype`),
+  CONSTRAINT `library_float_limits_ibfk_bc` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `library_float_limits_ibfk_it` FOREIGN KEY (`itemtype`) REFERENCES `itemtypes` (`itemtype`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

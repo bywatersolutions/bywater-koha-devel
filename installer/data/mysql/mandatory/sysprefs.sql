@@ -839,6 +839,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('useDischarge','0','','Allows librarians to discharge borrowers and borrowers to request a discharge','YesNo'),
 ('UseEmailReceipts','0','','Send email receipts for payments and write-offs','YesNo'),
 ('UseICUStyleQuotes','0','1','Tell Koha whether to use ICU style quotes ({) or default (") when tracing subjects .','YesNo'),
+('UseLibraryFloatLimits', '0', '', 'Enables library float limits', 'YesNo'),
 ('UseLocationAsAQInSIP', '0', '', 'Use permanent_location instead of homebranch for AQ in SIP response', 'YesNo'),
 ('UseOCLCEncodingLevels','0',NULL,'If enabled, include OCLC encoding levels in leader value builder dropdown for position 17.','YesNo'),
 ('UseRecalls','0',NULL,'Enable or disable recalls','YesNo'),
