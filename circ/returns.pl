@@ -320,7 +320,6 @@ if ($barcode) {
         my $biblio   = $item->biblio;
         $template->param(
             title                => $biblio->title,
-            returnbranch         => $returnbranch,
             author               => $biblio->author,
             itembiblionumber     => $biblio->biblionumber,
             biblionumber         => $biblio->biblionumber,
@@ -430,6 +429,8 @@ if ($barcode) {
         );
     }
 
+    $returnbranch = $messages->{NeedsTransfer} if $messages->{NeedsTransfer};
+
     # Mark missing bundle items as lost and report unexpected items
     if ( $item && $item->is_bundle && $query->param('confirm_items_bundle_return') && !$query->param('do_not_verify_items_bundle_contents') ) {
         my $BundleLostValue = C4::Context->preference('BundleLostValue');
@@ -516,6 +517,13 @@ my $recalled = 0;
 
 # new op dev : we check if the document must be returned to his homebranch directly,
 #  if the document is transferred, we have warning message .
+
+if ( $messages->{'LibraryFloatLimitTransferRequest'} ) {
+    $template->param(
+        LibraryFloatLimitTransferRequest => 1,
+        itemnumber     => $itemnumber,
+    );
+}
 
 if ( $messages->{'WasTransfered'} ) {
     $template->param(
@@ -744,6 +752,8 @@ foreach my $code ( keys %$messages ) {
         ;
     } elsif ( $code eq 'TransferredRecall' ) {
         ;
+    } elsif ( $code eq 'LibraryFloatLimitTransferRequest' ) {
+        ;
     } elsif ( $code eq 'InBundle' ) {
         $template->param( InBundle => $messages->{InBundle} );
     } else {
@@ -824,14 +834,14 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
 }
 
 $template->param(
-    riloop         => \@riloop,
-    errmsgloop     => \@errmsgloop,
-    exemptfine     => $exemptfine,
-    dropboxmode    => $dropboxmode,
-    dropboxdate    => $dropboxdate,
+    riloop                   => \@riloop,
+    errmsgloop               => \@errmsgloop,
+    exemptfine               => $exemptfine,
+    dropboxmode              => $dropboxmode,
+    dropboxdate              => $dropboxdate,
     forgivemanualholdsexpire => $forgivemanualholdsexpire,
-    overduecharges => $overduecharges,
-    AudioAlerts        => C4::Context->preference("AudioAlerts"),
+    overduecharges           => $overduecharges,
+    AudioAlerts              => C4::Context->preference("AudioAlerts"),
 );
 
 if ( $barcode ) {
@@ -852,7 +862,10 @@ if ( $barcode ) {
     }
 }
 
-$template->param( itemnumber => $itemnumber );
+$template->param(
+    itemnumber   => $itemnumber,
+    returnbranch => $returnbranch,
+);
 
 # Checking if there is a Fast Cataloging Framework
 $template->param( fast_cataloging => 1 ) if Koha::BiblioFrameworks->find( 'FA' );
