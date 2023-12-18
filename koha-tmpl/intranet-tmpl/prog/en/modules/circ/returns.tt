@@ -127,6 +127,7 @@
                                      <h3>Reason for transfer</h3>
                                      <p>
                                          [%- SWITCH trigger -%]
+                                             [%- CASE 'LibraryFloatLimit' -%]<span>Library has exceeded float limit for this item type</span>
                                              [%- CASE 'Manual' -%]<span>Manual</span>
                                              [%- CASE 'StockrotationAdvance' -%]<span>Stock rotation advance</span>
                                              [%- CASE 'StockrotationRepatriation' -%]<span>Stock rotation repatriation</span>
@@ -754,7 +755,7 @@
 
                                                 <div class="modal-header">
                                                     <h1 class="modal-title">
-                                                        Please return this item to [% IF transfer %][% Branches.GetName( transfer ) | html %][% ELSE %][% Branches.GetName( returnbranch ) | html %][% END %]
+                                                        Please return this item to [% IF transfer || needstransfer %][% Branches.GetName( transfer || needstransfer ) | html %][% ELSE %][% Branches.GetName( returnbranch ) | html %][% END %]
                                                     </h1>
                                                 </div>
                                                 <div class="modal-body">

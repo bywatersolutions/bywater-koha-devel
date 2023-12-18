@@ -50,6 +50,7 @@ use Koha::Patrons;
 use Koha::Patron::Debarments qw( DelUniqueDebarment AddUniqueDebarment );
 use Koha::Database;
 use Koha::Libraries;
+use Koha::Library::FloatLimits;
 use Koha::Account::Lines;
 use Koha::Holds;
 use Koha::Account::Lines;
@@ -2205,6 +2206,22 @@ sub AddReturn {
 
     # if $hbr was "noreturn" or any other non-item table value, then it should 'float' (i.e. stay at this branch)
     my $transfer_trigger = $hbr eq 'homebranch' ? 'ReturnToHome' : $hbr eq 'holdingbranch' ? 'ReturnToHolding' : undef;
+
+    # check library float limits if enabled if the item isn't being transferred away
+    if ( ( $returnbranch eq $branch ) && C4::Context->preference('UseLibraryFloatLimits') ) {
+        my $effective_itemtype = $item->effective_itemtype;
+        my $limit = Koha::Library::FloatLimits->find( { itemtype => $effective_itemtype, branchcode => $branch } );
+        if ($limit) {
+            my $count = Koha::Items->count( { itype => $limit->itemtype } );
+            if ( $count >= $limit->float_limit ) {
+                my $transfer_branchcode = Koha::Library::FloatLimits->lowest_ratio_library( $item, $branch );
+                if ( $transfer_branchcode ne $branch ) {
+                    $returnbranch     = $transfer_branchcode;
+                    $transfer_trigger = 'LibraryFloatLimit';
+                }
+            }
+        }
+    }
 
     my $borrowernumber = $patron ? $patron->borrowernumber : undef;    # we don't know if we had a borrower or not
     my $patron_unblessed = $patron ? $patron->unblessed : {};
