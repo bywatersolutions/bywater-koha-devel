@@ -2213,7 +2213,7 @@ sub AddReturn {
         my $limit = Koha::Library::FloatLimits->find( { itemtype => $effective_itemtype, branchcode => $branch } );
         if ($limit) {
             my $count = Koha::Items->count( { itype => $limit->itemtype } );
-            if ( $count >= $limit->float_limit ) {
+            if ( $count > $limit->float_limit ) {
                 my $transfer_branchcode = Koha::Library::FloatLimits->lowest_ratio_library( $item, $branch );
                 if ( $transfer_branchcode ne $branch ) {
                     $returnbranch     = $transfer_branchcode;
