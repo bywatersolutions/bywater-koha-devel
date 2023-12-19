@@ -196,7 +196,7 @@ sub get_metadata {
 
     #FIXME: Why another encoding issue? For metadata containing non latin characters.
     my $metadata = $self->{metadata};
-    defined($metadata->{$_}) && utf8::decode($metadata->{$_}) for keys %$metadata;
+    defined($metadata->{$_}) && !ref $metadata->{$_} && utf8::decode($metadata->{$_}) for keys %$metadata;
     return $metadata;
 }
 

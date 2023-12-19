@@ -155,10 +155,22 @@
                                             <span class="label label-warning">ERRORS</span>
                                         </td>
                                         [% IF ( CAN_user_plugins_configure || CAN_user_plugins_manage || CAN_user_plugins_report || CAN_user_plugins_tool ) %]
-                                            <td colspan="8">Error found whilst attempting to load plugin</td>
+                                            <td colspan="8">
                                         [% ELSE %]
-                                            <td colspan="8">Error found whilst attempting to load plugin</td>
+                                            <td colspan="7">
                                         [% END %]
+
+                                        [% IF plugin.error == 'missing_libs' %]
+                                            This plugin requires the following missing modules to be installed:
+                                            <ul>
+                                                [% FOREACH l IN plugin.libs %]
+                                                    <li>[% l.module | html %]</li>
+                                                [% END %]
+                                            </ul>
+                                        [% ELSE %]
+                                            Error found whilst attempting to load plugin
+                                        [% END %]
+                                        </td>
                                     </tr>
                                     [% ELSE %]
                                     <tr>

@@ -22,7 +22,7 @@ use Modern::Perl;
 use Array::Utils qw( array_minus );
 use Class::Inspector;
 use List::MoreUtils qw( any );
-use Module::Load::Conditional qw( can_load );
+use Module::Load::Conditional qw( can_load check_install );
 use Module::Load;
 use Module::Pluggable search_path => ['Koha::Plugin'], except => qr/::Edifact(|::Line|::Message|::Order|::Segment|::Transport)$/;
 use Try::Tiny;
@@ -242,6 +242,19 @@ sub GetPlugins {
 
             next unless $plugin->is_enabled or
                         defined($params->{all}) && $params->{all};
+
+            # Check metadata for required perl modules
+            my $libs = $plugin->get_metadata->{libs};
+            my @missing_libs;
+            foreach my $lib (@$libs) {
+                unless ( check_install( module => $lib->{module} ) ) {
+                    push( @missing_libs, $lib );
+                }
+            }
+            if (@missing_libs) {
+                push @plugins, { error => 'missing_libs', name => $plugin_class, libs => \@missing_libs };
+                next;
+            }
 
             # filter the plugin out by metadata
             my $plugin_metadata = $plugin->get_metadata;
