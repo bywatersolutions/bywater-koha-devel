@@ -851,6 +851,7 @@
             callnumber:
               description: Item call number generated for bibliographic record
               type: string
+          additionaProperties: false
       "401":
         description: Authentication required
         schema:
