@@ -191,6 +191,7 @@ Depends: ${misc:Depends}, ${koha:Depends},
  sudo,
  fonts-dejavu | ttf-dejavu,
  unzip,
+ weasyprint,
  xmlstarlet,
  yaz
 Suggests: mysql-server | virtual-mysql-server,
@@ -238,6 +239,7 @@ Depends: ${misc:Depends},
  sudo,
  fonts-dejavu | ttf-dejavu,
  unzip,
+ weasyprint,
  xmlstarlet,
  yaz
 Architecture: all
