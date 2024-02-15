@@ -86,6 +86,7 @@ my $dbh = DBI->connect(
 );
 
 my $op = $query->param('op') || q{};
+use Data::Printer colored => 1; warn p $op;
 if ( $step && $step == 1 ) {
 
     #First Step (for both fresh installations and upgrades)
@@ -527,8 +528,10 @@ else {
     }
 }
 
-$op =~ s/cud-//;
-$template->param( op => $op, $op => 1 );
+if ($op) {
+    $op =~ s/cud-//;
+    $template->param( op => $op, $op => 1 );
+}
 
 output_html_with_http_headers $query, $cookie, $template->output;
 

@@ -123,6 +123,7 @@ SKIP: {
 
     for (1..20){ # FIXME This is really ugly, but for an unknown reason the next submit_form is resubmitting the same form. So waiting for the next page to be effectively loaded
         my $title = $s->driver->get_title;
+        # We are getting "Install basic configuration settings"
         last if $title =~ m|Default data loaded|;
         sleep 1;
     }
