@@ -68,9 +68,6 @@ if ( $op eq 'cud-renew' && $barcode ) {
             $patron = $checkout->patron;
             my $borrowernumber = $patron->borrowernumber;
 
-            $balance = $patron->account->balance;
-            my $amountlimit = C4::Context->preference("FineNoRenewals");
-
             if ( ( $patron->is_debarred || q{} ) lt dt_from_string()->ymd() ) {
                 my $confirmations;
                 my $can_renew;
@@ -98,12 +95,15 @@ if ( $op eq 'cud-renew' && $barcode ) {
                     );
                 }
 
-                if ( $balance > $amountlimit ) {
-                    $error     = "too_much_debt";
-                    $can_renew = 0;
+                if ( $error && ($error eq 'too_much_oweing' or $error eq 'auto_too_much_oweing') ) {
                     if ($override_debt) {
                         $can_renew = 1;
-                        $error     = undef;
+                        $error = undef;
+                    }
+                    else {
+                        $balance = $patron->account->balance;
+                        $template->param( balance => $balance );
+                        $can_renew = 0;
                     }
                 }
 
@@ -142,7 +142,6 @@ if ( $op eq 'cud-renew' && $barcode ) {
         error               => $error,
         soonestrenewdate    => $soonest_renew_date,
         latestautorenewdate => $latest_auto_renew_date,
-        balance             => $balance,
     );
 }
 

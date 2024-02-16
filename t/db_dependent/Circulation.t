@@ -497,7 +497,7 @@ subtest "GetIssuingCharges tests" => sub {
 
 my ( $reused_itemnumber_1, $reused_itemnumber_2 );
 subtest "CanBookBeRenewed tests" => sub {
-    plan tests => 115;
+    plan tests => 116;
 
     C4::Context->set_preference( 'ItemsDeniedRenewal', '' );
 
@@ -1893,6 +1893,8 @@ subtest "CanBookBeRenewed tests" => sub {
         "Account line description must not contain 'Lost Items ', but be title, barcode, itemcallnumber"
     );
 
+    t::lib::Mocks::mock_preference('FineNoRenewals', 0);
+
     # Recalls
     t::lib::Mocks::mock_preference( 'UseRecalls', 1 );
     Koha::CirculationRules->set_rules(
@@ -1969,6 +1971,13 @@ subtest "CanBookBeRenewed tests" => sub {
     ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $recall_issue );
     is( $renewokay, 1, 'Can renew item if biblio-level recall has already been allocated an item' );
     $recall->set_cancelled;
+
+    # Too much debt
+    t::lib::Mocks::mock_preference('FineNoRenewals', 1);
+    ( $renewokay, $error ) = CanBookBeRenewed($renewing_borrower_obj, $issue_1);
+    is( $renewokay, 0, 'Cannot renew, too much debt and FineNoRenewals=1' );
+    is( $error, 'too_much_oweing', 'Cannot renew, debt not allowed (returned code is too_much_oweing)');
+    C4::Context->dbh->do("DELETE FROM accountlines");
 };
 
 subtest "CanBookBeRenewed | bookings" => sub {
