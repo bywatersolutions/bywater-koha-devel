@@ -257,6 +257,11 @@
             Manage SMTP servers
         </span>
         <span class="permissioncode">([% name | html %])</span>
+    [%- CASE 'manage_ftp_servers' -%]
+        <span class="sub_permission manage_manage_ftp_servers_subpermission">
+            Manage FTP servers
+        </span>
+        <span class="permissioncode">([% name | html %])</span>
     [%- CASE 'manage_column_config' -%]
         <span class="sub_permission manage_column_config_subpermission">
             Manage column configuration
