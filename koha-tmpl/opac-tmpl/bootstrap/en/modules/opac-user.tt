@@ -241,7 +241,7 @@
                                         <input type="radio" id="no-autorenew_checkouts" name="borrower_autorenew_checkouts" value="0" checked="checked" />
                                     </label>
                                 [% END %]
-                        <input type="hidden" name="cud-update_arc" value="op" />
+                        <input type="hidden" name="op" value="cud-update_arc" />
                         <input type="submit" value="Update auto-renewal preference" />
                     </form>
                     [% END %]
