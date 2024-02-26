@@ -202,22 +202,22 @@ sub checkpw_ldap {
     # But we still have work to do.  See perldoc below for detailed breakdown.
 
     my (%borrower);
-	my ($borrowernumber,$cardnumber,$local_userid,$savedpw) = exists_local($userid);
+    my $patron = Koha::Patrons->find( { userid => $userid } ) || Koha::Patrons->find( { cardnumber => $userid } );
 
-    my $patron;
-    if (( $borrowernumber and $config{update}   ) or
-        (!$borrowernumber and $config{replicate})   ) {
+    if (( $patron and $config{update}   ) or
+        (!$patron and $config{replicate})   ) {
+        my $cardnumber = $patron ? $patron->cardnumber : q{};
         %borrower = ldap_entry_2_hash($userldapentry,$cardnumber);
-        #warn "checkpw_ldap received \%borrower w/ " . keys(%borrower), " keys: ", join(' ', keys %borrower), "\n";
     }
 
-    if ($borrowernumber) {
-        if ($config{update}) { # A1, B1
-            my $c2 = &update_local($local_userid,$password,$borrowernumber,\%borrower) || '';
-            ($cardnumber eq $c2) or warn "update_local returned cardnumber '$c2' instead of '$cardnumber'";
-        } else { # C1, D1
-            # maybe update just the password?
-		return(1, $cardnumber, $local_userid);
+    if ($patron) {
+        if ( $config{update} ) {    # A1, B1
+            my $c2 = &update_local( $patron->userid, $password, $patron->id, \%borrower ) || '';
+            ( $patron->cardnumber eq $c2 )
+                or warn "update_local returned cardnumber '$c2' instead of '$patron->cardnumber'";
+        } else {                    # C1, D1
+                                    # maybe update just the password?
+            return ( 1, $patron->cardnumber, $patron->userid, $patron );
         }
     } elsif ($config{replicate}) { # A2, C2
         my @columns = Koha::Patrons->columns;
@@ -227,10 +227,9 @@ sub checkpw_ldap {
             }
         )->store;
         die "Insert of new patron failed" unless $patron;
-        $borrowernumber = $patron->borrowernumber;
         C4::Members::Messaging::SetMessagingPreferencesFromDefaults(
             {
-                borrowernumber => $borrowernumber,
+                borrowernumber => $patron->id,
                 categorycode   => $borrower{'categorycode'}
             }
         );
@@ -268,7 +267,7 @@ sub checkpw_ldap {
    } else {
         return 0;   # B2, D2
     }
-    if (C4::Context->preference('ExtendedPatronAttributes') && $borrowernumber && ($config{update} ||$config{replicate})) {
+    if (C4::Context->preference('ExtendedPatronAttributes') && $patron->id && ($config{update} ||$config{replicate})) {
         my $library_id = C4::Context->userenv ? C4::Context->userenv->{'branch'} : undef;
         my $attribute_types = Koha::Patron::Attribute::Types->search_with_library_limits({}, {}, $library_id);
         while ( my $attribute_type = $attribute_types->next ) {
@@ -276,7 +275,7 @@ sub checkpw_ldap {
             unless (exists($borrower{$code}) && $borrower{$code} !~ m/^\s*$/ ) {
                 next;
             }
-            $patron = Koha::Patrons->find($borrowernumber);
+            $patron = Koha::Patrons->find($patron->id);
             if ( $patron ) { # Should not be needed, but we are in C4::Auth LDAP...
                 eval {
                     my $attribute = Koha::Patron::Attribute->new({code => $code, attribute => $borrower{$code}});
@@ -288,7 +287,7 @@ sub checkpw_ldap {
             }
         }
     }
-    return(1, $cardnumber, $userid, $patron);
+    return ( 1, $patron->cardnumber, $userid, $patron );
 }
 
 # Pass LDAP entry object and local cardnumber (userid).
@@ -342,23 +341,6 @@ sub ldap_entry_2_hash {
 	}
 
 	return %borrower;
-}
-
-sub exists_local {
-	my $arg = shift;
-	my $dbh = C4::Context->dbh;
-	my $select = "SELECT borrowernumber,cardnumber,userid,password FROM borrowers ";
-
-	my $sth = $dbh->prepare("$select WHERE userid=?");	# was cardnumber=?
-	$sth->execute($arg);
-    #warn "Userid '$arg' exists_local? %s\n", $sth->rows;
-	($sth->rows == 1) and return $sth->fetchrow;
-
-	$sth = $dbh->prepare("$select WHERE cardnumber=?");
-	$sth->execute($arg);
-    #warn "Cardnumber '$arg' exists_local? %s\n", $sth->rows;
-	($sth->rows == 1) and return $sth->fetchrow;
-	return 0;
 }
 
 # This function performs a password update, given the userid, borrowerid,

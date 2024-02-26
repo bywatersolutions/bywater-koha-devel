@@ -2012,7 +2012,6 @@ sub checkpw {
     # INTERNAL AUTH
     if ($check_internal_as_fallback) {
         @return = checkpw_internal( $userid, $password, $no_set_userenv );
-        push( @return, $patron );
         $passwd_ok = 1 if $return[0] > 0;    # 1 or 2
     }
 
@@ -2041,43 +2040,23 @@ sub checkpw_internal {
     my ( $userid, $password, $no_set_userenv ) = @_;
 
     $password = Encode::encode( 'UTF-8', $password )
-      if Encode::is_utf8($password);
+        if Encode::is_utf8($password);
 
-    my $dbh = C4::Context->dbh;
-    my $sth =
-      $dbh->prepare(
-        "select password,cardnumber,borrowernumber,userid,firstname,surname,borrowers.branchcode,branches.branchname,flags from borrowers join branches on borrowers.branchcode=branches.branchcode where userid=?"
-      );
-    $sth->execute($userid);
-    if ( $sth->rows ) {
-        my ( $stored_hash, $cardnumber, $borrowernumber, $userid, $firstname,
-            $surname, $branchcode, $branchname, $flags )
-          = $sth->fetchrow;
+    my $patron = Koha::Patrons->find( { userid => $userid } ) || Koha::Patrons->find( { cardnumber => $userid } );
 
-        if ( checkpw_hash( $password, $stored_hash ) ) {
+    if ($patron) {
+        if ( checkpw_hash( $password, $patron->password ) ) {
+            my $borrowernumber = $patron->id;
 
-            C4::Context->set_userenv( "$borrowernumber", $userid, $cardnumber,
-                $firstname, $surname, $branchcode, $branchname, $flags ) unless $no_set_userenv;
-            return 1, $cardnumber, $userid;
+            C4::Context->set_userenv(
+                "$borrowernumber", $patron->userid, $patron->cardnumber,
+                $patron->firstname, $patron->surname, $patron->branchcode, $patron->library->branchname, $patron->flags
+            ) unless $no_set_userenv;
+
+            return ( 1, $patron->cardnumber, $patron->userid, $patron );
         }
     }
-    $sth =
-      $dbh->prepare(
-        "select password,cardnumber,borrowernumber,userid,firstname,surname,borrowers.branchcode,branches.branchname,flags from borrowers join branches on borrowers.branchcode=branches.branchcode where cardnumber=?"
-      );
-    $sth->execute($userid);
-    if ( $sth->rows ) {
-        my ( $stored_hash, $cardnumber, $borrowernumber, $userid, $firstname,
-            $surname, $branchcode, $branchname, $flags )
-          = $sth->fetchrow;
 
-        if ( checkpw_hash( $password, $stored_hash ) ) {
-
-            C4::Context->set_userenv( $borrowernumber, $userid, $cardnumber,
-                $firstname, $surname, $branchcode, $branchname, $flags ) unless $no_set_userenv;
-            return 1, $cardnumber, $userid;
-        }
-    }
     return 0;
 }
 
