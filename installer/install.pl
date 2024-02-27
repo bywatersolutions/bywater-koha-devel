@@ -86,7 +86,6 @@ my $dbh = DBI->connect(
 );
 
 my $op = $query->param('op') || q{};
-use Data::Printer colored => 1; warn p $op;
 if ( $step && $step == 1 ) {
 
     #First Step (for both fresh installations and upgrades)
