@@ -54,7 +54,7 @@
         <p>
             <a href="[% action_link | $raw %]" class="btn btn-primary approve"><i class="fa fa-fw fa-check"></i> OK</a>
 
-            <a href="/cgi-bin/koha/cataloguing/moveitem.pl?biblionumber=[% biblio.biblionumber | html %]" class="btn btn-default new"><i class="fa fa-fw fa-plus"></i> Try again with a different barcode</a>
+            <a href="/cgi-bin/koha/cataloguing/moveitem.pl?biblionumber=[% biblio.biblionumber | uri %]" class="btn btn-default new"><i class="fa fa-fw fa-plus"></i> Try again with a different barcode</a>
         </p>
 
     </div>
@@ -79,7 +79,7 @@
                 The item has successfully been attached to [% INCLUDE 'biblio-title.inc' link = 1 %].
                 <p>
                     <a href="[% action_link | $raw %]" class="btn btn-primary approve"><i class="fa fa-fw fa-check"></i> OK</a>
-                    <a href="/cgi-bin/koha/cataloguing/moveitem.pl?biblionumber=[% biblio.biblionumber | html %]" class="btn btn-default new"><i class="fa fa-fw fa-plus"></i> Attach another item</a>
+                    <a href="/cgi-bin/koha/cataloguing/moveitem.pl?biblionumber=[% biblio.biblionumber | uri %]" class="btn btn-default new"><i class="fa fa-fw fa-plus"></i> Attach another item</a>
                 </p>
             </div>
     [% ELSE %]
