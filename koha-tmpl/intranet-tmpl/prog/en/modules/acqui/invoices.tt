@@ -102,16 +102,37 @@
                                                         <li><a href="/cgi-bin/koha/acqui/invoice.pl?invoiceid=[% invoice.invoiceid | uri %]"><i class="fa fa-search"></i> Details</a></li>
                                                         [% IF invoice.closedate %]
                                                             [% IF CAN_user_acquisition_reopen_closed_invoices %]
-                                                                <li><a href="invoice.pl?op=reopen&amp;invoiceid=[% invoice.invoiceid | uri %]&amp;referer=/cgi-bin/koha/acqui/invoices.pl%3Fop=do_search%26invoicenumber=[% invoicenumber | uri %]%26supplier=[% booksellerid | uri %]%26shipmentdatefrom=[% shipmentdatefrom | $KohaDates %]%26shipmentdateto=[% shipmentdateto | $KohaDates %]%26billingdatefrom=[% billingdatefrom | $KohaDates %]%26billingdateto=[% billingdateto | $KohaDates %]%26isbneanissn=[% isbneanissn | uri %]%26title=[% title | uri %]%26author=[% author | uri %]%26publisher=[% publisher | uri %]%26publicationyear=[% publicationyear | uri %]%26branch=[% branch | uri %]"><i class="fa-solid fa-rotate"></i> Reopen</a></li>
+                                                                <li>
+                                                                    <form action="invoice.pl" method="post">
+                                                                        <input type="hidden" name="op" value="cud-reopen">
+                                                                        <input type="hidden" name="invoiceid" value="[% invoice.invoiceid | uri %]">
+                                                                        <input type="hidden" name="referer" value="/cgi-bin/koha/acqui/invoices.pl%3Fop=do_search%26invoicenumber=[% invoicenumber | uri %]%26supplier=[% booksellerid | uri %]%26shipmentdatefrom=[% shipmentdatefrom | $KohaDates %]%26shipmentdateto=[% shipmentdateto | $KohaDates %]%26billingdatefrom=[% billingdatefrom | $KohaDates %]%26billingdateto=[% billingdateto | $KohaDates %]%26isbneanissn=[% isbneanissn | uri %]%26title=[% title | uri %]%26author=[% author | uri %]%26publisher=[% publisher | uri %]%26publicationyear=[% publicationyear | uri %]%26branch=[% branch | uri %]">
+                                                                        <button type="submit" class="btn btn-link btn-default"><i class="fa-solid fa-rotate"></i> Reopen</button>
+                                                                    </form>
+                                                                </li>
                                                             [% END %]
                                                         [% ELSE %]
                                                             [% IF CAN_user_acquisition_edit_invoices %]
-                                                                <li><a href="invoice.pl?op=close&amp;invoiceid=[% invoice.invoiceid | uri %]&amp;referer=/cgi-bin/koha/acqui/invoices.pl%3Fop=do_search%26invoicenumber=[% invoicenumber | uri %]%26supplier=[% booksellerid | uri %]%26shipmentdatefrom=[% shipmentdatefrom | $KohaDates %]%26shipmentdateto=[% shipmentdateto | $KohaDates %]%26billingdatefrom=[% billingdatefrom | $KohaDates %]%26billingdateto=[% billingdateto | $KohaDates %]%26isbneanissn=[% isbneanissn | uri %]%26title=[% title | uri %]%26author=[% author | uri %]%26publisher=[% publisher | uri %]%26publicationyear=[% publicationyear | uri %]%26branch=[% branch | uri %]"><i class="fa fa-times-circle"></i> Close</a></li>
+                                                                <li>
+                                                                    <form action="invoice.pl" method="post">
+                                                                        <input type="hidden" name="op" value="cud-close">
+                                                                        <input type="hidden" name="invoiceid" value="[% invoice.invoiceid | uri %]">
+                                                                        <input type="hidden" name="referer" value="/cgi-bin/koha/acqui/invoices.pl%3Fop=do_search%26invoicenumber=[% invoicenumber | uri %]%26supplier=[% booksellerid | uri %]%26shipmentdatefrom=[% shipmentdatefrom | $KohaDates %]%26shipmentdateto=[% shipmentdateto | $KohaDates %]%26billingdatefrom=[% billingdatefrom | $KohaDates %]%26billingdateto=[% billingdateto | $KohaDates %]%26isbneanissn=[% isbneanissn | uri %]%26title=[% title | uri %]%26author=[% author | uri %]%26publisher=[% publisher | uri %]%26publicationyear=[% publicationyear | uri %]%26branch=[% branch | uri %]">
+                                                                        <button type="submit" class="btn btn-link btn-default"><i class="fa fa-times-circle"></i> Close</button>
+                                                                    </form>
+                                                                </li>
                                                             [% END %]
                                                         [% END # /IF invoice.closedate %]
                                                         [% UNLESS invoice.receivedbiblios || invoice.receiveditems %]
                                                             [% IF CAN_user_acquisition_delete_invoices %]
-                                                                <li><a href="invoice.pl?op=delete&amp;invoiceid=[% invoice.invoiceid | uri %]&amp;referer=/cgi-bin/koha/acqui/invoices.pl%3Fop=do_search%26invoicenumber=[% invoicenumber | uri %]%26supplier=[% booksellerid | uri %]%26shipmentdatefrom=[% shipmentdatefrom | $KohaDates %]%26shipmentdateto=[% shipmentdateto | $KohaDates %]%26billingdatefrom=[% billingdatefrom | $KohaDates %]%26billingdateto=[% billingdateto | $KohaDates %]%26isbneanissn=[% isbneanissn | uri %]%26title=[% title | uri %]%26author=[% author | uri %]%26publisher=[% publisher | uri %]%26publicationyear=[% publicationyear | uri %]%26branch=[% branch | uri %]" class="delete_invoice"><i class="fa fa-trash-can"></i> Delete</a></li>
+                                                                <li>
+                                                                    <form action="invoice.pl" method="post">
+                                                                        <input type="hidden" name="op" value="cud-delete">
+                                                                        <input type="hidden" name="invoiceid" value="[% invoice.invoiceid | uri %]">
+                                                                        <input type="hidden" name="referer" value="/cgi-bin/koha/acqui/invoices.pl%3Fop=do_search%26invoicenumber=[% invoicenumber | uri %]%26supplier=[% booksellerid | uri %]%26shipmentdatefrom=[% shipmentdatefrom | $KohaDates %]%26shipmentdateto=[% shipmentdateto | $KohaDates %]%26billingdatefrom=[% billingdatefrom | $KohaDates %]%26billingdateto=[% billingdateto | $KohaDates %]%26isbneanissn=[% isbneanissn | uri %]%26title=[% title | uri %]%26author=[% author | uri %]%26publisher=[% publisher | uri %]%26publicationyear=[% publicationyear | uri %]%26branch=[% branch | uri %]">
+                                                                        <button type="submit" class="btn btn-link btn-default"><i class="fa fa-trash-can"></i> Delete</button>
+                                                                    </form>
+                                                                </li>
                                                             [% END %]
                                                         [% END %]
                                                     </ul>
