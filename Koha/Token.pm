@@ -57,6 +57,8 @@ use Digest::MD5 qw( md5_base64 );
 use Encode;
 use C4::Context;
 use Koha::Exceptions::Token;
+use Koha::Session;
+
 use base qw(Class::Accessor);
 use constant HMAC_SHA1_LENGTH => 20;
 use constant CSRF_EXPIRY_HOURS => 8; # 8 hours instead of 7 days..
