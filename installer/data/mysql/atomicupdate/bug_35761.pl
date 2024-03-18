@@ -8,13 +8,13 @@ return {
         my ( $dbh, $out ) = @$args{qw(dbh out)};
 
         # Do you stuffs here
-        $dbh->do(q{});
+        # $dbh->do(q{});
 
 
         $dbh->do(q{
             INSERT IGNORE INTO permissions
                 (module_bit, code, description)
-            VALUES ( 3, 'manage_ftp_servers', 'Manage FTP servers configuration');
+            VALUES ( 3, 'manage_file_access_accounts', 'Manage remote file server accounts');
         });
 
         # Print useful stuff here

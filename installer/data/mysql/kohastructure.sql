@@ -5801,23 +5801,18 @@ CREATE TABLE `smtp_servers` (
 -- Table structure for table `smtp_servers`
 --
 
-DROP TABLE IF EXISTS `ftp_servers`;
+DROP TABLE IF EXISTS `file_access_accounts`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `ftp_servers` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `file_access_accounts` (
   `code` varchar(20) NOT NULL COMMENT 'Unique code for this given server for use in cli parameters',
-  `name` varchar(80) NOT NULL,
+  `description` mediumtext NOT NULL,
+  `transport` varchar(6) DEFAULT 'FTP',
   `host` varchar(80) NOT NULL DEFAULT 'localhost',
-  `port` int(11) NOT NULL DEFAULT 25,
-  `timeout` int(11) NOT NULL DEFAULT 120,
-  `type` enum('ftp','sftp') NOT NULL,
-  `user_name` varchar(80) DEFAULT NULL,
-  `password` varchar(80) DEFAULT NULL,
+  `username` varchar(40) DEFAULT NULL,
+  `password` mediumtext DEFAULT NULL,
   `debug` tinyint(1) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`),
-  UNIQUE(code),
-  KEY `host_idx` (`host`)
+  PRIMARY KEY (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

@@ -257,8 +257,8 @@
             Manage SMTP servers
         </span>
         <span class="permissioncode">([% name | html %])</span>
-    [%- CASE 'manage_ftp_servers' -%]
-        <span class="sub_permission manage_manage_ftp_servers_subpermission">
+    [%- CASE 'manage_file_access_accounts' -%]
+        <span class="sub_permission manage_manage_file_access_accounts_subpermission">
             Manage FTP servers
         </span>
         <span class="permissioncode">([% name | html %])</span>
