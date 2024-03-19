@@ -38,7 +38,7 @@ return {
             );
             my $sth_insert = $dbh->prepare(
                 q{
-                INSERT INTO additional_contents_localizations(additional_content_id, title, content, lang, updated_on)
+                INSERT IGNORE INTO additional_contents_localizations(additional_content_id, title, content, lang, updated_on)
                 VALUES(?, ?, ?, ?, ?)
             }
             );
