@@ -1,10 +1,27 @@
-import { setError, submitting, submitted } from "../messages";
+/* keep tidy */
+class Dialog {
+    constructor(options = {}) {}
+
+    setMessage(message) {
+        $("#messages").append(
+            '<div class="dialog message">%s</div>'.format(message)
+        );
+    }
+
+    setError(error) {
+        $("#messages").append(
+            '<div class="dialog alert">%s</div>'.format(error)
+        );
+    }
+}
 
 class HttpClient {
     constructor(options = {}) {
         this._baseURL = options.baseURL || "";
         this._headers = options.headers || {
+            // FIXME we actually need to merge the headers
             "Content-Type": "application/json;charset=utf-8",
+            "X-Requested-With": "XMLHttpRequest",
         };
     }
 
@@ -22,6 +39,9 @@ class HttpClient {
             headers: { ...this._headers, ...headers },
         })
             .then(response => {
+                const is_json = response.headers
+                    .get("content-type")
+                    ?.includes("application/json");
                 if (!response.ok) {
                     return response.text().then(text => {
                         let message;
@@ -37,7 +57,10 @@ class HttpClient {
                         throw new Error(message);
                     });
                 }
-                return return_response ? response : response.json();
+                if (return_response || !is_json) {
+                    return response;
+                }
+                return response.json();
             })
             .then(result => {
                 res = result;
@@ -127,31 +150,6 @@ class HttpClient {
             true,
             true
         );
-    }
-
-    count(params = {}) {
-        let res;
-        return this._fetchJSON(params.endpoint, params.headers, {}, 1).then(
-            response => {
-                if (response) {
-                    return response.headers.get("X-Total-Count");
-                }
-            },
-            error => {}
-        );
-    }
-
-    patch(params = {}) {
-        const body = params.body
-            ? typeof params.body === "string"
-                ? params.body
-                : JSON.stringify(params.body)
-            : undefined;
-        return this._fetchJSON(params.endpoint, params.headers, {
-            ...params.options,
-            body,
-            method: "PATCH",
-        });
     }
 }
 
