@@ -55,7 +55,7 @@
                 [% END %]
 
                 <form method="post" action="/cgi-bin/koha/admin/float_limits.pl" id="float_limit_form">
-                    <input type="hidden" name="op" value="set_float_limits" />
+                    <input type="hidden" name="op" value="cud-set_float_limits" />
                     <fieldset id="float_limits">
                         <div class="help">
                             <p>Specify the total number of items per itemtype that are allowed to float at each library.</p>

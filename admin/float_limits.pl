@@ -44,7 +44,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 
 my $op = $input->param('op');
 
-if ( $op eq 'set_float_limits' ) {
+if ( $op eq 'cud-set_float_limits' ) {
     my $schema    = Koha::Database->new()->schema();
     my @branches  = Koha::Libraries->search()->as_list;
     my @itemtypes = Koha::ItemTypes->search()->as_list;
