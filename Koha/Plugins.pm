@@ -26,6 +26,7 @@ use Module::Load::Conditional qw( can_load );
 use Module::Load;
 use Module::Pluggable search_path => ['Koha::Plugin'], except => qr/::Edifact(|::Line|::Message|::Order|::Segment|::Transport)$/;
 use Try::Tiny;
+use POSIX qw(getpid);
 
 use C4::Context;
 use C4::Output;
@@ -303,7 +304,63 @@ sub InstallPlugins {
 
     Koha::Cache::Memory::Lite->clear_from_cache(ENABLED_PLUGINS_CACHE_KEY);
 
+    $self->_restart_after_change();
+
     return @plugins;
+}
+
+=head2 RemovePlugins
+
+    Koha::Plugins->RemovePlugins( {
+        [ plugin_class => MODULE_NAME, destructive => 1, disable => 1 ],
+    } );
+
+    This is primarily for unit testing. Take care when you pass the
+    destructive flag (know what you are doing)!
+
+    The method removes records from plugin_methods for one or all plugins.
+
+    If you pass the destructive flag, it will remove records too from
+    plugin_data for one or all plugins. Destructive overrules disable.
+
+    If you pass disable, it will disable one or all plugins (in plugin_data).
+
+    If you do not pass destructive or disable, this method does not touch
+    records in plugin_data. The cache key for enabled plugins will be cleared
+    only if you pass disabled or destructive.
+
+=cut
+
+sub RemovePlugins {
+    my ( $class, $params ) = @_;
+
+    my $cond = {
+        $params->{plugin_class}
+        ? ( plugin_class => $params->{plugin_class} )
+        : ()
+    };
+    Koha::Plugins::Methods->search($cond)->delete;
+    if ( $params->{destructive} ) {
+        Koha::Plugins::Datas->search($cond)->delete;
+        Koha::Cache::Memory::Lite->clear_from_cache( Koha::Plugins->ENABLED_PLUGINS_CACHE_KEY );
+    } elsif ( $params->{disable} ) {
+        $cond->{plugin_key} = '__ENABLED__';
+        Koha::Plugins::Datas->search($cond)->update( { plugin_value => 0 } );
+        Koha::Cache::Memory::Lite->clear_from_cache( Koha::Plugins->ENABLED_PLUGINS_CACHE_KEY );
+    }
+
+    $class->_restart_after_change();
+}
+
+sub _restart_after_change {
+    my ( $class, $params ) = @_;
+
+    return unless ( C4::Context->config('plugins_restart') && C4::Context->psgi_env );
+
+    my $parent_pid = getppid();
+
+    # Send HUP signal to Plack parent process for graceful restart
+    kill 'HUP', $parent_pid;
 }
 
 1;
