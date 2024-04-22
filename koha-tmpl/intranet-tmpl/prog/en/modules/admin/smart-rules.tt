@@ -1,44 +1,44 @@
-[% USE raw %]
-[% USE Asset %]
-[% USE Koha %]
-[% USE KohaDates %]
-[% USE Branches %]
-[% USE Categories %]
-[% USE ItemTypes %]
-[% USE CirculationRules %]
-[% USE Price %]
+[%- USE raw %]
+[%- USE Asset %]
+[%- USE Koha %]
+[%- USE KohaDates %]
+[%- USE Branches %]
+[%- USE Categories %]
+[%- USE ItemTypes %]
+[%- USE CirculationRules %]
+[%- USE Price %]
 [% PROCESS 'i18n.inc' %]
-[% SET footerjs = 1 %]
+[%- SET footerjs = 1 %]
 
-[% SET branchcode = humanbranch || undef %]
+[%- SET branchcode = humanbranch || undef %]
 
-[% SET categorycodes = used_categorycodes %]
-[% SET itemtypes = used_itemtypes %]
+[%- SET categorycodes = used_categorycodes %]
+[%- SET itemtypes = used_itemtypes %]
 
 [% INCLUDE 'doc-head-open.inc' %]
 <title>[% FILTER collapse %]
     [% t("Circulation and fine rules") | html %] &rsaquo;
     [% t("Administration") | html %] &rsaquo;
     [% t("Koha") | html %]
-[% END %]</title>
+[%- END %]</title>
 [% INCLUDE 'doc-head-close.inc' %]
 </head>
 
 <body id="admin_smart-rules" class="admin">
 [% WRAPPER 'header.inc' %]
     [% INCLUDE 'prefs-admin-search.inc' %]
-[% END %]
+[%- END %]
 
 [% WRAPPER 'sub-header.inc' %]
     [% WRAPPER breadcrumbs %]
         [% WRAPPER breadcrumb_item %]
             <a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a>
-       [% END %]
+       [%- END %]
         [% WRAPPER breadcrumb_item bc_active= 1 %]
             <span>Circulation and fine rules</span>
-       [% END %]
-    [% END #/ WRAPPER breadcrumbs %]
-[% END #/ WRAPPER sub-header.inc %]
+       [%- END %]
+    [%- END #/ WRAPPER breadcrumbs %]
+[%- END #/ WRAPPER sub-header.inc %]
 
 <div class="main container-fluid">
     <div class="row">
@@ -46,11 +46,11 @@
             <main>
                 [% INCLUDE 'messages.inc' %]
                 <h1 class="parameters">
-                    [% IF humanbranch %]
+                    [%- IF humanbranch %]
                         Defining circulation and fine rules for "[% Branches.GetName( humanbranch ) | html %]"
-                    [% ELSE %]
+                    [%- ELSE %]
                         Defining circulation and fine rules for all libraries
-                    [% END %]
+                    [%- END %]
                 </h1>
 
                 <div class="page-section bg-info">
@@ -81,7 +81,7 @@
                                 [% PROCESS options_for_libraries libraries => Branches.all( selected => current_branch, unfiltered => 1 ) %]
                             </select>
                         </form>
-                        [% IF ( definedbranch ) %]
+                        [%- IF ( definedbranch ) %]
                             <form action="/cgi-bin/koha/admin/clone-rules.pl" method="post">
                                 [% INCLUDE 'csrf-token.inc' %]
                                 <label for="tobranch"><strong>Clone these rules to:</strong></label>
@@ -92,8 +92,8 @@
                                 <input type="hidden" name="op" value="cud-clone" />
                                 <input type="submit" id="clone_rules" class="btn btn-primary" value="Clone" />
                             </form>
-                        [% END %]
-                    [% END %]
+                        [%- END %]
+                    [%- END %]
                 </div>
 
                 <div class="page-section">
@@ -127,9 +127,9 @@
                             <th>Max. suspension duration (day)</th>
                             <th>Suspension charging interval</th>
                             <th>Renewals allowed (count)</th>
-                            [% IF Koha.Preference('UnseenRenewals') %]
+                            [%- IF Koha.Preference('UnseenRenewals') %]
                             <th>Unseen renewals allowed (count)</th>
-                            [% END %]
+                            [%- END %]
                             <th>Renewal period</th>
                             <th>No renewal before</th>
                             <th>No automatic renewal before</th>
@@ -142,118 +142,118 @@
                             <th>On shelf holds allowed</th>
                             <th>OPAC item level holds</th>
                             <th>Holds pickup period (day)</th>
-                            [% IF Koha.Preference('ArticleRequests') %]
+                            [%- IF Koha.Preference('ArticleRequests') %]
                             <th>Article requests</th>
-                            [% END %]
+                            [%- END %]
                             <th>Rental discount (%)</th>
-                            [% IF Koha.Preference('UseRecalls') %]
+                            [%- IF Koha.Preference('UseRecalls') %]
                                 <th>Recalls allowed (total)</th>
                                 <th>Recalls per record (count)</th>
                                 <th>On shelf recalls allowed</th>
                                 <th>Recall due date interval (day)</th>
                                 <th>Recall overdue fine amount</th>
                                 <th>Recall pickup period (day)</th>
-                            [% END %]
+                            [%- END %]
                             <th class="noExport">Actions</th>
                         </tr>
                         </thead>
                         <tbody>
-                            [% SET row_count = 0 %]
+                            [%- SET row_count = 0 %]
                             [% FOREACH c IN categorycodes %]
-                                [% SET c = '' UNLESS c.defined %]
+                                [%- SET c = '' UNLESS c.defined %]
                                 [% FOREACH i IN itemtypes %]
-                                    [% SET i = '' UNLESS i.defined %]
-                                    [% SET note = all_rules.$c.$i.note %]
-                                    [% SET maxissueqty = all_rules.$c.$i.maxissueqty %]
-                                    [% SET maxonsiteissueqty = all_rules.$c.$i.maxonsiteissueqty %]
-                                    [% SET issuelength = all_rules.$c.$i.issuelength %]
-                                    [% SET daysmode = all_rules.$c.$i.daysmode %]
-                                    [% SET lengthunit = all_rules.$c.$i.lengthunit %]
-                                    [% SET hardduedate = all_rules.$c.$i.hardduedate %]
-                                    [% SET hardduedatecompare = all_rules.$c.$i.hardduedatecompare %]
-                                    [% SET fine = all_rules.$c.$i.fine %]
-                                    [% SET chargeperiod = all_rules.$c.$i.chargeperiod %]
-                                    [% SET chargeperiod_charge_at = all_rules.$c.$i.chargeperiod_charge_at %]
-                                    [% SET firstremind = all_rules.$c.$i.firstremind %]
-                                    [% SET overduefinescap = all_rules.$c.$i.overduefinescap %]
-                                    [% SET cap_fine_to_replacement_price = all_rules.$c.$i.cap_fine_to_replacement_price %]
-                                    [% SET finedays = all_rules.$c.$i.finedays %]
-                                    [% SET maxsuspensiondays = all_rules.$c.$i.maxsuspensiondays %]
-                                    [% SET suspension_chargeperiod = all_rules.$c.$i.suspension_chargeperiod %]
-                                    [% SET renewalsallowed = all_rules.$c.$i.renewalsallowed %]
-                                    [% SET unseenrenewalsallowed = all_rules.$c.$i.unseen_renewals_allowed %]
-                                    [% SET renewalperiod = all_rules.$c.$i.renewalperiod %]
-                                    [% SET norenewalbefore = all_rules.$c.$i.norenewalbefore %]
-                                    [% SET noautorenewalbefore = all_rules.$c.$i.noautorenewalbefore %]
-                                    [% SET auto_renew = all_rules.$c.$i.auto_renew %]
-                                    [% SET no_auto_renewal_after = all_rules.$c.$i.no_auto_renewal_after %]
-                                    [% SET no_auto_renewal_after_hard_limit = all_rules.$c.$i.no_auto_renewal_after_hard_limit %]
-                                    [% SET reservesallowed = all_rules.$c.$i.reservesallowed %]
-                                    [% SET holds_per_day = all_rules.$c.$i.holds_per_day %]
-                                    [% SET holds_per_record = all_rules.$c.$i.holds_per_record %]
-                                    [% SET onshelfholds = all_rules.$c.$i.onshelfholds %]
-                                    [% SET opacitemholds = all_rules.$c.$i.opacitemholds %]
-                                    [% SET article_requests = all_rules.$c.$i.article_requests %]
-                                    [% SET rentaldiscount = all_rules.$c.$i.rentaldiscount %]
-                                    [% SET decreaseloanholds = all_rules.$c.$i.decreaseloanholds %]
-                                    [% SET recalls_allowed = all_rules.$c.$i.recalls_allowed %]
-                                    [% SET recalls_per_record = all_rules.$c.$i.recalls_per_record %]
-                                    [% SET on_shelf_recalls = all_rules.$c.$i.on_shelf_recalls %]
-                                    [% SET recall_due_date_interval = all_rules.$c.$i.recall_due_date_interval %]
-                                    [% SET recall_overdue_fine = all_rules.$c.$i.recall_overdue_fine %]
-                                    [% SET recall_shelf_time = all_rules.$c.$i.recall_shelf_time %]
-                                    [% SET holds_pickup_period = all_rules.$c.$i.holds_pickup_period %]
+                                    [%- SET i = '' UNLESS i.defined %]
+                                    [%- SET note = all_rules.$c.$i.note %]
+                                    [%- SET maxissueqty = all_rules.$c.$i.maxissueqty %]
+                                    [%- SET maxonsiteissueqty = all_rules.$c.$i.maxonsiteissueqty %]
+                                    [%- SET issuelength = all_rules.$c.$i.issuelength %]
+                                    [%- SET daysmode = all_rules.$c.$i.daysmode %]
+                                    [%- SET lengthunit = all_rules.$c.$i.lengthunit %]
+                                    [%- SET hardduedate = all_rules.$c.$i.hardduedate %]
+                                    [%- SET hardduedatecompare = all_rules.$c.$i.hardduedatecompare %]
+                                    [%- SET fine = all_rules.$c.$i.fine %]
+                                    [%- SET chargeperiod = all_rules.$c.$i.chargeperiod %]
+                                    [%- SET chargeperiod_charge_at = all_rules.$c.$i.chargeperiod_charge_at %]
+                                    [%- SET firstremind = all_rules.$c.$i.firstremind %]
+                                    [%- SET overduefinescap = all_rules.$c.$i.overduefinescap %]
+                                    [%- SET cap_fine_to_replacement_price = all_rules.$c.$i.cap_fine_to_replacement_price %]
+                                    [%- SET finedays = all_rules.$c.$i.finedays %]
+                                    [%- SET maxsuspensiondays = all_rules.$c.$i.maxsuspensiondays %]
+                                    [%- SET suspension_chargeperiod = all_rules.$c.$i.suspension_chargeperiod %]
+                                    [%- SET renewalsallowed = all_rules.$c.$i.renewalsallowed %]
+                                    [%- SET unseenrenewalsallowed = all_rules.$c.$i.unseen_renewals_allowed %]
+                                    [%- SET renewalperiod = all_rules.$c.$i.renewalperiod %]
+                                    [%- SET norenewalbefore = all_rules.$c.$i.norenewalbefore %]
+                                    [%- SET noautorenewalbefore = all_rules.$c.$i.noautorenewalbefore %]
+                                    [%- SET auto_renew = all_rules.$c.$i.auto_renew %]
+                                    [%- SET no_auto_renewal_after = all_rules.$c.$i.no_auto_renewal_after %]
+                                    [%- SET no_auto_renewal_after_hard_limit = all_rules.$c.$i.no_auto_renewal_after_hard_limit %]
+                                    [%- SET reservesallowed = all_rules.$c.$i.reservesallowed %]
+                                    [%- SET holds_per_day = all_rules.$c.$i.holds_per_day %]
+                                    [%- SET holds_per_record = all_rules.$c.$i.holds_per_record %]
+                                    [%- SET onshelfholds = all_rules.$c.$i.onshelfholds %]
+                                    [%- SET opacitemholds = all_rules.$c.$i.opacitemholds %]
+                                    [%- SET article_requests = all_rules.$c.$i.article_requests %]
+                                    [%- SET rentaldiscount = all_rules.$c.$i.rentaldiscount %]
+                                    [%- SET decreaseloanholds = all_rules.$c.$i.decreaseloanholds %]
+                                    [%- SET recalls_allowed = all_rules.$c.$i.recalls_allowed %]
+                                    [%- SET recalls_per_record = all_rules.$c.$i.recalls_per_record %]
+                                    [%- SET on_shelf_recalls = all_rules.$c.$i.on_shelf_recalls %]
+                                    [%- SET recall_due_date_interval = all_rules.$c.$i.recall_due_date_interval %]
+                                    [%- SET recall_overdue_fine = all_rules.$c.$i.recall_overdue_fine %]
+                                    [%- SET recall_shelf_time = all_rules.$c.$i.recall_shelf_time %]
+                                    [%- SET holds_pickup_period = all_rules.$c.$i.holds_pickup_period %]
 
-                                    [% SET show_rule = note || maxissueqty || maxonsiteissueqty || issuelength || daysmode || lengthunit || hardduedate || hardduedatecompare || fine || chargeperiod || chargeperiod_charge_at || firstremind || overduefinescap || cap_fine_to_replacement_price || finedays || maxsuspensiondays || suspension_chargeperiod || renewalsallowed || unseenrenewalsallowed || renewalperiod || norenewalbefore || noautorenewalbefore || auto_renew || no_auto_renewal_after || no_auto_renewal_after_hard_limit || reservesallowed || holds_per_day || holds_per_record || onshelfholds || opacitemholds || article_requests || rentaldiscount || decreaseloanholds || recalls_allowed || recalls_per_record || on_shelf_recalls || recall_due_date_interval || recall_overdue_fine || recall_shelf_time || holds_pickup_period %]
-                                    [% IF show_rule %]
-                                        [% SET row_count = row_count + 1 %]
+                                    [%- SET show_rule = note || maxissueqty || maxonsiteissueqty || issuelength || daysmode || lengthunit || hardduedate || hardduedatecompare || fine || chargeperiod || chargeperiod_charge_at || firstremind || overduefinescap || cap_fine_to_replacement_price || finedays || maxsuspensiondays || suspension_chargeperiod || renewalsallowed || unseenrenewalsallowed || renewalperiod || norenewalbefore || noautorenewalbefore || auto_renew || no_auto_renewal_after || no_auto_renewal_after_hard_limit || reservesallowed || holds_per_day || holds_per_record || onshelfholds || opacitemholds || article_requests || rentaldiscount || decreaseloanholds || recalls_allowed || recalls_per_record || on_shelf_recalls || recall_due_date_interval || recall_overdue_fine || recall_shelf_time || holds_pickup_period %]
+                                    [%- IF show_rule %]
+                                        [%- SET row_count = row_count + 1 %]
                                         <tr row_countd="row_[% row_count | html %]">
-                                                <td>[% IF ( c == undef ) %]
+                                                <td>[%- IF ( c == undef ) %]
                                                         1
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         0
-                                                    [% END %]</td>
+                                                    [%- END %]</td>
                                                 <td data-code="[% c | html %]">
-                                                    [% IF c == undef %]
+                                                    [%- IF c == undef %]
                                                         <em>All</em>
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         [% Categories.GetName(c) | html %]
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
-                                                <td>[% IF ( i == undef ) %]
+                                                <td>[%- IF ( i == undef ) %]
                                                         1
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         0
-                                                    [% END %]</td>
+                                                    [%- END %]</td>
                                                 <td data-code="[% i | html %]">
-                                                    [% IF i == undef %]
+                                                    [%- IF i == undef %]
                                                         <em>All</em>
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         [% ItemTypes.GetDescription(i,1) | html %]
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td class="actions">
                                                   <a href="#" class="editrule btn btn-default btn-xs"><i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit</a>
                                                   <a href="#" class="delete btn btn-default btn-xs" data-itemtype="[% i || '*' | html %]" data-categorycode="[% c || '*' | html %]" data-branch"[% current_branch | html %]"><i class="fa fa-trash-can"></i> Delete</a>
                                                 </td>
                                                 <td>
-                                                    [% IF note.defined && note != '' %]
+                                                    [%- IF note.defined && note != '' %]
                                                         <a id="viewnote" data-toggle="popover" title="Note" data-content="[% note | html %]" data-placement="top" data-trigger="hover">View note</a>
-                                                    [% ELSE %]<span>&nbsp;</span>[% END %]
+                                                    [%- ELSE %]<span>&nbsp;</span>[%- END %]
                                                 </td>
                                                 <td>
-                                                    [% IF maxissueqty.defined && maxissueqty != '' %]
+                                                    [%- IF maxissueqty.defined && maxissueqty != '' %]
                                                         [% maxissueqty | html %]
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         <span>Unlimited</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td>
-                                                    [% IF maxonsiteissueqty.defined && maxonsiteissueqty != ''  %]
+                                                    [%- IF maxonsiteissueqty.defined && maxonsiteissueqty != ''  %]
                                                         [% maxonsiteissueqty | html %]
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         <span>Unlimited</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td>[% issuelength | html %]</td>
                                                 <td data-code="[% daysmode | html %]">
@@ -263,150 +263,150 @@
                                                     [% CASE 'Days' %]<span title="Ignore the calendar">Ignore the calendar</span>
                                                     [% CASE 'Dayweek' %]<span title="Use the calendar to push the due date to the next open matching weekday for weekly loan periods, or the next open day otherwise">Same week day</span>
                                                     [% CASE %]<span title="Use the system preference 'useDaysMode' as a default value">Default</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td data-code="[% lengthunit | html %]">
-                                                    [% IF ( lengthunit == 'days' ) %]
+                                                    [%- IF ( lengthunit == 'days' ) %]
                                                         <span>Days</span>
-                                                    [% ELSIF ( lengthunit == 'hours') %]
+                                                    [%- ELSIF ( lengthunit == 'hours') %]
                                                         <span>Hours</span>
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         <span>Undefined</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td data-code="[% hardduedatecompare | html %]" data-duedate="[% hardduedate | $KohaDates %]">
-                                                  [% IF ( hardduedate ) %]
-                                                    [% IF ( hardduedatecompare == '-1' ) %]
+                                                  [%- IF ( hardduedate ) %]
+                                                    [%- IF ( hardduedatecompare == '-1' ) %]
                                                       before [% hardduedate | $KohaDates %]
-                                                    [% ELSIF ( hardduedatecompare == '0' ) %]
+                                                    [%- ELSIF ( hardduedatecompare == '0' ) %]
                                                       on [% hardduedate | $KohaDates %]
-                                                    [% ELSIF ( hardduedatecompare == '1' ) %]
+                                                    [%- ELSIF ( hardduedatecompare == '1' ) %]
                                                       after [% hardduedate | $KohaDates %]
-                                                    [% END %]
-                                                  [% ELSE %]
+                                                    [%- END %]
+                                                  [%- ELSE %]
                                                     <span>None defined</span>
-                                                  [% END %]
+                                                  [%- END %]
                                                 </td>
                                                 <td>[% decreaseloanholds | html %]</td>
                                                 <td>[% fine | $Price %]</td>
                                                 <td>[% chargeperiod | html %]</td>
-                                                <td>[% IF chargeperiod_charge_at %]Start of interval[% ELSE %]End of interval[% END %]</td>
+                                                <td>[%- IF chargeperiod_charge_at %]Start of interval[%- ELSE %]End of interval[%- END %]</td>
                                                 <td>[% firstremind | html %]</td>
-                                                <td>[% IF overduefinescap %][% overduefinescap | $Price %][% ELSE %][% END %]</td>
+                                                <td>[%- IF overduefinescap %][% overduefinescap | $Price %][%- ELSE %][%- END %]</td>
                                                 <td>
-                                                    [% IF cap_fine_to_replacement_price %]
+                                                    [%- IF cap_fine_to_replacement_price %]
                                                         <input type="checkbox" checked="checked" disabled="disabled" />
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         <input type="checkbox" disabled="disabled" />
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td>[% finedays | html %]</td>
                                                 <td>[% maxsuspensiondays | html %]</td>
                                                 <td>[% suspension_chargeperiod | html %]</td>
                                                 <td>[% renewalsallowed | html %]</td>
-                                                [% IF Koha.Preference('UnseenRenewals') %]
+                                                [%- IF Koha.Preference('UnseenRenewals') %]
                                                     <td>
-                                                        [% IF unseenrenewalsallowed.defined && unseenrenewalsallowed != '' %]
+                                                        [%- IF unseenrenewalsallowed.defined && unseenrenewalsallowed != '' %]
                                                             [% unseenrenewalsallowed | html %]
-                                                        [% ELSE %]
+                                                        [%- ELSE %]
                                                             <span>Unlimited</span>
-                                                        [% END %]
+                                                        [%- END %]
                                                     </td>
-                                                [% END %]
+                                                [%- END %]
                                                 <td>[% renewalperiod | html %]</td>
                                                 <td>[% norenewalbefore | html %]</td>
                                                 <td>[% noautorenewalbefore | html %]</td>
                                                 <td data-code="[%- IF auto_renew -%]yes[%- ELSE -%]no[%- END -%]">
-                                                    [% IF auto_renew %]
+                                                    [%- IF auto_renew %]
                                                         <span>Yes</span>
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         <span>No</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td>[% no_auto_renewal_after | html %]</td>
                                                 <td>[% no_auto_renewal_after_hard_limit | $KohaDates %]</td>
                                                 <td>
-                                                    [% IF reservesallowed.defined && reservesallowed != '' %]
+                                                    [%- IF reservesallowed.defined && reservesallowed != '' %]
                                                         [% reservesallowed | html %]
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         <span>Unlimited</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td>
-                                                    [% IF holds_per_day.defined && holds_per_day != '' %]
+                                                    [%- IF holds_per_day.defined && holds_per_day != '' %]
                                                         [% holds_per_day | html %]
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         <span>Unlimited</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td>
-                                                    [% IF holds_per_record.defined && holds_per_record != '' %]
+                                                    [%- IF holds_per_record.defined && holds_per_record != '' %]
                                                         [% holds_per_record | html %]
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         <span>Unlimited</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td data-code="[% onshelfholds | html %]">
-                                                    [% IF onshelfholds == 1 %]
+                                                    [%- IF onshelfholds == 1 %]
                                                         <span>Yes</span>
-                                                    [% ELSIF onshelfholds == 2 %]
+                                                    [%- ELSIF onshelfholds == 2 %]
                                                         <span>If all unavailable</span>
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         <span>If any unavailable</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td data-code="[% opacitemholds | html %]">
-                                                    [% IF opacitemholds == 'F'%]
+                                                    [%- IF opacitemholds == 'F'%]
                                                         <span>Force</span>
-                                                    [% ELSIF opacitemholds == 'Y'%]
+                                                    [%- ELSIF opacitemholds == 'Y'%]
                                                         <span>Allow</span>
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         <span>Don't allow</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
                                                 <td>
-                                                    [% IF holds_pickup_period == '' %]
+                                                    [%- IF holds_pickup_period == '' %]
                                                         <span title="Will use ReservesMaxPickupDelay system preference value ([% Koha.Preference('ReservesMaxPickupDelay') | html %])">Default</span>
-                                                    [% ELSE %]
+                                                    [%- ELSE %]
                                                         [% holds_pickup_period | html %]
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
-                                                [% IF Koha.Preference('ArticleRequests') %]
+                                                [%- IF Koha.Preference('ArticleRequests') %]
                                                 <td data-code="[% article_requests | html %]">
-                                                    [% IF article_requests == 'no' %]
+                                                    [%- IF article_requests == 'no' %]
                                                         <span>No</span>
-                                                    [% ELSIF article_requests == 'yes' %]
+                                                    [%- ELSIF article_requests == 'yes' %]
                                                         <span>Yes</span>
-                                                    [% ELSIF article_requests == 'bib_only' %]
+                                                    [%- ELSIF article_requests == 'bib_only' %]
                                                         <span>Record only</span>
-                                                    [% ELSIF article_requests == 'item_only' %]
+                                                    [%- ELSIF article_requests == 'item_only' %]
                                                         <span>Item only</span>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </td>
-                                                [% END %]
+                                                [%- END %]
                                                 <td>[% rentaldiscount | html %]</td>
-                                                [% IF Koha.Preference('UseRecalls') %]
+                                                [%- IF Koha.Preference('UseRecalls') %]
                                                     <td>[% recalls_allowed | html %]</td>
                                                     <td>[% recalls_per_record | html %]</td>
                                                     <td data-code="[% on_shelf_recalls | html %]">
-                                                        [% IF on_shelf_recalls == 'all' %]
+                                                        [%- IF on_shelf_recalls == 'all' %]
                                                             <span>If all unavailable</span>
-                                                        [% ELSE %]
+                                                        [%- ELSE %]
                                                             <span>If any unavailable</span>
-                                                        [% END %]
+                                                        [%- END %]
                                                     </td>
                                                     <td>[% recall_due_date_interval | html %]</td>
                                                     <td>[% recall_overdue_fine | $Price %]</td>
                                                     <td>[% recall_shelf_time | html %]</td>
-                                                [% END %]
+                                                [%- END %]
                                                 <td class="actions">
                                                   <a href="#" class="editrule btn btn-default btn-xs"><i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit</a>
                                                   <a href="#" class="delete btn btn-default btn-xs" data-itemtype="[% i || '*' | html %]" data-categorycode="[% c || '*' | html %]" data-branch"[% current_branch | html %]"><i class="fa fa-trash-can"></i> Delete</a>
                                                 </td>
                                         </tr>
-                                    [% END %]
-                                [% END %]
-                            [% END %]
+                                    [%- END %]
+                                [%- END %]
+                            [%- END %]
                             <tr class="noExport" id="edit_row">
                                 <td>2</td>
                                 <td>
@@ -414,7 +414,7 @@
                                         <option value="*">All</option>
                                     [% FOREACH patron_category IN patron_categories%]
                                         <option value="[% patron_category.categorycode | html %]">[% patron_category.description | html %]</option>
-                                    [% END %]
+                                    [%- END %]
                                     </select>
                                 </td>
                                 <td>0</td>
@@ -423,18 +423,18 @@
                                         <option value="*">All</option>
                                         [% FOREACH itemtypeloo IN itemtypeloop %]
                                             [% NEXT IF itemtypeloo.parent_type %]
-                                            [% SET children = itemtypeloo.children_with_localization %]
-                                            [% IF children.count %]
+                                            [%- SET children = itemtypeloo.children_with_localization %]
+                                            [%- IF children.count %]
                                                 <optgroup label="[% itemtypeloo.translated_description | html %]">
                                                     <option value="[% itemtypeloo.itemtype | html %]">[% itemtypeloo.translated_description | html %] (All)</option>
                                                     [% FOREACH child IN children %]
                                                         <option value="[% child.itemtype | html %]">[% child.translated_description | html %]</option>
-                                                    [% END %]
+                                                    [%- END %]
                                                 </optgroup>
-                                            [% ELSE %]
+                                            [%- ELSE %]
                                                 <option value="[% itemtypeloo.itemtype | html %]">[% itemtypeloo.translated_description | html %]</option>
-                                            [% END %]
-                                        [% END %]
+                                            [%- END %]
+                                        [%- END %]
                                     </select>
                                 </td>
                                 <td class="actions">
@@ -486,9 +486,9 @@
                                 <td><input type="text" name="maxsuspensiondays" id="maxsuspensiondays" size="3" /> </td>
                                 <td><input type="text" name="suspension_chargeperiod" id="suspension_chargeperiod" size="3" /> </td>
                                 <td><input type="text" name="renewalsallowed" id="renewalsallowed" size="2" /></td>
-                                [% IF Koha.Preference('UnseenRenewals') %]
+                                [%- IF Koha.Preference('UnseenRenewals') %]
                                     <td><input type="text" name="unseen_renewals_allowed" id="unseen_renewals_allowed" size="2" /></td>
-                                [% END %]
+                                [%- END %]
                                 <td><input type="text" name="renewalperiod" id="renewalperiod" size="3" /></td>
                                 <td><input type="text" name="norenewalbefore" id="norenewalbefore" size="3" /></td>
                                 <td><input type="text" name="noautorenewalbefore" id="noautorenewalbefore" size="3" /></td>
@@ -521,7 +521,7 @@
                                     </select>
                                 </td>
                                 <td><input type="text" name="holds_pickup_period" id="holds_pickup_period" size="2" /></td>
-                                [% IF Koha.Preference('ArticleRequests') %]
+                                [%- IF Koha.Preference('ArticleRequests') %]
                                 <td>
                                     <select id="article_requests" name="article_requests">
                                         <option value="no">No</option>
@@ -530,9 +530,9 @@
                                         <option value="item_only">Item only</option>
                                     </select>
                                 </td>
-                                [% END %]
+                                [%- END %]
                                 <td><input type="text" name="rentaldiscount" id="rentaldiscount" size="2" /></td>
-                                [% IF Koha.Preference('UseRecalls') %]
+                                [%- IF Koha.Preference('UseRecalls') %]
                                     <td><input type="text" name="recalls_allowed" id="recalls_allowed" size="3"></td>
                                     <td><input type="text" name="recalls_per_record" id="recalls_per_record" size="3"></td>
                                     <td>
@@ -544,7 +544,7 @@
                                     <td><input type="text" name="recall_due_date_interval" id="recall_due_date_interval" size="3"></td>
                                     <td><input type="text" name="recall_overdue_fine" id="recall_overdue_fine" size="6" inputmode="decimal" pattern="^\d+(\.\d{2})?$"></td>
                                     <td><input type="text" name="recall_shelf_time" id="recall_shelf_time" size="3"></td>
-                                [% END %]
+                                [%- END %]
                                 <td class="actions">
                                     <input type="hidden" name="branch" value="[% current_branch | html %]"/>
                                     <button type="submit" class="btn btn-default btn-xs"><i class="fa fa-save"></i> Save</button>
@@ -577,9 +577,9 @@
                                   <th>Max. suspension duration (day)</th>
                                   <th>Suspension charging interval</th>
                                   <th>Renewals allowed (count)</th>
-                                  [% IF Koha.Preference('UnseenRenewals') %]
+                                  [%- IF Koha.Preference('UnseenRenewals') %]
                                   <th>Unseen renewals allowed (count)</th>
-                                  [% END %]
+                                  [%- END %]
                                   <th>Renewal period</th>
                                   <th>No renewal before</th>
                                   <th>No automatic renewal before</th>
@@ -592,18 +592,18 @@
                                   <th>On shelf holds allowed</th>
                                   <th>OPAC item level holds</th>
                                   <th>Holds pickup period (day)</th>
-                                  [% IF Koha.Preference('ArticleRequests') %]
+                                  [%- IF Koha.Preference('ArticleRequests') %]
                                   <th>Article requests</th>
-                                  [% END %]
+                                  [%- END %]
                                   <th>Rental discount (%)</th>
-                                  [% IF Koha.Preference('UseRecalls') %]
+                                  [%- IF Koha.Preference('UseRecalls') %]
                                     <th>Recalls allowed (total)</th>
                                     <th>Recalls per record (count)</th>
                                     <th>On shelf recalls allowed</th>
                                     <th>Recall due date interval (day)</th>
                                     <th>Recall overdue fine amount</th>
                                     <th>Recall pickup period (day)</th>
-                                  [% END %]
+                                  [%- END %]
                                   <th>&nbsp;</th>
                                 </tr>
                             </tfoot>
@@ -612,7 +612,7 @@
                 </div><!-- ./page-section -->
 
                 <div id="defaults-for-this-library" class="page-section">
-                    <h2>Default checkout, hold and return policy[% IF humanbranch %] for [% Branches.GetName( humanbranch ) | html %][% END %]</h2>
+                    <h2>Default checkout, hold and return policy[%- IF humanbranch %] for [% Branches.GetName( humanbranch ) | html %][%- END %]</h2>
                     <p>You can set a default maximum number of checkouts, hold policy and return policy that will be used if none is defined below for a particular item type or category.</p>
                     <form method="post" action="/cgi-bin/koha/admin/smart-rules.pl">
                         [% INCLUDE 'csrf-token.inc' %]
@@ -629,22 +629,22 @@
                                 <th>Return policy</th>
                                 <th class="noExport">Actions</th>
                             </tr>
-                            [% SET patron_maxissueqty = CirculationRules.Search( current_branch, undef, undef, 'patron_maxissueqty', { want_rule => 1 } ) %]
-                            [% SET patron_maxonsiteissueqty = CirculationRules.Search( current_branch, undef, undef, 'patron_maxonsiteissueqty', { want_rule => 1 } ) %]
-                            [% SET rule_value = CirculationRules.Search( current_branch, undef , undef, 'max_holds', { want_rule => 1 } ) %]
-                            [% SET holdallowed = CirculationRules.Search( current_branch, undef, undef, 'holdallowed', { want_rule => 1 } ) %]
-                            [% SET hold_fulfillment_policy = CirculationRules.Search( current_branch, undef, undef, 'hold_fulfillment_policy', { want_rule => 1 }) %]
-                            [% SET returnbranch = CirculationRules.Search( current_branch, undef, undef, 'returnbranch', { want_rule => 1 }) %]
-                            [% SET default_checkout_hold_and_return_policy = ( patron_maxissueqty || patron_maxonsiteissueqty || rule_value || holdallowed || hold_fulfillment_policy || returnbranch ) %]
+                            [%- SET patron_maxissueqty = CirculationRules.Search( current_branch, undef, undef, 'patron_maxissueqty', { want_rule => 1 } ) %]
+                            [%- SET patron_maxonsiteissueqty = CirculationRules.Search( current_branch, undef, undef, 'patron_maxonsiteissueqty', { want_rule => 1 } ) %]
+                            [%- SET rule_value = CirculationRules.Search( current_branch, undef , undef, 'max_holds', { want_rule => 1 } ) %]
+                            [%- SET holdallowed = CirculationRules.Search( current_branch, undef, undef, 'holdallowed', { want_rule => 1 } ) %]
+                            [%- SET hold_fulfillment_policy = CirculationRules.Search( current_branch, undef, undef, 'hold_fulfillment_policy', { want_rule => 1 }) %]
+                            [%- SET returnbranch = CirculationRules.Search( current_branch, undef, undef, 'returnbranch', { want_rule => 1 }) %]
+                            [%- SET default_checkout_hold_and_return_policy = ( patron_maxissueqty || patron_maxonsiteissueqty || rule_value || holdallowed || hold_fulfillment_policy || returnbranch ) %]
                             <tr>
                                 <td>
-                                    [% IF ( default_checkout_hold_and_return_policy ) %]
+                                    [%- IF ( default_checkout_hold_and_return_policy ) %]
                                         <em>
                                         Defaults
                                         </em>
-                                    [% ELSE %]
+                                    [%- ELSE %]
                                         Not set
-                                    [% END %]
+                                    [%- END %]
                                 </td>
                                 <td>
                                     <input type="text" name="patron_maxissueqty" size="9" value="[% patron_maxissueqty.rule_value | html %]" placeholder="Unlimited"/>
@@ -661,35 +661,35 @@
                                             Not set
                                         </option>
 
-                                        [% IF holdallowed.rule_value == 'from_any_library' %]
+                                        [%- IF holdallowed.rule_value == 'from_any_library' %]
                                             <option value="from_any_library" selected="selected">
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <option value="from_any_library">
-                                        [% END %]
+                                        [%- END %]
                                             From any library
                                         </option>
 
-                                        [% IF holdallowed.rule_value == 'from_local_hold_group' %]
+                                        [%- IF holdallowed.rule_value == 'from_local_hold_group' %]
                                         <option value="from_local_hold_group" selected="selected">
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                         <option value="from_local_hold_group">
-                                        [% END %]
+                                        [%- END %]
                                             From local hold group
                                         </option>
 
-                                        [% IF holdallowed.rule_value == 'from_home_library' %]
+                                        [%- IF holdallowed.rule_value == 'from_home_library' %]
                                             <option value="from_home_library" selected="selected">
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <option value="from_home_library">
-                                        [% END %]
+                                        [%- END %]
                                             From home library
                                         </option>
 
-                                        [% IF holdallowed.rule_value == 'not_allowed' %]
+                                        [%- IF holdallowed.rule_value == 'not_allowed' %]
                                             <option value="not_allowed" selected="selected">
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <option value="not_allowed">
-                                        [% END %]
+                                        [%- END %]
                                             No holds allowed
                                         </option>
                                     </select>
@@ -701,55 +701,55 @@
                                             Not set
                                         </option>
 
-                                        [% IF hold_fulfillment_policy.rule_value == 'any' %]
+                                        [%- IF hold_fulfillment_policy.rule_value == 'any' %]
                                             <option value="any" selected="selected">
                                                 any library
                                             </option>
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <option value="any">
                                                 any library
                                             </option>
-                                        [% END %]
+                                        [%- END %]
 
-                                        [% IF hold_fulfillment_policy.rule_value == 'holdgroup' %]
+                                        [%- IF hold_fulfillment_policy.rule_value == 'holdgroup' %]
                                             <option value="holdgroup" selected="selected">
                                                 item's hold group
                                             </option>
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <option value="holdgroup">
                                                 item's hold group
                                             </option>
-                                        [% END %]
+                                        [%- END %]
 
-                                        [% IF hold_fulfillment_policy.rule_value == 'patrongroup' %]
+                                        [%- IF hold_fulfillment_policy.rule_value == 'patrongroup' %]
                                             <option value="patrongroup" selected="selected">
                                                 patron's hold group
                                             </option>
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <option value="patrongroup">
                                                 patron's hold group
                                             </option>
-                                        [% END %]
+                                        [%- END %]
 
-                                        [% IF hold_fulfillment_policy.rule_value == 'homebranch' %]
+                                        [%- IF hold_fulfillment_policy.rule_value == 'homebranch' %]
                                             <option value="homebranch" selected="selected">
                                                 item's home library
                                             </option>
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <option value="homebranch">
                                                 item's home library
                                             </option>
-                                        [% END %]
+                                        [%- END %]
 
-                                        [% IF hold_fulfillment_policy.rule_value == 'holdingbranch' %]
+                                        [%- IF hold_fulfillment_policy.rule_value == 'holdingbranch' %]
                                             <option value="holdingbranch" selected="selected">
                                                 item's holding library
                                             </option>
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <option value="holdingbranch">
                                                 item's holding library
                                             </option>
-                                        [% END %]
+                                        [%- END %]
                                     </select>
                                 </td>
                                 <td>
@@ -759,50 +759,50 @@
                                             Not set
                                         </option>
 
-                                        [% IF returnbranch.rule_value == 'homebranch' %]
+                                        [%- IF returnbranch.rule_value == 'homebranch' %]
                                         <option value="homebranch" selected="selected">
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                         <option value="homebranch">
-                                        [% END %]
+                                        [%- END %]
                                             Item returns home
                                         </option>
-                                        [% IF returnbranch.rule_value == 'holdingbranch' %]
+                                        [%- IF returnbranch.rule_value == 'holdingbranch' %]
                                         <option value="holdingbranch" selected="selected">
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                         <option value="holdingbranch">
-                                        [% END %]
+                                        [%- END %]
                                             Item returns to issuing library
                                         </option>
-                                        [% IF returnbranch.rule_value == 'noreturn' %]
+                                        [%- IF returnbranch.rule_value == 'noreturn' %]
                                         <option value="noreturn" selected="selected">
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                         <option value="noreturn">
-                                        [% END %]
+                                        [%- END %]
                                             Item floats
                                         </option>
-                                        [% IF returnbranch.rule_value == 'returnbylibrarygroup' %]
+                                        [%- IF returnbranch.rule_value == 'returnbylibrarygroup' %]
                                         <option value="returnbylibrarygroup" selected="selected">
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                         <option value="returnbylibrarygroup">
-                                        [% END %]
+                                        [%- END %]
                                             Item floats by library group
                                         </option>
                                     </select>
                                 </td>
                                 <td class="actions">
                                     <button type="submit" class="btn btn-default btn-xs"><i class="fa fa-save"></i> Save</button>
-                                    [% IF ( default_checkout_hold_and_return_policy ) %]
+                                    [%- IF ( default_checkout_hold_and_return_policy ) %]
                                         <a href="#" class="delete-branch-cat btn btn-default btn-xs" data-categorycode="[% c || '*' | html %]" data-branch"[% current_branch | html %]"><i class="fa fa-undo"></i> Unset</a>
-                                    [% END %]
+                                    [%- END %]
                                 </td>
                             </tr>
                         </table>
                     </form>
                 </div>
 
-                [% IF ( show_branch_cat_rule_form ) %]
+                [%- IF ( show_branch_cat_rule_form ) %]
                 <div id="holds-policy-by-patron-category" class="page-section">
-                    <h2>[% IF humanbranch %]Checkout, hold policy by patron category for [% Branches.GetName( humanbranch ) | html %][% ELSE %]Default checkout, hold policy by patron category[% END %]</h2>
+                    <h2>[%- IF humanbranch %]Checkout, hold policy by patron category for [% Branches.GetName( humanbranch ) | html %][%- ELSE %]Default checkout, hold policy by patron category[%- END %]</h2>
                     <p>For this library, you can specify the maximum number of loans that
                         a patron of a given category can make, regardless of the item type.
                     </p>
@@ -823,53 +823,53 @@
                             </tr>
                             [% FOREACH c IN categorycodes %]
                                 [% NEXT UNLESS c %]
-                                [% SET patron_maxissueqty = CirculationRules.Search( branchcode, c, undef, 'patron_maxissueqty' ) %]
-                                [% SET patron_maxonsiteissueqty = CirculationRules.Search( branchcode, c, undef, 'patron_maxonsiteissueqty' ) %]
-                                [% SET max_holds = CirculationRules.Search( branchcode, c, undef, 'max_holds' ) %]
+                                [%- SET patron_maxissueqty = CirculationRules.Search( branchcode, c, undef, 'patron_maxissueqty' ) %]
+                                [%- SET patron_maxonsiteissueqty = CirculationRules.Search( branchcode, c, undef, 'patron_maxonsiteissueqty' ) %]
+                                [%- SET max_holds = CirculationRules.Search( branchcode, c, undef, 'max_holds' ) %]
 
-                                [% IF  ( patron_maxissueqty.defined && patron_maxissueqty != '' ) || ( patron_maxonsiteissueqty.defined && patron_maxonsiteissueqty != '' ) || ( max_holds.defined && max_holds != '' ) %]
+                                [%- IF  ( patron_maxissueqty.defined && patron_maxissueqty != '' ) || ( patron_maxonsiteissueqty.defined && patron_maxonsiteissueqty != '' ) || ( max_holds.defined && max_holds != '' ) %]
                                 <tr>
                                     <td>
-                                        [% IF c == undef %]
+                                        [%- IF c == undef %]
                                             <em>Default</em>
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             [% Categories.GetName(c) | html %]
-                                        [% END %]
+                                        [%- END %]
                                     </td>
                                     <td>
-                                        [% IF patron_maxissueqty.defined && patron_maxissueqty != '' %]
+                                        [%- IF patron_maxissueqty.defined && patron_maxissueqty != '' %]
                                             [% patron_maxissueqty | html %]
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <span>Unlimited</span>
-                                        [% END %]
+                                        [%- END %]
                                     </td>
                                     <td>
-                                        [% IF patron_maxonsiteissueqty.defined && patron_maxonsiteissueqty != '' %]
+                                        [%- IF patron_maxonsiteissueqty.defined && patron_maxonsiteissueqty != '' %]
                                             [% patron_maxonsiteissueqty | html %]
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <span>Unlimited</span>
-                                        [% END %]
+                                        [%- END %]
                                     </td>
                                     <td>
-                                        [% IF max_holds.defined && max_holds != '' %]
+                                        [%- IF max_holds.defined && max_holds != '' %]
                                             [% max_holds | html %]
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <span>Unlimited</span>
-                                        [% END %]
+                                        [%- END %]
                                     </td>
 
                                     <td class="actions">
                                         <a href="#" class="delete-branch-cat btn btn-default btn-xs" data-categorycode="[% c | html %]" data-branch"[% current_branch | html %]"><i class="fa fa-trash-can"></i> Delete</a>
                                     </td>
                                 </tr>
-                                [% END %]
-                            [% END %]
+                                [%- END %]
+                            [%- END %]
                             <tr>
                                 <td>
                                     <select name="categorycode">
                                     [% FOREACH patron_category IN patron_categories%]
                                         <option value="[% patron_category.categorycode | html %]">[% patron_category.description | html %]</option>
-                                    [% END %]
+                                    [%- END %]
                                     </select>
                                 </td>
                                 <td><input name="patron_maxissueqty" size="3" type="text" /></td>
@@ -880,14 +880,14 @@
                         </table>
                     </form>
                 </div>
-                [% END %]
+                [%- END %]
 
                 <div id="waiting-hold-cancel-category" class="page-section">
-                [% IF humanbranch %]
+                [%- IF humanbranch %]
                     <h2>Waiting hold cancellation policy for [% Branches.GetName( humanbranch ) | html %]</h2>
-                [% ELSE %]
+                [%- ELSE %]
                     <h2>Default waiting hold cancellation policy</h2>
-                [% END %]
+                [%- END %]
                     <p>Specify if waiting holds can be cancelled for a given patron category.</p>
                     <form id="set-waiting-hold-cancellation" method="post" action="/cgi-bin/koha/admin/smart-rules.pl">
                         [% INCLUDE 'csrf-token.inc' %]
@@ -901,49 +901,49 @@
                                 <th>&nbsp;</th>
                             </tr>
                             [% FOREACH c IN categorycodes %]
-                                [% SET c = '*' UNLESS c.defined AND c != '' %]
+                                [%- SET c = '*' UNLESS c.defined AND c != '' %]
                                 [% FOREACH i IN itemtypes %]
-                                    [% SET i = '*' UNLESS i.defined AND i != '' %]
+                                    [%- SET i = '*' UNLESS i.defined AND i != '' %]
 
-                                    [% SET waiting_hold_cancellation = CirculationRules.Search( current_branch, c, i, 'waiting_hold_cancellation' ) %]
+                                    [%- SET waiting_hold_cancellation = CirculationRules.Search( current_branch, c, i, 'waiting_hold_cancellation' ) %]
 
-                                    [% IF ( waiting_hold_cancellation.defined && waiting_hold_cancellation != '' ) %]
+                                    [%- IF ( waiting_hold_cancellation.defined && waiting_hold_cancellation != '' ) %]
                                         <tr>
                                             <td>
-                                                [% IF c == '*' %]
+                                                [%- IF c == '*' %]
                                                     <em>All</em>
-                                                [% ELSE %]
+                                                [%- ELSE %]
                                                     [% Categories.GetName(c) | html %]
-                                                [% END %]
+                                                [%- END %]
                                             </td>
                                             <td>
-                                                [% IF i == '*' %]
+                                                [%- IF i == '*' %]
                                                     <em>All</em>
-                                                [% ELSE %]
+                                                [%- ELSE %]
                                                     [% ItemTypes.GetDescription(i,1) | html %]
-                                                [% END %]
+                                                [%- END %]
                                             </td>
                                             <td>
-                                                [% IF waiting_hold_cancellation %]
+                                                [%- IF waiting_hold_cancellation %]
                                                     <span>Yes</span>
-                                                [% ELSE %]
+                                                [%- ELSE %]
                                                     <span>No</span>
-                                                [% END %]
+                                                [%- END %]
                                             </td>
                                             <td class="actions">
                                                 <a href="#" class="del-waiting-hold-cancellation btn btn-default btn-xs" data-categorycode="[% c | html %]" data-itemtype="[% i | html %]" data-branch"[% current_branch | html %]"><i class="fa fa-trash-can"></i> Delete</a>
                                             </td>
                                         </tr>
-                                    [% END %]
-                                [% END %]
-                            [% END %]
+                                    [%- END %]
+                                [%- END %]
+                            [%- END %]
                             <tr>
                                 <td>
                                     <select name="waiting_hold_cancellation_category" id="waiting_hold_cancellation_category">
                                         <option value="*">All</option>
                                     [% FOREACH patron_category IN patron_categories %]
                                         <option value="[% patron_category.categorycode | html %]">[% patron_category.description | html %]</option>
-                                    [% END %]
+                                    [%- END %]
                                     </select>
                                 </td>
                                 <td>
@@ -951,7 +951,7 @@
                                         <option value="*">All</option>
                                     [% FOREACH itemtype IN itemtypeloop %]
                                         <option value="[% itemtype.itemtype | html %]">[% ItemTypes.GetDescription(itemtype.itemtype) | html %]</option>
-                                    [% END %]
+                                    [%- END %]
                                     </select>
                                 </td>
                                 <td>
@@ -966,13 +966,13 @@
                     </form>
                 </div>
 
-                [% IF Koha.Preference('ArticleRequests') %]
+                [%- IF Koha.Preference('ArticleRequests') %]
                 <div id="open-article-requests-limit-patron-category" class="page-section">
-                [% IF humanbranch %]
+                [%- IF humanbranch %]
                     <h2>Daily open article requests limit for [% Branches.GetName( humanbranch ) | html %]</h2>
-                [% ELSE %]
+                [%- ELSE %]
                     <h2>Default open article requests limit</h2>
-                [% END %]
+                [%- END %]
                     <p>Specify the maximum number simultaneous current article requests a patron of a given category can have.</p>
                     <form id="set-article-requests-daily-limit" method="post" action="/cgi-bin/koha/admin/smart-rules.pl">
                         [% INCLUDE 'csrf-token.inc' %]
@@ -986,33 +986,33 @@
                             </tr>
                             [% FOREACH c IN categorycodes %]
                                 [% NEXT UNLESS c %]
-                                [% SET open_article_requests_limit = CirculationRules.Search( branchcode, c, undef, 'open_article_requests_limit' ) %]
+                                [%- SET open_article_requests_limit = CirculationRules.Search( branchcode, c, undef, 'open_article_requests_limit' ) %]
 
-                                [% IF ( open_article_requests_limit.defined && open_article_requests_limit != '' ) %]
+                                [%- IF ( open_article_requests_limit.defined && open_article_requests_limit != '' ) %]
                                 <tr>
                                     <td>
                                         [% Categories.GetName(c) | html %]
                                     </td>
                                     <td>
-                                        [% IF open_article_requests_limit.defined && open_article_requests_limit != '' %]
+                                        [%- IF open_article_requests_limit.defined && open_article_requests_limit != '' %]
                                             [% open_article_requests_limit | html %]
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <span>Unlimited</span>
-                                        [% END %]
+                                        [%- END %]
                                     </td>
 
                                     <td class="actions">
                                         <a href="#" class="del-open-article-requests-limit btn btn-default btn-xs" data-categorycode="[% c | html %]" data-branch"[% current_branch | html %]"><i class="fa fa-trash-can"></i> Delete</a>
                                     </td>
                                 </tr>
-                                [% END %]
-                            [% END %]
+                                [%- END %]
+                            [%- END %]
                             <tr>
                                 <td>
                                     <select name="categorycode">
                                     [% FOREACH patron_category IN patron_categories %]
                                         <option value="[% patron_category.categorycode | html %]">[% patron_category.description | html %]</option>
-                                    [% END %]
+                                    [%- END %]
                                     </select>
                                 </td>
                                 <td><input name="open_article_requests_limit" size="3" type="text" /></td>
@@ -1023,11 +1023,11 @@
                 </div>
 
                 <div id="article-request-fee-category" class="page-section">
-                [% IF humanbranch %]
+                [%- IF humanbranch %]
                     <h2>Article request fees for [% Branches.GetName( humanbranch ) | html %]</h2>
-                [% ELSE %]
+                [%- ELSE %]
                     <h2>Default article request fees</h2>
-                [% END %]
+                [%- END %]
                     <p>Specify the article request fee for a given patron category.</p>
                     <form id="set-article-request-fee" method="post" action="/cgi-bin/koha/admin/smart-rules.pl">
                         [% INCLUDE 'csrf-token.inc' %]
@@ -1040,39 +1040,39 @@
                                 <th>&nbsp;</th>
                             </tr>
                             [% FOREACH c IN categorycodes %]
-                                [% SET c = '*' UNLESS c.defined AND c != '' %]
+                                [%- SET c = '*' UNLESS c.defined AND c != '' %]
 
-                                [% SET article_request_fee = CirculationRules.Search( current_branch, c, undef, 'article_request_fee' ) %]
+                                [%- SET article_request_fee = CirculationRules.Search( current_branch, c, undef, 'article_request_fee' ) %]
 
-                                [% IF ( article_request_fee.defined && article_request_fee != '' ) %]
+                                [%- IF ( article_request_fee.defined && article_request_fee != '' ) %]
                                 <tr>
                                     <td>
-                                        [% IF c == '*' %]
+                                        [%- IF c == '*' %]
                                             <em>All</em>
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             [% Categories.GetName(c) | html %]
-                                        [% END %]
+                                        [%- END %]
                                     </td>
                                     <td>
-                                        [% IF article_request_fee.defined && article_request_fee != '' %]
+                                        [%- IF article_request_fee.defined && article_request_fee != '' %]
                                             [% article_request_fee | $Price %]
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <span>0</span>
-                                        [% END %]
+                                        [%- END %]
                                     </td>
                                     <td class="actions">
                                         <a href="#" class="del-article-request-fee btn btn-default btn-xs" data-categorycode="[% c | html %]" data-branch"[% current_branch | html %]"><i class="fa fa-trash-can"></i> Delete</a>
                                     </td>
                                 </tr>
-                                [% END %]
-                            [% END %]
+                                [%- END %]
+                            [%- END %]
                             <tr>
                                 <td>
                                     <select name="article_request_fee_category" id="article_request_fee_category">
                                         <option value="*">All</option>
                                     [% FOREACH patron_category IN patron_categories%]
                                         <option value="[% patron_category.categorycode | html %]">[% patron_category.description | html %]</option>
-                                    [% END %]
+                                    [%- END %]
                                     </select>
                                 </td>
                                 <td><input name="article_request_fee" size="5" type="text" inputmode="decimal" pattern="^\d+(\.\d{2})?$" /></td>
@@ -1081,14 +1081,14 @@
                         </table>
                     </form>
                 </div>
-                [% END %]
+                [%- END %]
 
                 <div id="refund-lost-item-fee-on-return" class="page-section">
-                [% IF current_branch == '*' %]
+                [%- IF current_branch == '*' %]
                     <h2>Default lost item fee refund on return policy</h2>
-                [% ELSE %]
+                [%- ELSE %]
                     <h2>Lost item fee refund on return policy for [% Branches.GetName(current_branch) | html %]</h2>
-                [% END %]
+                [%- END %]
                     <p>Specify the default policy for lost item fees on return.</p>
                     <form method="post" action="/cgi-bin/koha/admin/smart-rules.pl">
                         [% INCLUDE 'csrf-token.inc' %]
@@ -1104,161 +1104,161 @@
                                 <td>
                                     <select name="lostreturn">
                                       [%# Default branch %]
-                                      [% IF ( current_branch == '*' ) %]
-                                        [% IF ( defaultRefundRule == 'refund' ) %]
+                                      [%- IF ( current_branch == '*' ) %]
+                                        [%- IF ( defaultRefundRule == 'refund' ) %]
                                         <option value="refund" selected="selected">Refund lost item charge</option>
                                         <option value="refund_unpaid">Refund lost item charge (only if unpaid)</option>
                                         <option value="charge">Refund lost item charge and charge new overdue fine</option>
                                         <option value="restore">Refund lost item charge and restore overdue fine</option>
                                         <option value="0">Leave lost item charge</option>
-                                        [% ELSIF ( defaultRefundRule == 'refund_unpaid' ) %]
+                                        [%- ELSIF ( defaultRefundRule == 'refund_unpaid' ) %]
                                         <option value="refund">Refund lost item charge</option>
                                         <option value="refund_unpaid" selected="selected">Refund lost item charge (only if unpaid)</option>
                                         <option value="charge">Refund lost item charge and charge new overdue fine</option>
                                         <option value="restore">Refund lost item charge and restore overdue fine</option>
                                         <option value="0">Leave lost item charge</option>
-                                        [% ELSIF ( defaultRefundRule == 'charge' ) %]
+                                        [%- ELSIF ( defaultRefundRule == 'charge' ) %]
                                         <option value="refund">Refund lost item charge</option>
                                         <option value="refund_unpaid">Refund lost item charge (only if unpaid)</option>
                                         <option value="charge" selected="selected">Refund lost item charge and charge new overdue fine</option>
                                         <option value="restore">Refund lost item charge and restore overdue fine</option>
                                         <option value="0">Leave lost item charge</option>
-                                        [% ELSIF ( defaultRefundRule == 'restore' ) %]
+                                        [%- ELSIF ( defaultRefundRule == 'restore' ) %]
                                         <option value="refund">Refund lost item charge</option>
                                         <option value="refund_unpaid">Refund lost item charge (only if unpaid)</option>
                                         <option value="charge">Refund lost item charge and charge new overdue fine</option>
                                         <option value="restore" selected="selected">Refund lost item charge and restore overdue fine</option>
                                         <option value="0">Leave lost item charge</option>
-                                        [% ELSIF ( defaultRefundRule == 0 ) %]
+                                        [%- ELSIF ( defaultRefundRule == 0 ) %]
                                         <option value="refund">Refund lost item charge</option>
                                         <option value="refund_unpaid">Refund lost item charge (only if unpaid)</option>
                                         <option value="charge">Refund lost item charge and charge new overdue fine</option>
                                         <option value="restore">Refund lost item charge and restore overdue fine</option>
                                         <option value="0" selected="selected">Leave lost item charge</option>
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                         <option value="refund">Refund lost item charge</option>
                                         <option value="refund_unpaid">Refund lost item charge (only if unpaid)</option>
                                         <option value="charge">Refund lost item charge and charge new overdue fine</option>
                                         <option value="restore">Refund lost item charge and restore overdue fine</option>
                                         <option value="0">Leave lost item charge</option>
-                                        [% END %]
-                                      [% ELSE %]
+                                        [%- END %]
+                                      [%- ELSE %]
                                       [%# Branch-specific %]
-                                        [% IF ( not refundLostItemFeeRule ) %]
+                                        [%- IF ( not refundLostItemFeeRule ) %]
                                             <option value="*" selected="selected">
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <option value="*">
-                                        [% END %]
-                                          [% IF defaultRefundRule == 'refund' %]
+                                        [%- END %]
+                                          [%- IF defaultRefundRule == 'refund' %]
                                             <span>Use default (Refund lost item charge)</span>
-                                          [% ELSIF defaultRefundRule == 'refund_unpaid' %]
+                                          [%- ELSIF defaultRefundRule == 'refund_unpaid' %]
                                             Use default (Refund lost item charge (only if unpaid))
-                                          [% ELSIF defaultRefundRule == 'charge' %]
+                                          [%- ELSIF defaultRefundRule == 'charge' %]
                                             <span>Use default (Refund lost item charge and charge new overdue fine)</span>
-                                          [% ELSIF defaultRefundRule == 'restore' %]
+                                          [%- ELSIF defaultRefundRule == 'restore' %]
                                             <span>Use default (Refund lost item charge and restore overdue fine)</span>
-                                          [% ELSE %]
+                                          [%- ELSE %]
                                             <span>Use default (Leave lost item charge)</span>
-                                          [% END %]
+                                          [%- END %]
                                             </option>
-                                        [% IF ( not refundLostItemFeeRule ) %]
+                                        [%- IF ( not refundLostItemFeeRule ) %]
                                             <option value="refund">Refund lost item charge</option>
                                             <option value="refund_unpaid">Refund lost item charge (only if unpaid)</option>
                                             <option value="charge">Refund lost item charge and charge new overdue fine</option>
                                             <option value="restore">Refund lost item charge and restore overdue fine</option>
                                             <option value="0">Leave lost item charge</option>
-                                        [% ELSE %]
-                                            [% IF ( refundLostItemFeeRule.rule_value == 'refund' ) %]
+                                        [%- ELSE %]
+                                            [%- IF ( refundLostItemFeeRule.rule_value == 'refund' ) %]
                                             <option value="refund" selected="selected">Refund lost item charge</option>
                                             <option value="refund_unpaid">Refund lost item charge (only if unpaid)</option>
                                             <option value="charge">Refund lost item charge and charge new overdue fine</option>
                                             <option value="restore">Refund lost item charge and restore overdue fine</option>
                                             <option value="0">Leave lost item charge</option>
-                                            [% ELSIF ( refundLostItemFeeRule.rule_value == 'refund_unpaid' ) %]
+                                            [%- ELSIF ( refundLostItemFeeRule.rule_value == 'refund_unpaid' ) %]
                                             <option value="refund">Refund lost item charge</option>
                                             <option value="refund_unpaid" selected="selected">Refund lost item charge (only if unpaid)</option>
                                             <option value="charge">Refund lost item charge and charge new overdue fine</option>
                                             <option value="restore">Refund lost item charge and restore overdue fine</option>
                                             <option value="0">Leave lost item charge</option>
-                                            [% ELSIF ( refundLostItemFeeRule.rule_value == 'charge' ) %]
+                                            [%- ELSIF ( refundLostItemFeeRule.rule_value == 'charge' ) %]
                                             <option value="refund">Refund lost item charge</option>
                                             <option value="refund_unpaid">Refund lost item charge (only if unpaid)</option>
                                             <option value="charge" selected="selected">Refund lost item charge and charge new overdue fine</option>
                                             <option value="restore">Refund lost item charge and restore overdue fine</option>
                                             <option value="0">Leave lost item charge</option>
-                                            [% ELSIF ( refundLostItemFeeRule.rule_value == 'restore' ) %]
+                                            [%- ELSIF ( refundLostItemFeeRule.rule_value == 'restore' ) %]
                                             <option value="refund">Refund lost item charge</option>
                                             <option value="refund_unpaid">Refund lost item charge (only if unpaid)</option>
                                             <option value="charge">Refund lost item charge and charge new overdue fine</option>
                                             <option value="restore" selected="selected">Refund lost item charge and restore overdue fine</option>
                                             <option value="0">Leave lost item charge</option>
-                                            [% ELSIF ( refundLostItemFeeRule.rule_value == 0 ) %]
+                                            [%- ELSIF ( refundLostItemFeeRule.rule_value == 0 ) %]
                                             <option value="refund">Refund lost item charge</option>
                                             <option value="refund_unpaid">Refund lost item charge (only if unpaid)</option>
                                             <option value="charge">Refund lost item charge and charge new overdue fine</option>
                                             <option value="restore">Refund lost item charge and restore overdue fine</option>
                                             <option value="0" selected="selected">Leave lost item charge</option>
-                                            [% END %]
-                                        [% END %]
-                                      [% END %]
+                                            [%- END %]
+                                        [%- END %]
+                                      [%- END %]
                                     </select>
                                 </td>
                                 <td>
                                     <select name="processingreturn">
                                       [%# Default branch %]
-                                      [% IF ( current_branch == '*' ) %]
-                                        [% IF ( defaultProcessingRefundRule == 'refund' ) %]
+                                      [%- IF ( current_branch == '*' ) %]
+                                        [%- IF ( defaultProcessingRefundRule == 'refund' ) %]
                                         <option value="refund" selected="selected">Refund lost item processing charge</option>
                                         <option value="refund_unpaid">Refund lost item processing charge (only if unpaid)</option>
                                         <option value="0">Leave lost item processing charge</option>
-                                        [% ELSIF ( defaultProcessingRefundRule == 'refund_unpaid' ) %]
+                                        [%- ELSIF ( defaultProcessingRefundRule == 'refund_unpaid' ) %]
                                         <option value="refund">Refund lost item charge</option>
                                         <option value="refund_unpaid" selected="selected">Refund lost item processing charge (only if unpaid)</option>
                                         <option value="0">Leave lost item processing charge</option>
-                                        [% ELSIF ( defaultProcessingRefundRule == 0 ) %]
+                                        [%- ELSIF ( defaultProcessingRefundRule == 0 ) %]
                                         <option value="refund">Refund lost item processing charge</option>
                                         <option value="refund_unpaid">Refund lost item processing charge (only if unpaid)</option>
                                         <option value="0" selected="selected">Leave lost item processing charge</option>
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                         <option value="refund">Refund lost item processing charge</option>
                                         <option value="refund_unpaid">Refund lost item processing charge (only if unpaid)</option>
                                         <option value="0">Leave lost item processing charge</option>
-                                        [% END %]
-                                      [% ELSE %]
+                                        [%- END %]
+                                      [%- ELSE %]
                                       [%# Branch-specific %]
-                                        [% IF ( not refundProcessingFeeRule ) %]
+                                        [%- IF ( not refundProcessingFeeRule ) %]
                                             <option value="*" selected="selected">
-                                        [% ELSE %]
+                                        [%- ELSE %]
                                             <option value="*">
-                                        [% END %]
-                                          [% IF defaultProcessingRefundRule == 'refund' %]
+                                        [%- END %]
+                                          [%- IF defaultProcessingRefundRule == 'refund' %]
                                             <span>Use default (Refund lost item processing charge)</span>
-                                          [% ELSIF defaultProcessingRefundRule == 'refund_unpaid' %]
+                                          [%- ELSIF defaultProcessingRefundRule == 'refund_unpaid' %]
                                             Use default (Refund lost item processing charge (only if unpaid))
-                                          [% ELSE %]
+                                          [%- ELSE %]
                                             <span>Use default (Leave lost item processing charge)</span>
-                                          [% END %]
+                                          [%- END %]
                                             </option>
-                                        [% IF ( not refundProcessingFeeRule ) %]
+                                        [%- IF ( not refundProcessingFeeRule ) %]
                                             <option value="refund">Refund lost item processing charge</option>
                                             <option value="refund_unpaid">Refund lost item processing charge (only if unpaid)</option>
                                             <option value="0">Leave lost item processing charge</option>
-                                        [% ELSE %]
-                                            [% IF ( refundProcessingFeeRule.rule_value == 'refund' ) %]
+                                        [%- ELSE %]
+                                            [%- IF ( refundProcessingFeeRule.rule_value == 'refund' ) %]
                                             <option value="refund" selected="selected">Refund lost item processing charge</option>
                                             <option value="refund_unpaid">Refund lost item processing charge (only if unpaid)</option>
                                             <option value="0">Leave lost item processing charge</option>
-                                            [% ELSIF ( refundProcessingFeeRule.rule_value == 'refund_unpaid' ) %]
+                                            [%- ELSIF ( refundProcessingFeeRule.rule_value == 'refund_unpaid' ) %]
                                             <option value="refund">Refund lost item processing charge</option>
                                             <option value="refund_unpaid" selected="selected">Refund lost item processing charge (only if unpaid)</option>
                                             <option value="0">Leave lost item processing charge</option>
-                                            [% ELSIF ( refundProcessingFeeRule.rule_value == 0 ) %]
+                                            [%- ELSIF ( refundProcessingFeeRule.rule_value == 0 ) %]
                                             <option value="refund">Refund lost item processing charge</option>
                                             <option value="refund_unpaid">Refund lost item processing charge (only if unpaid)</option>
                                             <option value="0" selected="selected">Leave lost item processing charge</option>
-                                            [% END %]
-                                        [% END %]
-                                      [% END %]
+                                            [%- END %]
+                                        [%- END %]
+                                      [%- END %]
                                     </select>
                                 </td>
                                 <td class="actions">
@@ -1270,7 +1270,7 @@
                 </div>
 
                 <div id="holds-policy-by-item-type" class="page-section">
-                    <h2>[% IF humanbranch %]Holds policy by item type for [% Branches.GetName( humanbranch ) | html %][% ELSE %]Default holds policy by item type[% END %]</h2>
+                    <h2>[%- IF humanbranch %]Holds policy by item type for [% Branches.GetName( humanbranch ) | html %][%- ELSE %]Default holds policy by item type[%- END %]</h2>
                     <p>
                         For this library, you can edit rules for given itemtypes, regardless of the patron's category.
                     </p>
@@ -1306,62 +1306,62 @@
                                 <th>&nbsp;</th>
                             </tr>
                             [% FOREACH i IN itemtypeloop %]
-                                [% SET holdallowed = CirculationRules.Search( branchcode, undef, i.itemtype, 'holdallowed' ) %]
-                                [% SET hold_fulfillment_policy = CirculationRules.Search( branchcode, undef, i.itemtype, 'hold_fulfillment_policy' ) %]
-                                [% SET returnbranch = CirculationRules.Search( branchcode, undef, i.itemtype, 'returnbranch' ) %]
+                                [%- SET holdallowed = CirculationRules.Search( branchcode, undef, i.itemtype, 'holdallowed' ) %]
+                                [%- SET hold_fulfillment_policy = CirculationRules.Search( branchcode, undef, i.itemtype, 'hold_fulfillment_policy' ) %]
+                                [%- SET returnbranch = CirculationRules.Search( branchcode, undef, i.itemtype, 'returnbranch' ) %]
 
-                                [% IF holdallowed || hold_fulfillment_policy || returnbranch %]
+                                [%- IF holdallowed || hold_fulfillment_policy || returnbranch %]
                                     <tr>
                                         <td>
                                             [% i.translated_description | html %]
                                         </td>
                                         <td>
-                                            [% IF holdallowed == 'from_any_library' %]
+                                            [%- IF holdallowed == 'from_any_library' %]
                                                 <span>From any library</span>
-                                            [% ELSIF holdallowed == 'from_local_hold_group' %]
+                                            [%- ELSIF holdallowed == 'from_local_hold_group' %]
                                                 <span>From local hold group</span>
-                                            [% ELSIF holdallowed == 'from_home_library' %]
+                                            [%- ELSIF holdallowed == 'from_home_library' %]
                                                 <span>From home library</span>
-                                            [% ELSE %]
+                                            [%- ELSE %]
                                                 <span>No holds allowed</span>
-                                            [% END %]
+                                            [%- END %]
                                         </td>
                                         <td>
-                                            [% IF hold_fulfillment_policy == 'any' %]
+                                            [%- IF hold_fulfillment_policy == 'any' %]
                                                 <span>any library</span>
-                                            [% ELSIF hold_fulfillment_policy == 'homebranch' %]
+                                            [%- ELSIF hold_fulfillment_policy == 'homebranch' %]
                                                 <span>item's home library</span>
-                                            [% ELSIF hold_fulfillment_policy == 'holdgroup' %]
+                                            [%- ELSIF hold_fulfillment_policy == 'holdgroup' %]
                                                 <span>item's hold group</span>
-                                            [% ELSIF hold_fulfillment_policy == 'patrongroup' %]
+                                            [%- ELSIF hold_fulfillment_policy == 'patrongroup' %]
                                                 <span>patron's hold group</span>
-                                            [% ELSIF hold_fulfillment_policy == 'holdingbranch' %]
+                                            [%- ELSIF hold_fulfillment_policy == 'holdingbranch' %]
                                                 <span>item's holding library</span>
-                                            [% END %]
+                                            [%- END %]
                                         </td>
                                         <td>
-                                            [% IF returnbranch == 'homebranch' %]
+                                            [%- IF returnbranch == 'homebranch' %]
                                                 <span>Item returns home</span>
-                                            [% ELSIF returnbranch == 'holdingbranch' %]
+                                            [%- ELSIF returnbranch == 'holdingbranch' %]
                                                 <span>Item returns to issuing branch</span>
-                                            [% ELSIF returnbranch == 'noreturn' %]
+                                            [%- ELSIF returnbranch == 'noreturn' %]
                                                 <span>Item floats</span>
-                                            [% ELSIF returnbranch == 'returnbylibrarygroup'%]
+                                            [%- ELSIF returnbranch == 'returnbylibrarygroup'%]
                                                 <span>Item floats by library group</span>
-                                            [% END %]
+                                            [%- END %]
                                         </td>
                                         <td class="actions">
                                             <a href="#" class="delete-branch-item btn btn-default btn-xs" data-itemtype="[% i.itemtype | html %]" data-branch"[% current_branch | html %]"><i class="fa fa-trash-can"></i> Delete</a>
                                         </td>
                                     </tr>
-                                [% END %]
-                            [% END %]
+                                [%- END %]
+                            [%- END %]
                             <tr>
                                 <td>
                                     <select name="itemtype">
                                     [% FOREACH itemtypeloo IN itemtypeloop %]
                                         <option value="[% itemtypeloo.itemtype | html %]">[% itemtypeloo.translated_description | html %]</option>
-                                    [% END %]
+                                    [%- END %]
                                     </select>
                                 </td>
                                 <td>
@@ -1670,5 +1670,5 @@
 
         });
     </script>
-[% END %]
+[%- END %]
 [% INCLUDE 'intranet-bottom.inc' %]
