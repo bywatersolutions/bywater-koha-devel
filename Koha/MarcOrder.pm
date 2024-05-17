@@ -181,6 +181,7 @@ sub import_record_and_create_order_lines {
     my $budget_id                 = $args->{budget_id};
     my $vendor                    = $args->{vendor};
 
+
     my $result = add_biblio_from_import_record(
         {
             import_batch_id           => $import_batch_id,
@@ -360,7 +361,8 @@ sub _get_syspref_mappings {
     }
     @tags_list = List::MoreUtils::uniq(@tags_list);
 
-    my $tags_count = _verify_number_of_fields(\@tags_list, $record);
+    my $tags_count = { count => 1 };
+    $tags_count = _verify_number_of_fields(\@tags_list, $record) if $syspref_to_read eq 'MarcItemFieldsToOrder';
     # Return if the number of these fields in the record is not the same.
     die "Invalid number of fields detected on field $tags_count->{key}, please check this file" if $tags_count->{error};
 
@@ -963,7 +965,7 @@ sub parse_input_into_order_line_fields {
         replacementprice    => $fields->{replacementprices},
         itemcallnumber      => $fields->{itemcallnumbers},
         budget_code         => $fields->{budget_codes},
-        loop_limit          => $quantity,
+        loop_limit          => scalar @{$fields->{homebranches}},
         basket_id           => $basket_id,
         budget_id           => $budget_id,
         c_quantity          => $fields->{c_quantity},
@@ -975,7 +977,6 @@ sub parse_input_into_order_line_fields {
         c_price             => $fields->{c_price},
     };
 
-    if($client) {
         $order_line_fields->{tags}               = $fields->{tags};
         $order_line_fields->{subfields}          = $fields->{subfields};
         $order_line_fields->{field_values}       = $fields->{field_values};
@@ -983,7 +984,6 @@ sub parse_input_into_order_line_fields {
         $order_line_fields->{order_vendornote}   = $fields->{order_vendornote};
         $order_line_fields->{order_internalnote} = $fields->{order_internalnote};
         $order_line_fields->{all_currency}       = $fields->{all_currency};
-    }
 
     return $order_line_fields;
 }
@@ -1151,7 +1151,7 @@ sub create_items_and_generate_order_hash {
             my $xml          = TransformHtmlToXml( \@tags, \@subfields, \@field_values );
             my $record       = MARC::Record::new_from_xml( $xml, 'UTF-8' );
             for ( my $qtyloop = 1 ; $qtyloop <= $fields->{c_quantity} ; $qtyloop++ ) {
-                my ( $biblionumber, undef, $itemnumber ) = AddItemFromMarc( $fields->{marcrecord}, $fields->{biblionumber} );
+                my ( $biblionumber, undef, $itemnumber ) = AddItemFromMarc( $record, $fields->{biblionumber} );
                 $order->add_item($itemnumber);
             }
         }
