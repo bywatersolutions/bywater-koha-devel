@@ -1107,7 +1107,7 @@ sub create_items_and_generate_order_hash {
             basketno           => $basket_id,
             quantity           => $fields->{c_quantity},
             branchcode         => C4::Context->userenv()->{'branch'},
-            budget_id          => $fields->{c_budget_id},
+            budget_id          => $fields->{c_budget_id} || $fields->{budget_id},
             uncertainprice     => 1,
             sort1              => $fields->{c_sort1},
             sort2              => $fields->{c_sort2},
@@ -1143,6 +1143,7 @@ sub create_items_and_generate_order_hash {
         $order->store;
 
         my $basket = Koha::Acquisition::Baskets->find( $basket_id );
+        # If the order fil doesn't contain item info, this is going to fail unless AcqCreateItems is set to another value
         if ( $basket->effective_create_items eq 'ordering' && !$basket->is_standing ) {
             my @tags         = @{ $fields->{tags} };
             my @subfields    = @{ $fields->{subfields} };
