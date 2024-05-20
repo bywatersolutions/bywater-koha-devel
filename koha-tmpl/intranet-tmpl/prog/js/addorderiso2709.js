@@ -22,12 +22,12 @@ $(document).ready(function() {
     $('input:checkbox[name="import_record_id"]').change(function(){
         var container = $(this).parents("tr");
         if ( $(this).is(':checked') ) {
-            $(container).addClass("selected");
+            //$(container).addClass("selected");
             $(container).removeClass("unselected");
             $(container).find(".order_details").toggle(true);
         } else {
             $(container).addClass("unselected");
-            $(container).removeClass("selected");
+            //$(container).removeClass("selected");
             $(container).find(".order_details").toggle(false);
         }
     } );

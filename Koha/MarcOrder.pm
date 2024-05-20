@@ -210,9 +210,9 @@ sub import_record_and_create_order_lines {
         client_item_fields => $client_item_fields
     });
 
-    my $order_lines = create_order_lines({
-        order_line_details => $order_line_details
-    });
+#    my $order_lines = create_order_lines({
+#        order_line_details => $order_line_details
+#    });
 
     return {
         duplicates_in_batch => 0,
