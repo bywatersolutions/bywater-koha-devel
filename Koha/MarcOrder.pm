@@ -144,9 +144,10 @@ sub create_order_lines_from_file {
                 agent           => $agent,
             });
 
-            my $order_lines = create_order_lines({
-                order_line_details => $order_line_details
-            });
+
+             #my $order_lines = create_order_lines({
+             #    order_line_details => $order_line_details
+             #});
         };
         SetImportBatchStatus( $import_batch_id, 'imported' )
             if Koha::Import::Records->search({import_batch_id => $import_batch_id, status => 'imported' })->count
@@ -236,9 +237,8 @@ sub _create_basket_for_file {
     my $vendor_id            = $args->{vendor_id};
     my @import_records       = $args->{import_records}->as_list;
     my $marcrecord           = $import_records[0]->get_marc_record;
-    my $marc_fields_to_order = _get_MarcFieldsToOrder_syspref_data(
-        'MarcFieldsToOrder', $marcrecord,
-        [ 'sort1' ]
+    my $marc_fields_to_order = _get_syspref_mappings(
+        $marcrecord, 'MarcFieldsToOrder'
     );
     my $filename = $marc_fields_to_order->{sort1};
 
@@ -1113,7 +1113,7 @@ sub create_items_and_generate_order_hash {
     } else {
         # Add an orderline for each MARC record
         # Get quantity in the MARC record (1 if none)
-        my $quantity  = GetMarcQuantity( $fields->{marcrecord}, C4::Context->preference('marcflavour') ) || 1;
+        my $quantity  = GetMarcQuantity( $marcrecord, C4::Context->preference('marcflavour') ) || 1;
         my %orderinfo = (
             biblionumber       => $fields->{biblionumber},
             basketno           => $basket_id,
@@ -1152,12 +1152,12 @@ sub create_items_and_generate_order_hash {
             'before_orderline_create',
             {
                 marcrecord => $marcrecord,
-                orderline  => \%order_detail_hash,
+                orderline  => \%orderinfo,
                 marcfields => $marcfields
             }
         );
 
-        push @order_line_details, \%order_detail_hash;
+        push @order_line_details, \%orderinfo;
 
         my $order = Koha::Acquisition::Order->new( \%orderinfo );
         $order->populate_with_prices_for_ordering();
