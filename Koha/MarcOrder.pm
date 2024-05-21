@@ -278,7 +278,6 @@ sub _stage_file {
     my $nomatch_action             = $args->{nomatch_action};
     my $item_action                = $args->{item_action};
 
-    my @messages;
     my ( $batch_id, $num_valid, $num_items, @import_errors );
     my $num_with_matches = 0;
     my $checked_matches  = 0;
