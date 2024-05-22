@@ -1982,10 +1982,10 @@ sub checkpw {
 
         # Nothing to check, account is locked
     } elsif ( $ldap && defined($password) ) {
-        my ( $retval, $retcard, $retuserid );
-        ( $retval, $retcard, $retuserid, $patron ) = checkpw_ldap(@_);    # EXTERNAL AUTH
+        my ( $retval, $retcard, $retuserid, $ldap_patron );
+        ( $retval, $retcard, $retuserid, $ldap_patron ) = checkpw_ldap(@_);    # EXTERNAL AUTH
         if ( $retval == 1 ) {
-            @return    = ( $retval, $retcard, $retuserid, $patron );
+            @return    = ( $retval, $retcard, $retuserid, $ldap_patron );
             $passwd_ok = 1;
         }
         $check_internal_as_fallback = 1 if $retval == 0;
