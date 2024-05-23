@@ -153,6 +153,16 @@
                 <option value="like">is</option>
                 <option value="not like">is not</option>
             [% END %]
+            [% IF params.op == '>' %]
+               <option value=">" selected="selected">></option>
+            [% ELSE %]
+               <option value=">">></option>
+            [% END %]
+            [% IF params.op == '<' %]
+               <option value="<" selected="selected"><</option>
+            [% ELSE %]
+               <option value="<"><</option>
+            [% END %]
         </select>
         <input type="text" name="q" class="form-field-value" value="[% query.param('q').$i ? query.param('q').$i : query.param('q') | html %]" />
     </div>
