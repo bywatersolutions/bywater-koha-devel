@@ -3045,12 +3045,52 @@ biblios:
       sort: 1
       suggestible: ''
     - facet: ''
+      marc_field: '501a'
+      marc_type: marc21
+      sort: 1
+      suggestible: ''
+    - facet: ''
+      marc_field: '503a'
+      marc_type: marc21
+      sort: 1
+      suggestible: ''
+    - facet: ''
+      marc_field: '504a'
+      marc_type: marc21
+      sort: 1
+      suggestible: ''
+    - facet: ''
       marc_field: '505'
       marc_type: marc21
       sort: 1
       suggestible: ''
     - facet: ''
+      marc_field: '508a'
+      marc_type: marc21
+      sort: 1
+      suggestible: ''
+    - facet: ''
+      marc_field: '511a'
+      marc_type: marc21
+      sort: 1
+      suggestible: ''
+    - facet: ''
       marc_field: '520'
+      marc_type: marc21
+      sort: 1
+      suggestible: ''
+    - facet: ''
+      marc_field: '521a'
+      marc_type: marc21
+      sort: 1
+      suggestible: ''
+    - facet: ''
+      marc_field: '538a'
+      marc_type: marc21
+      sort: 1
+      suggestible: ''
+    - facet: ''
+      marc_field: '547a'
       marc_type: marc21
       sort: 1
       suggestible: ''
