@@ -77,6 +77,7 @@ if ( $rthq && !$force ) {
 
 cronlogaction( { info => $command_line_options } );
 
-CreateQueue();
+my $loops = C4::Context->config('holds_queue_builder')->{parallel_loops_count};
+CreateQueue($loops);
 
 cronlogaction( { action => 'End', info => "COMPLETED" } );

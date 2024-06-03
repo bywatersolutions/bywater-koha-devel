@@ -30,8 +30,10 @@ use Koha::Items;
 use Koha::Libraries;
 use Koha::Patrons;
 
-use List::Util qw( shuffle );
 use List::MoreUtils qw( any );
+use List::Util qw( shuffle );
+use POSIX qw(ceil);
+use Parallel::ForkManager;
 
 our (@ISA, @EXPORT_OK);
 BEGIN {
@@ -166,15 +168,12 @@ Top level function that turns reserves into tmp_holdsqueue and hold_fill_targets
 =cut
 
 sub CreateQueue {
+    my $loops = shift || 1;
+
     my $dbh   = C4::Context->dbh;
 
     $dbh->do("DELETE FROM tmp_holdsqueue");  # clear the old table for new info
     $dbh->do("DELETE FROM hold_fill_targets");
-
-    my $total_bibs            = 0;
-    my $total_requests        = 0;
-    my $total_available_items = 0;
-    my $num_items_mapped      = 0;
 
     my $branches_to_use;
     my $transport_cost_matrix;
@@ -191,9 +190,42 @@ sub CreateQueue {
 
     my $bibs_with_pending_requests = GetBibsWithPendingHoldRequests();
 
-    foreach my $biblionumber (@$bibs_with_pending_requests) {
+    # Split the list of bibs into chunks to run in parallel
+    my @chunks;
+    if ( $loops > 1 ) {
+        my $i = 0;
+        while (@$bibs_with_pending_requests) {
+            push( @{ $chunks[$i] }, pop(@$bibs_with_pending_requests) );
 
-        $total_bibs++;
+            $i++;
+            $i = 0 if $i >= $loops;
+        }
+
+        my $pm = Parallel::ForkManager->new($loops);
+
+        DATA_LOOP:
+        foreach my $chunk (@chunks) {
+            my $pid = $pm->start and next DATA_LOOP;
+            _ProcessBiblios( $chunk, $branches_to_use, $transport_cost_matrix );
+            $pm->finish;
+        }
+
+        $pm->wait_all_children;
+    } else {
+        _ProcessBiblios( $bibs_with_pending_requests, $branches_to_use, $transport_cost_matrix );
+    }
+}
+
+=head2 _ProcessBiblios
+
+=cut
+
+sub _ProcessBiblios {
+    my $bibs_with_pending_requests = shift;
+    my $branches_to_use = shift;
+    my $transport_cost_matrix = shift;
+
+    foreach my $biblionumber (@$bibs_with_pending_requests) {
 
         my $result = update_queue_for_biblio(
             {   biblio_id             => $biblionumber,
@@ -201,10 +233,6 @@ sub CreateQueue {
                 transport_cost_matrix => $transport_cost_matrix,
             }
         );
-
-        $total_requests        += $result->{requests};
-        $total_available_items += $result->{available_items};
-        $num_items_mapped      += $result->{mapped_items};
     }
 }
 
@@ -220,12 +248,15 @@ that have one or more unfilled hold requests.
 sub GetBibsWithPendingHoldRequests {
     my $dbh = C4::Context->dbh;
 
-    my $bib_query = "SELECT DISTINCT biblionumber
-                     FROM reserves
-                     WHERE found IS NULL
-                     AND priority > 0
-                     AND reservedate <= CURRENT_DATE()
-                     AND suspend = 0
+    my $bib_query = "SELECT biblionumber,
+                            COUNT(biblionumber) AS holds_count
+                     FROM   reserves
+                     WHERE  found IS NULL
+                        AND priority > 0
+                        AND reservedate <= CURRENT_DATE()
+                        AND suspend = 0
+                     GROUP BY biblionumber
+                     ORDER BY biblionumber DESC
                      ";
     my $sth = $dbh->prepare($bib_query);
 

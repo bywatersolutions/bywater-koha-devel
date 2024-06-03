@@ -255,6 +255,10 @@
  -->
  </koha_xslt_security>
 
+ <holds_queue_builder>
+     <parallel_loops_count>1</parallel_loops_count>
+ </holds_queue_builder>
+
  <smtp_server>
     <host>__SMTP_HOST__</host>
     <port>__SMTP_PORT__</port>
