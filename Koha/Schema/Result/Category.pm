@@ -215,6 +215,13 @@ define maximum amount that the guarantees of a patron in this category can have 
 
 define maximum amount that the guarantors with guarantees of a patron in this category can have outstanding before checkouts are blocked
 
+=head2 force_password_reset_when_set_by_staff
+
+  data_type: 'tinyint'
+  is_nullable: 1
+
+if patrons of this category are required to reset password after being created by a staff member
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -284,6 +291,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_nullable => 1 },
   "noissueschargeguarantorswithguarantees",
   { data_type => "integer", is_nullable => 1 },
+  "force_password_reset_when_set_by_staff",
+  { data_type => "tinyint", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -391,24 +400,25 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07051 @ 2024-07-19 12:29:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WC8+n0x/UB9kDO1ZAVTo/A
-
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2024-09-17 17:34:19
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SZoU95HraPfIzszljOSHyQ
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 
 sub koha_object_class {
     'Koha::Patron::Category';
 }
+
 sub koha_objects_class {
     'Koha::Patron::Categories';
 }
 
 __PACKAGE__->add_columns(
-    '+can_be_guarantee'                  => { is_boolean => 1 },
-    '+can_place_ill_in_opac'             => { is_boolean => 1 },
-    '+exclude_from_local_holds_priority' => { is_boolean => 1 },
-    '+require_strong_password'           => { is_boolean => 1 },
+    '+can_be_guarantee'                       => { is_boolean => 1 },
+    '+can_place_ill_in_opac'                  => { is_boolean => 1 },
+    '+exclude_from_local_holds_priority'      => { is_boolean => 1 },
+    '+require_strong_password'                => { is_boolean => 1 },
+    '+force_password_reset_when_set_by_staff' => { is_boolean => 1 },
 );
 
 1;
