@@ -76,6 +76,8 @@
                         [% UNLESS ( casAuthentication || shibbolethAuthentication ) %]
                             <div id="login">
                                 <form action="/cgi-bin/koha/opac-user.pl" method="post" name="auth" id="auth">
+                                    [% INCLUDE 'csrf-token.inc' %]
+                                    <input type="hidden" name="op" value="cud-login" />
                                     <input type="hidden" name="koha_login_context" value="opac" />
                                     <fieldset class="brief">
                                         <legend>Log in to your account:</legend>
