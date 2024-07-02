@@ -800,6 +800,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 library_float_limits
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::LibraryFloatLimit>
+
+=cut
+
+__PACKAGE__->has_many(
+  "library_float_limits",
+  "Koha::Schema::Result::LibraryFloatLimit",
+  { "foreign.branchcode" => "self.branchcode" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 library_groups
 
 Type: has_many
@@ -996,8 +1011,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07051 @ 2024-05-03 13:13:25
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HiH1QNlDqKcq9GeM85Pu0A
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2024-07-02 11:14:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3TsuWEa3C2DEKJ1gR+V2Ig
 
 __PACKAGE__->add_columns(
     '+pickup_location' => { is_boolean => 1 },
