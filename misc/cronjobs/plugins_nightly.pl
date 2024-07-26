@@ -2,6 +2,8 @@
 
 use Modern::Perl;
 
+use Getopt::Long qw( GetOptions );
+use Pod::Usage qw( pod2usage );
 use Try::Tiny qw( catch try );
 
 use C4::Context;
@@ -13,11 +15,20 @@ use Koha::Script -cron;
 my $command_line_options = join(" ",@ARGV);
 cronlogaction({ info => $command_line_options });
 
+my $metadata;
+my $help;
+GetOptions(
+    'm|metadata=s%' => \$metadata,
+    'h|help'        => \$help,
+) or pod2usage(2);
+pod2usage(1) if $help;
+
 my $logger = Koha::Logger->get();
 if ( C4::Context->config("enable_plugins") ) {
     my @plugins = Koha::Plugins->new->GetPlugins(
         {
-            method => 'cronjob_nightly',
+            method   => 'cronjob_nightly',
+            metadata => $metadata,
         }
     );
 
@@ -44,7 +55,11 @@ plugins_nightly.pl - Run nightly tasks specified by plugins
 
 =head1 SYNOPSIS
 
-plugins_nightly.pl
+plugins_nightly.pl [-m|--metadata key=value]
+
+-m --metadata, repeatable, specify a metadata key and value to run only plugins
+                           with nightly_cronjob methods and matching metadata.
+                           e.g. plugins_nightly.pl -m name="My Awesome Plugin"
 
 =head1 AUTHOR
 
