@@ -16,7 +16,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 23;
+use Test::More tests => 25;
 
 use Test::MockModule;
 use Test::Warn;
@@ -90,10 +90,36 @@ is( Koha::Patron::Discharge::discharge({ borrowernumber => $patron->borrowernumb
 is_deeply( [ Koha::Patron::Discharge::get_pendings ], [], 'There is no pending discharge request' );
 is_deeply( [ Koha::Patron::Discharge::get_validated ], [], 'There is no validated discharge' );
 
+# Discharge not possible with issues and fines
+$patron->account->add_debit(
+    {
+        amount    => 0.1,
+        interface => C4::Context->interface,
+        type      => 'OVERDUE'
+    }
+);
+
+is(
+    Koha::Patron::Discharge::can_be_discharged( { borrowernumber => $patron->borrowernumber } ), 0,
+    'A patron with fines and checkouts cannot be discharged'
+);
+
 AddReturn( $barcode );
 
-# Discharge possible without issue
-is( Koha::Patron::Discharge::can_be_discharged({ borrowernumber => $patron->borrowernumber }), 1, 'A patron without issues can be discharged' );
+is( Koha::Patron::Discharge::can_be_discharged({ borrowernumber => $patron->borrowernumber }), 0, 'A patron with fines cannot be discharged' );
+
+
+$patron->account->pay(
+    {
+        amount => 0.1,
+    }
+);
+
+# Discharge possible without issue or fine
+is(
+    Koha::Patron::Discharge::can_be_discharged( { borrowernumber => $patron->borrowernumber } ), 1,
+    'A patron without issues or fines can be discharged'
+);
 
 is(Koha::Patron::Discharge::generate_as_pdf,undef,"Confirm failure when lacking borrower number");
 

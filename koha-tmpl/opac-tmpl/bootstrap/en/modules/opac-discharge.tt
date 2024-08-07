@@ -43,14 +43,37 @@
                         <a href="/cgi-bin/koha/opac-discharge.pl?op=get">Get your discharge</a></li>
                     [% ELSIF pending %]
                         <p>Your discharge will be available on this page within a few days.</p>
-                    [% ELSIF has_issues %]
+                    [% ELSIF failure %]
                         <p>You cannot be discharged, you have checked out items. Please return items before asking for a discharge.</p>
+                        <ul>
+                        [% IF has_debt %]
+                            <li> You have unpaid fines. Please pay your fines before reapplying.</li>
+                        [% END %]
+                        [% IF has_issues %]
+                            <li> You have checked out items. Please return them before reapplying.</li>
+                        [% END %]
+                        [% IF !has_issue and !has_debt %]
+                            <li>   Patron cannot be discharged for an unknown reason, please contact a librarian for more information</li>
+                        [% END %]
+                        </ul>
                     [% ELSIF not messages %]
                         <h2>What is a discharge?</h2>
                         <p>This document certifies that you have returned all borrowed items. It is sometimes asked during a file transfer from a school to another. The discharge is sent by us to your school. You will also find it available on your reader account.</p>
                         <p><strong>Warning</strong>: This request is only valid if you are in good standing with the library. Once the application is made, you can not borrow library materials.</p>
-                        [% IF has_checkouts %]
-                            <div class="alert alert-info">You cannot be discharged, you have checked out items. Please return items before asking for a discharge.</div>
+                        [% UNLESS can_be_discharged %]
+                            <div class="alert alert-info">You cannot be discharged for following reasons:
+                            <ul>
+                                [% IF has_debt %]
+                                    <li> You have unpaid fines. Please pay your fines before reapplying.</li>
+                                [% END %]
+                                [% IF has_checkouts %]
+                                    <li> You have checked out items. Please return them before reapplying.</li>
+                                [% END %]
+                                [% IF !has_checkouts and !has_debt %]
+                                    <li>   Patron cannot be discharged for an unknown reason, please contact a librarian for more information</li>
+                                [% END %]
+                            </ul>
+                            </div>
                         [% ELSE %]
                             <form action="/cgi-bin/koha/opac-discharge.pl" method="post">
                                 [% INCLUDE 'csrf-token.inc' %]

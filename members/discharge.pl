@@ -65,6 +65,12 @@ my $can_be_discharged = Koha::Patron::Discharge::can_be_discharged({
     borrowernumber => $borrowernumber
 });
 
+
+unless ($can_be_discharged) {
+    my $has_checkout = $patron->checkouts->count;
+    my $has_fine     = $patron->account->outstanding_debits->total_outstanding;
+}
+
 # Generating discharge if needed
 if ( $op eq 'cud-discharge' && $input->param('discharge') and $can_be_discharged ) {
     my $is_discharged = Koha::Patron::Discharge::is_discharged({

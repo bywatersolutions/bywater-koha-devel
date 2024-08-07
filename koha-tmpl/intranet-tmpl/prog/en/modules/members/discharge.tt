@@ -52,7 +52,18 @@
     </div>
 [% END %]
 [% UNLESS can_be_discharged %]
-    <p>Cannot edit discharge: the patron has checked out items.</p>
+    <p>Cannot edit discharge for following reasons: </p>
+    <ul>
+    [% IF patron.checkouts.count %]
+    <li>They have checked out items</li>
+    [% END %]
+    [% IF (patron.account.outstanding_debits.total_outstanding > 0) %]
+    <li>They have unpaid fines</li>
+    [% END %]
+    [% IF patron.checkouts.count == 0 and (patron.account.outstanding_debits.total_outstanding == 0) %]
+    <li>   Patron cannot be discharged for an unknown reason, please contact a librarian for more information</li>
+    [% END %]
+    </ul>
 [% ELSE %]
     [% IF patron.holds.count %]
         <p>Patron has holds. They will be cancelled if the discharge is generated.</p>

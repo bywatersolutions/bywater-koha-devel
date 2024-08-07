@@ -40,7 +40,12 @@ sub can_be_discharged {
     return unless $patron;
 
     my $has_pending_checkouts = $patron->checkouts->count;
-    return $has_pending_checkouts ? 0 : 1;
+    return 0 if $has_pending_checkouts;
+
+    my $has_debt = ( $patron->account->outstanding_debits->total_outstanding > 0 );
+    return 0 if $has_debt;
+
+    return 1;
 }
 
 sub is_discharged {
