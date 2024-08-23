@@ -39,13 +39,22 @@ sub can_be_discharged {
     my $patron = Koha::Patrons->find( $params->{borrowernumber} );
     return unless $patron;
 
-    my $has_pending_checkouts = $patron->checkouts->count;
-    return 0 if $has_pending_checkouts;
+    my $can_be_discharged = 1;
+    my $problems          = {};
 
-    my $has_debt = ( $patron->account->outstanding_debits->total_outstanding > 0 );
-    return 0 if $has_debt;
+    my $checkouts = $patron->checkouts->count;
+    if ($checkouts) {
+        $can_be_discharged = 0;
+        $problems->{checkouts} = $checkouts;
+    }
 
-    return 1;
+    my $debt = $patron->account->outstanding_debits->total_outstanding;
+    if ( $debt > 0 ) {
+        $can_be_discharged = 0;
+        $problems->{debt} = $debt;
+    }
+
+    return ( $can_be_discharged, $problems );
 }
 
 sub is_discharged {
@@ -53,10 +62,10 @@ sub is_discharged {
     return unless $params->{borrowernumber};
     my $borrowernumber = $params->{borrowernumber};
 
-    my $restricted = Koha::Patrons->find( $borrowernumber )->is_debarred;
-    my @validated = get_validated({borrowernumber => $borrowernumber});
+    my $restricted = Koha::Patrons->find($borrowernumber)->is_debarred;
+    my @validated  = get_validated( { borrowernumber => $borrowernumber } );
 
-    if ($restricted && @validated) {
+    if ( $restricted && @validated ) {
         return 1;
     } else {
         return 0;
@@ -67,19 +76,24 @@ sub request {
     my ($params) = @_;
     my $borrowernumber = $params->{borrowernumber};
     return unless $borrowernumber;
-    return unless can_be_discharged({ borrowernumber => $borrowernumber });
+    my ($can) = can_be_discharged( { borrowernumber => $borrowernumber } );
+    return unless $can;
 
     my $rs = Koha::Database->new->schema->resultset('Discharge');
-    return $rs->create({
-        borrower => $borrowernumber,
-        needed   => dt_from_string,
-    });
+    return $rs->create(
+        {
+            borrower => $borrowernumber,
+            needed   => dt_from_string,
+        }
+    );
 }
 
 sub discharge {
     my ($params) = @_;
     my $borrowernumber = $params->{borrowernumber};
-    return unless $borrowernumber and can_be_discharged( { borrowernumber => $borrowernumber } );
+
+    my ( $can ) = can_be_discharged({ borrowernumber => $borrowernumber });
+    return unless $borrowernumber and $can;
 
     # Cancel reserves
     my $patron = Koha::Patrons->find( $borrowernumber );

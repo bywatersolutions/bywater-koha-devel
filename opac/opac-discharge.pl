@@ -43,14 +43,18 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user({
     type          => "opac",
 });
 
-my $can_be_discharged     = Koha::Patron::Discharge::can_be_discharged( { borrowernumber => $loggedinuser } );
+my ( $can_be_discharged, $discharge_problems ) =
+    Koha::Patron::Discharge::can_be_discharged( { borrowernumber => $loggedinuser } );
 my $patron                = Koha::Patrons->find($loggedinuser);
 my $has_pending_checkouts = $patron->checkouts->count;
 my $has_debt              = ( $patron->account->outstanding_debits->total_outstanding > 0 );
 
-$template->param( can_be_discharged => $can_be_discharged );
-$template->param( has_checkouts     => $has_pending_checkouts );
-$template->param( has_debt          => $has_debt );
+$template->param(
+    can_be_discharged   => $can_be_discharged,
+    discharge_problems => $discharge_problems,
+    has_checkouts       => $has_pending_checkouts,
+    has_debt            => $has_debt,
+);
 
 my $pending = Koha::Patron::Discharge::count({
     borrowernumber => $loggedinuser,

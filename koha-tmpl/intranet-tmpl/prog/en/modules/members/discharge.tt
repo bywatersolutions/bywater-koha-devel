@@ -1,6 +1,7 @@
 [% USE raw %]
 [% USE Asset %]
 [% USE KohaDates %]
+[% USE Price %]
 [% USE AuthorisedValues %]
 [% USE Branches %]
 [% PROCESS 'i18n.inc' %]
@@ -54,15 +55,13 @@
 [% UNLESS can_be_discharged %]
     <p>Cannot edit discharge for following reasons: </p>
     <ul>
-    [% IF patron.checkouts.count %]
-    <li>They have checked out items</li>
-    [% END %]
-    [% IF (patron.account.outstanding_debits.total_outstanding > 0) %]
-    <li>They have unpaid fines</li>
-    [% END %]
-    [% IF patron.checkouts.count == 0 and (patron.account.outstanding_debits.total_outstanding == 0) %]
-    <li>   Patron cannot be discharged for an unknown reason, please contact a librarian for more information</li>
-    [% END %]
+        [% IF discharge_problems.checkouts %]
+            <li>They have [% discharge_problems.checkouts | html %] item(s) checked out</li>
+        [% END %]
+
+        [% IF discharge_problems.debt %]
+            <li>They have unpaid fines totaling [% discharge_problems.debt | $Price %]</li>
+        [% END %]
     </ul>
 [% ELSE %]
     [% IF patron.holds.count %]

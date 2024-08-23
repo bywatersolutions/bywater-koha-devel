@@ -1,5 +1,6 @@
 [% USE raw %]
 [% USE Koha %]
+[% USE Price %]
 [% USE AdditionalContents %]
 [% SET OpacNav = AdditionalContents.get( location => "OpacNav", lang => lang, library => logged_in_user.branchcode || default_branch, blocktitle => 0 ) %]
 [% SET OpacNavBottom = AdditionalContents.get( location => "OpacNavBottom", lang => lang, library => logged_in_user.branchcode || default_branch, blocktitle => 0 ) %]
@@ -63,14 +64,18 @@
                         [% UNLESS can_be_discharged %]
                             <div class="alert alert-info">You cannot be discharged for following reasons:
                             <ul>
-                                [% IF has_debt %]
-                                    <li> You have unpaid fines. Please pay your fines before reapplying.</li>
+                                [% IF discharge_problems.checkouts %]
+                                    <li>
+                                        You have [% discharge_problems.checkouts | html %] item(s) checked out.
+                                        Please return them before reapplying.
+                                    </li>
                                 [% END %]
-                                [% IF has_checkouts %]
-                                    <li> You have checked out items. Please return them before reapplying.</li>
-                                [% END %]
-                                [% IF !has_checkouts and !has_debt %]
-                                    <li>   Patron cannot be discharged for an unknown reason, please contact a librarian for more information</li>
+
+                                [% IF discharge_problems.debt %]
+                                    <li>
+                                        They have unpaid fines totaling [% discharge_problems.debt | $Price %].
+                                        Please pay your fines before reapplying.
+                                    </li>
                                 [% END %]
                             </ul>
                             </div>
