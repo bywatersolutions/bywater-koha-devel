@@ -98,7 +98,7 @@
                         [% SET bc = hold.patron.branchcode %]
                         [% SET all_bc = "" %]
                         [% UNLESS cancel_notice_branches.$bc || cancel_notice_branches.$all_bc %]
-                            <span class="no-notice-warning text-warning">Cancellation will not recieve a notice.</span>
+                            <span class="no-notice-warning text-warning">Cancellation will not receive a notice.</span>
                         [% END %]
                     [% END %]
                 </td>
