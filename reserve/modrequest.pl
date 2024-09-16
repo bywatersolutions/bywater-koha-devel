@@ -51,31 +51,31 @@ my $count=@rank;
 @biblionumber = uniq @biblionumber;
 
 # Cancel or modify the queue list of reserves (without item linked)
-if( $op eq 'cud-cancelall' || $op eq 'cud-modifyall' ) {
-    for (my $i=0;$i<$count;$i++){
+if ( $op eq 'cud-cancelall' || $op eq 'cud-modifyall' ) {
+    for ( my $i = 0 ; $i < $count ; $i++ ) {
         undef $itemnumber[$i] if !$itemnumber[$i];
-        my $suspend_until = $query->param( "suspend_until_" . $reserve_id[$i] );
-        my $cancellation_reason = $query->param("cancellation-reason");
+        my $suspend_until              = $query->param( "suspend_until_" . $reserve_id[$i] );
+        my $cancellation_reason        = $query->param("cancellation-reason");
         my $cancellation_notify_patron = $query->param("cancellation-notify-patron");
 
         my $params = {
-            rank => $rank[$i],
-            reserve_id => $reserve_id[$i],
+            rank           => $rank[$i],
+            reserve_id     => $reserve_id[$i],
             expirationdate => $expirationdates[$i] || undef,
-            branchcode => $branch[$i],
-            itemnumber => $itemnumber[$i],
+            branchcode     => $branch[$i],
+            itemnumber     => $itemnumber[$i],
             defined $suspend_until ? ( suspend_until => $suspend_until ) : (),
             cancellation_reason => $cancellation_reason,
-            notify_patron => $cancellation_notify_patron,
+            notify_patron       => $cancellation_notify_patron,
         };
-        if (C4::Context->preference('AllowHoldDateInFuture')) {
+        if ( C4::Context->preference('AllowHoldDateInFuture') ) {
             $params->{reservedate} = $reservedates[$i] || undef;
         }
 
         try {
             ModReserve($params);
         } catch {
-            if ($_->isa('Koha::Exceptions::ObjectNotFound')){
+            if ( $_->isa('Koha::Exceptions::ObjectNotFound') ) {
                 warn $_;
             } else {
                 $_->rethrow;
@@ -97,11 +97,8 @@ if( $op eq 'cud-cancelall' || $op eq 'cud-modifyall' ) {
         }
     }
     my @biblio_ids = uniq @biblionumber;
-    Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue->new->enqueue(
-        {
-            biblio_ids => \@biblio_ids
-        }
-    ) if C4::Context->preference('RealTimeHoldsQueue');
+    Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue->new->enqueue( { biblio_ids => \@biblio_ids } )
+        if C4::Context->preference('RealTimeHoldsQueue');
 }
 
 my $from=$query->param('from');

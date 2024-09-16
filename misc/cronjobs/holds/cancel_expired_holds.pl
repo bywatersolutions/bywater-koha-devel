@@ -81,6 +81,6 @@ pod2usage(1) if $help;
 
 cronlogaction({ info => $command_line_options });
 
-C4::Reserves::CancelExpiredReserves($reason, $notify);
+C4::Reserves::CancelExpiredReserves( $reason, $notify );
 
 cronlogaction({ action => 'End', info => "COMPLETED" });
