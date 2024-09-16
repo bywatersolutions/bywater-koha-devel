@@ -726,7 +726,7 @@ $template->param(borrowernumber => $borrowernumber_hold);
 
 $template->param( failed_holds => \@failed_holds );
 
-# Show hold cancelation reason only if notice exists
+# Show hold cancellation reason only if notice exists
 my $cancel_notify_templates = Koha::Notice::Templates->search({ module => 'reserves', code => 'HOLD_CANCELLATION' });
 my $cancel_notice_branches;
 while ( my $notice = $cancel_notify_templates->next ) {
