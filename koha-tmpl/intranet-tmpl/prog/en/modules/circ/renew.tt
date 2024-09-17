@@ -2,6 +2,7 @@
 [% USE Asset %]
 [% USE Koha %]
 [% USE KohaDates %]
+[% USE Price %]
 [% PROCESS 'i18n.inc' %]
 [% SET footerjs = 1 %]
 [% INCLUDE 'doc-head-open.inc' %]
@@ -138,6 +139,14 @@
                         <button type="submit" class="btn btn-default approve"><i class="fa fa-check"></i> Override limit and renew</button>
                     </form>
                 [% END %]
+            [% ELSIF error == "too_much_debt" %]
+
+                <li>The patron has a debt of [% balance | $Price %].</li>
+                <form method="post" action="/cgi-bin/koha/circ/renew.pl">
+                    <input type="hidden" name="barcode" value="[% item.barcode | html %]"/>
+                    <input type="hidden" name="override_debt" value="1" />
+                    <button type="submit" class="approve"><i class="fa fa-check"></i>Renew checkout(s)</button>
+                </form>
             [% ELSIF error == "on_reserve" %]
                 <p>[% INCLUDE 'biblio-title.inc' biblio=item.biblio link = 1 %] ( [% item.barcode | html %] ): This item is on hold for another patron.</p>
 
@@ -164,6 +173,7 @@
                 <p>Item cannot be renewed because it's an onsite checkout</p>
             [% ELSIF error == 'recalled' %]
                 <p>This item has been recalled.</p>
+
             [% ELSE %]
 
                 [% error | html %]

@@ -796,6 +796,8 @@ if (AlwaysLoadCheckoutsTable) {
 $(document).ready(function () {
     var onHoldDueDateSet = false;
 
+    var show_confirm = true;
+
     var onHoldChecked = function () {
         var isChecked = false;
         $("input[data-on-reserve]").each(function () {
@@ -985,6 +987,16 @@ $(document).ready(function () {
     $("#RenewChecked").on("click", function (e) {
         e.preventDefault();
         let refresh_table = true;
+
+        if(show_confirm  && parseFloat(fines) > parseFloat(amountlimit) ) {
+            var result = confirm(MSG_CONFIRM_RENEW);
+            if(!result){
+                return false;
+            }
+            // Prevent displaying confirm box again
+            show_confirm  = false;
+        }
+
         function renew(item_id) {
             var override_limit = $("#override_limit").is(":checked") ? 1 : 0;
 
@@ -1019,6 +1031,9 @@ $(document).ready(function () {
             if (dueDate && dueDate.length > 0) {
                 params.date_due = dueDate;
             }
+
+
+            $(this).parent().parent().replaceWith("<img id='renew_" + item_id+ "' src='" + interface + "/" + theme + "/img/spinner-small.gif' />");
 
             const client = APIClient.circulation;
             return client.checkouts.renew(params).then(

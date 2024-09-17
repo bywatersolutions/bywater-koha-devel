@@ -27,6 +27,7 @@ use C4::Circulation qw( barcodedecode CanBookBeRenewed GetLatestAutoRenewDate Ad
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Database;
 use Koha::BiblioFrameworks;
+use Koha::Patrons;
 
 my $cgi = CGI->new;
 
@@ -47,11 +48,12 @@ my $unseen  = $cgi->param('unseen') || 0;
 $barcode = barcodedecode($barcode) if $barcode;
 my $override_limit = $cgi->param('override_limit');
 my $override_holds = $cgi->param('override_holds');
+my $override_debt  = $cgi->param('override_debt');
 my $hard_due_date  = $cgi->param('hard_due_date');
 
 my ( $item, $checkout, $patron );
 my $error = q{};
-my ( $soonest_renew_date, $latest_auto_renew_date );
+my ( $soonest_renew_date, $latest_auto_renew_date, $balance );
 
 if ( $op eq 'cud-renew' && $barcode ) {
     $barcode = barcodedecode($barcode) if $barcode;
@@ -65,6 +67,9 @@ if ( $op eq 'cud-renew' && $barcode ) {
 
             $patron = $checkout->patron;
             my $borrowernumber = $patron->borrowernumber;
+
+            $balance = $patron->account->balance;
+            my $amountlimit = C4::Context->preference("OPACFineNoRenewals");
 
             if ( ( $patron->is_debarred || q{} ) lt dt_from_string()->ymd() ) {
                 my $confirmations;
@@ -92,6 +97,16 @@ if ( $op eq 'cud-renew' && $barcode ) {
                         $checkout,
                     );
                 }
+
+                if ( $balance > $amountlimit ) {
+                    $error     = "too_much_debt";
+                    $can_renew = 0;
+                    if ($override_debt) {
+                        $can_renew = 1;
+                        $error     = undef;
+                    }
+                }
+
                 if ($can_renew) {
                     my $branchcode = C4::Context->userenv ? C4::Context->userenv->{'branch'} : undef;
                     my $date_due =
@@ -127,6 +142,7 @@ if ( $op eq 'cud-renew' && $barcode ) {
         error               => $error,
         soonestrenewdate    => $soonest_renew_date,
         latestautorenewdate => $latest_auto_renew_date,
+        balance => $balance,
     );
 }
 

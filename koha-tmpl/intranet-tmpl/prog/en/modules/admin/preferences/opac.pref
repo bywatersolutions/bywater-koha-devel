@@ -656,6 +656,7 @@ OPAC:
             - pref: OPACFineNoRenewals
               class: currency
             - '[% local_currency %] in charges (leave blank to disable).'
+            - <br /><strong>NOTE:</strong> If set, confirmation dialog is shown when renewing for patron with charges from staff interface.'
         -
             - pref: OPACFineNoRenewalsIncludeCredits
               choices:

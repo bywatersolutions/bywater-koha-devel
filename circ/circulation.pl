@@ -293,7 +293,7 @@ if ($patron) {
     $template->param(
         overduecount => $overdues->count,
         issuecount   => $issues->count,
-        finetotal    => $balance,
+        fines        => $balance,
     );
 
     if ( $patron and $patron->is_debarred ) {
