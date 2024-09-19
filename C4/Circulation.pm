@@ -3552,7 +3552,7 @@ sub AddRenewal {
 
     $borrowernumber ||= $issue->borrowernumber;
 
-    if ( defined $datedue && ref $datedue ne 'DateTime' ) {
+    if ( $datedue && ref $datedue ne 'DateTime' ) {
         $datedue = dt_from_string( $datedue, 'sql' );
     }
 
