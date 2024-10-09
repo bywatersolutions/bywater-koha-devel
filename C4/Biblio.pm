@@ -95,6 +95,7 @@ use C4::Linker;
 use C4::OAI::Sets;
 
 use Koha::Logger;
+use Koha::Cache::Memory::Lite;
 use Koha::Caches;
 use Koha::ClassSources;
 use Koha::Authority::Types;
@@ -1570,15 +1571,15 @@ sub GetAuthorisedValueDesc {
 
         #---- itemtypes
         if ( $tagslib->{$tag}->{$subfield}->{'authorised_value'} eq "itemtypes" ) {
-            my $lang = C4::Languages::getlanguage;
-            $lang //= 'en';
-            $cache_key = 'itemtype:description:' . $lang;
-            my $itypes = $cache->get_from_cache( $cache_key, { unsafe => 1 } );
-            if ( !$itypes ) {
-                $itypes = { map { $_->itemtype => $_->translated_description } Koha::ItemTypes->search()->as_list };
-                $cache->set_in_cache( $cache_key, $itypes );
+            my $memory_cache = Koha::Cache::Memory::Lite->get_instance();
+            my $cache_key    = 'GetAuthorisedValueDesc:itemtypes';
+            my $itemtypes    = $memory_cache->get_from_cache($cache_key);
+            unless ($itemtypes) {
+                $itemtypes = { map { $_->itemtype => $_ } Koha::ItemTypes->as_list };
+                $memory_cache->set_in_cache( $cache_key, $itemtypes );
             }
-            return $itypes->{$value};
+            my $itemtype = $itemtypes->{$value};
+            return $itemtype ? $itemtype->translated_description : undef;
         }
 
         if ( $tagslib->{$tag}->{$subfield}->{'authorised_value'} eq "cn_source" ) {

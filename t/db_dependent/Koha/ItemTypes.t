@@ -27,6 +27,7 @@ use t::lib::TestBuilder;
 
 use C4::Calendar;
 use Koha::Biblioitems;
+use Koha::Caches;
 use Koha::Libraries;
 use Koha::Database;
 use Koha::DateUtils qw(dt_from_string);
@@ -73,30 +74,29 @@ my $child3 = $builder->build_object(
     }
 );
 
-Koha::Localization->new(
+$child1->_result->localizations->create(
     {
-        entity      => 'itemtypes',
-        code        => $child1->itemtype,
+        property    => 'description',
         lang        => 'en',
         translation => 'b translated itemtype desc'
     }
-)->store;
-Koha::Localization->new(
+);
+$child2->_result->localizations->create(
     {
-        entity      => 'itemtypes',
-        code        => $child2->itemtype,
+        property    => 'description',
         lang        => 'en',
         translation => 'a translated itemtype desc'
     }
-)->store;
-Koha::Localization->new(
+);
+$child3->_result->localizations->create(
     {
-        entity      => 'something_else',
-        code        => $child2->itemtype,
+        property    => 'description',
         lang        => 'en',
         translation => 'another thing'
     }
-)->store;
+);
+
+Koha::Caches->get_instance('localization')->flush_all();
 
 my $type = Koha::ItemTypes->find( $child1->itemtype );
 ok( defined($type), 'first result' );

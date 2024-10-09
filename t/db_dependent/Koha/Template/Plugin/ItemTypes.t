@@ -20,6 +20,7 @@ use Test::NoWarnings;
 use Test::More tests => 11;
 
 use C4::Context;
+use Koha::Caches;
 use Koha::Database;
 use Koha::ItemTypes;
 
@@ -53,14 +54,13 @@ my $itemtypeA = $builder->build_object(
         }
     }
 );
-Koha::Localization->new(
+$itemtypeA->_result->localizations->create(
     {
-        entity      => 'itemtypes',
-        code        => $itemtypeA->itemtype,
+        property    => 'description',
         lang        => 'en',
         translation => 'Translated itemtype A'
     }
-)->store;
+);
 my $itemtypeB = $builder->build_object(
     {
         class => 'Koha::ItemTypes',
@@ -70,14 +70,13 @@ my $itemtypeB = $builder->build_object(
         }
     }
 );
-Koha::Localization->new(
+$itemtypeB->_result->localizations->create(
     {
-        entity      => 'itemtypes',
-        code        => $itemtypeB->itemtype,
+        property    => 'description',
         lang        => 'en',
         translation => 'Translated itemtype B'
     }
-)->store;
+);
 my $itemtypeC = $builder->build_object(
     {
         class => 'Koha::ItemTypes',
@@ -87,6 +86,8 @@ my $itemtypeC = $builder->build_object(
         }
     }
 );
+
+Koha::Caches->get_instance('localization')->flush_all();
 
 my $GetDescriptionA1 = $plugin->GetDescription( $itemtypeA->itemtype );
 is( $GetDescriptionA1, "Translated itemtype A", "ItemType without parent - GetDescription without want parent" );

@@ -4583,10 +4583,11 @@ CREATE TABLE `localization` (
   `localization_id` int(11) NOT NULL AUTO_INCREMENT,
   `entity` varchar(16) NOT NULL,
   `code` varchar(64) NOT NULL,
+  `property` varchar(100) NOT NULL,
   `lang` varchar(25) NOT NULL COMMENT 'could be a foreign key',
   `translation` mediumtext DEFAULT NULL,
   PRIMARY KEY (`localization_id`),
-  UNIQUE KEY `entity_code_lang` (`entity`,`code`,`lang`)
+  UNIQUE KEY `entity_code_property_lang` (`entity`,`code`,`property`,`lang`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

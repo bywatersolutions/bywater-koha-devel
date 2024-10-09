@@ -20,8 +20,9 @@ use Modern::Perl;
 use C4::Auth   qw( get_template_and_user );
 use C4::Output qw( output_html_with_http_headers );
 
-use Koha::Localization;
-use Koha::Localizations;
+use Koha::Database;
+
+my $schema = Koha::Database->schema;
 
 use CGI qw( -utf8 );
 
@@ -36,19 +37,20 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
-my $entity = $query->param('entity');
-my $code   = $query->param('code');
-my $rs     = Koha::Localizations->search( { entity => $entity, code => $code } );
+my $source    = $query->param('source');
+my $object_id = $query->param('object_id');
+my $property  = $query->param('property');
+
+my $row = $schema->resultset($source)->find($object_id);
+
 my @translations;
-while ( my $s = $rs->next ) {
-    push @translations,
-        {
-        id          => $s->localization_id,
-        entity      => $s->entity,
-        code        => $s->code,
-        lang        => $s->lang,
-        translation => $s->translation,
-        };
+my $localizations = $row->localizations->search( { property => $property } );
+while ( my $localization = $localizations->next ) {
+    push @translations, {
+        localization_id => $localization->id,
+        lang            => $localization->lang,
+        translation     => $localization->translation,
+    };
 }
 
 my $translated_languages = C4::Languages::getTranslatedLanguages();    # opac and intranet
@@ -56,8 +58,9 @@ my $translated_languages = C4::Languages::getTranslatedLanguages();    # opac an
 $template->param(
     translations => \@translations,
     languages    => $translated_languages,
-    entity       => $entity,
-    code         => $code,
+    source       => $source,
+    object_id    => $object_id,
+    property     => $property,
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;

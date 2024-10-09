@@ -30,6 +30,7 @@ use C4::Biblio      qw( GetMarcSubfieldStructure );
 use C4::Circulation qw( AddIssue AddReturn );
 
 use Koha::Caches;
+use Koha::Cache::Memory::Lite;
 use Koha::Items;
 use Koha::Database;
 use Koha::DateUtils qw( dt_from_string );
@@ -2455,9 +2456,10 @@ subtest 'columns_to_str' => sub {
     $cache->clear_from_cache("MarcStructure-1-");
     $cache->clear_from_cache("MarcSubfieldStructure-");
     $cache->clear_from_cache("libraries:name");
-    $cache->clear_from_cache("itemtype:description:en");
     $cache->clear_from_cache("cn_sources:description");
     $cache->clear_from_cache("AV_descriptions:LOST");
+
+    Koha::Caches->get_instance('localization')->clear_from_cache('Itemtype:en');
 
     # Creating subfields 'é', 'è' that are not linked with a kohafield
     Koha::MarcSubfieldStructures->search(
@@ -2540,9 +2542,10 @@ subtest 'columns_to_str' => sub {
     $cache->clear_from_cache("MarcStructure-1-");
     $cache->clear_from_cache("MarcSubfieldStructure-");
     $cache->clear_from_cache("libraries:name");
-    $cache->clear_from_cache("itemtype:description:en");
     $cache->clear_from_cache("cn_sources:description");
     $cache->clear_from_cache("AV_descriptions:LOST");
+
+    Koha::Caches->get_instance('localization')->clear_from_cache('Itemtype:en');
 
     $schema->storage->txn_rollback;
 };
@@ -2560,9 +2563,10 @@ subtest 'strings_map() tests' => sub {
     $cache->clear_from_cache("MarcStructure-1-");
     $cache->clear_from_cache("MarcSubfieldStructure-");
     $cache->clear_from_cache("libraries:name");
-    $cache->clear_from_cache("itemtype:description:en");
     $cache->clear_from_cache("cn_sources:description");
     $cache->clear_from_cache("AV_descriptions:LOST");
+
+    Koha::Caches->get_instance('localization')->clear_from_cache('Itemtype:en');
 
     # Recreating subfields just to be sure tests will be ok
     # 1 => av (LOST)
@@ -2675,6 +2679,7 @@ subtest 'strings_map() tests' => sub {
     )->store();
 
     Koha::Caches->get_instance->flush_all;
+    Koha::Cache::Memory::Lite->get_instance->flush;
 
     $item->set(
         {
@@ -2747,8 +2752,9 @@ subtest 'strings_map() tests' => sub {
     $cache->clear_from_cache("MarcStructure-1-");
     $cache->clear_from_cache("MarcSubfieldStructure-");
     $cache->clear_from_cache("libraries:name");
-    $cache->clear_from_cache("itemtype:description:en");
     $cache->clear_from_cache("cn_sources:description");
+
+    Koha::Caches->get_instance('localization')->clear_from_cache('Itemtype:en');
 
     $schema->storage->txn_rollback;
 };

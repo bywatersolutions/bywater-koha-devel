@@ -956,6 +956,32 @@ sub unblessed_all_relateds {
     return \%data;
 }
 
+=head3 localization
+
+Returns a localized (translated) value of the property, or the original
+property value if no translation exist
+
+    $localization = $object->localization($property, $lang);
+
+C<$property> is the property name. Often this will correspond to an SQL column name
+
+C<$lang> is the language code (for instance: 'en-GB')
+
+=cut
+
+sub localization {
+    my ( $self, $property, $lang ) = @_;
+
+    my $result = $self->_result;
+    if ( $result->can('localization') ) {
+        if ( my $localization = $result->localization( $property, $lang ) ) {
+            return $localization;
+        }
+    }
+
+    return $result->get_column($property);
+}
+
 =head3 $object->_result();
 
 Returns the internal DBIC Row object

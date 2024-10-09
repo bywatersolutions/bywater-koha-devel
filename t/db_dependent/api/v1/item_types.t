@@ -26,6 +26,7 @@ use t::lib::Mocks;
 
 use Mojo::JSON qw(encode_json);
 
+use Koha::Caches;
 use Koha::ItemTypes;
 use Koha::Database;
 
@@ -66,28 +67,22 @@ subtest 'list() tests' => sub {
         }
     );
 
-    my $en = $builder->build_object(
+    $item_type->_result->localizations->create(
         {
-            class => 'Koha::Localizations',
-            value => {
-                entity      => 'itemtypes',
-                code        => $item_type->id,
-                lang        => 'en',
-                translation => 'English word "test"',
-            }
+            property    => 'description',
+            lang        => 'en',
+            translation => 'English word "test"',
         }
     );
-    my $sv = $builder->build_object(
+    $item_type->_result->localizations->create(
         {
-            class => 'Koha::Localizations',
-            value => {
-                entity      => 'itemtypes',
-                code        => $item_type->id,
-                lang        => 'sv_SE',
-                translation => 'Swedish word "test"',
-            }
+            property    => 'description',
+            lang        => 'sv_SE',
+            translation => 'Swedish word "test"',
         }
     );
+
+    Koha::Caches->get_instance('localization')->flush_all();
 
     my $librarian = $builder->build_object(
         {

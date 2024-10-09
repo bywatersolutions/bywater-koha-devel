@@ -377,22 +377,8 @@ __PACKAGE__->add_columns(
     '+bookable'                     => { is_boolean => 1, is_nullable => 1 },
 );
 
-# Use the ItemtypeLocalization view to create the join on localization
-our $LANGUAGE;
-__PACKAGE__->has_many(
-  "localization" => "Koha::Schema::Result::ItemtypeLocalization",
-    sub {
-        my $args = shift;
-
-        die "no lang specified!" unless $LANGUAGE;
-
-        return ({
-            "$args->{self_alias}.itemtype" => { -ident => "$args->{foreign_alias}.code" },
-            "$args->{foreign_alias}.lang" => $LANGUAGE,
-        });
-
-    }
-);
+__PACKAGE__->load_components('+Koha::Schema::Component::Localization');
+__PACKAGE__->localization_add_relationships('itemtype', 'description');
 
 =head2 koha_object_class
 

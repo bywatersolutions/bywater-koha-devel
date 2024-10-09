@@ -5,12 +5,12 @@
 [% INCLUDE 'doc-head-open.inc' %]
 <title>
     [% FILTER collapse %]
-        [% SWITCH entity %]
-        [% CASE "itemtypes" %]
-            [% tx("Add translations for item type '{code}'", { code = code }) | html %]
+        [% SWITCH source %]
+        [% CASE "Itemtype" %]
+            [% tx("Add translations for item type '{code}'", { code = object_id }) | html %]
             &rsaquo; [% t("Item types") | html %] &rsaquo; [% t("Administration") | html %]
         [% CASE %]
-            [% tx("Add translations for '{code}'", { code = code }) | html %]
+            [% tx("Add translations for '{code}'", { code = object_id }) | html %]
         [% END %]
         &rsaquo; [% t("Koha") | html %]
     [% END %]
@@ -29,8 +29,8 @@
 [% END %]
 [% WRAPPER 'sub-header.inc' %]
     [% WRAPPER breadcrumbs %]
-        [% SWITCH entity %]
-        [% CASE "itemtypes" %]
+        [% SWITCH source %]
+        [% CASE "Itemtype" %]
             [% WRAPPER breadcrumb_item %]
                 <a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a>
             [% END %]
@@ -38,37 +38,37 @@
                 <a href="/cgi-bin/koha/admin/itemtypes.pl">Item types</a>
             [% END %]
             [% WRAPPER breadcrumb_item %]
-                <a href="/cgi-bin/koha/admin/itemtypes.pl?op=add_form&itemtype=[% code | uri %]"> [% tx("Modify item type '{code}'", { code = code }) | html %] </a>
+                <a href="/cgi-bin/koha/admin/itemtypes.pl?op=add_form&itemtype=[% object_id | uri %]"> [% tx("Modify item type '{code}'", { code = object_id }) | html %] </a>
             [% END %]
             [% WRAPPER breadcrumb_item bc_active= 1 %]
                 <span>Add translations</span>
             [% END %]
         [% CASE %]
             [% WRAPPER breadcrumb_item bc_active= 1 %]
-                [% tx("Add translations for '{code}'", { code = code }) | html %]
+                [% tx("Add translations for '{code}'", { code = object_id }) | html %]
             [% END %]
         [% END %]
     [% END #/ WRAPPER breadcrumbs %]
 [% END #/ WRAPPER sub-header.inc %]
 
 [% WRAPPER 'main-container.inc' %]
-    [% SWITCH entity %]
-    [% CASE "itemtypes" %]
-        <h1>[% tx("Add translations for item type '{code}'", { code = code }) | html %]</h1>
+    [% SWITCH source %]
+    [% CASE "Itemtype" %]
+        <h1>[% tx("Add translations for item type '{code}'", { code = object_id }) | html %]</h1>
     [% CASE %]
         <h1>[% tx("Add translations for '{code}'", { code = code }) | html %]</h1>
     [% END %]
 
     <form id="add_translation" method="get">
         [% INCLUDE 'csrf-token.inc' %]
-        <input type="hidden" name="entity" value="[% entity | html %]" />
-        <input type="hidden" name="code" value="[% code | html %]" />
-        <input type="hidden" name="interface" value="[% interface_side | html %]" />
+        <input type="hidden" name="source" value="[% source | html %]" />
+        <input type="hidden" name="object_id" value="[% object_id | html %]" />
+        <input type="hidden" name="property" value="[% property | html %]" />
         <fieldset class="rows clearfix">
             <ol>
                 <li>
-                    <span class="label">Authorized value:</span>
-                    [% code | html %]
+                    <span class="label">Code:</span>
+                    [% object_id | html %]
                 </li>
                 <li>
                     <label for="lang">Language:</label>
@@ -100,9 +100,6 @@
         <table id="localization">
             <thead>
                 <tr>
-                    <th>Id</th>
-                    <th>Entity</th>
-                    <th>Code</th>
                     <th class="lang">Language</th>
                     <th class="translation">Translation</th>
                     <th class="no-sort">&nbsp;</th>
@@ -110,17 +107,7 @@
             </thead>
             <tbody>
                 [% FOR t IN translations %]
-                    <tr id="row_id_[% t.id | html %]" data-id="[% t.id | html %]">
-                        <td>[% t.id | html %]</td>
-                        <td>
-                            [% SWITCH entity %]
-                            [% CASE "itemtypes" %]
-                                Item type
-                            [% CASE %]
-                                [% t.entity | html %]
-                            [% END %]
-                        </td>
-                        <td>[% t.code | html %]</td>
+                    <tr id="row_id_[% t.localization_id | html %]" data-id="[% t.localization_id | html %]">
                         <td class="lang">[% t.lang | html %]</td>
                         <td class="translation" contenteditable="true">[% t.translation | html %]</td>
                         <td class="actions"
@@ -149,7 +136,7 @@
             var message;
             if (type == "success_on_update") {
                 message = $('<div class="alert alert-info"></div>');
-                message.text(_("Entity %s (code %s) for lang %s has been updated with '%s'").format(data.entity, data.code, data.lang, data.translation));
+                message.text(_("Translation for lang %s has correctly been updated with '%s'").format(data.lang, data.translation));
             } else if (type == "error_on_update") {
                 message = $('<div class="alert alert-warning"></div>');
                 if (data.error_code == "already_exists") {
@@ -159,13 +146,13 @@
                 }
             } else if (type == "success_on_delete") {
                 message = $('<div class="alert alert-info"></div>');
-                message.text(_("The translation (id %s) has been removed successfully").format(data.id));
+                message.text(_("The translation has been removed successfully"));
             } else if (type == "error_on_delete") {
                 message = $('<div class="alert alert-warning"></div>');
                 message.text(_("An error occurred when deleting this translation"));
             } else if (type == "success_on_insert") {
                 message = $('<div class="alert alert-info"></div>');
-                message.text(_("Translation (id %s) has been added successfully").format(data.id));
+                message.text(_("Translation has been added successfully"));
             } else if (type == "error_on_insert") {
                 message = $('<div class="alert alert-warning"></div>');
                 if (data.error_code == "already_exists") {
@@ -182,14 +169,18 @@
             }, 3000);
         }
 
-        function send_update_request(data, cell) {
+        function send_update_request(_data, cell) {
+            const form = document.forms.add_translation;
+            const source = form.elements.source.value;
+            const object_id = form.elements.object_id.value;
+            const data = Object.assign({}, _data, { source, object_id });
             const client = APIClient.localization;
             client.localizations.update(data).then(
                 success => {
                     if (success.error) {
                         $(cell).css("background-color", "#FF0000");
                         show_message({ type: "error_on_update", data: success });
-                    } else if (success.is_changed == 1) {
+                    } else {
                         $(cell).css("background-color", "#00FF00");
                         show_message({ type: "success_on_update", data: success });
                     }
@@ -213,16 +204,22 @@
             );
         }
 
-        function send_delete_request(id, cell) {
+        function send_delete_request(localization_id, cell) {
+            const form = document.forms.add_translation;
+            const source = form.elements.source.value;
+            const object_id = form.elements.object_id.value;
+            const property = form.elements.property.value;
+            const data = { source, object_id, property, localization_id };
+
             const client = APIClient.localization;
-            client.localizations.delete(id).then(
+            client.localizations.delete(data).then(
                 success => {
                     $("#localization")
                         .DataTable()
-                        .row("#row_id_" + id)
+                        .row("#row_id_" + localization_id)
                         .remove()
                         .draw();
-                    show_message({ type: "success_on_delete", data: { id } });
+                    show_message({ type: "success_on_delete", data: { localization_id } });
                 },
                 error => {
                     $(cell).css("background-color", "#FF9090");
@@ -247,6 +244,10 @@
             });
             $("body").on("click", "td.lang", function () {
                 var td = $(this);
+                if (td[0].childElementCount > 0) {
+                    // do nothing if there is already something there (like a select for instance)
+                    return;
+                }
                 var tr = td.parent();
                 var id = tr.data("id");
                 var lang = td.text();
@@ -258,9 +259,9 @@
                 });
                 var lang;
                 my_select.on("change", function () {
-                    lang = td.find("option:selected").val();
-                    var translation = tr.find("td.translation").text();
-                    send_update_request({ id, lang, translation }, td[0]);
+                    var localization_id = $(tr).data('id');
+                    lang = td.find('option:selected').val();
+                    send_update_request( {localization_id, lang}, td[0] );
                 });
                 my_select.on("blur", function () {
                     td.html(lang);
@@ -270,10 +271,9 @@
 
             $("body").on("blur", "td.translation", function () {
                 var tr = $(this).parent();
-                var id = $(tr).data("id");
-                var lang = $(tr).find("td.lang").text();
+                var localization_id = $(tr).data('id');
                 var translation = $(this).text();
-                send_update_request({ id, lang, translation }, this);
+                send_update_request( {localization_id, translation}, this );
             });
 
             $("body").on("click", "a.delete", function (e) {
@@ -291,25 +291,28 @@
 
             $("#add_translation").on("submit", function (e) {
                 e.preventDefault();
-                let localization = {
-                    entity: $(this).find('input[name="entity"]').val(),
-                    code: $(this).find('input[name="code"]').val(),
-                    lang: $(this).find('select[name="lang"] option:selected').val(),
-                    translation: $(this).find('input[name="translation"]').val(),
-                };
+
+                const form = this;
+                const source = form.elements.source.value;
+                const object_id = form.elements.object_id.value;
+                const property = form.elements.property.value;
+                const lang = form.elements.lang.value
+                const translation = form.elements.translation.value
+
+                let localization = { source, object_id, property, lang, translation };
                 const client = APIClient.localization;
                 client.localizations.create(localization).then(
                     success => {
                         if (success.error) {
                             show_message({ type: "error_on_insert", data: success });
                         } else {
-                            var new_row = table_dt.row
-                                .add([success.id, success.entity, success.code, success.lang, success.translation, '<a href="#" class="btn btn-default btn-xs delete"><i class="fa fa-trash-can"></i> Delete</a>'])
+                            var new_row = table.api().row
+                                .add([success.lang, success.translation, '<a href="#" class="btn btn-xs btn-default delete"><i class="fa fa-trash-can"></i> %s</a>'.format(escape_str(_("Delete")))])
                                 .draw()
                                 .node();
                             $(new_row)
-                                .attr("id", "row_id_" + success.id)
-                                .data("id", success.id);
+                                .attr("id", "row_id_" + success.localization_id)
+                                .data("id", success.localization_id);
                             $(new_row.children[th_lang_index]).prop("contenteditable", true).addClass("lang");
                             $(new_row.children[th_translation_index]).prop("contenteditable", true).addClass("translation");
                             show_message({ type: "success_on_insert", data: success });

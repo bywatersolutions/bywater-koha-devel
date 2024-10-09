@@ -202,12 +202,11 @@ sub generate_subfield_form {
             }
         } elsif ( $subfield->{authorised_value} eq "itemtypes" ) {
             push @authorised_values, "";
-            my $itemtypes;
+            my $itemtypes = Koha::ItemTypes->new;
             if ($branch_limit) {
-                $itemtypes = Koha::ItemTypes->search_with_localization( { branchcode => $branch_limit } );
-            } else {
-                $itemtypes = Koha::ItemTypes->search_with_localization;
+                $itemtypes = $itemtypes->search_with_library_limits( {}, {}, $branch_limit );
             }
+            $itemtypes = $itemtypes->order_by_translated_description;
             while ( my $itemtype = $itemtypes->next ) {
                 push @authorised_values, $itemtype->itemtype;
                 $authorised_lib{ $itemtype->itemtype } = $itemtype->translated_description;

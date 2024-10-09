@@ -10,12 +10,7 @@ export class LocalizationAPIClient {
             create: localization =>
                 this.httpClient.post({
                     endpoint: "",
-                    body: "entity=%s&code=%s&lang=%s&translation=%s".format(
-                        encodeURIComponent(localization.entity),
-                        encodeURIComponent(localization.code),
-                        encodeURIComponent(localization.lang),
-                        encodeURIComponent(localization.translation)
-                    ),
+                    body: new URLSearchParams(localization).toString(),
                     headers: {
                         "Content-Type":
                             "application/x-www-form-urlencoded;charset=utf-8",
@@ -24,23 +19,16 @@ export class LocalizationAPIClient {
             update: localization =>
                 this.httpClient.put({
                     endpoint: "",
-                    body: "id=%s&lang=%s&translation=%s".format(
-                        encodeURIComponent(localization.id),
-                        encodeURIComponent(localization.lang),
-                        encodeURIComponent(localization.translation)
-                    ),
+                    body: new URLSearchParams(localization).toString(),
                     headers: {
                         "Content-Type":
                             "application/x-www-form-urlencoded;charset=utf-8",
                     },
                 }),
-            delete: id =>
+            delete: localization =>
                 this.httpClient.delete({
-                    endpoint: "/?id=%s".format(id),
-                    headers: {
-                        "Content-Type":
-                            "application/x-www-form-urlencoded;charset=utf-8",
-                    },
+                    endpoint:
+                        "?" + new URLSearchParams(localization).toString(),
                 }),
         };
     }

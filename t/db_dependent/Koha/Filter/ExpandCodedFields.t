@@ -71,9 +71,10 @@ subtest 'ExpandCodedFields tests' => sub {
 
     # Clear GetAuthorisedValueDesc-generated cache
     $cache->clear_from_cache("libraries:name");
-    $cache->clear_from_cache("itemtype:description:en");
     $cache->clear_from_cache("cn_sources:description");
     $cache->clear_from_cache( "AV_descriptions:" . $av->category );
+
+    Koha::Caches->get_instance('localization')->clear_from_cache('Itemtype:en');
 
     C4::Biblio::ModBiblio( $record, $biblio->biblionumber );
     $biblio = Koha::Biblios->find( $biblio->biblionumber );

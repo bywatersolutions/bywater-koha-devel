@@ -19,14 +19,10 @@ use Modern::Perl;
 
 use C4::Koha qw( getitemtypeimagelocation );
 use C4::Languages;
-use Koha::Caches;
 use Koha::Database;
 use Koha::CirculationRules;
-use Koha::Localizations;
 
 use base qw(Koha::Object Koha::Object::Limit::Library);
-
-my $cache = Koha::Caches->get_instance();
 
 =head1 NAME
 
@@ -35,48 +31,6 @@ Koha::ItemType - Koha Item type Object class
 =head1 API
 
 =head2 Class methods
-
-=cut
-
-=head3 store
-
-ItemType specific store to ensure relevant caches are flushed on change
-
-=cut
-
-sub store {
-    my ($self) = @_;
-
-    my $flush = 0;
-
-    if ( !$self->in_storage ) {
-        $flush = 1;
-    } else {
-        my $self_from_storage = $self->get_from_storage;
-        $flush = 1 if ( $self_from_storage->description ne $self->description );
-    }
-
-    $self = $self->SUPER::store;
-
-    if ($flush) {
-        my $key = "itemtype:description:en";
-        $cache->clear_from_cache($key);
-    }
-
-    return $self;
-}
-
-=head2 delete
-
-ItemType specific C<delete> to clear relevant caches on delete.
-
-=cut
-
-sub delete {
-    my $self = shift @_;
-    $cache->clear_from_cache('itemtype:description:en');
-    $self->SUPER::delete(@_);
-}
 
 =head3 image_location
 
@@ -93,26 +47,8 @@ sub image_location {
 
 sub translated_description {
     my ( $self, $lang ) = @_;
-    if ( my $translated_description = eval { $self->get_column('translated_description') } ) {
 
-        # If the value has already been fetched (eg. from sarch_with_localization),
-        # do not search for it again
-        # Note: This is a bit hacky but should be fast
-        return $translated_description
-            ? $translated_description
-            : $self->description;
-    }
-    $lang ||= C4::Languages::getlanguage;
-    my $translated_description = Koha::Localizations->search(
-        {
-            code   => $self->itemtype,
-            entity => 'itemtypes',
-            lang   => $lang
-        }
-    )->next;
-    return $translated_description
-        ? $translated_description->translation
-        : $self->description;
+    my $localization = $self->localization( 'description', $lang || C4::Languages::getlanguage() );
 }
 
 =head3 translated_descriptions
@@ -121,19 +57,14 @@ sub translated_description {
 
 sub translated_descriptions {
     my ($self) = @_;
-    my @translated_descriptions = Koha::Localizations->search(
-        {
-            entity => 'itemtypes',
-            code   => $self->itemtype,
-        }
-    )->as_list;
+
     return [
         map {
             {
                 lang        => $_->lang,
                 translation => $_->translation,
             }
-        } @translated_descriptions
+        } $self->_result->description_localizations
     ];
 }
 
@@ -234,7 +165,30 @@ sub to_api_mapping {
         rentalcharge_hourly          => 'hourly_rental_charge',
         rentalcharge_hourly_calendar => 'hourly_rental_charge_calendar',
         bookable_itemtype            => 'bookable_itemtype',
+
+        # TODO Remove after having updated all code using unblessed translated_description
+        translated_description => undef,
     };
+}
+
+=head3 unblessed
+
+See L<Koha::Object/unblessed>
+
+Overridden to add a C<translated_description> key for backward compatibility.
+This should not be relied on as it may be removed in the future.
+
+=cut
+
+# TODO Remove after having updated all code using unblessed translated_description
+sub unblessed {
+    my ($self) = @_;
+
+    my $unblessed = $self->SUPER::unblessed();
+
+    $unblessed->{translated_description} = $self->translated_description;
+
+    return $unblessed;
 }
 
 =head2 Internal methods
