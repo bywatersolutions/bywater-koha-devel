@@ -541,6 +541,10 @@ paths:
     $ref: "./paths/rotas.yaml#/~1rotas~1{rota_id}"
   "/rotas/{rota_id}/stages/{stage_id}/position":
     $ref: "./paths/rotas.yaml#/~1rotas~1{rota_id}~1stages~1{stage_id}~1position"
+  "/rpc/biblios/{biblio_id}/items/{item_id}/populate_empty_callnumbers":
+    $ref: "./paths/rpc_biblios.yaml#/~1rpc~1biblios~1{biblio_id}~1items~1{item_id}~1populate_empty_callnumbers"
+  "/rpc/biblios/{biblio_id}/items/populate_empty_callnumbers":
+    $ref: "./paths/rpc_biblios.yaml#/~1rpc~1biblios~1{biblio_id}~1items~1populate_empty_callnumbers"
   /suggestions:
     $ref: ./paths/suggestions.yaml#/~1suggestions
   "/suggestions/{suggestion_id}":

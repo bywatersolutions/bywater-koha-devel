@@ -1,0 +1,140 @@
+---
+"/rpc/biblios/{biblio_id}/items/populate_empty_callnumbers":
+  post:
+    x-mojo-to: RPC::Biblios#populate_empty_callnumbers
+    operationId: RPCBiblioPopulateEmptyItemsCallnumbers
+    tags:
+      - biblios
+    summary: Populate empty item callnumbers from biblio callnumber for all items on record with no callnumber
+    parameters:
+      - $ref: "../swagger.yaml#/parameters/biblio_id_pp"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Callnumbers updated
+        schema:
+          type: object
+          properties:
+            updated_items_count:
+              description: Number of items updated
+              type: integer
+            callnumber:
+              description: Callnumber added to updated items
+              type: string
+            modified_item_ids:
+              description: A list of item IDs for the actually modified items
+              type: array
+              items:
+                type: integer
+                description: Internal item identifier for the modified item
+          required:
+            - updated_items_count
+            - callnumber
+          additionalProperties: false
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "409":
+        description: |
+          Conflict. Possible `error_code` attribute values:
+
+          * `missing_configuration`
+          * `callnumber_empty`
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
+"/rpc/biblios/{biblio_id}/items/{item_id}/populate_empty_callnumbers":
+  post:
+    x-mojo-to: RPC::Biblios#populate_empty_callnumbers
+    operationId: RPCBiblioPopulateEmptyItemCallnumber
+    tags:
+      - biblios
+    summary: Populate empty item callnumbers from biblio callnumber for all items on record with no callnumber
+    parameters:
+      - $ref: "../swagger.yaml#/parameters/biblio_id_pp"
+      - $ref: "../swagger.yaml#/parameters/item_id_pp"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Callnumbers updated
+        schema:
+          type: object
+          properties:
+            updated_items_count:
+              description: Number of items updated
+              type: integer
+            callnumber:
+              description: Callnumber added to updated items
+              type: string
+            modified_item_ids:
+              description: A list of item IDs for the actually modified items
+              type: array
+              items:
+                type: integer
+                description: Internal item identifier for the modified item
+          required:
+            - updated_items_count
+            - callnumber
+          additionalProperties: false
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "409":
+        description: |
+          Conflict. Possible `error_code` attribute values:
+
+          * `missing_configuration`
+          * `callnumber_empty`
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue
