@@ -1131,6 +1131,7 @@ DROP TABLE IF EXISTS `biblio_framework`;
 CREATE TABLE `biblio_framework` (
   `frameworkcode` varchar(4) NOT NULL DEFAULT '' COMMENT 'the unique code assigned to the framework',
   `frameworktext` varchar(255) NOT NULL DEFAULT '' COMMENT 'the description/name given to the framework',
+  `is_fast_add` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'the ability to be used as a Fast add framework',
   PRIMARY KEY (`frameworkcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
