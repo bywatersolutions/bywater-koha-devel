@@ -135,6 +135,14 @@
                         <input type="text" name="frameworktext" id="description" size="40" maxlength="80" value="[% framework.frameworktext | html %]" required="required" class="required" />
                         <span class="required">Required</span>
                     </li>
+                    <li>
+                        <label for="is_fast_add">Use as a Fast add framework: </label>
+                        [% IF framework.is_fast_add %]
+                            <input type="checkbox" name="is_fast_add" id="is_fast_add" value="1" checked />
+                        [% ELSE %]
+                            <input type="checkbox" name="is_fast_add" id="is_fast_add" value="1" />
+                        [% END %]
+                    </li>
                 </ol>
             </fieldset>
             <fieldset class="action">
@@ -292,7 +300,12 @@
                     [% FOREACH loo IN frameworks %]
                         <tr>
                             <td>[% loo.frameworkcode | html %]</td>
-                            <td>[% loo.frameworktext | html %]</td>
+                            <td>
+                                [% loo.frameworktext | html %]
+                                [% IF loo.is_fast_add %]
+                                    <span class="badge rounded-pill bg-secondary float-end">Fast add</span>
+                                [% END %]
+                            </td>
                             <td>
                                 <div class="btn-group dropup">
                                     <a class="btn btn-default btn-xs dropdown-toggle" id="frameworkactions[% loo.frameworkcode | html %]" role="button" data-bs-toggle="dropdown" href="#"> Actions </a>

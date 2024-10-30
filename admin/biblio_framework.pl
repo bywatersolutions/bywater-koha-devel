@@ -54,10 +54,12 @@ if ( $op eq 'add_form' ) {
     my $frameworkcode = $input->param('frameworkcode');
     my $frameworktext = $input->param('frameworktext');
     my $is_a_modif    = $input->param('is_a_modif');
+    my $is_fast_add   = $input->param('is_fast_add') // 0;
 
     if ($is_a_modif) {
         my $framework = Koha::BiblioFrameworks->find($frameworkcode);
         $framework->frameworktext($frameworktext);
+        $framework->is_fast_add($is_fast_add);
         eval { $framework->store; };
         if ($@) {
             push @messages, { type => 'error', code => 'error_on_update' };
@@ -69,6 +71,7 @@ if ( $op eq 'add_form' ) {
             {
                 frameworkcode => $frameworkcode,
                 frameworktext => $frameworktext,
+                is_fast_add   => $is_fast_add,
             }
         );
         eval { $framework->store; };
@@ -127,4 +130,3 @@ $template->param(
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;
-
