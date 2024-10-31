@@ -39,7 +39,11 @@
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" id="newRecordDefault" href="/cgi-bin/koha/cataloguing/addbiblio.pl?frameworkcode=">Default framework</a></li>
                     [% FOREACH framework IN frameworks %]
-                        <li><a class="dropdown-item" href="/cgi-bin/koha/cataloguing/addbiblio.pl?frameworkcode=[% framework.frameworkcode | uri %]">[% framework.frameworktext | html %]</a></li>
+                        [% IF !framework.is_fast_add %]<li><a class="dropdown-item" href="/cgi-bin/koha/cataloguing/addbiblio.pl?frameworkcode=[% framework.frameworkcode | uri %]">[% framework.frameworktext | html %]</a></li>[% END %]
+                    [% END %]
+                    [% FOREACH framework IN frameworks %]
+                        [% IF loop.first %]<li><h6 class="dropdown-header">Fast add frameworks</h6></li>[% END %]
+                        [% IF framework.is_fast_add %]<li><a class="dropdown-item" href="/cgi-bin/koha/cataloguing/addbiblio.pl?frameworkcode=[% framework.frameworkcode | uri %]">[% framework.frameworktext | html %]</a></li>[% END %]
                     [% END %]
                 </ul>
             </div>
@@ -50,7 +54,11 @@
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li id="Default" class="z3950searchFw"><a class="dropdown-item" href="#">Default framework</a></li>
                         [% FOREACH framework IN frameworks %]
-                            <li id="[% framework.frameworkcode | html %]" class="z3950searchFw"><a class="dropdown-item" href="#">[% framework.frameworktext | html %]</a></li>
+                            [% IF !framework.is_fast_add %]<li id="[% framework.frameworkcode | html %]" class="z3950searchFw"><a class="dropdown-item" href="#">[% framework.frameworktext | html %]</a></li>[% END %]
+                        [% END %]
+                        [% FOREACH framework IN frameworks %]
+                            [% IF loop.first %]<li><h6 class="dropdown-header">Fast add frameworks</h6></li>[% END %]
+                            [% IF framework.is_fast_add %]<li id="[% framework.frameworkcode | html %]" class="z3950searchFw"><a class="dropdown-item" href="#">[% framework.frameworktext | html %]</a></li>[% END %]
                         [% END %]
                     </ul>
                 </div>

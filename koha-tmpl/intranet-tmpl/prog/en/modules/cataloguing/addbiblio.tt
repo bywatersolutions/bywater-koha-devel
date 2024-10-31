@@ -956,18 +956,7 @@
                                     <a class="dropdown-item" href="#" id="marcTagsSelect"><i class="fa fa-check-square"></i> Show tags</a>
                                 </li>
                             [% END %]
-                            <li><h6 class="dropdown-header">Change framework</h6></li>
-                            <li>
-                                <a class="dropdown-item change-framework" href="#" data-frameworkcode="">
-                                    [% IF ( frameworkcode ) %]
-                                       <i class="fa fa-fw">&nbsp;</i>
-                                    [% ELSE %]
-                                        <i class="fa fa-fw fa-check"></i>
-                                    [% END %]
-                                    Default
-                                </a>
-                            </li>
-                            [% FOREACH framework IN frameworks%]
+                            [% BLOCK framework_link %]
                                 <li>
                                     <a class="dropdown-item change-framework" href="#" data-frameworkcode="[% framework.frameworkcode | html %]">
                                         [% IF framework.frameworkcode == frameworkcode %]
@@ -975,9 +964,22 @@
                                         [% ELSE %]
                                             <i class="fa fa-fw">&nbsp;</i>
                                         [% END %]
-                                        [% framework.frameworktext | html %]
+                                        [% !framework ? 'Default' : framework.frameworktext | html %]
                                     </a>
                                 </li>
+                            [% END %]
+                            [% IF CAN_user_editcatalogue_edit_catalogue %]
+                                <li><h6 class="dropdown-header">Change framework</h6></li>
+                                [% FOREACH framework IN frameworks %]
+                                    [% IF loop.first %][% INCLUDE framework_link framework='' %][% END %]
+                                    [% IF !framework.is_fast_add %][% INCLUDE framework_link %][% END %]
+                                [% END %]
+                            [% END %]
+                            [% IF CAN_user_editcatalogue_fast_cataloging %]
+                                <li><h6 class="dropdown-header">Change Fast Add framework</h6></li>
+                                [% FOREACH framework IN frameworks %]
+                                    [% IF framework.is_fast_add %][% INCLUDE framework_link %][% END %]
+                                [% END %]
                             [% END %]
                         </ul> <!-- /#settings-menu -->
                     </div> <!-- /.btn-group -->
