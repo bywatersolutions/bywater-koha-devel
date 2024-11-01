@@ -909,7 +909,7 @@
                 [% END %]
 
                 <div id="toolbar" class="btn-toolbar sticky">
-                    [% IF CAN_user_editcatalogue_edit_items or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]
+                    [% IF CAN_user_editcatalogue_edit_items || ( CAN_user_editcatalogue_fast_cataloging && is_fast_add ) %]
                         [% IF (circborrowernumber) %][%# fast cataloging must lead to items %]
                             <!-- Action is under fast cataloging - Save button redirecting to items -->
                             <div class="btn-group"><a href="#" id="saveanditems" class="btn btn-primary"><i class="fa fa-save"></i> Save</a></div>
@@ -964,7 +964,7 @@
                                         [% ELSE %]
                                             <i class="fa fa-fw">&nbsp;</i>
                                         [% END %]
-                                        [% !framework ? 'Default' : framework.frameworktext | html %]
+                                        [% ( !framework ? 'Default' : framework.frameworktext ) | html %]
                                     </a>
                                 </li>
                             [% END %]
@@ -976,7 +976,7 @@
                                 [% END %]
                             [% END %]
                             [% IF CAN_user_editcatalogue_fast_cataloging %]
-                                <li><h6 class="dropdown-header">Change Fast Add framework</h6></li>
+                                <li><h6 class="dropdown-header">Change Fast add framework</h6></li>
                                 [% FOREACH framework IN frameworks %]
                                     [% IF framework.is_fast_add %][% INCLUDE framework_link %][% END %]
                                 [% END %]

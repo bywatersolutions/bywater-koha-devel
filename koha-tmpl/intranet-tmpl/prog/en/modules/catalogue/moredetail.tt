@@ -166,7 +166,7 @@
                         <h4>
                             Item information
                             [% UNLESS ( ITEM_DAT.nomod ) %]
-                                [% IF ( CAN_user_editcatalogue_edit_items ) %]
+                                [% IF ( CAN_user_editcatalogue_edit_items || CAN_user_editcatalogue_fast_cataloging && is_fast_add ) %]
                                     <a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber=[% ITEM_DAT.biblionumber | uri %]&amp;itemnumber=[% ITEM_DAT.itemnumber | uri %]"
                                         ><i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit item</a
                                     >

@@ -43,6 +43,7 @@ use Koha::Biblio::Metadatas;
 use Koha::Biblio::Metadata::Extractor;
 use Koha::Biblio::ItemGroups;
 use Koha::Biblioitems;
+use Koha::BiblioFrameworks;
 use Koha::Cache::Memory::Lite;
 use Koha::Bookings;
 use Koha::Checkouts;
@@ -330,8 +331,13 @@ sub can_be_edited {
     Koha::Exceptions::MissingParameter->throw( error => "The patron parameter is missing or invalid" )
         unless $patron && ref($patron) eq 'Koha::Patron';
 
+    my $is_fast_add =
+        defined $self->frameworkcode && $self->frameworkcode ne ''
+        ? Koha::BiblioFrameworks->find( $self->frameworkcode )->is_fast_add
+        : 0;
+
     my $editcatalogue =
-        $self->frameworkcode eq 'FA'
+        $is_fast_add
         ? [ 'fast_cataloging', 'edit_catalogue' ]
         : 'edit_catalogue';
 

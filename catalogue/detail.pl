@@ -46,6 +46,7 @@ use Koha::AuthorisedValues;
 use Koha::Biblios;
 use Koha::Biblio::ItemGroup::Items;
 use Koha::Biblio::ItemGroups;
+use Koha::BiblioFrameworks;
 use Koha::Controller::Catalogue;
 use Koha::CoverImages;
 use Koha::DateUtils;
@@ -89,11 +90,17 @@ if ( C4::Context->config('enable_plugins') ) {
 my $activetab    = $query->param('activetab');
 my $biblionumber = $query->param('biblionumber');
 $biblionumber = HTML::Entities::encode($biblionumber);
-my $biblio = Koha::Biblios->find($biblionumber);
+my $biblio        = Koha::Biblios->find($biblionumber);
+my $frameworkcode = $biblio->frameworkcode;
+my $is_fast_add =
+    $frameworkcode eq ''
+    ? 0
+    : Koha::BiblioFrameworks->find($frameworkcode)->is_fast_add;
 
 $template->param(
-    biblio    => $biblio,
-    activetab => $activetab,
+    biblio      => $biblio,
+    activetab   => $activetab,
+    is_fast_add => $is_fast_add,
 );
 
 unless ($biblio) {

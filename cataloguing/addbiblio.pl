@@ -515,8 +515,13 @@ $frameworkcode = &GetFrameworkCode($biblionumber)
     if ( $biblionumber and not( defined $frameworkcode ) and $op ne 'cud-addbiblio' );
 $frameworkcode //= '';
 
+my $fast_cataloging_mode =
+    $frameworkcode eq ''
+    ? 0
+    : Koha::BiblioFrameworks->find($frameworkcode)->is_fast_add;
+
 my $userflags =
-    $frameworkcode eq 'FA'
+    $fast_cataloging_mode
     ? [ 'fast_cataloging', 'edit_catalogue' ]
     : 'edit_catalogue';
 
@@ -563,7 +568,7 @@ if ($biblionumber) {
     }
 }
 
-if ( $frameworkcode eq 'FA' ) {
+if ($fast_cataloging_mode) {
 
     # We need to grab and set some variables in the template for use on the additems screen
     $template->param(
@@ -727,7 +732,7 @@ if ( $op eq "cud-addbiblio" ) {
         if ( $redirect eq "items"
             || ( $mode ne "popup" && !$is_a_modif && $redirect ne "view" && $redirect ne "just_save" ) )
         {
-            if ( $frameworkcode eq 'FA' ) {
+            if ($fast_cataloging_mode) {
                 print $input->redirect( '/cgi-bin/koha/cataloguing/additem.pl?'
                         . 'biblionumber='
                         . $biblionumber

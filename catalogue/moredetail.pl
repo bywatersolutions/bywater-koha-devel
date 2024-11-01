@@ -31,6 +31,7 @@ use C4::Search      qw( enabled_staff_search_views z3950_search_args );
 use Koha::Acquisition::Booksellers;
 use Koha::AuthorisedValues;
 use Koha::Biblios;
+use Koha::BiblioFrameworks;
 use Koha::Controller::Catalogue;
 use Koha::Items;
 use Koha::Patrons;
@@ -90,7 +91,11 @@ my $record = $biblio ? $biblio->metadata->record : undef;
 output_and_exit( $query, $cookie, $template, 'unknown_biblio' )
     unless $biblio && $record;
 
-my $fw        = GetFrameworkCode($biblionumber);
+my $fw = $biblio->frameworkcode;
+my $is_fast_add =
+    $fw eq ''
+    ? 0
+    : Koha::BiblioFrameworks->find($fw)->is_fast_add;
 my $all_items = $biblio->items->search_ordered;
 
 my @items;
@@ -319,6 +324,7 @@ $template->param(
     itemnumber          => $itemnumber,
     z3950_search_params => C4::Search::z3950_search_args( GetBiblioData($biblionumber) ),
     biblio              => $biblio,
+    is_fast_add         => $is_fast_add,
 );
 $template->param( ONLY_ONE => 1 ) if ( $itemnumber && $showncount != @items );
 $template->{'VARS'}->{'searchid'} = $query->param('searchid');

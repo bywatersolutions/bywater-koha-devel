@@ -43,7 +43,7 @@
                 [% IF ( analyze ) %]<th id="[% tab | html %]_usedin" data-colname="usedin">Used in</th><th></th>[% END %]
                 [% IF Koha.Preference('UseCourseReserves') %]<th id="[% tab | html %]_course_reserves" data-colname="course_reserves">Course reserves</th>[% END %]
                 <th id="[% tab | html %]_spinelabel" data-colname="spinelabel" class="no-sort">Spine label</th>
-                [% IF ( CAN_user_editcatalogue_edit_items ) %]<th id="[% tab | html %]_actions" data-colname="actions" class="no-sort no-export">&nbsp;</th>[% END %]
+                [% IF ( CAN_user_editcatalogue_edit_items || CAN_user_editcatalogue_fast_cataloging && is_fast_add ) %]<th id="[% tab | html %]_actions" data-colname="actions" class="no-sort no-export">&nbsp;</th>[% END %]
             </tr>
         </thead>
     </table>
@@ -148,7 +148,7 @@
             canreservefromotherbranches: [% Koha.Preference('canreservefromotherbranches') ? 1 : 0 | html %],
         });
         Koha.addPermissions({
-            CAN_user_editcatalogue_edit_items: [% CAN_user_editcatalogue_edit_items ? 1 : 0 | html %],
+            CAN_user_editcatalogue_edit_items: [% (CAN_user_editcatalogue_edit_items || CAN_user_editcatalogue_fast_cataloging && is_fast_add) ? 1 : 0 | html %],
         });
         const logged_in_branchcode = '[% Branches.GetLoggedInBranchcode() | html %]';
 

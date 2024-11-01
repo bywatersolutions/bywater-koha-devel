@@ -142,13 +142,13 @@ my $item_group             = $input->param('item_group');
 my $item_group_description = $input->param('item_group_description');
 my $display_order          = $input->param('item_group_display_order');
 
-our $frameworkcode = &GetFrameworkCode($biblionumber);
+our $frameworkcode = $biblio->frameworkcode;
 
 # Defining which userflag is needing according to the framework currently used
 my $fast_cataloging_mode =
-    defined $input->param('frameworkcode')
-    ? $input->param('frameworkcode') eq 'FA'
-    : $frameworkcode eq 'FA';
+    $frameworkcode eq ''
+    ? 0
+    : Koha::BiblioFrameworks->find($frameworkcode)->is_fast_add;
 
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
@@ -186,7 +186,7 @@ $restrictededition = 0 if ( $restrictededition != 0 && C4::Context->IsSuperLibra
 # In case user has fast cataloging permission (and we're in fast cataloging), editing is not restricted
 $restrictededition = 0
     if ( $restrictededition != 0
-    && $frameworkcode eq 'FA'
+    && $fast_cataloging_mode
     && haspermission( $uid, { 'editcatalogue' => 'fast_cataloging' } ) );
 
 our $tagslib = &GetMarcStructure( 1, $frameworkcode );
@@ -486,7 +486,7 @@ if ( $op eq "cud-additem" ) {
             undef($current_item);
         }
     }
-    if ( $frameworkcode eq 'FA' && $fa_circborrowernumber ) {
+    if ( $fast_cataloging_mode && $fa_circborrowernumber ) {
         print $input->redirect( '/cgi-bin/koha/circ/circulation.pl?'
                 . 'borrowernumber='
                 . $fa_circborrowernumber
@@ -796,7 +796,7 @@ my $subfields =
     }
     );
 
-if ( $frameworkcode eq 'FA' ) {
+if ($fast_cataloging_mode) {
     my ($barcode_field) = grep { $_->{kohafield} eq 'items.barcode' } @$subfields;
     $barcode_field->{marc_value}->{value} ||= $input->param('barcode');
 }
@@ -826,7 +826,7 @@ $template->param(
 );
 $template->{'VARS'}->{'searchid'} = $searchid;
 
-if ( $frameworkcode eq 'FA' ) {
+if ($fast_cataloging_mode) {
 
     # fast cataloguing datas
     $template->param(

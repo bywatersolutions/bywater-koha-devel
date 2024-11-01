@@ -33,11 +33,11 @@
         </div>
     [% END %]
 
-    [% IF ( CAN_user_editcatalogue_edit_catalogue || CAN_user_editcatalogue_edit_items || CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel ) or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]
+    [% IF ( CAN_user_editcatalogue_edit_catalogue || CAN_user_editcatalogue_edit_items || CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel ) || ( CAN_user_editcatalogue_fast_cataloging && is_fast_add ) %]
         <div class="btn-group">
             <button class="btn btn-default dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit</button>
             <ul class="dropdown-menu">
-                [% IF CAN_user_editcatalogue_edit_catalogue or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]
+                [% IF CAN_user_editcatalogue_edit_catalogue || ( CAN_user_editcatalogue_fast_cataloging && is_fast_add ) %]
                     [% IF biblio.can_be_edited(logged_in_user) %]
                         <li><a class="dropdown-item" id="editbiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=[% biblionumber | html %]">Edit record</a></li>
                     [% ELSE %]
@@ -57,7 +57,7 @@
                     </li>
                 [% END %]
 
-                [% IF CAN_user_editcatalogue_edit_items or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]
+                [% IF CAN_user_editcatalogue_edit_items || ( CAN_user_editcatalogue_fast_cataloging && is_fast_add ) %]
                     <li><a class="dropdown-item" id="manageitems" href="/cgi-bin/koha/cataloguing/additem.pl?biblionumber=[% biblionumber | html %]">Manage items</a></li>
                 [% END %]
 
@@ -126,7 +126,7 @@
                     <li><a class="dropdown-item" href="#" id="z3950copy">Replace record via Z39.50/SRU</a></li>
                 [% END %]
 
-                [% IF CAN_user_editcatalogue_edit_catalogue or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]
+                [% IF CAN_user_editcatalogue_edit_catalogue || ( CAN_user_editcatalogue_fast_cataloging && is_fast_add ) %]
                     [% IF ( count ) %]
                         <li
                             data-bs-toggle="tooltip"
@@ -157,7 +157,7 @@
                     [% END %]
                 [% END %]
 
-                [% IF CAN_user_editcatalogue_delete_all_items or ( frameworkcode == 'FA' and CAN_user_editcatalogue_fast_cataloging ) %]
+                [% IF CAN_user_editcatalogue_delete_all_items || ( CAN_user_editcatalogue_fast_cataloging && is_fast_add ) %]
                     [% IF ( count ) %]
                         <li>
                             <form action="/cgi-bin/koha/cataloguing/additem.pl" method="post">
