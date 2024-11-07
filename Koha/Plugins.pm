@@ -45,6 +45,15 @@ BEGIN {
     my @pluginsdir = ref($pluginsdir) eq 'ARRAY' ? @$pluginsdir : $pluginsdir;
     push @INC, array_minus( @pluginsdir, @INC );
     pop @INC if $INC[-1] eq '.';
+
+    # Load plugins early to ensure they're available before any transactions begin
+    my $enable_plugins = C4::Context->config("enable_plugins") // 0;
+
+    if ($enable_plugins) {
+        require Koha::Plugins::Loader;
+        Koha::Plugins::Loader->get_enabled_plugins();
+    }
+
 }
 
 =head1 NAME
@@ -118,34 +127,9 @@ sub get_enabled_plugins {
 
     return unless C4::Context->config('enable_plugins');
 
-    my $enabled_plugins = Koha::Cache::Memory::Lite->get_from_cache(ENABLED_PLUGINS_CACHE_KEY);
-    unless ($enabled_plugins) {
-        my $verbose = $params->{verbose} // $class->_verbose;
-        $enabled_plugins = [];
-
-        my @plugin_classes;
-        try {
-            my $rs = Koha::Plugins::Datas->search( { plugin_key => '__ENABLED__', plugin_value => 1 } );
-            @plugin_classes = $rs->get_column('plugin_class');
-        } catch {
-            warn "$_";
-        };
-
-        foreach my $plugin_class (@plugin_classes) {
-            next unless can_load( modules => { $plugin_class => undef }, verbose => $verbose, nocache => 1 );
-
-            my $plugin = eval { $plugin_class->new() };
-            if ( $@ || !$plugin ) {
-                warn "Failed to instantiate plugin $plugin_class: $@";
-                next;
-            }
-
-            push @$enabled_plugins, $plugin;
-        }
-        Koha::Cache::Memory::Lite->set_in_cache( ENABLED_PLUGINS_CACHE_KEY, $enabled_plugins );
-    }
-
-    return @$enabled_plugins;
+    # Delegate to Koha::Plugins::Loader which handles caching and loading
+    require Koha::Plugins::Loader;
+    return Koha::Plugins::Loader->get_enabled_plugins();
 }
 
 sub _verbose {
