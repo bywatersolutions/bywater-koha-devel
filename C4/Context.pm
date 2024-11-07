@@ -22,7 +22,12 @@ use Modern::Perl;
 use vars qw($AUTOLOAD $context);
 
 BEGIN {
-    if ( $ENV{'HTTP_USER_AGENT'} ) {    # Only hit when plack is not enabled
+    # Calling get_enabled_plugins here esnures that all plugin
+    # modules are loaded before use and will not trigger
+    # a database connection reset
+    Koha::Plugins->get_enabled_plugins();
+
+    if ( $ENV{'HTTP_USER_AGENT'} ) { # Only hit when plack is not enabled
 
         # Redefine multi_param if cgi version is < 4.08
         # Remove the "CGI::param called in list context" warning in this case
