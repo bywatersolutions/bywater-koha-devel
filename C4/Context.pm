@@ -22,12 +22,87 @@ use Modern::Perl;
 use vars qw($AUTOLOAD $context);
 
 BEGIN {
-    # Calling get_enabled_plugins here esnures that all plugin
-    # modules are loaded before use and will not trigger
-    # a database connection reset
-    Koha::Plugins->get_enabled_plugins();
+    my $enable_plugins = 0;
+    if ( exists $ENV{'KOHA_CONF'} && -e $ENV{'KOHA_CONF'} ) {
+        require XML::Simple;
+        $enable_plugins =
+            XML::Simple->new->XMLin( $ENV{'KOHA_CONF'}, ForceArray => 0, KeyAttr => [] )->{'config'}->{'enable_plugins'}
+            // 0;
+    }
 
-    if ( $ENV{'HTTP_USER_AGENT'} ) { # Only hit when plack is not enabled
+    if ($enable_plugins) {
+        require Koha::Cache::Memory::Lite;
+        my $enabled_plugins = Koha::Cache::Memory::Lite->get_from_cache('enabled_plugins');
+
+        if ( !$enabled_plugins ) {
+            require Koha::Config;
+            my $config = Koha::Config->get_instance;
+
+            # Database connection setup
+            my $driver = $config->get('db_scheme') eq 'Pg' ? 'Pg' : 'mysql';
+            my $dsn    = sprintf(
+                'dbi:%s:database=%s;host=%s;port=%s',
+                $driver,
+                $config->get("database_test") || $config->get("database"),
+                $config->get("hostname"),
+                $config->get("port") || q{},
+            );
+            my $attr = { RaiseError => 1, PrintError => 1 };
+            if ( $driver eq 'mysql' && ( $config->get("tls") // q{} ) eq 'yes' ) {
+                $dsn .= sprintf(
+                    ';mysql_ssl=1;mysql_ssl_client_key=%s;mysql_ssl_client_cert=%s;mysql_ssl_ca_file=%s',
+                    $config->get('key'), $config->get('cert'), $config->get('ca'),
+                );
+                $attr->{mysql_enable_utf8} = 1;
+            }
+
+            require DBI;
+            my $dbh = DBI->connect( $dsn, $config->get("user"), $config->get("pass"), $attr );
+
+            if ($dbh) {
+                my $tz = $config->timezone // q{};
+                my @queries;
+                push @queries, "SET NAMES 'utf8mb4'"            if $driver eq 'mysql';
+                push @queries, qq{SET time_zone = "$tz"}        if $tz && $driver eq 'mysql' && $tz ne 'local';
+                push @queries, qq{SET TIME ZONE = "$tz"}        if $tz && $driver eq 'Pg';
+                push @queries, 'set client_encoding = \'UTF8\'' if $driver eq 'Pg';
+                if ( $driver eq 'mysql' ) {
+                    my $sql_mode =
+                        ( $config->get('strict_sql_modes') || $ENV{KOHA_TESTING} || ( $ENV{_} // q{} ) =~ m{prove}smx )
+                        ? 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'
+                        : 'IGNORE_SPACE,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+                    push @queries, qq{SET sql_mode = '$sql_mode'};
+                }
+
+                $dbh->do($_) for grep { $_ } @queries;
+
+                # Retrieve enabled plugin classes
+                my $sth = $dbh->prepare(
+                    q{SELECT plugin_class FROM plugin_data WHERE plugin_key = ' __ENABLED__ ' AND plugin_value = 1});
+                $sth->execute();
+                my @plugin_classes = map { $_->[0] } @{ $sth->fetchall_arrayref() };
+                $sth->finish();
+                $dbh->disconnect();
+
+                # Load and instantiate plugins
+                $enabled_plugins = [];
+                foreach my $plugin_class (@plugin_classes) {
+                    next
+                        if !Module::Load::Conditional::can_load(
+                        modules => { $plugin_class => undef },
+                        nocache => 1
+                        );
+                    if ( my $plugin = eval { $plugin_class->new() } ) {
+                        push @{$enabled_plugins}, $plugin;
+                    }
+                }
+
+                Koha::Cache::Memory::Lite->set_in_cache( 'enabled_plugins', $enabled_plugins );
+            }
+        }
+    }
+
+    if ( $ENV{'HTTP_USER_AGENT'} ) {    # Only hit when plack is not enabled
 
         # Redefine multi_param if cgi version is < 4.08
         # Remove the "CGI::param called in list context" warning in this case
