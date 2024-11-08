@@ -33,19 +33,16 @@ BEGIN {
     if ($enable_plugins) {
         require Koha::Cache::Memory::Lite;
         my $enabled_plugins = Koha::Cache::Memory::Lite->get_from_cache('enabled_plugins');
-
         if ( !$enabled_plugins ) {
             require Koha::Config;
             my $config = Koha::Config->get_instance;
-
-            # Database connection setup
             my $driver = $config->get('db_scheme') eq 'Pg' ? 'Pg' : 'mysql';
             my $dsn    = sprintf(
                 'dbi:%s:database=%s;host=%s;port=%s',
                 $driver,
-                $config->get("database_test") || $config->get("database"),
-                $config->get("hostname"),
-                $config->get("port") || q{},
+                $config->get('database_test') || $config->get('database'),
+                $config->get('hostname'),
+                $config->get('port') || q{},
             );
             my $attr = { RaiseError => 1, PrintError => 1 };
             if ( $driver eq 'mysql' && ( $config->get("tls") // q{} ) eq 'yes' ) {
@@ -53,12 +50,11 @@ BEGIN {
                     ';mysql_ssl=1;mysql_ssl_client_key=%s;mysql_ssl_client_cert=%s;mysql_ssl_ca_file=%s',
                     $config->get('key'), $config->get('cert'), $config->get('ca'),
                 );
-                $attr->{mysql_enable_utf8} = 1;
+                $attr->{'mysql_enable_utf8'} = 1;
             }
 
             require DBI;
-            my $dbh = DBI->connect( $dsn, $config->get("user"), $config->get("pass"), $attr );
-
+            my $dbh = DBI->connect( $dsn, $config->get('user'), $config->get('pass'), $attr );
             if ($dbh) {
                 my $tz = $config->timezone // q{};
                 my @queries;
@@ -76,28 +72,52 @@ BEGIN {
 
                 $dbh->do($_) for grep { $_ } @queries;
 
-                # Retrieve enabled plugin classes
-                my $sth = $dbh->prepare(
-                    q{SELECT plugin_class FROM plugin_data WHERE plugin_key = ' __ENABLED__ ' AND plugin_value = 1});
-                $sth->execute();
-                my @plugin_classes = map { $_->[0] } @{ $sth->fetchall_arrayref() };
-                $sth->finish();
+                my $table_exists = 0;
+                if ( $driver eq 'mysql' ) {
+                    $table_exists = $dbh->selectrow_array(
+                        <<~'SQL'
+                            SELECT COUNT(*) FROM information_schema.tables
+                            WHERE table_schema = DATABASE() AND table_name = 'plugin_data'
+                        SQL
+                    );
+                } elsif ( $driver eq 'Pg' ) {
+                    $table_exists = $dbh->selectrow_array(
+                        <<~'SQL'
+                            SELECT COUNT(*) FROM pg_catalog.pg_tables
+                            WHERE tablename = 'plugin_data'
+                        SQL
+                    );
+                }
+
+                my @plugin_classes;
+                if ($table_exists) {
+                    my $sth = $dbh->prepare(
+                        <<~'SQL'
+                            SELECT plugin_class FROM plugin_data WHERE plugin_key = '__ENABLED__' AND plugin_value = 1
+                        SQL
+                    );
+                    $sth->execute();
+                    @plugin_classes = map { $_->[0] } @{ $sth->fetchall_arrayref() };
+                    $sth->finish();
+                }
                 $dbh->disconnect();
 
-                # Load and instantiate plugins
-                $enabled_plugins = [];
-                foreach my $plugin_class (@plugin_classes) {
-                    next
-                        if !Module::Load::Conditional::can_load(
-                        modules => { $plugin_class => undef },
-                        nocache => 1
-                        );
-                    if ( my $plugin = eval { $plugin_class->new() } ) {
-                        push @{$enabled_plugins}, $plugin;
+                if (@plugin_classes) {
+                    $enabled_plugins = [];
+                    require Module::Load::Conditional;
+                    foreach my $plugin_class (@plugin_classes) {
+                        next
+                            if !Module::Load::Conditional::can_load(
+                            modules => { $plugin_class => undef },
+                            nocache => 1
+                            );
+                        if ( my $plugin = eval { $plugin_class->new() } ) {
+                            push @{$enabled_plugins}, $plugin;
+                        }
                     }
                 }
 
-                Koha::Cache::Memory::Lite->set_in_cache( 'enabled_plugins', $enabled_plugins );
+                Koha::Cache::Memory::Lite->set_in_cache( 'enabled_plugins', $enabled_plugins ) if $enabled_plugins;
             }
         }
     }
