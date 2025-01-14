@@ -190,10 +190,6 @@ sub get_template_and_user {
     if ( C4::Context->preference('AutoSelfCheckAllowed') && $in->{template_name} =~ m|sco/| ) {
         my $AutoSelfCheckID   = C4::Context->preference('AutoSelfCheckID');
         my $AutoSelfCheckPass = C4::Context->preference('AutoSelfCheckPass');
-
-        die "Cannot auto login to self checkout, user $AutoSelfCheckID does not exist!"
-            unless Koha::Patrons->search( { userid => $AutoSelfCheckID } )->count();
-
         $in->{query}->param( -name => 'login_userid',       -values => [$AutoSelfCheckID] );
         $in->{query}->param( -name => 'login_password',     -values => [$AutoSelfCheckPass] );
         $in->{query}->param( -name => 'koha_login_context', -values => ['sco'] );
