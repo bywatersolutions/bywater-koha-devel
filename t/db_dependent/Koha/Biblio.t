@@ -36,6 +36,7 @@ use Koha::AuthorisedValues;
 use Koha::MarcSubfieldStructures;
 use Koha::ActionLogs;
 use Koha::Exception;
+use Koha::BiblioFrameworks;
 
 use JSON qw( decode_json from_json );
 
@@ -2109,7 +2110,7 @@ subtest 'opac_summary_html' => sub {
 
 subtest 'can_be_edited() tests' => sub {
 
-    plan tests => 9;
+    plan tests => 11;
 
     $schema->storage->txn_begin;
 
@@ -2140,6 +2141,10 @@ subtest 'can_be_edited() tests' => sub {
     my $fa_biblio = $builder->build_sample_biblio( { frameworkcode => 'FA' } );
     my $fa_patron = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 0 } } );
 
+    my $is_fa_framework =
+        $builder->build_object( { class => 'Koha::BiblioFrameworks', value => { is_fast_add => 1 } } );
+    my $is_fa_biblio = $builder->build_sample_biblio( { frameworkcode => $is_fa_framework->frameworkcode } );
+
     # Add editcatalogue => edit_catalog subpermission
     $builder->build(
         {
@@ -2152,9 +2157,11 @@ subtest 'can_be_edited() tests' => sub {
         }
     );
 
-    ok( !$biblio->can_be_edited($fa_patron),   "Fast add permissions are not enough" );
-    ok( $fa_biblio->can_be_edited($fa_patron), "Fast add user can edit FA records" );
-    ok( $fa_biblio->can_be_edited($patron),    "edit_catalogue user can edit FA records" );
+    ok( !$biblio->can_be_edited($fa_patron),      "Fast add permissions are not enough" );
+    ok( $fa_biblio->can_be_edited($fa_patron),    "Fast add user can edit FA records" );
+    ok( $fa_biblio->can_be_edited($patron),       "edit_catalogue user can edit FA records" );
+    ok( $is_fa_biblio->can_be_edited($fa_patron), "Fast add user can edit is_fast_add records" );
+    ok( $is_fa_biblio->can_be_edited($patron),    "edit_catalogue user can edit is_fast_add records" );
 
     # Mock the record source doesn't allow direct editing
     $source_allows_editing = 0;
