@@ -57,12 +57,13 @@ my $es_record;
 my @es_fields;
 
 try {
-    $es_record = $es->get_elasticsearch()->get(
-        {
-            index => $es->index_name,
-            id    => $biblionumber,
-        }
-    );
+    my $params = {
+        index => $es->index_name,
+        id    => $biblionumber
+    };
+    $params->{type} = '_doc' if C4::Context->preference('ElasticsearchIncludeDocType');
+
+    $es_record = $es->get_elasticsearch()->get($params);
 } catch {
     warn $_;
     print $input->redirect("/cgi-bin/koha/errors/404.pl");

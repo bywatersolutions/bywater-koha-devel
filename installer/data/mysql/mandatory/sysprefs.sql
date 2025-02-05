@@ -240,6 +240,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('EdifactLSQ', 'location', 'location|ccode|', 'Map EDI sequence code (GIR+LSQ) to Koha Item field, empty to ignore', 'Choice'),
 ('ElasticsearchBoostFieldMatch', '0', NULL, 'Add a "match" query to es when searching, will follow indexes chosen in advanced search, or use title-cover for generic keyword or title index search', 'YesNo'),
 ('ElasticsearchCrossFields', '1', NULL, 'Enable "cross_fields" option for searches using Elastic search.', 'YesNo'),
+('ElasticsearchIncludeDocType', '0', '', 'When displaying ES records on the details page include the "type => _doc".', 'YesNo'),
 ('ElasticsearchIndexStatus_authorities', '0', 'Authorities index status', NULL, NULL),
 ('ElasticsearchIndexStatus_biblios', '0', 'Biblios index status', NULL, NULL),
 ('ElasticsearchMARCFormat', 'base64ISO2709', 'base64ISO2709|ARRAY', 'Elasticsearch MARC format. ISO2709 format is recommended as it is faster and takes less space, whereas array is searchable.', 'Choice'),
