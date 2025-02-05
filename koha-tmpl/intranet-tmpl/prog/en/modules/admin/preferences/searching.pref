@@ -104,6 +104,14 @@ Searching:
             - "adding a second 'match' field search to the ES query to boost relevancy. Keyword and title fields will be boosted with title-cover, other fields will boost directly."
             - "This will not boost CCL style searches, only standard or advanced searches."
         -
+            - pref: ElasticsearchIncludeDocType
+              default: 0
+              choices:
+                  1: Do
+                  0: Don't
+            - "include the 'type => _doc' parameter when displaying ES records on the details page."
+            - Due to specific configurations and versions the command to fetch a single record may or may not require this parameter, toggling it should fix 404 errors when viewing ES records from the details page.
+        -
             - pref: SavedSearchFilters
               default: 0
               choices:
