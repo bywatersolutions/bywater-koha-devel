@@ -248,6 +248,7 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('ElasticsearchCrossFields', '1'),
 ('ElasticsearchEnableZebraQueue', '0'),
 ('ElasticsearchEscapeCharacters', ''),
+('ElasticsearchIncludeDocType', '0'),
 ('ElasticsearchIndexStatus_authorities', '0'),
 ('ElasticsearchIndexStatus_biblios', '0'),
 ('ElasticsearchMARCFormat', 'base64ISO2709'),
