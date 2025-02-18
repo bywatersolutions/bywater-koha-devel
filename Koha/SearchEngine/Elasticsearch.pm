@@ -716,56 +716,12 @@ sub marc_records_to_documents {
                         $altscript = 1;
                     }
                 }
-
-                my $data_field_rules = $data_fields_rules->{$tag};
-                if ($data_field_rules) {
-                    my $subfields_mappings = $data_field_rules->{subfields};
-                    my $wildcard_mappings  = $subfields_mappings->{'*'};
-                    foreach my $subfield ( $field->subfields() ) {
-                        my ( $code, $data ) = @{$subfield};
-                        my $mappings = $subfields_mappings->{$code} // [];
-                        if ($wildcard_mappings) {
-                            $mappings = [ @{$mappings}, @{$wildcard_mappings} ];
-                        }
-                        if ( @{$mappings} ) {
-                            $self->_process_mappings(
-                                $mappings,
-                                $data,
-                                $record_document,
-                                {
-                                    altscript   => $altscript,
-                                    data_source => 'subfield',
-                                    code        => $code,
-                                    field       => $field
-                                }
-                            );
-                        }
-                    }
-
-                    my $subfields_join_mappings = $data_field_rules->{subfields_join};
-                    if ($subfields_join_mappings) {
-                        foreach my $subfields_group ( keys %{$subfields_join_mappings} ) {
-                            my $data_field = $field->clone;    #copy field to preserve for alt scripts
-                            $data_field->delete_subfield( match => qr/^$/ )
-                                ;    #remove empty subfields, otherwise they are printed as a space
-                            my $data = $data_field->as_string($subfields_group)
-                                ;    #get values for subfields as a combined string, preserving record order
-                            if ($data) {
-                                $self->_process_mappings(
-                                    $subfields_join_mappings->{$subfields_group},
-                                    $data,
-                                    $record_document,
-                                    {
-                                        altscript   => $altscript,
-                                        data_source => 'subfields_group',
-                                        codes       => $subfields_group,
-                                        field       => $field
-                                    }
-                                );
-                            }
-                        }
-                    }
-                }
+                $self->_process_data_field_rules(
+                    $data_fields_rules->{$tag},
+                    $field,
+                    $record_document,
+                    $altscript
+                );
             }
         }
 
@@ -783,61 +739,18 @@ sub marc_records_to_documents {
             if ( C4::Context->preference('IncludeSeeAlsoFromInSearches') ) {
                 push @other_headings, 'see_also_from';
             }
+
             $marc_filter->initialize( { options => { other_headings => \@other_headings } } );
             foreach my $field ( $marc_filter->fields($record) ) {
-                my $data_field_rules = $data_fields_rules->{ $field->tag() };
-                if ($data_field_rules) {
-                    my $subfields_mappings = $data_field_rules->{subfields};
-                    my $wildcard_mappings  = $subfields_mappings->{'*'};
-                    foreach my $subfield ( $field->subfields() ) {
-                        my ( $code, $data ) = @{$subfield};
-                        my @mappings;
-                        push @mappings, @{ $subfields_mappings->{$code} } if $subfields_mappings->{$code};
-                        push @mappings, @$wildcard_mappings               if $wildcard_mappings;
+                $self->_process_data_field_rules(
+                    $data_fields_rules->{ $field->tag() },
+                    $field,
+                    $record_document,
+                    0,
 
-                        # Do not include "see from" into these kind of fields
-                        @mappings = grep { $_->[0] !~ /__(sort|facet|suggestion)$/ } @mappings;
-                        if (@mappings) {
-                            $self->_process_mappings(
-                                \@mappings,
-                                $data,
-                                $record_document,
-                                {
-                                    data_source => 'subfield',
-                                    code        => $code,
-                                    field       => $field
-                                }
-                            );
-                        }
-                    }
-
-                    my $subfields_join_mappings = $data_field_rules->{subfields_join};
-                    if ($subfields_join_mappings) {
-                        foreach my $subfields_group ( keys %{$subfields_join_mappings} ) {
-                            my $data_field = $field->clone;
-
-                            # remove empty subfields, otherwise they are printed as a space
-                            $data_field->delete_subfield( match => qr/^$/ );
-                            my $data = $data_field->as_string($subfields_group);
-                            if ($data) {
-                                my @mappings = @{ $subfields_join_mappings->{$subfields_group} };
-
-                                # Do not include "see from" into these kind of fields
-                                @mappings = grep { $_->[0] !~ /__(sort|facet|suggestion)$/ } @mappings;
-                                $self->_process_mappings(
-                                    \@mappings,
-                                    $data,
-                                    $record_document,
-                                    {
-                                        data_source => 'subfields_group',
-                                        codes       => $subfields_group,
-                                        field       => $field
-                                    }
-                                );
-                            }
-                        }
-                    }
-                }
+                    # Do not include "see from" into these kind of fields
+                    qr/__(sort|facet|suggestion)$/
+                );
             }
         }
 
@@ -996,6 +909,101 @@ sub marc_records_to_documents {
         push @record_documents, $record_document;
     }
     return \@record_documents;
+}
+
+=head2 _process_data_field_rules($rules, $field, $record_document, $altscript, $exclude_target_fields_regexp)
+
+Process mapping rules for a single MARC::Field data field.
+
+=over 4
+
+=item C<$rules>
+
+Data field mapping rules to be applied.
+
+=item C<$field>
+
+The source Marc::Field data field.
+
+=item C<$record_document>
+
+The target elasticsearch document.
+
+=item C<$altscript>
+
+A boolean value indicating whether an alternate script presentation is being
+processed.
+
+=back
+
+=item C<$exclude_target_fields_regexp>
+
+An optional regexp for excluding target fields in mappings.
+
+=back
+
+=cut
+
+sub _process_data_field_rules {
+    my ( $self, $rules, $field, $record_document, $altscript, $exclude_target_fields_regexp ) = @_;
+    if ($rules) {
+        my $subfields_mappings = $rules->{subfields};
+        my $wildcard_mappings  = $subfields_mappings->{'*'};
+        foreach my $subfield ( $field->subfields() ) {
+            my ( $code, $data ) = @{$subfield};
+            my @mappings;
+            push @mappings, @{ $subfields_mappings->{$code} } if $subfields_mappings->{$code};
+            push @mappings, @{$wildcard_mappings}             if $wildcard_mappings;
+            if (@mappings) {
+                if ($exclude_target_fields_regexp) {
+                    @mappings = grep { $_->[0] !~ $exclude_target_fields_regexp } @mappings;
+                }
+                $self->_process_mappings(
+                    \@mappings,
+                    $data,
+                    $record_document,
+                    {
+                        altscript   => $altscript,
+                        data_source => 'subfield',
+                        code        => $code,
+                        field       => $field
+                    }
+                );
+            }
+        }
+
+        my $subfields_join_mappings = $rules->{subfields_join};
+        if ($subfields_join_mappings) {
+            foreach my $subfields_group ( keys %{$subfields_join_mappings} ) {
+
+                # copy field to preserve for alt scripts
+                my $data_field = $field->clone;
+
+                #remove empty subfields, otherwise they are printed as a space
+                $data_field->delete_subfield( match => qr/^$/ );
+
+                #get values for subfields as a combined string, preserving record order
+                my $data = $data_field->as_string($subfields_group);
+                if ($data) {
+                    my @mappings = @{ $subfields_join_mappings->{$subfields_group} };
+                    if ($exclude_target_fields_regexp) {
+                        @mappings = grep { $_->[0] !~ /$exclude_target_fields_regexp/ } @mappings;
+                    }
+                    $self->_process_mappings(
+                        \@mappings,
+                        $data,
+                        $record_document,
+                        {
+                            altscript   => $altscript,
+                            data_source => 'subfields_group',
+                            codes       => $subfields_group,
+                            field       => $field
+                        }
+                    );
+                }
+            }
+        }
+    }
 }
 
 =head2 _marc_to_array($record)
