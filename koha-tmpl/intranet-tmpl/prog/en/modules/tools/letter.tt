@@ -548,13 +548,13 @@
                         [% WRAPPER accordion_panel panel_id="all_notice_css" %]
                             <p class="alert alert-info">CSS to be applied to all notice types</p>
                             [%- IF Koha.Preference('AllNoticeCSS') -%]
-                            <div class="card">
-                                <div class="card-body bg-light">
-                                    <pre class="mb-0"><code class="language-css">[%- Koha.Preference('AllNoticeCSS') | html -%]</code></pre>
+                                <div class="card">
+                                    <div class="card-body bg-light">
+                                        <pre class="mb-0"><code class="language-css">[%- Koha.Preference('AllNoticeCSS') | html -%]</code></pre>
+                                    </div>
                                 </div>
-                            </div>
                             [%- ELSE -%]
-                            <p class="alert alert-warning">None defined</p>
+                                <p class="alert alert-warning">None defined</p>
                             [%- END -%]
                             [% IF ( CAN_user_parameters_manage_sysprefs ) %]
                                 <a class="syspref-link" href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=AllNoticeCSS">Edit</a>
@@ -568,13 +568,13 @@
                         [% WRAPPER accordion_panel panel_id="email_notice_css" %]
                             <p class="alert alert-info">CSS to be applied to email notices in addition to that already in "All Notice CSS"</p>
                             [%- IF Koha.Preference('EmailNoticeCSS') -%]
-                            <div class="card">
-                                <div class="card-body bg-light">
-                                    <pre><code>[%- Koha.Preference('EmailNoticeCSS') | html -%]</code></pre>
+                                <div class="card">
+                                    <div class="card-body bg-light">
+                                        <pre><code>[%- Koha.Preference('EmailNoticeCSS') | html -%]</code></pre>
+                                    </div>
                                 </div>
-                            </div>
                             [%- ELSE -%]
-                            <p class="alert alert-warning">None defined</p>
+                                <p class="alert alert-warning">None defined</p>
                             [%- END -%]
                             [% IF ( CAN_user_parameters_manage_sysprefs ) %]
                                 <a class="syspref-link" href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=EmailNoticeCSS">Edit</a>
@@ -588,13 +588,13 @@
                         [% WRAPPER accordion_panel panel_id="print_notice_css" %]
                             <p class="alert alert-info">CSS to be applied to print notices in addition to that already in "All Notice CSS"</p>
                             [%- IF Koha.Preference('PrintNoticeCSS') -%]
-                            <div class="card">
-                                <div class="card-body bg-light">
-                                    <pre><code>[%- Koha.Preference('PrintNoticeCSS') | html -%]</code></pre>
+                                <div class="card">
+                                    <div class="card-body bg-light">
+                                        <pre><code>[%- Koha.Preference('PrintNoticeCSS') | html -%]</code></pre>
+                                    </div>
                                 </div>
-                            </div>
                             [%- ELSE -%]
-                            <p class="alert alert-warning">None defined</p>
+                                <p class="alert alert-warning">None defined</p>
                             [%- END -%]
                             [% IF ( CAN_user_parameters_manage_sysprefs ) %]
                                 <a class="syspref-link" href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=PrintNoticeCSS">Edit</a>
@@ -888,17 +888,6 @@
                                 <li class="style_notices_option">
                                     <label for="style_[% lang | html %]">Style (CSS): </label>
                                     <textarea id="style_[% lang | html %]" name="style_[% lang | html %]" rows="15" cols="80">[% letters.$lang.params.style | $raw %]</textarea>
-                                </li>
-                                <li class="format_all_notices_option">
-                                    <label for="format_all_[% lang | html %]">
-                                        [% IF Koha.Preference('TranslateNotices') %]
-                                            Apply format settings to all notices for this language:
-                                        [% ELSE %]
-                                            Apply format settings to all notices:
-                                        [% END %]
-                                    </label>
-                                    <input type="checkbox" name="format_all_[% lang | html %]" id="format_all_[% lang | html %]" class="format_all" value="1" />
-                                    <span class="hint">Existing format settings will be overwritten.</span>
                                 </li>
                             </ol>
                         </div>

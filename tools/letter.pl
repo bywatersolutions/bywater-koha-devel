@@ -326,15 +326,8 @@ sub add_validate {
     my @lang       = $input->multi_param('lang');
 
     for my $mtt (@mtt) {
-        my $lang       = shift @lang;
-        my $style      = $input->param("style_$lang");
-        my $format_all = $input->param("format_all_$lang");
-        if ($format_all) {
-            my @letters = Koha::Notice::Templates->search( { lang => $lang } )->as_list;
-            foreach my $letter (@letters) {
-                $letter->set( { style => $style } )->store;
-            }
-        }
+        my $lang    = shift @lang;
+        my $style   = $input->param("style_$lang");
         my $is_html = $input->param("is_html_$mtt\_$lang");
         my $title   = shift @title;
         my $content = shift @content;
