@@ -539,14 +539,23 @@
             <!-- /#add_notice -->
 
             <fieldset class="page-section">
-                <h2>HTML styles</h2>
+                <h2>Global HTML Notice Styles</h2>
                 [% WRAPPER accordion panelgroup_id="notice_styles" %]
                     [% WRAPPER accordion_item %]
                         [% WRAPPER accordion_heading panel_id="all_notice_css" %]
                             All Notice CSS
                         [% END %]
                         [% WRAPPER accordion_panel panel_id="all_notice_css" %]
-                            <pre><code>[%- Koha.Preference('AllNoticeCSS') | html -%]</code></pre>
+                            <p class="alert alert-info">CSS to be applied to all notice types</p>
+                            [%- IF Koha.Preference('AllNoticeCSS') -%]
+                            <div class="card">
+                                <div class="card-body bg-light">
+                                    <pre class="mb-0"><code class="language-css">[%- Koha.Preference('AllNoticeCSS') | html -%]</code></pre>
+                                </div>
+                            </div>
+                            [%- ELSE -%]
+                            <p class="alert alert-warning">None defined</p>
+                            [%- END -%]
                             [% IF ( CAN_user_parameters_manage_sysprefs ) %]
                                 <a class="syspref-link" href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=AllNoticeCSS">Edit</a>
                             [% END %]
@@ -557,7 +566,16 @@
                             Email Notice CSS
                         [% END %]
                         [% WRAPPER accordion_panel panel_id="email_notice_css" %]
-                            <pre><code>[%- Koha.Preference('EmailNoticeCSS') | html -%]</code></pre>
+                            <p class="alert alert-info">CSS to be applied to email notices in addition to that already in "All Notice CSS"</p>
+                            [%- IF Koha.Preference('EmailNoticeCSS') -%]
+                            <div class="card">
+                                <div class="card-body bg-light">
+                                    <pre><code>[%- Koha.Preference('EmailNoticeCSS') | html -%]</code></pre>
+                                </div>
+                            </div>
+                            [%- ELSE -%]
+                            <p class="alert alert-warning">None defined</p>
+                            [%- END -%]
                             [% IF ( CAN_user_parameters_manage_sysprefs ) %]
                                 <a class="syspref-link" href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=EmailNoticeCSS">Edit</a>
                             [% END %]
@@ -568,7 +586,16 @@
                             Print Notice CSS
                         [% END %]
                         [% WRAPPER accordion_panel panel_id="print_notice_css" %]
-                            <pre><code>[%- Koha.Preference('PrintNoticeCSS') | html -%]</code></pre>
+                            <p class="alert alert-info">CSS to be applied to print notices in addition to that already in "All Notice CSS"</p>
+                            [%- IF Koha.Preference('PrintNoticeCSS') -%]
+                            <div class="card">
+                                <div class="card-body bg-light">
+                                    <pre><code>[%- Koha.Preference('PrintNoticeCSS') | html -%]</code></pre>
+                                </div>
+                            </div>
+                            [%- ELSE -%]
+                            <p class="alert alert-warning">None defined</p>
+                            [%- END -%]
                             [% IF ( CAN_user_parameters_manage_sysprefs ) %]
                                 <a class="syspref-link" href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=PrintNoticeCSS">Edit</a>
                             [% END %]
@@ -841,7 +868,7 @@
             <div class="panel-heading" role="tab" id="format_[% lang | html %]Heading">
                 <h3 class="panel-title">
                     <a role="button" class="collapsed" data-bs-toggle="collapse" data-parent="#group_[% lang | html %]" href="#format_[% lang | html %]" aria-expanded="false" aria-controls="format_[% lang | html %]">
-                        <span>Format</span>
+                        <span>Local HTML Notice Styles</span>
                     </a>
                 </h3>
             </div>
