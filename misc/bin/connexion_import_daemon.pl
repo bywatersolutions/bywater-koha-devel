@@ -77,6 +77,27 @@ EOF
 
 my $server = ImportProxyServer->new($config);
 
+# Add signal handlers to capture warnings and fatal errors
+$SIG{__WARN__} = sub {
+    my $message = shift;
+    if ($server && $server->{log_fh}) {
+        my $t = localtime;
+        print { $server->{log_fh} } "$t: WARNING: $message\n";
+        $server->{log_fh}->flush(); # Ensure the warning is written to the log immediately
+    } else {
+        warn $message; # fallback to default behavior
+    }
+};
+
+$SIG{__DIE__} = sub {
+    my $message = shift;
+    if ($server && $server->{log_fh}) {
+        my $t = localtime;
+        print { $server->{log_fh} } "$t: FATAL: $message\n";
+    }
+    die $message; # fallback to default behavior
+};
+
 if ($daemon) {
     print $server->background;
 } else {
