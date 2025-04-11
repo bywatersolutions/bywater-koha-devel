@@ -21,6 +21,7 @@ use strict;
 use warnings;
 
 use Getopt::Long qw( GetOptions );
+use POSIX qw( strftime );
 
 my ( $help, $config, $daemon );
 
@@ -81,7 +82,7 @@ my $server = ImportProxyServer->new($config);
 $SIG{__WARN__} = sub {
     my $message = shift;
     if ($server && $server->{log_fh}) {
-        my $t = localtime;
+        my $t = strftime("%Y-%m-%dT%H:%M:%S", localtime);
         print { $server->{log_fh} } "$t: WARNING: $message\n";
         $server->{log_fh}->flush(); # Ensure the warning is written to the log immediately
     } else {
@@ -92,7 +93,7 @@ $SIG{__WARN__} = sub {
 $SIG{__DIE__} = sub {
     my $message = shift;
     if ($server && $server->{log_fh}) {
-        my $t = localtime;
+        my $t = strftime("%Y-%m-%dT%H:%M:%S", localtime);
         print { $server->{log_fh} } "$t: FATAL: $message\n";
     }
     die $message; # fallback to default behavior
@@ -203,7 +204,7 @@ exit;
         my $log_fh = $self->{log_fh}
             or warn "No log fh",
             return;
-        my $t = localtime;
+        my $t = strftime("%Y-%m-%dT%H:%M:%S", localtime);
         print $log_fh map "$t: $_\n", @_;
     }
 
