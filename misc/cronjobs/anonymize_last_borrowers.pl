@@ -36,6 +36,7 @@ use C4::Log;
 sub usage {
     print STDERR <<USAGE;
 Usage: $0  [-h|--help]
+   -c --confirm       required to actually perform the anonymization
    -v --verbose       gives a little more information
    -h --help          prints this help message, and exits, ignoring all
                       other options
@@ -44,11 +45,12 @@ USAGE
     exit $_[0];
 }
 
-my ( $help, $verbose );
+my ( $help, $verbose, $confirm );
 
 GetOptions(
     'h|help'    => \$help,
     'v|verbose' => \$verbose,
+    'c|confirm' => \$confirm,
 ) || usage(1);
 
 if ($help) {
@@ -60,6 +62,12 @@ my $pref = C4::Context->preference("AnonymizeLastBorrower");
 if ( !$pref ) {
     print "Preference 'AnonymizeLastBorrower' must be enabled to anonymize item's last borrower\n\n";
     usage(1);
+}
+
+unless ($confirm) {
+    print STDERR "You must use the --confirm flag to run this script.\n";
+    print STDERR "Add --confirm to actually perform the anonymization.\n";
+    exit(1);
 }
 
 cronlogaction();
