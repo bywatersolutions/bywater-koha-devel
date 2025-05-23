@@ -22,8 +22,6 @@ use Modern::Perl;
 use vars qw($AUTOLOAD $context);
 
 BEGIN {
-    warn "PROCESS STARTING [$$]";
-
     if ( $ENV{'HTTP_USER_AGENT'} ) { # Only hit when plack is not enabled
 
         # Redefine multi_param if cgi version is < 4.08
@@ -36,10 +34,6 @@ BEGIN {
             $CGI::LIST_CONTEXT_WARN = 0;
         }
     }
-}
-
-END {
-    warn "PROCESS ENDING [$$]";
 }
 
 use Carp qw( carp );
