@@ -53,6 +53,7 @@ INSERT INTO permissions (module_bit, code, description) VALUES
    ( 4, 'send_messages_to_borrowers_email', 'Send messages to patrons via email'),
    ( 4, 'send_messages_to_borrowers_sms', 'Send messages to patrons via sms'),
    ( 4, 'view_borrower_infos_from_any_libraries', 'View patron infos from any libraries'),
+   ( 4, 'view_checkout_history', 'Viewing checkout history'),
    ( 6, 'place_holds', 'Place holds for patrons'),
    ( 6, 'modify_holds_priority', 'Modify holds priority'),
    ( 6, 'alter_hold_targets', 'Move holds between items and records'),
