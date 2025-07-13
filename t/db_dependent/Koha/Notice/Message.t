@@ -20,7 +20,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 3;
+use Test::More tests => 4;
 
 use C4::Letters qw( GetPreparedLetter EnqueueLetter );
 
@@ -145,7 +145,14 @@ subtest 'html_content() tests' => sub {
         }
     );
 
-    t::lib::Mocks::mock_preference( 'AllNoticeStylesheet', '' );
+    # Mock all CSS preferences to ensure clean test state
+    t::lib::Mocks::mock_preference( 'AllNoticeStylesheet',   '' );
+    t::lib::Mocks::mock_preference( 'AllNoticeCSS',          '' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeStylesheet', '' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeCSS',        '' );
+    t::lib::Mocks::mock_preference( 'PrintNoticeStylesheet', '' );
+    t::lib::Mocks::mock_preference( 'PrintNoticeCSS',        '' );
+
     my $css_import      = '';
     my $message         = Koha::Notice::Messages->find($message_id);
     my $wrapped_compare = <<"WRAPPED";
@@ -190,6 +197,15 @@ WRAPPED
     );
 
     $template->is_html(0)->store;
+
+    # Reset all preferences for plaintext test
+    t::lib::Mocks::mock_preference( 'AllNoticeStylesheet',   '' );
+    t::lib::Mocks::mock_preference( 'AllNoticeCSS',          '' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeStylesheet', '' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeCSS',        '' );
+    t::lib::Mocks::mock_preference( 'PrintNoticeStylesheet', '' );
+    t::lib::Mocks::mock_preference( 'PrintNoticeCSS',        '' );
+
     $prepared_letter = GetPreparedLetter(
         (
             module      => 'test',
@@ -216,6 +232,136 @@ WRAPPED
         $message->html_content, $wrapped_compare,
         "html_content returned the correct html wrapped letter for a plaintext template"
     );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'stylesheets() tests' => sub {
+    plan tests => 8;
+
+    $schema->storage->txn_begin;
+
+    my $template = $builder->build_object(
+        {
+            class => 'Koha::Notice::Templates',
+            value => {
+                module                 => 'test',
+                code                   => 'TEST',
+                message_transport_type => 'email',
+                is_html                => '1',
+                name                   => 'test notice template',
+                title                  => 'Test Title',
+                content                => 'Test content',
+                branchcode             => "",
+                lang                   => 'default',
+            }
+        }
+    );
+
+    my $patron = $builder->build_object( { class => 'Koha::Patrons' } );
+
+    my $prepared_letter = GetPreparedLetter(
+        (
+            module      => 'test',
+            letter_code => 'TEST',
+            tables      => {
+                borrowers => $patron->id,
+            },
+        )
+    );
+
+    # Test with no stylesheets set
+    t::lib::Mocks::mock_preference( 'AllNoticeStylesheet',   '' );
+    t::lib::Mocks::mock_preference( 'AllNoticeCSS',          '' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeStylesheet', '' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeCSS',        '' );
+    t::lib::Mocks::mock_preference( 'PrintNoticeStylesheet', '' );
+    t::lib::Mocks::mock_preference( 'PrintNoticeCSS',        '' );
+
+    my $message_id = EnqueueLetter(
+        {
+            letter                 => $prepared_letter,
+            borrowernumber         => $patron->id,
+            message_transport_type => 'email'
+        }
+    );
+    my $message = Koha::Notice::Messages->find($message_id);
+
+    is( $message->stylesheets, '', "No stylesheets when all preferences are empty" );
+
+    # Test AllNoticeStylesheet only
+    t::lib::Mocks::mock_preference( 'AllNoticeStylesheet', 'https://example.com/all.css' );
+    is(
+        $message->stylesheets, '<link rel="stylesheet" type="text/css" href="https://example.com/all.css">',
+        "AllNoticeStylesheet works correctly"
+    );
+
+    # Test AllNoticeCSS only
+    t::lib::Mocks::mock_preference( 'AllNoticeStylesheet', '' );
+    t::lib::Mocks::mock_preference( 'AllNoticeCSS',        'body { color: red; }' );
+    is( $message->stylesheets, '<style type="text/css">body { color: red; }</style>', "AllNoticeCSS works correctly" );
+
+    # Test email-specific stylesheet for email transport
+    t::lib::Mocks::mock_preference( 'AllNoticeCSS',          '' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeStylesheet', 'https://example.com/email.css' );
+    is(
+        $message->stylesheets, '<link rel="stylesheet" type="text/css" href="https://example.com/email.css">',
+        "EmailNoticeStylesheet works for email transport"
+    );
+
+    # Test email-specific CSS for email transport
+    t::lib::Mocks::mock_preference( 'EmailNoticeStylesheet', '' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeCSS',        '.email { font-weight: bold; }' );
+    is(
+        $message->stylesheets, '<style type="text/css">.email { font-weight: bold; }</style>',
+        "EmailNoticeCSS works for email transport"
+    );
+
+    # Test combined all + email styles
+    t::lib::Mocks::mock_preference( 'AllNoticeStylesheet',   'https://example.com/all.css' );
+    t::lib::Mocks::mock_preference( 'AllNoticeCSS',          'body { margin: 0; }' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeStylesheet', 'https://example.com/email.css' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeCSS',        '.email { color: blue; }' );
+
+    my $expected_combined =
+          '<link rel="stylesheet" type="text/css" href="https://example.com/all.css">' . "\n"
+        . '<style type="text/css">body { margin: 0; }</style>'
+        . '<link rel="stylesheet" type="text/css" href="https://example.com/email.css">' . "\n"
+        . '<style type="text/css">.email { color: blue; }</style>';
+    is( $message->stylesheets, $expected_combined, "Combined all and email styles work correctly" );
+
+    # Test print transport type
+    $message_id = EnqueueLetter(
+        {
+            letter                 => $prepared_letter,
+            borrowernumber         => $patron->id,
+            message_transport_type => 'print'
+        }
+    );
+    $message = Koha::Notice::Messages->find($message_id);
+
+    # Reset email preferences and set print preferences
+    t::lib::Mocks::mock_preference( 'EmailNoticeStylesheet', '' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeCSS',        '' );
+    t::lib::Mocks::mock_preference( 'PrintNoticeStylesheet', 'https://example.com/print.css' );
+    t::lib::Mocks::mock_preference( 'PrintNoticeCSS',        '.print { page-break-after: always; }' );
+
+    my $expected_print =
+          '<link rel="stylesheet" type="text/css" href="https://example.com/all.css">' . "\n"
+        . '<style type="text/css">body { margin: 0; }</style>'
+        . '<link rel="stylesheet" type="text/css" href="https://example.com/print.css">' . "\n"
+        . '<style type="text/css">.print { page-break-after: always; }</style>';
+    is( $message->stylesheets, $expected_print, "Print transport type uses correct stylesheets" );
+
+    # Test that email styles are NOT included for print transport
+    t::lib::Mocks::mock_preference( 'AllNoticeStylesheet',   '' );
+    t::lib::Mocks::mock_preference( 'AllNoticeCSS',          '' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeStylesheet', 'https://example.com/email.css' );
+    t::lib::Mocks::mock_preference( 'EmailNoticeCSS',        '.email { color: blue; }' );
+    t::lib::Mocks::mock_preference( 'PrintNoticeStylesheet', '' );
+    t::lib::Mocks::mock_preference( 'PrintNoticeCSS',        '' );
+
+    is( $message->stylesheets, '', "Print transport does not include email-specific styles" );
 
     $schema->storage->txn_rollback;
 };
