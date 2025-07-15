@@ -158,3 +158,12 @@ input[type="password"] {
     font-size: 1.7em;
     width: 97%;
 }
+
+.show-password-toggle {
+    margin: .7rem 0;
+}
+
+input.show-password-toggle-checkbox {
+    float: left;
+    margin: 0 .5rem 0 0;
+}
