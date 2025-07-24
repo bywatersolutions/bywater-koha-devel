@@ -345,6 +345,8 @@ returns 1 if the item is safe to delete,
 
 "book_reserved" if the there are holds aganst the item, or
 
+"item_has_holds" if the item has holds,
+
 "linked_analytics" if the item has linked analytic records.
 
 "last_item_for_hold" if the item is the last one on a record on which a biblio-level hold is placed
@@ -366,6 +368,9 @@ sub safe_to_delete {
     # check it doesn't have a waiting reserve
     $error //= "book_reserved"
         if $self->holds->filter_by_found->count;
+
+    $error //= "item_has_holds"
+        if $self->holds->count;
 
     $error //= "linked_analytics"
         if C4::Items::GetAnalyticsCount( $self->itemnumber ) > 0;

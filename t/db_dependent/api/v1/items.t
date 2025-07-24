@@ -373,7 +373,7 @@ subtest 'get() tests' => sub {
 
 subtest 'delete() tests' => sub {
 
-    plan tests => 23;
+    plan tests => 26;
 
     $schema->storage->txn_begin;
 
@@ -414,6 +414,7 @@ subtest 'delete() tests' => sub {
         },
         linked_analytics => { code => 'linked_analytics', description => 'The item has linked analytic records' },
         not_same_branch  => { code => 'not_same_branch', description => 'The item is blocked by independent branches' },
+        item_has_holds   => { code => 'item_has_holds',  description => 'The item has item level holds' },
     };
 
     $fail = 1;
