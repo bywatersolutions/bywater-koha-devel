@@ -378,6 +378,8 @@
                                             [% SET cannot_delete_reason = t("Item does not belong to your library") %]
                                         [% CASE "book_reserved" %]
                                             [% SET cannot_delete_reason = t("Item has a waiting hold") %]
+                                        [% CASE "item_has_holds" %]
+                                            [% SET cannot_delete_reason = t("Item has item level holds") %]
                                         [% CASE "linked_analytics" %]
                                             [% SET cannot_delete_reason = t("Item has linked analytics") %]
                                         [% CASE "last_item_for_hold" %]
