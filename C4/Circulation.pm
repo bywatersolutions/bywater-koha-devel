@@ -2346,6 +2346,19 @@ sub AddReturn {
     # if $hbr was "noreturn" or any other non-item table value, then it should 'float' (i.e. stay at this branch)
     my $transfer_trigger = $hbr eq 'homebranch' ? 'ReturnToHome' : $hbr eq 'holdingbranch' ? 'ReturnToHolding' : undef;
 
+    # check library float limits if enabled if the item isn't being transferred away
+    if ( ( $returnbranch eq $branch ) && C4::Context->preference('UseLibraryFloatLimits') ) {
+        my $effective_itemtype = $item->effective_itemtype;
+        my $limit = Koha::Library::FloatLimits->find( { itemtype => $effective_itemtype, branchcode => $branch } );
+        if ($limit) {
+            my $transfer_library = Koha::Library::FloatLimits->lowest_ratio_library( $item, $branch );
+            if ( $transfer_library && $transfer_library->branchcode ne $branch ) {
+                $returnbranch     = $transfer_library->branchcode;
+                $transfer_trigger = 'LibraryFloatLimit';
+            }
+        }
+    }
+
     my $borrowernumber   = $patron ? $patron->borrowernumber : undef;    # we don't know if we had a borrower or not
     my $patron_unblessed = $patron ? $patron->unblessed      : {};
 

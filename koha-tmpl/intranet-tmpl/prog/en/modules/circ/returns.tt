@@ -120,6 +120,8 @@
                 <p>
                     [%- SWITCH trigger -%]
 
+                    [%- CASE 'LibraryFloatLimit' -%]
+                        <span>Library has exceeded float limit for this item type</span>
                     [%- CASE 'Manual' -%]
                         <span>Manual</span>
                     [%- CASE 'StockrotationAdvance' -%]

@@ -22,6 +22,7 @@ use Modern::Perl;
 use Koha::Database;
 
 use Koha::Library::FloatLimit;
+use Koha::Libraries;
 use C4::Circulation qw(IsBranchTransferAllowed);
 
 use base qw(Koha::Objects);
@@ -41,40 +42,141 @@ Koha::Library::FloatLimits - Koha Library::FloatLimit object set class
 sub lowest_ratio_library {
     my ( $self, $item, $branchcode ) = @_;
 
-    my $field = C4::Context->preference('item-level_itypes') ? 'items.itype' : 'biblioitems.itemtype';
-    my $query = qq{
-        SELECT branchcode
-        FROM library_float_limits
-        LEFT JOIN items ON ( items.itype = library_float_limits.itemtype AND items.holdingbranch = library_float_limits.branchcode )
-        LEFT JOIN biblioitems ON ( items.biblioitemnumber = biblioitems.biblioitemnumber )
-        WHERE library_float_limits.itemtype = ?
-              AND ( $field = ? OR $field IS NULL )
-              AND library_float_limits.float_limit != 0
-        GROUP BY branchcode
-        ORDER BY COUNT(items.holdingbranch)/library_float_limits.float_limit ASC, library_float_limits.float_limit DESC;
-    };
+    my $schema = Koha::Database->new->schema;
 
-    my $results = C4::Context->dbh->selectall_arrayref(
-        $query, { Slice => {} }, $item->effective_itemtype,
-        $item->effective_itemtype
-    );
+    my @float_limits = $schema->resultset('LibraryFloatLimit')->search(
+        {
+            itemtype    => $item->effective_itemtype,
+            float_limit => { '!=' => 0 }
+        }
+    )->all;
+
+    return unless @float_limits;
+
+    my @candidates;
+    my $use_item_level = C4::Context->preference('item-level_itypes');
+
+    foreach my $limit (@float_limits) {
+        my $branch          = $limit->get_column('branchcode');
+        my $float_limit_val = $limit->get_column('float_limit');
+
+        my $item_count;
+
+        if ($use_item_level) {
+            my $at_branch_count = Koha::Items->search(
+                {
+                    itype         => $item->effective_itemtype,
+                    holdingbranch => $branch,
+                    onloan        => undef
+                },
+            )->count;
+
+            # Count items in transit TO this branch
+            my $in_transit_to_count = Koha::Items->search(
+                {
+                    itype => $item->effective_itemtype,
+
+                    # Join with active transfers where this branch is the destination
+                },
+                {
+                    join  => 'branchtransfers',
+                    where => {
+                        'branchtransfers.tobranch'      => $branch,
+                        'branchtransfers.datearrived'   => undef,     # Still in transit
+                        'branchtransfers.datecancelled' => undef,     #Not cancelled
+                    },
+                    distinct => 1
+                }
+            )->count;
+
+            my $in_transit_from_count = Koha::Items->search(
+                { itype => $item->effective_itemtype },
+                {
+                    join  => 'branchtransfers',
+                    where => {
+                        'branchtransfers.frombranch'    => $branch,
+                        'branchtransfers.datearrived'   => undef,     # Still in transit
+                        'branchtransfers.datecancelled' => undef,     #Not cancelled
+                    },
+                    distinct => 1
+                }
+            )->count;
+            $item_count = $at_branch_count + $in_transit_to_count - $in_transit_from_count;
+        } else {
+            my $at_branch_count = Koha::Items->search(
+                {
+                    holdingbranch         => $branch,
+                    'biblioitem.itemtype' => $item->effective_itemtype,
+                    onloan                => undef
+                },
+            )->count;
+
+            # Count items in transit TO this branch
+            my $in_transit_to_count = Koha::Items->search(
+                {
+                    itype => $item->effective_itemtype,
+                },
+                {
+                    join  => 'branchtransfers',
+                    where => {
+                        'branchtransfers.tobranch'      => $branch,
+                        'branchtransfers.datearrived'   => undef,     # Still in transit
+                        'branchtransfers.datecancelled' => undef,     #Not cancelled
+                    },
+                    distinct => 1
+                }
+            )->count;
+
+            my $in_transit_from_count = Koha::Items->search(
+                {
+                    itype => $item->effective_itemtype,
+                },
+                {
+                    join  => 'branchtransfers',
+                    where => {
+                        'branchtransfers.frombranch'    => $branch,
+                        'branchtransfers.datearrived'   => undef,     # Still in transit
+                        'branchtransfers.datecancelled' => undef,     #Not cancelled
+                    },
+                    distinct => 1
+                }
+            )->count;
+            $item_count = $at_branch_count + $in_transit_to_count - $in_transit_from_count;
+        }
+
+        my $ratio = $item_count / $float_limit_val;
+
+        push @candidates, {
+            branchcode  => $branch,
+            ratio       => $ratio,
+            float_limit => $float_limit_val
+        };
+    }
+
+    # sort the branches by lowest ratio in the event of a tie choose a random branch
+    @candidates = sort { $a->{ratio} <=> $b->{ratio} || rand() <=> rand() } @candidates;
 
     my $UseBranchTransferLimits = C4::Context->preference("UseBranchTransferLimits");
     my $BranchTransferLimitsType =
         C4::Context->preference("BranchTransferLimitsType") eq 'itemtype' ? 'effective_itemtype' : 'ccode';
 
-    foreach my $r (@$results) {
+    my $transfer_branch;
+    for my $candidate (@candidates) {
         if ($UseBranchTransferLimits) {
             my $allowed = C4::Circulation::IsBranchTransferAllowed(
-                $r->{branchcode},    # to
-                $branchcode,         # from
+                $candidate->{branchcode},
+                $branchcode,
                 $item->$BranchTransferLimitsType
             );
-            return $r->{branchcode} if $allowed;
+            $transfer_branch = Koha::Libraries->find( $candidate->{branchcode} ) if $allowed;
+            last;
         } else {
-            return $r->{branchcode};
+            $transfer_branch = Koha::Libraries->find( $candidate->{branchcode} );
+            last;
         }
     }
+
+    return $transfer_branch;
 }
 
 =head3 _type
