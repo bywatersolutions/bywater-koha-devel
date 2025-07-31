@@ -41,7 +41,6 @@ Koha::Library::FloatLimits - Koha Library::FloatLimit object set class
 
 sub lowest_ratio_library {
     my ( $self, $item, $branchcode ) = @_;
-
     my $schema = Koha::Database->new->schema;
 
     my @float_limits = $schema->resultset('LibraryFloatLimit')->search(
@@ -50,6 +49,21 @@ sub lowest_ratio_library {
             float_limit => { '!=' => 0 }
         }
     )->all;
+
+    # check the items return policy
+    my $hbr = Koha::CirculationRules->get_return_branch_policy($item);
+
+    # if item only floats in the library group we must eliminate all other candidates
+    if ( $hbr && $hbr eq 'returnbylibrarygroup' ) {
+        my $current_library = Koha::Libraries->find($branchcode);
+        my $float_libraries = $current_library->get_float_libraries;
+
+        if ( $float_libraries->count > 0 ) {
+            my @allowed_branchcodes = $float_libraries->get_column('branchcode');
+            my %allowed_branches    = map { $_ => 1 } @allowed_branchcodes;
+            @float_limits = grep { $allowed_branches{ $_->get_column('branchcode') } } @float_limits;
+        }
+    }
 
     return unless @float_limits;
 
@@ -153,8 +167,14 @@ sub lowest_ratio_library {
         };
     }
 
-    # sort the branches by lowest ratio in the event of a tie choose a random branch
-    @candidates = sort { $a->{ratio} <=> $b->{ratio} || rand() <=> rand() } @candidates;
+    # sort the branches by lowest ratio
+    # in the event of a tie the item should stay where it is, if the current branch is involved in the tie
+    # when the current branch is not involved in the tie a random branch is choosen from those who tied
+    @candidates = sort {
+               $a->{ratio} <=> $b->{ratio}
+            || ( $a->{branchcode} eq $branchcode ? -1 : 0 ) - ( $b->{branchcode} eq $branchcode ? -1 : 0 )
+            || rand() <=> rand()
+    } @candidates;
 
     my $UseBranchTransferLimits = C4::Context->preference("UseBranchTransferLimits");
     my $BranchTransferLimitsType =
@@ -162,12 +182,14 @@ sub lowest_ratio_library {
 
     my $transfer_branch;
     for my $candidate (@candidates) {
+
         if ($UseBranchTransferLimits) {
             my $allowed = C4::Circulation::IsBranchTransferAllowed(
                 $candidate->{branchcode},
                 $branchcode,
                 $item->$BranchTransferLimitsType
             );
+
             $transfer_branch = Koha::Libraries->find( $candidate->{branchcode} ) if $allowed;
             last;
         } else {
