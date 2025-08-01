@@ -24,14 +24,11 @@ use Test::More tests => 6;
 use Koha::Database;
 use C4::Circulation qw(CreateBranchTransferLimit);
 use Koha::DateUtils qw( dt_from_string );
+use Koha::Library::FloatLimit;
+use Koha::Library::FloatLimits;
 
 use t::lib::Mocks;
 use t::lib::TestBuilder;
-
-BEGIN {
-    use_ok('Koha::Library::FloatLimit');
-    use_ok('Koha::Library::FloatLimits');
-}
 
 my $schema = Koha::Database->new->schema;
 $schema->storage->txn_begin;
@@ -44,6 +41,7 @@ my $itemtype = $builder->build_object( { class => 'Koha::ItemTypes' } );
 
 my $biblio = $builder->build_sample_biblio();
 
+# Create initial items for testing
 for ( 1 .. 5 ) {
     $builder->build_sample_item(
         {
@@ -125,9 +123,56 @@ my $code = $itemtype->itemtype;
 CreateBranchTransferLimit( $to, $from, $code );
 
 is( C4::Circulation::IsBranchTransferAllowed( $to, $from, $code ), 0, "Transfer to best library is no longer allowed" );
-say "C4::Circulation::IsBranchTransferAllowed( $to, $from, $code )";
 
-subtest 'onloan items excluded from ratio calculation' => sub {
+subtest 'FloatLimits: General tests' => sub {
+    $schema->storage->txn_begin;
+    plan tests => 2;
+
+    # Test with no float limits defined
+    my $no_limits_item = $builder->build_sample_item(
+        {
+            biblionumber  => $biblio->biblionumber,
+            homebranch    => $library1->{branchcode},
+            holdingbranch => $library1->{branchcode},
+            itype         => $builder->build_object( { class => 'Koha::ItemTypes' } )->itemtype,
+        }
+    );
+
+    my $no_limits_result = Koha::Library::FloatLimits->lowest_ratio_library( $no_limits_item, $library1->{branchcode} );
+    is( $no_limits_result, undef, "Returns undef when no float limits defined" );
+
+    # Test with only zero float limits
+    my $zero_lib      = $builder->build( { source => 'Branch' } );
+    my $zero_itemtype = $builder->build_object( { class => 'Koha::ItemTypes' } );
+
+    Koha::Library::FloatLimit->new(
+        {
+            branchcode  => $zero_lib->{branchcode},
+            itemtype    => $zero_itemtype->itemtype,
+            float_limit => 0,                          # Zero limit should be excluded
+        }
+    )->store();
+
+    # Test with item type not in any float limits
+    my $unknown_itemtype = $builder->build_object( { class => 'Koha::ItemTypes' } );
+    my $unknown_item     = $builder->build_sample_item(
+        {
+            biblionumber  => $biblio->biblionumber,
+            homebranch    => $library1->{branchcode},
+            holdingbranch => $library1->{branchcode},
+            itype         => $unknown_itemtype->itemtype,
+        }
+    );
+
+    my $unknown_result = Koha::Library::FloatLimits->lowest_ratio_library( $unknown_item, $library1->{branchcode} );
+    is( $unknown_result, undef, "Returns undef for item type not in float limits" );
+
+    $schema->storage->txn_rollback;
+
+};
+
+subtest 'FloatLimits: Count on loan items against total' => sub {
+    $schema->storage->txn_begin;
     plan tests => 5;
 
     # Reset transfer limits for clean test
@@ -191,9 +236,11 @@ subtest 'onloan items excluded from ratio calculation' => sub {
         $library3->{branchcode},
         "Library3 still selected after checkouts (ratio now 5/1000 = 0.005, still better than library2's 10/100 = 0.1)"
     );
+    $schema->storage->txn_rollback;
 };
 
-subtest 'items in transit counted toward destination branch' => sub {
+subtest 'FloatLimits: Count in transit TO items against total' => sub {
+    $schema->storage->txn_begin;
     plan tests => 6;
 
     # Reset transfer limits for clean test
@@ -281,7 +328,6 @@ subtest 'items in transit counted toward destination branch' => sub {
 
     is( $in_transit_count, 2, "2 items are in transit to library2" );
 
-    # Test 5: Library2's physical count should still be 10
     my $library2_physical = Koha::Items->search(
         {
             holdingbranch => $library2->{branchcode},
@@ -292,12 +338,116 @@ subtest 'items in transit counted toward destination branch' => sub {
 
     is( $library2_physical, 10, "Library2 still has 10 physical items" );
 
-    # Library2's count should now be 10 + 2 = 12
     is(
         Koha::Library::FloatLimits->lowest_ratio_library( $item, $library1->{branchcode} )->branchcode,
         $library3->{branchcode},
         "Library3 still selected after items in transit to library2"
     );
+
+    $schema->storage->txn_rollback;
+
+};
+
+subtest 'FloatLimits: Do not count in transit FROM items against total' => sub {
+    $schema->storage->txn_begin;
+    plan tests => 2;
+
+    # Reset transfer limits
+    t::lib::Mocks::mock_preference( 'UseBranchTransferLimits', '0' );
+
+    # Create unique itemtype for this test
+    my $transit_itemtype = $builder->build_object( { class => 'Koha::ItemTypes' } );
+
+    # Create test libraries
+    my $from_lib = $builder->build( { source => 'Branch' } );
+    my $to_lib   = $builder->build( { source => 'Branch' } );
+
+    # Create items at from_lib
+    my @from_items;
+    for ( 1 .. 8 ) {
+        my $from_item = $builder->build_sample_item(
+            {
+                biblionumber  => $biblio->biblionumber,
+                homebranch    => $from_lib->{branchcode},
+                holdingbranch => $from_lib->{branchcode},
+                itype         => $transit_itemtype->itemtype,    # Use unique itemtype
+            }
+        );
+        push @from_items, $from_item;
+    }
+
+    # Create items at to_lib
+    for ( 1 .. 5 ) {
+        $builder->build_sample_item(
+            {
+                biblionumber  => $biblio->biblionumber,
+                homebranch    => $to_lib->{branchcode},
+                holdingbranch => $to_lib->{branchcode},
+                itype         => $transit_itemtype->itemtype,    # Use unique itemtype
+            }
+        );
+    }
+
+    # Set float limits
+    Koha::Library::FloatLimit->new(
+        {
+            branchcode  => $from_lib->{branchcode},
+            itemtype    => $transit_itemtype->itemtype,    # Use unique itemtype
+            float_limit => 10,
+        }
+    )->store();
+
+    Koha::Library::FloatLimit->new(
+        {
+            branchcode  => $to_lib->{branchcode},
+            itemtype    => $transit_itemtype->itemtype,    # Use unique itemtype
+            float_limit => 10,
+        }
+    )->store();
+
+    # Create test item with unique itemtype
+    my $transit_item = $builder->build_sample_item(
+        {
+            biblionumber  => $biblio->biblionumber,
+            homebranch    => $from_lib->{branchcode},
+            holdingbranch => $from_lib->{branchcode},
+            itype         => $transit_itemtype->itemtype,
+        }
+    );
+
+    # Initial state: from_lib has 8 items, to_lib has 5 items
+    # Ratios: from_lib = 8/10 = 0.8, to_lib = 5/10 = 0.5
+    my $initial_result = Koha::Library::FloatLimits->lowest_ratio_library( $transit_item, $from_lib->{branchcode} );
+    is( $initial_result->branchcode, $to_lib->{branchcode}, "to_lib selected initially (better ratio)" );
+
+    # Create transfers FROM from_lib TO to_lib (3 items)
+    my $transfer_date = dt_from_string();
+    for my $i ( 0 .. 2 ) {
+        Koha::Item::Transfer->new(
+            {
+                itemnumber    => $from_items[$i]->itemnumber,
+                frombranch    => $from_lib->{branchcode},
+                tobranch      => $to_lib->{branchcode},
+                daterequested => $transfer_date,
+                datesent      => $transfer_date,
+                reason        => 'LibraryFloatLimit'
+            }
+        )->store;
+    }
+
+    # After transfers:
+    # from_lib effective count = 8 - 3 = 5 (ratio = 5/10 = 0.5)
+    # to_lib effective count = 5 + 3 = 8 (ratio = 8/10 = 0.8)
+    # Now from_lib should be better choice
+    my $after_transfer_result =
+        Koha::Library::FloatLimits->lowest_ratio_library( $transit_item, $to_lib->{branchcode} );
+    is(
+        $after_transfer_result->branchcode, $from_lib->{branchcode},
+        "from_lib selected after transfers (items subtracted)"
+    );
+
+    $schema->storage->txn_rollback;
+
 };
 
 $schema->storage->txn_rollback;
