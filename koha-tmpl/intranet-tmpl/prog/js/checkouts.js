@@ -503,6 +503,18 @@ function LoadIssuesTable() {
 
                             span_style = "display: none";
                             span_class = "renewals-allowed";
+                        } else if (
+                            oObj.can_renew_error == "too_much_oweing"
+                        ) {
+                            msg +=
+                                "<span class='renewals-disabled'>" +
+                                __(
+                                    "Cannot renew, he patron has a debt of " + parseFloat(oObj.fine).format_price()
+                                ) +
+                                "</span>";
+
+                            span_style = "display: none";
+                            span_class = "renewals-allowed";
                         } else {
                             msg +=
                                 "<span class='renewals-disabled'>" +

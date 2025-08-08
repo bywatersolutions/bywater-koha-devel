@@ -264,6 +264,12 @@ Circulation:
                   0: "Don't allow"
             - staff to manually override and check out items to patrons who have more in fines than set in the <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=noissuescharge">noissuescharge</a> system preference.
         -
+            - pref: AllowFineOverrideRenewing
+              choices:
+                  1: Allow
+                  0: "Don't allow"
+            - staff to manually override and renew items for patrons who have more in fines than set in the <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=FineNoRenewals">FineNoRenewals</a> system preference.
+        -
             - pref: AutomaticItemReturn
               choices:
                   1: Do

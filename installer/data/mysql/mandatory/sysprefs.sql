@@ -30,6 +30,7 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('AllowAllMessageDeletion','0'),
 ('AllowCheckoutNotes', '0'),
 ('AllowFineOverride','0'),
+('AllowFineOverrideRenewing','0'),
 ('AllowHoldDateInFuture','0'),
 ('AllowHoldItemTypeSelection','0'),
 ('AllowHoldPolicyOverride','0'),
