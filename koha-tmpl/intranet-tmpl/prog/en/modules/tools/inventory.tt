@@ -311,6 +311,7 @@
                             [% END %]
                             <th id="barcode" data-colname="barcode">Barcode</th>
                             <th id="call_number" data-colname="call_number">Call number</th>
+                            <th id="enumchron" data-colname="enumchron">Serial enumeration / chronology</th>
                             <th id="library" data-colname="library">Library</th>
                             <th id="collection" data-colname="collection">Collection</th>
                             <th id="title" data-colname="title" class="anti-the">Title</th>
@@ -334,6 +335,10 @@
                                 <td> [% result.barcode | html %] </td>
 
                                 <td data-order="[% result.cn_sort | html %]"> [% result.itemcallnumber | html %] </td>
+
+                                <td>
+                                    <span class="enumchron">[% result.enumchron | html %]</span>
+                                </td>
 
                                 <td>
                                     [% Branches.GetName( result.homebranch ) | html %]

@@ -443,7 +443,7 @@ if ( defined $input->param('CSVexport') && $input->param('CSVexport') eq 'on' ) 
         qw / biblio.title    biblio.author
         items.barcode        items.itemnumber
         items.homebranch     items.location   items.ccode
-        items.itemcallnumber items.notforloan
+        items.itemcallnumber items.enumchron  items.notforloan
         items.itemlost       items.damaged
         items.withdrawn      items.stocknumber
         /
@@ -458,7 +458,7 @@ if ( defined $input->param('CSVexport') && $input->param('CSVexport') eq 'on' ) 
     print $csv->string, "\n";
 
     my @keys =
-        qw/ title author barcode itemnumber homebranch location ccode itemcallnumber notforloan itemlost damaged withdrawn stocknumber /;
+        qw/ title author barcode itemnumber homebranch location ccode itemcallnumber enumchron notforloan itemlost damaged withdrawn stocknumber /;
     for my $item (@$loop) {
         my @line;
         for my $key (@keys) {
