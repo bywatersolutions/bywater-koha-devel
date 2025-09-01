@@ -140,11 +140,12 @@
                     </form>
                 [% END %]
             [% ELSIF error == "too_much_oweing" %]
-
                 <li>The patron has a debt of [% balance | $Price %].</li>
                 <form method="post" action="/cgi-bin/koha/circ/renew.pl">
-                    <input type="hidden" name="barcode" value="[% item.barcode | html %]"/>
+                    [% INCLUDE 'csrf-token.inc' %]
+                    <input type="hidden" name="barcode" value="[% item.barcode | html %]" />
                     <input type="hidden" name="override_debt" value="1" />
+                    <input type="hidden" name="op" value="cud-renew" />
                     <button type="submit" class="approve"><i class="fa fa-check"></i>Renew checkout(s)</button>
                 </form>
             [% ELSIF error == "on_reserve" %]
@@ -173,7 +174,6 @@
                 <p>Item cannot be renewed because it's an onsite checkout</p>
             [% ELSIF error == 'recalled' %]
                 <p>This item has been recalled.</p>
-
             [% ELSE %]
 
                 [% error | html %]

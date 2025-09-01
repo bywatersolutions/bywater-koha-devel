@@ -3281,7 +3281,7 @@ sub CanBookBeRenewed {
         {
             return ( 0, 'overdue' );
         } elsif ( $finesblockrenewing && $balance > $finesblockrenewing && !$allowfineoverriderenewing ) {
-            return ( 0, 'too_much_oweing');
+            return ( 0, 'too_much_oweing' );
         }
 
     }

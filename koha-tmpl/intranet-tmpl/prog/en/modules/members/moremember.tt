@@ -863,7 +863,8 @@
 
         var amountlimit = "[% Koha.Preference('FineNoRenewals') | html %]";
         var fines = "[% fines | $Price %]";
-        var MSG_CONFIRM_RENEW = _("The patron has a debt of %s\n Are you sure you want to renew checkout(s)?").format(fines);
+        var MSG_CONFIRM_RENEW = _("The patron has a debt of %s").format(fines);
+        MSG_CONFIRM_RENEW += _("Are you sure you want to renew checkout(s)?");
 
         function uncheck_sibling(me){
             nodename=me.getAttribute("name");

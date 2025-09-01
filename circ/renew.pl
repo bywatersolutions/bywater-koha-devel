@@ -95,12 +95,11 @@ if ( $op eq 'cud-renew' && $barcode ) {
                     );
                 }
 
-                if ( $error && ($error eq 'too_much_oweing' or $error eq 'auto_too_much_oweing') ) {
+                if ( $error && ( $error eq 'too_much_oweing' or $error eq 'auto_too_much_oweing' ) ) {
                     if ($override_debt) {
                         $can_renew = 1;
-                        $error = undef;
-                    }
-                    else {
+                        $error     = undef;
+                    } else {
                         $balance = $patron->account->balance;
                         $template->param( balance => $balance );
                         $can_renew = 0;

@@ -503,13 +503,12 @@ function LoadIssuesTable() {
 
                             span_style = "display: none";
                             span_class = "renewals-allowed";
-                        } else if (
-                            oObj.can_renew_error == "too_much_oweing"
-                        ) {
+                        } else if (oObj.can_renew_error == "too_much_oweing") {
                             msg +=
                                 "<span class='renewals-disabled'>" +
                                 __(
-                                    "Cannot renew, he patron has a debt of " + parseFloat(oObj.fine).format_price()
+                                    "Cannot renew, he patron has a debt of " +
+                                        parseFloat(oObj.fine).format_price()
                                 ) +
                                 "</span>";
 
@@ -1000,13 +999,13 @@ $(document).ready(function () {
         e.preventDefault();
         let refresh_table = true;
 
-        if(show_confirm  && parseFloat(fines) > parseFloat(amountlimit) ) {
+        if (show_confirm && parseFloat(fines) > parseFloat(amountlimit)) {
             var result = confirm(MSG_CONFIRM_RENEW);
-            if(!result){
+            if (!result) {
                 return false;
             }
             // Prevent displaying confirm box again
-            show_confirm  = false;
+            show_confirm = false;
         }
 
         function renew(item_id) {
@@ -1044,8 +1043,18 @@ $(document).ready(function () {
                 params.date_due = dueDate;
             }
 
-
-            $(this).parent().parent().replaceWith("<img id='renew_" + item_id+ "' src='" + interface + "/" + theme + "/img/spinner-small.gif' />");
+            $(this)
+                .parent()
+                .parent()
+                .replaceWith(
+                    "<img id='renew_" +
+                        item_id +
+                        "' src='" +
+                        interface +
+                        "/" +
+                        theme +
+                        "/img/spinner-small.gif' />"
+                );
 
             const client = APIClient.circulation;
             return client.checkouts.renew(params).then(
