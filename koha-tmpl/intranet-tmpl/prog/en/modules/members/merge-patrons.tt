@@ -140,7 +140,7 @@
 
             <form method="post" action="merge-patrons.pl" id="patron-merge-form">
                 [% INCLUDE 'csrf-token.inc' %]
-                <table id="patron-merge-table" class="datatable">
+                <table id="patron-merge-table" class="datatable container">
                     <thead>
                         <tr>
                             <th>&nbsp;</th>
@@ -176,6 +176,16 @@
                         [% END %]
                     </tbody>
                 </table>
+                [% IF ( patrons.count == 2 ) %]
+                    <br />
+                    <fieldset id="copy-ui" class="datatable container" disabled>
+                        <div class="form-check">
+                            <input type="checkbox" id="copy-checkbox" name="copy" value="1" />
+                            <label for="copy-checkbox">Copy values from record to be deleted</label>
+                        </div>
+                        <div id="copy-fields" hidden></div>
+                    </fieldset>
+                [% END %]
 
                 <fieldset class="action">
                     [% FOREACH p IN patrons %]
@@ -239,33 +249,35 @@
             <div class="modal-body">
                 <div class="compare">
                     <div id="col-label">
-                        <div><strong>Name:</strong></div>
-                        <div><strong>Initials:</strong></div>
-                        <div><strong>Other name:</strong></div>
-                        <div><strong>Library:</strong></div>
-                        <div><strong>Card number:</strong></div>
-                        <div><strong>Category:</strong></div>
+                        <div><strong data-field="surname">Surname:</strong></div>
+                        <div><strong data-field="firstname">First name:</strong></div>
+                        <div><strong data-field="preferred_name">Preferred name:</strong></div>
+                        <div><strong data-field="initials">Initials:</strong></div>
+                        <div><strong data-field="othernames">Other name:</strong></div>
+                        <div><strong data-field="branchcode">Library:</strong></div>
+                        <div><strong data-field="cardnumber">Card number:</strong></div>
+                        <div><strong data-field="categorycode">Category:</strong></div>
                         <br />
-                        <div><strong>Address line 1:</strong></div>
-                        <div><strong>Address line 2:</strong></div>
-                        <div><strong>City:</strong></div>
-                        <div><strong>State:</strong></div>
-                        <div><strong>ZIP/Postal code:</strong></div>
-                        <div><strong>Country:</strong></div>
+                        <div><strong data-field="address">Address line 1:</strong></div>
+                        <div><strong data-field="address2">Address line 2:</strong></div>
+                        <div><strong data-field="city">City:</strong></div>
+                        <div><strong data-field="state">State:</strong></div>
+                        <div><strong data-field="zipcode">ZIP/Postal code:</strong></div>
+                        <div><strong data-field="country">Country:</strong></div>
                         <br />
-                        <div><strong>Registration date:</strong></div>
-                        <div><strong>Renewal date:</strong></div>
-                        <div><strong>Expiration date:</strong></div>
-                        <div><strong>Date of birth:</strong></div>
-                        <div><strong>Restricted:</strong></div>
-                        <div><strong>Primary email:</strong></div>
-                        <div><strong>Secondary email:</strong></div>
-                        <div><strong>Primary phone:</strong></div>
-                        <div><strong>Secondary phone:</strong></div>
-                        <div><strong>Other phone:</strong></div>
-                        <div><strong>Gender:</strong></div>
-                        <div><strong>Updated on:</strong></div>
-                        <div><strong>Username:</strong></div>
+                        <div><strong data-field="dateenrolled">Registration date:</strong></div>
+                        <div><strong data-field="date_renewed">Renewal date:</strong></div>
+                        <div><strong data-field="dateexpiry">Expiration date:</strong></div>
+                        <div><strong data-field="dateofbirth">Date of birth:</strong></div>
+                        <div><strong data-field="debarred">Restricted:</strong></div>
+                        <div><strong data-field="email">Primary email:</strong></div>
+                        <div><strong data-field="emailpro">Secondary email:</strong></div>
+                        <div><strong data-field="phone">Primary phone:</strong></div>
+                        <div><strong data-field="phonepro">Secondary phone:</strong></div>
+                        <div><strong data-field="mobile">Other phone:</strong></div>
+                        <div><strong data-field="sex">Gender:</strong></div>
+                        <div><strong data-field="updated_on">Updated on:</strong></div>
+                        <div><strong data-field="userid">Username:</strong></div>
                     </div>
 
                     [% FOREACH p IN patrons %]
@@ -273,7 +285,9 @@
                             <!-- prettier-ignore-start -->
 <!-- <pre> block is unindented to avoid unwanted whitespace -->
 <pre>
-[% IF ( p.surname ) %][% p.surname | html %], [% p.firstname | html %][% ELSE %]-[% END %]
+[% IF ( p.surname ) %][% p.surname | html %][% ELSE %]-[% END %]
+[% IF ( p.firstname ) %][% p.firstname | html %][% ELSE %]-[% END %]
+[% IF ( p.preferred_name ) %][% p.preferred_name | html %][% ELSE %]-[% END %]
 [% IF ( p.initials ) %][% p.initials | html %][% ELSE %]-[% END %]
 [% IF ( p.othernames ) %][% p.othernames | html %][% ELSE %]-[% END %]
 [% IF ( p.branchcode ) %][% p.branchcode | html %][% ELSE %]-[% END %]
@@ -332,8 +346,12 @@
             $("#patron-merge-table").on("change", "input", function () {
                 if ($(".keeper:checked").length > 0) {
                     controls.prop("disabled", false);
+                    $("#copy-ui").prop("disabled", false);
                 } else {
                     controls.prop("disabled", true);
+                }
+                if ($("#copy-checkbox").is(":checked")) {
+                    loadCopyUI();
                 }
             });
 
@@ -352,13 +370,101 @@
 
                 var diffs = diffString(diff2, diff1);
                 /* Load the diff HTML in the empty columns */
-                $(".col2 pre, .col3 pre").html(diffs);
+                $("#compareModal .col2 pre, #compareModal .col3 pre").html(diffs);
             });
 
             $("#submit-merge-form").on("click", function () {
                 $("#patron-merge-form").submit();
             });
+
+            $("#copy-checkbox").on("change", function () {
+                $("#copy-fields").prop("hidden", !this.checked);
+                $("#compare_patrons").prop("disabled", this.checked);
+                if (this.checked) {
+                    loadCopyUI();
+                }
+            });
         });
+
+        function loadCopyUI() {
+            $("#copy-fields").empty();
+            /* Find which column is the basis for merging */
+            let col0 = $(".keeper:checked").data("borrowernumber");
+            let col1 = $(".keeper:not(:checked)").data("borrowernumber");
+            /* Get the original patron data for comparison */
+            let diff1 = $("#col-" + col0 + "-orig pre")
+                .text()
+                .split("\n")
+                .filter(e => e !== "");
+            let diff2 = $("#col-" + col1 + "-orig pre")
+                .text()
+                .split("\n")
+                .filter(e => e !== "");
+            let labels = $("#col-label strong")
+                .text()
+                .split(":")
+                .filter(e => e !== "");
+            let fields = $("#col-label strong")
+                .map((_, e) => e.dataset.field)
+                .get();
+
+            const container = $("#copy-fields");
+            container.append(
+                `<div class="row mb-2">
+                    <div class="col fw-bold">` +
+                    _("Field") +
+                    `</div>
+                    <div class="col fw-bold">` +
+                    _("Destination record") +
+                    `</div>
+                    <div class="col fw-bold">` +
+                    _("Source record") +
+                    `</div>
+                    <div class="col fw-bold">` +
+                    _("Copy value") +
+                    `</div>
+                </div>`
+            );
+
+            labels.forEach((label, i) => {
+                if (diff1[i] !== diff2[i]) {
+                    container.append(
+                        `<div class="row">
+                            <div class="col">
+                                <label for="copy${fields[i]}">
+                                <strong>` +
+                            _(label) +
+                            `:</strong>
+                            </div>
+                            <div class="col col2"><pre data-og="${diff1[i]}"></pre></div>
+                            <div class="col col3"><pre data-og="${diff2[i]}"></pre></div>
+                            <div class="col form-check">
+                                <input type="checkbox" name="${fields[i]}" value="${diff2[i]}" id="copy${fields[i]}">
+                            </div>
+                        </div>`
+                    );
+
+                    let diffs = diffString(diff2[i], diff1[i]);
+                    container.find(".row:last-child pre").html(diffs);
+                }
+            });
+
+            $("#copy-fields .row input[type=checkbox]").on("click", function () {
+                let ins = $(this).closest(".row").find(".col2 pre").data("og").toString();
+                let del = $(this).closest(".row").find(".col3 pre").data("og").toString();
+                let diffs = diffString(ins, del);
+
+                $(this).closest(".row").find(".col3 pre, .col2 pre").html(diffs);
+
+                $(this)
+                    .closest(".row")
+                    .find(".col2, .col3")
+                    .each(function () {
+                        $(this).toggleClass("col2", "col3");
+                        $(this).toggleClass("col3", "col2");
+                    });
+            });
+        }
     </script>
 [% END %]
 
