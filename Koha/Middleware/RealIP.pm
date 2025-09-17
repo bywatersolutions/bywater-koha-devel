@@ -22,6 +22,7 @@ use Modern::Perl;
 use parent qw(Plack::Middleware);
 
 use C4::Context;
+use Koha::Logger;
 
 use Net::Netmask;
 use Plack::Util::Accessor qw( trusted_proxy );
@@ -56,8 +57,17 @@ sub call {
 
     # Check the env for the custom header, if the custom header is not set, fall back to HTTP_X_FORWARDED_FOR
     my $header = $env->{$reverse_proxy_ip_header} || $env->{'HTTP_X_FORWARDED_FOR'};
+
+    my $logger = Koha::Logger->get( { prefix => 0, interface => 'realip', category => 'call' } );
+    my $url;
+    if ( $logger->is_debug ) {
+        my $req = Plack::Request->new($env);
+        $url = $req->uri->as_string;
+        $logger->debug("$url: HTTP_X_FORWARDED_FOR => $env->{'HTTP_X_FORWARDED_FOR'}");
+        $logger->debug("$url: $reverse_proxy_ip_header => $env->{$reverse_proxy_ip_header}");
+    }
     if ($header) {
-        my $addr = get_real_ip( $env->{REMOTE_ADDR}, $header );
+        my $addr = get_real_ip( $env->{REMOTE_ADDR}, $header, $url );
         $ENV{REMOTE_ADDR} = $addr;
         $env->{REMOTE_ADDR} = $addr;
     }
@@ -75,12 +85,19 @@ determines the correct external ip address, and returns it.
 =cut
 
 sub get_real_ip {
-    my ( $remote_addr, $header ) = @_;
+    my ( $remote_addr, $header, $url ) = @_;
 
     my @forwarded_for = $header =~ /([^,\s]+)/g;
     return $remote_addr unless @forwarded_for;
 
     my $trusted_proxies = get_trusted_proxies();
+
+    my $logger = Koha::Logger->get( { prefix => 0, interface => 'realip', category => 'get_real_ip' } );
+    if ( $logger->is_debug ) {
+        $url //= CGI->new->url( -absolute => 1, -query => 1 );
+        $logger->debug( sub { "$url: forwarded_for: " . Data::Dumper::Dumper( \@forwarded_for ) } );
+        $logger->debug( sub { "$url: trusted_proxies: " . Data::Dumper::Dumper($trusted_proxies) } );
+    }
 
     #X-Forwarded-For: <client>, <proxy1>, <proxy2>
     my $real_ip     = shift @forwarded_for;
@@ -93,6 +110,8 @@ sub get_real_ip {
         }
         $real_ip = $addr, last unless $has_matched;
     }
+
+    $logger->debug( sub { "$url: real_ip: " . Data::Dumper::Dumper($real_ip) } );
 
     return $real_ip;
 }
