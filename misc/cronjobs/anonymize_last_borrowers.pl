@@ -40,7 +40,6 @@ Usage: $0  [-h|--help]
    -v --verbose       gives a little more information
    -h --help          prints this help message, and exits, ignoring all
                       other options
-Note: If the system preference 'AnonymousPatron' is not defined, NULL will be used.
 USAGE
     exit $_[0];
 }
@@ -57,10 +56,16 @@ if ($help) {
     usage(0);
 }
 
-my $pref = C4::Context->preference("AnonymizeLastBorrower");
+my $pref1 = C4::Context->preference("AnonymizeLastBorrower");
+my $pref2 = C4::Context->preference("AnonymousPatron");
 
-if ( !$pref ) {
+if ( !$pref1 ) {
     print "Preference 'AnonymizeLastBorrower' must be enabled to anonymize item's last borrower\n\n";
+    usage(1);
+}
+
+if ( !$pref2 ) {
+    print "Preference 'AnonymousPatron' must be enabled to anonymize item's last borrower\n\n";
     usage(1);
 }
 
