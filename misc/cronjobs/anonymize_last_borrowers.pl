@@ -56,17 +56,17 @@ if ($help) {
     usage(0);
 }
 
-my $pref1 = C4::Context->preference("AnonymizeLastBorrower");
-my $pref2 = C4::Context->preference("AnonymousPatron");
+my $AnonymizeLastBorrower = C4::Context->preference("AnonymizeLastBorrower");
+my $AnonymousPatron       = C4::Context->preference("AnonymousPatron");
 
-if ( !$pref1 ) {
-    print "Preference 'AnonymizeLastBorrower' must be enabled to anonymize item's last borrower\n\n";
-    usage(1);
+unless ($AnonymizeLastBorrower) {
+    print STDERR "Preference 'AnonymizeLastBorrower' must be enabled to anonymize item's last borrower\n\n";
+    exit(1);
 }
 
-if ( !$pref2 ) {
-    print "Preference 'AnonymousPatron' must be enabled to anonymize item's last borrower\n\n";
-    usage(1);
+unless ($AnonymousPatron) {
+    print STDERR "Preference 'AnonymousPatron' must be enabled to anonymize item's last borrower\n\n";
+    exit(1);
 }
 
 unless ($confirm) {
