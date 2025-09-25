@@ -9,10 +9,6 @@ return {
         my ($args) = @_;
         my ( $dbh, $out ) = @$args{qw(dbh out)};
 
-        # Do you stuffs here
-        $dbh->do("ALTER TABLE items_last_borrower MODIFY COLUMN `borrowernumber` int(11) NULL");
-        say_success( $out, "items_last_borrower updated to allow NULL borrowernumbers" );
-
         $dbh->do(
             q{
             ALTER TABLE items_last_borrower
