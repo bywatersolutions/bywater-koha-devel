@@ -1230,8 +1230,9 @@ subtest "_sort_field() tests" => sub {
 };
 
 subtest "_build_field_match_boost_query() tests" => sub {
-    plan tests => 10;
+    plan tests => 11;
 
+    t::lib::Mocks::mock_preference( 'ElasticsearchBoostFieldMatchAmount', '0' );
     my $qb;
 
     ok(
@@ -1294,6 +1295,18 @@ subtest "_build_field_match_boost_query() tests" => sub {
         'Title is not converted to title-cover'
     );
 
+    t::lib::Mocks::mock_preference( 'ElasticsearchBoostFieldMatchAmount', '10' );
+    $field_match_boost_query = $qb->_build_field_match_boost_query( { indexes => \@indexes, operands => \@operands } );
+    is_deeply(
+        $field_match_boost_query,
+        [
+            { match => { 'title-cover' => { boost => 10, query => 'turkey' } } },
+            { match => { 'subject'     => { boost => 10, query => 'gravy' } } },
+            { match => { 'title-cover' => { boost => 10, query => 'mashed' } } },
+        ],
+        'Boost is added to fields as expected only when pref has a value'
+    );
+
     t::lib::Mocks::mock_preference( 'ElasticsearchBoostFieldMatch', '0' );
     t::lib::Mocks::mock_preference( 'QueryAutoTruncate',            '1' );
     my ( undef, $query ) = $qb->build_query_compat( ['AND'], [ 'donald duck', 'disney' ], [ 'title', 'author' ] );
@@ -1308,7 +1321,8 @@ subtest "_build_field_match_boost_query() tests" => sub {
         'No should query added for boosting'
     );
 
-    t::lib::Mocks::mock_preference( 'ElasticsearchBoostFieldMatch', '1' );
+    t::lib::Mocks::mock_preference( 'ElasticsearchBoostFieldMatch',       '1' );
+    t::lib::Mocks::mock_preference( 'ElasticsearchBoostFieldMatchAmount', '0' );
     ( undef, $query ) = $qb->build_query_compat( ['AND'], [ 'donald duck', 'disney' ], [ 'title', 'author' ] );
     is_deeply(
         $query->{query}{bool}{should},
