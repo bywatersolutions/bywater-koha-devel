@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('1PageOrderPDFText', 'Order number must appear on all related correspondence, shipping papers and invoices. Notify us immediately if \n you are unable to supply item(s).'),
 ('AccessControlAllowOrigin', ''),
@@ -240,6 +241,7 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('EdifactLSL', 'ccode'),
 ('EdifactLSQ', 'location'),
 ('ElasticsearchBoostFieldMatch', '0'),
+('ElasticsearchBoostFieldMatchAmount', '0'),
 ('ElasticsearchCrossFields', '1'),
 ('ElasticsearchIndexStatus_authorities', '0'),
 ('ElasticsearchIndexStatus_biblios', '0'),

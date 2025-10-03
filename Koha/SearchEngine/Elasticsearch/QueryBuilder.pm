@@ -392,13 +392,17 @@ sub _build_field_match_boost_query {
     my $indexes  = $params->{indexes};
     my $operands = $params->{operands};
 
+    my $boost_amount = C4::Context->preference('ElasticsearchBoostFieldMatchAmount');
     my @boost_query;
+    my $built_boost;
     my $ea = each_array( @$operands, @$indexes );
     while ( my ( $operand, $index ) = $ea->() ) {
         next unless $operand;
         $index = $index->{field} if ref $index eq 'HASH';
         $index = 'title-cover'   if ( !$index || $index eq 'kw' || $index eq 'ti' || $index eq 'title' );
-        push @boost_query, { match => { $index => { query => $operand } } };
+        $built_boost = { match => { $index => { query => $operand } } };
+        $built_boost->{match}->{$index}->{boost} = $boost_amount if $boost_amount;
+        push @boost_query, $built_boost;
     }
     return \@boost_query;
 }
