@@ -19,7 +19,7 @@ use Modern::Perl;
 use utf8;
 
 use Test::NoWarnings;
-use Test::More tests => 83;
+use Test::More tests => 85;
 use Test::Exception;
 use Test::MockModule;
 use Test::Deep qw( cmp_deeply );
@@ -339,7 +339,7 @@ subtest 'AddIssue | renewal when adding issue to same borrower' => sub {
     my $staff         = $builder->build_object( { class => "Koha::Patrons" } );
     t::lib::Mocks::mock_userenv( { patron => $staff } );
 
-    t::lib::Mocks::mock_preference( 'RenewalPeriodBase', 'date_due' );
+    t::lib::Mocks::mock_preference( 'ManualRenewalPeriodBase', 'date_due' );
 
     my $issue = AddIssue( $patron, $item->barcode );
     is( dt_from_string( $issue->date_due )->truncate( to => 'day' ), $seven_days, "Item issued for correct term" );
@@ -866,7 +866,7 @@ subtest "CanBookBeRenewed tests" => sub {
 
     # Calculate new due-date based on the present date not to incur
     # multiple fees
-    t::lib::Mocks::mock_preference( 'RenewalPeriodBase', 'now' );
+    t::lib::Mocks::mock_preference( 'ManualRenewalPeriodBase', 'now' );
 
     my $staff = $builder->build_object( { class => "Koha::Patrons" } );
     t::lib::Mocks::mock_userenv( { patron => $staff } );
@@ -1905,8 +1905,8 @@ subtest "CanBookBeRenewed | bookings" => sub {
     my $schema = Koha::Database->schema;
     $schema->storage->txn_begin;
 
-    t::lib::Mocks::mock_preference( 'RenewalPeriodBase',   'date_due' );
-    t::lib::Mocks::mock_preference( 'ChildNeedsGuarantor', 0 );
+    t::lib::Mocks::mock_preference( 'ManualRenewalPeriodBase', 'date_due' );
+    t::lib::Mocks::mock_preference( 'ChildNeedsGuarantor',     0 );
 
     my $renewing_patron = $builder->build_object( { class => 'Koha::Patrons' } );
     my $booked_patron   = $builder->build_object( { class => 'Koha::Patrons' } );
@@ -7513,6 +7513,122 @@ subtest 'Test CanBookBeIssued param ignore_reserves (Bug 35322)' => sub {
     );
     isnt( exists $question->{RESERVE_WAITING}, 1, 'RESERVE_WAITING is not set' );
 
+};
+
+subtest "Check AutomaticRenewalPeriodBase vs ManualRenewalPeriodBase ( Bug 30331 )" => sub {
+    plan tests => 4;
+
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $patron =
+        $builder->build_object( { class => 'Koha::Patrons', value => { branchcode => $library->branchcode } } );
+    my $item  = $builder->build_sample_item( { library => $library->branchcode } );
+    my $staff = $builder->build_object( { class => "Koha::Patrons" } );
+    t::lib::Mocks::mock_userenv( { patron => $staff, branchcode => $library->branchcode } );
+
+    Koha::CirculationRules->set_rules(
+        {
+            categorycode => undef,
+            branchcode   => undef,
+            itemtype     => $item->effective_itemtype,
+            rules        => {
+                issuelength     => 14,
+                lengthunit      => 'days',
+                renewalperiod   => 7,
+                renewalsallowed => 5,
+            }
+        }
+    );
+
+    #Manual renewal with ManualRenewalPeriodBase === 'date_due'
+    t::lib::Mocks::mock_preference( 'ManualRenewalPeriodBase',    'date_due' );
+    t::lib::Mocks::mock_preference( 'AutomaticRenewalPeriodBase', 'now' );
+
+    my $issue        = AddIssue( $patron, $item->barcode );
+    my $original_due = dt_from_string( $issue->date_due );
+    my $expected_due = $original_due->clone()->add( days => 7 );
+
+    my $manual_due = AddRenewal(
+        {
+            borrowernumber => $patron->borrowernumber,
+            itemnumber     => $item->itemnumber,
+            branch         => $library->branchcode,
+            automatic      => 0,
+        }
+    );
+
+    is(
+        $manual_due->truncate( to => 'day' )->ymd,
+        $expected_due->truncate( to => 'day' )->ymd,
+        'Manual renewal based off of old due date'
+    );
+
+    #Manual renewal with ManualRenewalPeriodBase === 'now'
+    t::lib::Mocks::mock_preference( 'ManualRenewalPeriodBase', 'now' );
+
+    $issue = Koha::Checkouts->find( { itemnumber => $item->itemnumber } );
+    my $now = dt_from_string();
+    $expected_due = $now->clone()->add( days => 7 );
+
+    $manual_due = AddRenewal(
+        {
+            borrowernumber => $patron->borrowernumber,
+            itemnumber     => $item->itemnumber,
+            branch         => $library->branchcode,
+            automatic      => 0,
+        }
+    );
+
+    is(
+        $manual_due->truncate( to => 'day' )->ymd,
+        $expected_due->truncate( to => 'day' )->ymd,
+        'Manual renewal based off of current date'
+    );
+
+    #Automatic renewal with AutomaticRenewalPeriodBase === 'date_due'
+    t::lib::Mocks::mock_preference( 'ManualRenewalPeriodBase',    'now' );
+    t::lib::Mocks::mock_preference( 'AutomaticRenewalPeriodBase', 'date_due' );
+
+    $issue        = Koha::Checkouts->find( { itemnumber => $item->itemnumber } );
+    $original_due = dt_from_string( $issue->date_due );
+    $expected_due = $original_due->clone()->add( days => 7 );
+
+    my $auto_due = AddRenewal(
+        {
+            borrowernumber => $patron->borrowernumber,
+            itemnumber     => $item->itemnumber,
+            branch         => $library->branchcode,
+            automatic      => 1,
+        }
+    );
+
+    is(
+        $auto_due->truncate( to => 'day' )->ymd,
+        $expected_due->truncate( to => 'day' )->ymd,
+        'Automatic renewal uses old checkout date'
+    );
+
+    #Automatic renewal with AutomaticRenewalPeriodBase === 'now'
+    t::lib::Mocks::mock_preference( 'ManualRenewalPeriodBase',    'date_due' );
+    t::lib::Mocks::mock_preference( 'AutomaticRenewalPeriodBase', 'now' );
+
+    $issue        = Koha::Checkouts->find( { itemnumber => $item->itemnumber } );
+    $now          = dt_from_string();
+    $expected_due = $now->clone()->add( days => 7 );
+
+    $auto_due = AddRenewal(
+        {
+            borrowernumber => $patron->borrowernumber,
+            itemnumber     => $item->itemnumber,
+            branch         => $library->branchcode,
+            automatic      => 1,
+        }
+    );
+
+    is(
+        $auto_due->truncate( to => 'day' )->ymd,
+        $expected_due->truncate( to => 'day' )->ymd,
+        'Automatic renewal uses current date'
+    );
 };
 
 subtest 'NoRefundOnLostFinesPaidAge' => sub {
