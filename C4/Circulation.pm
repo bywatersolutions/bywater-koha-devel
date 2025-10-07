@@ -3478,8 +3478,10 @@ sub AddRenewal {
             my $itemtype = $item_object->effective_itemtype;
             unless ($datedue) {
 
+                my $renewal_base_pref = $automatic ? 'AutomaticRenewalPeriodBase' : 'ManualRenewalPeriodBase';
+
                 $datedue =
-                    ( C4::Context->preference('ManualRenewalPeriodBase') eq 'date_due' )
+                    ( C4::Context->preference($renewal_base_pref) eq 'date_due' )
                     ? dt_from_string( $issue->date_due, 'sql' )
                     : dt_from_string();
                 $datedue = CalcDateDue( $datedue, $itemtype, $circ_library->branchcode, $patron, 'is a renewal' );
