@@ -2351,7 +2351,8 @@ sub AddReturn {
         my $effective_itemtype = $item->effective_itemtype;
         my $limit = Koha::Library::FloatLimits->find( { itemtype => $effective_itemtype, branchcode => $branch } );
         if ($limit) {
-            my $transfer_library = Koha::Library::FloatLimits->lowest_ratio_library( $item, $branch );
+            my $transfer_library =
+                Koha::Library::FloatLimits->lowest_ratio_library( $item, $branch, $item->holdingbranch );
             if ( $transfer_library && $transfer_library->branchcode ne $branch ) {
                 $returnbranch     = $transfer_library->branchcode;
                 $transfer_trigger = 'LibraryFloatLimit';

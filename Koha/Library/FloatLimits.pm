@@ -40,7 +40,7 @@ Koha::Library::FloatLimits - Koha Library::FloatLimit object set class
 =cut
 
 sub lowest_ratio_library {
-    my ( $self, $item, $branchcode ) = @_;
+    my ( $self, $item, $branchcode, $from_branch ) = @_;
     my $schema = Koha::Database->new->schema;
 
     my @float_limits = $schema->resultset('LibraryFloatLimit')->search(
@@ -116,6 +116,21 @@ sub lowest_ratio_library {
                 }
             )->count;
             $item_count = $at_branch_count + $in_transit_to_count - $in_transit_from_count;
+
+            # artifically adjust counts for the item being checked in
+            if ($from_branch) {
+
+                # This is the checkin branch - artifically add 1
+                if ( $branch eq $branchcode ) {
+                    $item_count++;
+                }
+
+                # This is where the item came from - artifically subtract 1
+                if ( $branch eq $from_branch ) {
+                    $item_count--;
+                }
+            }
+
         } else {
             my $at_branch_count = Koha::Items->search(
                 {
@@ -156,6 +171,20 @@ sub lowest_ratio_library {
                 }
             )->count;
             $item_count = $at_branch_count + $in_transit_to_count - $in_transit_from_count;
+
+            # artifically adjust counts for the item being checked in
+            if ($from_branch) {
+
+                # This is the checkin branch - artifically add 1
+                if ( $branch eq $branchcode ) {
+                    $item_count++;
+                }
+
+                # This is where the item came from - artifically subtract 1
+                if ( $branch eq $from_branch ) {
+                    $item_count--;
+                }
+            }
         }
 
         my $ratio = $item_count / $float_limit_val;
