@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Koha; if not, see <http://www.gnu.org/licenses>.
+# along with Koha; if not, see <https://www.gnu.org/licenses>.
 
 use Modern::Perl;
 
@@ -109,7 +109,8 @@ my $float_limit3 = Koha::Library::FloatLimit->new(
 )->store();
 
 is(
-    Koha::Library::FloatLimits->lowest_ratio_library( $item, $library1->{branchcode} )->branchcode,
+    Koha::Library::FloatLimits->lowest_ratio_library( $item, $library1->{branchcode}, $item->holdingbranch )
+        ->branchcode,
     $library3->{branchcode},
     "Correct library selected for float limit transfer"
 );
@@ -137,8 +138,10 @@ subtest 'FloatLimits: General tests' => sub {
             itype         => $builder->build_object( { class => 'Koha::ItemTypes' } )->itemtype,
         }
     );
-
-    my $no_limits_result = Koha::Library::FloatLimits->lowest_ratio_library( $no_limits_item, $library1->{branchcode} );
+    my $no_limits_result = Koha::Library::FloatLimits->lowest_ratio_library(
+        $no_limits_item, $library1->{branchcode},
+        $no_limits_item->holdingbranch
+    );
     is( $no_limits_result, undef, "Returns undef when no float limits defined" );
 
     # Test with only zero float limits
@@ -163,8 +166,10 @@ subtest 'FloatLimits: General tests' => sub {
             itype         => $unknown_itemtype->itemtype,
         }
     );
-
-    my $unknown_result = Koha::Library::FloatLimits->lowest_ratio_library( $unknown_item, $library1->{branchcode} );
+    my $unknown_result = Koha::Library::FloatLimits->lowest_ratio_library(
+        $unknown_item, $library1->{branchcode},
+        $unknown_item->holdingbranch
+    );
     is( $unknown_result, undef, "Returns undef for item type not in float limits" );
 
     $schema->storage->txn_rollback;
