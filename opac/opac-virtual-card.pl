@@ -24,6 +24,8 @@ use C4::Auth   qw( get_template_and_user );
 use C4::Output qw( output_html_with_http_headers );
 use Koha::Libraries;
 use Koha::Patrons;
+use C4::Letters qw( GetPreparedLetter );
+use C4::Scrubber;
 
 my $query = CGI->new;
 
@@ -44,17 +46,41 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 my $patron = Koha::Patrons->find($borrowernumber);
 
 # Find and display patron image if allowed
-if ( C4::Context->preference('OPACpatronimages') ) {
-    $template->param( display_patron_image => 1 ) if $patron->image;
+my $image_html = '';
+if ( C4::Context->preference('OPACpatronimages') && $patron->image ) {
+    $template->param( display_patron_image => 1 );
+    $image_html =
+        '<div id="image-container"><img id="patron-image" src="/cgi-bin/koha/opac-patron-image.pl" alt="" /></div>';
 }
 
 # Get the desired barcode format
-my $barcode_format = C4::Context->preference('OPACVirtualCardBarcode');
+my $barcode_format = C4::Context->preference('OPACVirtualCardBarcode') || 'Code39';
+my $barcode_html =
+    qq{<div id="barcode-container"><svg id="patron-barcode" data-barcode="${\$patron->cardnumber}" data-barcode-format="$barcode_format"></svg></div>};
+
+my $content = C4::Letters::GetPreparedLetter(
+    (
+        module      => 'members',
+        letter_code => 'VIRTUALCARD',
+        branchcode  => $patron->branchcode,
+        tables      => {
+            borrowers => $patron->borrowernumber,
+            branches  => $patron->branchcode,
+        },
+        lang                   => $patron->lang,
+        message_transport_type => 'email',
+        substitute             => {
+            my_barcode => $barcode_html,
+            my_image   => $image_html,
+        },
+    )
+);
 
 $template->param(
     virtualcardview => 1,
     patron          => $patron,
     barcode_format  => $barcode_format,
+    content         => $content,
 );
 
 output_html_with_http_headers $query, $cookie, $template->output, undef, { force_no_caching => 1 };

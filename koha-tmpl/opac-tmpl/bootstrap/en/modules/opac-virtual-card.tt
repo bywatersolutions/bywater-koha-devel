@@ -33,24 +33,28 @@
             <div class="col-lg-10 order-first order-lg-2">
                 <h1>Your library card </h1>
                 <div id="patron-virtual-card">
-                    [% IF ( display_patron_image ) %]
-                        <div id="image-container">
-                            <img id="patron-image" src="/cgi-bin/koha/opac-patron-image.pl" alt="" />
-                        </div>
-                    [% END %]
                     <div id="card-details">
-                        <div id="barcode-container">
-                            <svg id="patron-barcode" data-barcode="[% patron.cardnumber | html %]" data-barcode-format="[% barcode_format | html %]"></svg>
-                        </div>
-                        <div id="lib-container">
-                            <p id="patron-lib"><strong>Library:</strong> [% Branches.GetName( patron.branchcode ) | html %]</p>
-                        </div>
-                        <div id="cardnumber-container">
-                            <p id="patron-cardnumber"><strong>Card number:</strong> [% patron.cardnumber | html %]</p>
-                        </div>
-                        <div id="dateexpiry-container">
-                            <p id="patron-dateexpiry"><strong>Expiration date:</strong> [% patron.dateexpiry | $KohaDates %]</p>
-                        </div>
+                        [% IF content.content %]
+                            [% content.content | $raw %]
+                        [% ELSE %]
+                            [% IF ( display_patron_image ) %]
+                                <div id="image-container">
+                                    <img id="patron-image" src="/cgi-bin/koha/opac-patron-image.pl" alt="" />
+                                </div>
+                            [% END %]
+                            <div id="barcode-container">
+                                <svg id="patron-barcode" data-barcode="[% patron.cardnumber | html %]" data-barcode-format="[% barcode_format | html %]"></svg>
+                            </div>
+                            <div id="lib-container">
+                                <p id="patron-lib"><strong>Library:</strong> [% Branches.GetName( patron.branchcode ) | html %]</p>
+                            </div>
+                            <div id="cardnumber-container">
+                                <p id="patron-cardnumber"><strong>Card number:</strong> [% patron.cardnumber | html %]</p>
+                            </div>
+                            <div id="dateexpiry-container">
+                                <p id="patron-dateexpiry"><strong>Expiration date:</strong> [% patron.dateexpiry | $KohaDates %]</p>
+                            </div>
+                        [% END %]
                     </div>
                 </div>
             </div>
