@@ -488,6 +488,12 @@ Patrons:
            class: integer
          - characters long.
      -
+         - pref: DisallowEmptyPatronSearches
+           choices:
+               1: "Require"
+               0: "Don't require"
+         - "at least one search criterion when searching for patrons."
+     -
          - pref: RequireStrongPassword
            choices:
                1: "Require"

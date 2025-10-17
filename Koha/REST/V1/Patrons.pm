@@ -47,6 +47,34 @@ sub list {
 
     return try {
 
+        # Check if empty searches are disallowed
+        if ( C4::Context->preference('DisallowEmptyPatronSearches') ) {
+            my $has_search_criteria = 0;
+            my $params              = $c->req->query_params->to_hash;
+
+            # Remove special parameters that aren't search criteria
+            delete $params->{_per_page};
+            delete $params->{_page};
+            delete $params->{_order_by};
+            delete $params->{_match};
+
+            # Check if any search parameters are provided
+            $has_search_criteria = 1 if scalar( keys %$params ) > 0;
+
+            # Check if we're not in restricted mode (which would add a criterion)
+            $has_search_criteria = 1 if $c->param('restricted');
+
+            if ( !$has_search_criteria ) {
+                return $c->render(
+                    status  => 422,
+                    openapi => {
+                        error => 'Search criteria are required',
+                        code  => 'empty_search_not_allowed'
+                    }
+                );
+            }
+        }
+
         my $query      = {};
         my $restricted = $c->param('restricted');
         $c->req->params->remove('restricted');

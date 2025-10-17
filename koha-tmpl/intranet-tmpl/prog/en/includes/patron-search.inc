@@ -346,9 +346,27 @@
             [% END %]
 
             $(document).ready(function(){
-
                 let parent_block = $("#[% search_results_block_id | html %]");
                 let patron_search_form = get_patron_search_form();
+
+                let patron_search_filter = patron_search_form.find(".search_patron_filter"); // jQuery object
+                let search_patron_filter_btn = patron_search_form.find(".search_patron_filter_btn"); // assuming you already have this
+
+                [% IF Koha.Preference('DisallowEmptyPatronSearches') %]
+                    // Check for passed search value on load
+                    if (!patron_search_filter.val()) {
+                        search_patron_filter_btn.prop('disabled', true);
+                    }
+
+                    // Check for empty search value on input
+                    patron_search_filter.on("input", function() {
+                        if (!patron_search_filter.val()) {
+                            search_patron_filter_btn.prop('disabled', true);
+                        } else {
+                            search_patron_filter_btn.prop('disabled', false);
+                        }
+                    });
+                [% END %]
 
                 parent_block.find(".info").hide();
                 parent_block.find(".error").hide();
@@ -496,6 +514,27 @@
                                 first_draw = 0;
                             [% END %]
                             return json.data;
+                        },
+                        error: function(xhr, error, thrown) {
+                            if (xhr.status === 422) {
+                                // Directly manipulate tbody instead of clear().draw(), that causes an infinite loop
+                                var tbody = table_node.find('tbody');
+                                tbody.empty();
+
+                                // Hide the "Processing..." model
+                                $(".dt-processing").hide();
+
+                                // Display a message to the librarian
+                                var colCount = table_node.find('thead th').length;
+                                tbody.append(
+                                    '<tr class="error-row"><td colspan="' + colCount + '" style="text-align:center;">' +
+                                    _("Empty patron search, please add a search term") +
+                                    '</td></tr>'
+                                );
+
+                                // Re-enable the patron search button
+                                patron_search_form.find(".search_patron_filter_btn").prop({disabled: false});
+                            }
                         }
                     },
                     [% IF open_on_row_click OR preview_on_name_click OR remember_selections %]
