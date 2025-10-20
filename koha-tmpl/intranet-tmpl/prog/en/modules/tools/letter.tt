@@ -504,10 +504,10 @@
                             [% ELSE %]
                                 <option value="bookings">Bookings</option>
                             [% END %]
-                            [% IF ( module == "debit_descriptions" ) %]
-                                <option value="bookings" selected="selected">Debit description (custom)</option>
+                            [% IF ( module == "debit_description" ) %]
+                                <option value="debit_description" selected="selected">Debit description (custom)</option>
                             [% ELSE %]
-                                <option value="bookings">Bookings</option>
+                                <option value="debit_description">Debit description (custom)</option>
                             [% END %]
                         </select>
                     </li>
