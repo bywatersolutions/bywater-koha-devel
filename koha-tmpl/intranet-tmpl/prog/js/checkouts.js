@@ -751,7 +751,7 @@ var barcodefield = $("#barcode");
 
 if (AlwaysLoadCheckoutsTable) {
     if (LoadCheckoutsTableDelay) {
-        setTimeout(function () {
+        loadIssuesTableDelayTimeoutId = setTimeout(function () {
             LoadIssuesTable();
         }, LoadCheckoutsTableDelay * 1000);
     } else {
@@ -774,7 +774,7 @@ if (AlwaysLoadCheckoutsTable) {
 
     if (Cookies.get("issues-table-load-immediately-" + script) == "true") {
         if (LoadCheckoutsTableDelay) {
-            setTimeout(function () {
+            loadIssuesTableDelayTimeoutId = setTimeout(function () {
                 LoadIssuesTable();
             }, LoadCheckoutsTableDelay * 1000);
         } else {
