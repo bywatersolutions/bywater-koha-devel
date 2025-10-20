@@ -28,6 +28,7 @@ use Koha::Database;
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Exceptions::Account;
 use Koha::Patron::Debarments;
+use C4::Letters;
 
 use base qw(Koha::Object Koha::Object::Mixin::AdditionalFields);
 
@@ -1110,6 +1111,26 @@ sub store {
                 $max //= $prefix . '0000';
                 my $incr = substr( $max, length $prefix );
                 $self->credit_number( sprintf( '%s%04d', $prefix, $incr + 1 ) );
+            }
+        }
+    }
+
+    #if there is a matching debit description letter, pull that content and render it for the accountline.description
+    if ( $self->is_debit && !$self->in_storage && !$self->description ) {
+        my $debit_type = $self->debit_type;
+        if ($debit_type) {
+            my $letter = C4::Letters::GetPreparedLetter(
+                module      => 'debit_description',
+                letter_code => $debit_type->code,
+                tables      => {
+                    borrowers   => $self->borrowernumber,
+                    branches    => $self->branchcode,
+                    accountline => $self,
+                },
+            );
+
+            if ( $letter && $letter->{content} ) {
+                $self->description( $letter->{content} );
             }
         }
     }
