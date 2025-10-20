@@ -1576,4 +1576,98 @@ subtest "cancel() tests" => sub {
     $schema->storage->txn_rollback;
 };
 
+subtest 'debit description from notice' => sub {
+    plan tests => 3;
+
+    $schema->storage->txn_begin;
+
+    my $patron = $builder->build_object( { class => 'Koha::Patrons' } );
+
+    # Create a debit type
+    my $debit_type = $builder->build_object(
+        {
+            class => 'Koha::Account::DebitTypes',
+            value => {
+                code        => 'LUKEG_WAS_HERE',
+                description => 'Default description',
+                is_system   => 0,
+            }
+        }
+    );
+
+    # Create a notice for this debit type
+    my $notice = $builder->build_object(
+        {
+            class => 'Koha::Notice::Templates',
+            value => {
+                module                 => 'debit_description',
+                code                   => 'LUKEG_WAS_HERE',
+                name                   => 'Test fee',
+                content                => 'You owe big time buddy, pay up: $[% accountline.amount | format("%.2f") %]',
+                branchcode             => '',
+                message_transport_type => 'email',
+                lang                   => 'default',
+            }
+        }
+    );
+
+    # Create an account line - description should be set from notice
+    my $account_line = Koha::Account::Line->new(
+        {
+            borrowernumber    => $patron->borrowernumber,
+            debit_type_code   => 'LUKEG_WAS_HERE',
+            amount            => 10.50,
+            amountoutstanding => 10.50,
+            interface         => 'commandline',
+        }
+    )->store;
+
+    is( $account_line->description, 'You owe big time buddy, pay up: $10.50', 'Description set from notice template' );
+
+    # Create another line without a notice
+    $notice->delete;
+
+    my $account_line2 = Koha::Account::Line->new(
+        {
+            borrowernumber    => $patron->borrowernumber,
+            debit_type_code   => 'LUKEG_WAS_HERE',
+            amount            => 5.00,
+            amountoutstanding => 5.00,
+            interface         => 'commandline',
+        }
+    )->store;
+
+    is( $account_line2->description, undef, 'No notice, no description' );
+
+    # Create a line with explicit description - should not be overridden
+    my $notice2 = $builder->build_object(
+        {
+            class => 'Koha::Notice::Templates',
+            value => {
+                module                 => 'debit_description',
+                code                   => 'LUKEG_WAS_HERE',
+                content                => 'From notice',
+                branchcode             => '',
+                message_transport_type => 'email',
+                lang                   => 'default',
+            }
+        }
+    );
+
+    my $account_line3 = Koha::Account::Line->new(
+        {
+            borrowernumber    => $patron->borrowernumber,
+            debit_type_code   => 'LUKEG_WAS_HERE',
+            description       => 'Manual description',
+            amount            => 3.00,
+            amountoutstanding => 3.00,
+            interface         => 'commandline',
+        }
+    )->store;
+
+    is( $account_line3->description, 'Manual description', 'System defined description is used' );
+
+    $schema->storage->txn_rollback;
+};
+
 1;
