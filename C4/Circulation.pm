@@ -3266,13 +3266,12 @@ sub CanBookBeRenewed {
         $final_unseen_renewal = ( C4::Context->preference('UnseenRenewals')
                 && $issuing_rule->{unseen_renewals_allowed} == ( $issue->unseen_renewals + 1 ) ) ? 1 : 0;
 
-        my $overduesblockrenewing     = C4::Context->preference('OverduesBlockRenewing');
-        my $finesblockrenewing        = C4::Context->preference("FineNoRenewals");
-        my $restrictionblockrenewing  = C4::Context->preference('RestrictionBlockRenewing');
-        my $allowfineoverriderenewing = C4::Context->preference("AllowFineOverrideRenewing");
-        my $restricted                = $patron->is_debarred;
-        my $hasoverdues               = $patron->has_overdues;
-        my $balance                   = $patron->account->balance;
+        my $overduesblockrenewing    = C4::Context->preference('OverduesBlockRenewing');
+        my $finesblockrenewing       = C4::Context->preference("FineNoRenewals");
+        my $restrictionblockrenewing = C4::Context->preference('RestrictionBlockRenewing');
+        my $restricted               = $patron->is_debarred;
+        my $hasoverdues              = $patron->has_overdues;
+        my $balance                  = $patron->account->balance;
 
         if ( $restricted and $restrictionblockrenewing ) {
             return ( 0, 'restriction' );
@@ -3280,7 +3279,7 @@ sub CanBookBeRenewed {
             || ( $issue->is_overdue and $overduesblockrenewing eq 'blockitem' ) )
         {
             return ( 0, 'overdue' );
-        } elsif ( $finesblockrenewing && $balance > $finesblockrenewing && !$allowfineoverriderenewing ) {
+        } elsif ( $finesblockrenewing && $balance > $finesblockrenewing ) {
             return ( 0, 'too_much_oweing' );
         }
 

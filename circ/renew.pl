@@ -96,7 +96,7 @@ if ( $op eq 'cud-renew' && $barcode ) {
                 }
 
                 if ( $error && ( $error eq 'too_much_oweing' or $error eq 'auto_too_much_oweing' ) ) {
-                    if ($override_debt) {
+                    if ( $override_debt && C4::Context->preference("AllowFineOverrideRenewing") ) {
                         $can_renew = 1;
                         $error     = undef;
                     } else {

@@ -507,7 +507,7 @@ function LoadIssuesTable() {
                             msg +=
                                 "<span class='renewals-disabled'>" +
                                 __(
-                                    "Cannot renew, he patron has a debt of " +
+                                    "Cannot renew, the patron has a debt of " +
                                         parseFloat(oObj.fine).format_price()
                                 ) +
                                 "</span>";

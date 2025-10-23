@@ -497,7 +497,7 @@ subtest "GetIssuingCharges tests" => sub {
 
 my ( $reused_itemnumber_1, $reused_itemnumber_2 );
 subtest "CanBookBeRenewed tests" => sub {
-    plan tests => 116;
+    plan tests => 120;
 
     C4::Context->set_preference( 'ItemsDeniedRenewal', '' );
 
@@ -1353,7 +1353,7 @@ subtest "CanBookBeRenewed tests" => sub {
         );
         C4::Context->set_preference( 'OPACFineNoRenewalsBlockAutoRenew', '1' );
         C4::Context->set_preference( 'FineNoRenewals',                   '10' );
-        C4::Context->set_preference( 'OPACFineNoRenewalsIncludeCredit',  '1' );
+        C4::Context->set_preference( 'OPACFineNoRenewalsIncludeCredits', '1' );
         my $fines_amount = 5;
         my $account      = Koha::Account->new( { patron_id => $renewing_borrowernumber } );
         $account->add_debit(
@@ -1974,6 +1974,19 @@ subtest "CanBookBeRenewed tests" => sub {
     ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_1 );
     is( $renewokay, 0,                 'Cannot renew, too much debt and FineNoRenewals=1' );
     is( $error,     'too_much_oweing', 'Cannot renew, debt not allowed (returned code is too_much_oweing)' );
+
+    # AllowFineOverrideRenewing should not affect CanBookBeRenewed behavior
+    # The preference only controls whether staff can override in the UI
+    t::lib::Mocks::mock_preference( 'AllowFineOverrideRenewing', 1 );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_1 );
+    is( $renewokay, 0,                 'Cannot renew, too much debt even with AllowFineOverrideRenewing enabled' );
+    is( $error,     'too_much_oweing', 'Error code still too_much_oweing with AllowFineOverrideRenewing enabled' );
+
+    t::lib::Mocks::mock_preference( 'AllowFineOverrideRenewing', 0 );
+    ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_1 );
+    is( $renewokay, 0,                 'Cannot renew, too much debt with AllowFineOverrideRenewing disabled' );
+    is( $error,     'too_much_oweing', 'Error code still too_much_oweing with AllowFineOverrideRenewing disabled' );
+
     C4::Context->dbh->do("DELETE FROM accountlines");
 };
 
