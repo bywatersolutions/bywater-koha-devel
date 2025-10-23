@@ -76,6 +76,11 @@ my $content = C4::Letters::GetPreparedLetter(
     )
 );
 
+my $scrubber = C4::Scrubber->new('opac');
+my $scrubbed = $scrubber->scrub( $content->{content} );
+
+$content->{content} = $scrubbed;
+
 $template->param(
     virtualcardview => 1,
     patron          => $patron,

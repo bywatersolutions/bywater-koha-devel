@@ -88,6 +88,40 @@ my %scrubbertypes = (
             },
         ],
     },
+    opac => {
+        allow => [
+            qw(
+                div span h1 h2 h3 h4 h5 h6 p br
+                ul ol li dl dt dd
+                a img svg
+                strong b em i u
+                hr
+            )
+        ],
+        rules => [
+            div => {
+                class => qr/^[\w\s\-_]+$/,
+                id    => qr/^[\w\-_]+$/,
+            },
+
+            span => {
+                class => qr/^[\w\s\-_]+$/,
+                id    => qr/^[\w\-_]+$/,
+            },
+            'svg' => {
+                'id'                  => qr/^[\w\-_]+$/,
+                'class'               => qr/^[\w\s\-_]+$/,
+                'data-barcode'        => qr/^[\w\-_]+$/,
+                'data-barcode-format' => qr/^[\w\-_]+$/,
+            },
+            'img' => {
+                'src'   => qr/^(?:https?:\/\/|\/)/i,
+                'alt'   => 1,
+                'class' => qr/^[\w\s\-_]+$/,
+                'id'    => qr/^[\w\-_]+$/,
+            },
+        ],
+    }
 );
 
 sub new {
