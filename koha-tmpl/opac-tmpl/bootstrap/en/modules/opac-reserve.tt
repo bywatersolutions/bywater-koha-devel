@@ -59,8 +59,8 @@
                             [% INCLUDE "patron-restrictions.inc" %]
                         [% END %]
 
-                        [% IF ( too_much_oweing ) %]
-                            <li id="too_much_oweing"> You have unpaid fines. Amount: [% too_much_oweing | $Price %]. </li>
+                        [% IF ( too_much_owing ) %]
+                            <li id="too_much_owing"> You have unpaid fines. Amount: [% too_much_owing | $Price %]. </li>
                         [% END %]
 
                         [% IF ( too_many_reserves ) %]

@@ -468,7 +468,7 @@ function LoadIssuesTable() {
                             span_style = "display: none";
                             span_class = "renewals-allowed";
                         } else if (
-                            oObj.can_renew_error == "auto_too_much_oweing"
+                            oObj.can_renew_error == "auto_too_much_owing"
                         ) {
                             msg +=
                                 "<span class='renewals-disabled'>" +
@@ -503,7 +503,7 @@ function LoadIssuesTable() {
 
                             span_style = "display: none";
                             span_class = "renewals-allowed";
-                        } else if (oObj.can_renew_error == "too_much_oweing") {
+                        } else if (oObj.can_renew_error == "too_much_owing") {
                             msg +=
                                 "<span class='renewals-disabled'>" +
                                 __(

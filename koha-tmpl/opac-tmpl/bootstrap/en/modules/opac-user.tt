@@ -458,7 +458,7 @@
                                                                     <span class="usr-msg no-renew-overdue">Not allowed <span class="renewals">(overdue)</span></span>
                                                                 [% ELSIF ( ISSUE.auto_too_late ) %]
                                                                     <span class="usr-msg no-renew-too-late">No longer renewable</span>
-                                                                [% ELSIF ISSUE.auto_too_much_oweing %]
+                                                                [% ELSIF ISSUE.auto_too_much_owing %]
                                                                     <span class="usr-msg auto-renew-fines">Automatic renewal failed, you have unpaid fines.</span>
                                                                     <span class="renewals"
                                                                         >( [% I18N.tx("{renewals_left} of {renewals_allowed} renewals remaining", { renewals_left = ISSUE.renewsleft, renewals_allowed = ISSUE.renewsallowed }) %]

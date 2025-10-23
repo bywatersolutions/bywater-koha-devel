@@ -243,7 +243,7 @@ sub _ProcessRenewals {
             || $error eq 'too_unseen'
             || $error eq 'auto_account_expired'
             || $error eq 'auto_too_late'
-            || $error eq 'auto_too_much_oweing'
+            || $error eq 'auto_too_much_owing'
             || $error eq 'auto_too_soon'
             || $error eq 'item_denied_renewal'
             || $error eq 'item_issued_to_other_patron'

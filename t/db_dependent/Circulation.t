@@ -1324,7 +1324,7 @@ subtest "CanBookBeRenewed tests" => sub {
         is( $error,     'auto_renew', 'Cannot renew, renew is automatic' );
     };
 
-    subtest "auto_too_much_oweing | OPACFineNoRenewalsBlockAutoRenew & OPACFineNoRenewalsIncludeCredits" => sub {
+    subtest "auto_too_much_owing | OPACFineNoRenewalsBlockAutoRenew & OPACFineNoRenewalsIncludeCredits" => sub {
         plan tests => 10;
         my $item_to_auto_renew = $builder->build_sample_item(
             {
@@ -1392,8 +1392,8 @@ subtest "CanBookBeRenewed tests" => sub {
             }
         )->status('RETURNED')->store;
         ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue );
-        is( $renewokay, 0,                      'Do not renew, renewal is automatic' );
-        is( $error,     'auto_too_much_oweing', 'Cannot auto renew, FineNoRenewals=10, patron has 15' );
+        is( $renewokay, 0,                     'Do not renew, renewal is automatic' );
+        is( $error,     'auto_too_much_owing', 'Cannot auto renew, FineNoRenewals=10, patron has 15' );
 
         $account->add_credit(
             {
@@ -1414,7 +1414,7 @@ subtest "CanBookBeRenewed tests" => sub {
         ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue );
         is( $renewokay, 0, 'Do not renew, renewal is automatic' );
         is(
-            $error, 'auto_too_much_oweing',
+            $error, 'auto_too_much_owing',
             'Cannot auto renew, FineNoRenewals=10, OPACFineNoRenewalsIncludeCredits=1, patron has 15 debt, 5 credit'
         );
 
@@ -1972,20 +1972,20 @@ subtest "CanBookBeRenewed tests" => sub {
     # Too much debt
     t::lib::Mocks::mock_preference( 'FineNoRenewals', 1 );
     ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_1 );
-    is( $renewokay, 0,                 'Cannot renew, too much debt and FineNoRenewals=1' );
-    is( $error,     'too_much_oweing', 'Cannot renew, debt not allowed (returned code is too_much_oweing)' );
+    is( $renewokay, 0,                'Cannot renew, too much debt and FineNoRenewals=1' );
+    is( $error,     'too_much_owing', 'Cannot renew, debt not allowed (returned code is too_much_owing)' );
 
     # AllowFineOverrideRenewing should not affect CanBookBeRenewed behavior
     # The preference only controls whether staff can override in the UI
     t::lib::Mocks::mock_preference( 'AllowFineOverrideRenewing', 1 );
     ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_1 );
-    is( $renewokay, 0,                 'Cannot renew, too much debt even with AllowFineOverrideRenewing enabled' );
-    is( $error,     'too_much_oweing', 'Error code still too_much_oweing with AllowFineOverrideRenewing enabled' );
+    is( $renewokay, 0,                'Cannot renew, too much debt even with AllowFineOverrideRenewing enabled' );
+    is( $error,     'too_much_owing', 'Error code still too_much_owing with AllowFineOverrideRenewing enabled' );
 
     t::lib::Mocks::mock_preference( 'AllowFineOverrideRenewing', 0 );
     ( $renewokay, $error ) = CanBookBeRenewed( $renewing_borrower_obj, $issue_1 );
-    is( $renewokay, 0,                 'Cannot renew, too much debt with AllowFineOverrideRenewing disabled' );
-    is( $error,     'too_much_oweing', 'Error code still too_much_oweing with AllowFineOverrideRenewing disabled' );
+    is( $renewokay, 0,                'Cannot renew, too much debt with AllowFineOverrideRenewing disabled' );
+    is( $error,     'too_much_owing', 'Error code still too_much_owing with AllowFineOverrideRenewing disabled' );
 
     C4::Context->dbh->do("DELETE FROM accountlines");
 };

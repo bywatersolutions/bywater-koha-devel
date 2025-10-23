@@ -258,7 +258,7 @@ if ( $pending_checkouts->count ) {    # Useless test
             $issue->{'auto_renew'}                  = 1 if $renewerror eq 'auto_renew';
             $issue->{'auto_too_soon'}               = 1 if $renewerror eq 'auto_too_soon';
             $issue->{'auto_too_late'}               = 1 if $renewerror eq 'auto_too_late';
-            $issue->{'auto_too_much_oweing'}        = 1 if $renewerror eq 'auto_too_much_oweing';
+            $issue->{'auto_too_much_owing'}         = 1 if $renewerror eq 'auto_too_much_owing';
             $issue->{'item_denied_renewal'}         = 1 if $renewerror eq 'item_denied_renewal';
             $issue->{'item_issued_to_other_patron'} = 1 if $renewerror eq 'item_issued_to_other_patron';
 

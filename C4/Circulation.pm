@@ -3238,7 +3238,7 @@ sub CanBookBeRenewed {
         # extra notices being sent. Cron also implies no override
         return ( 0, $auto_renew ) if $auto_renew =~ 'auto_account_expired';
         return ( 0, $auto_renew ) if $auto_renew =~ 'auto_too_late';
-        return ( 0, $auto_renew ) if $auto_renew =~ 'auto_too_much_oweing';
+        return ( 0, $auto_renew ) if $auto_renew =~ 'auto_too_much_owing';
 
         my $issuing_rule = Koha::CirculationRules->get_effective_rules(
             {
@@ -3280,7 +3280,7 @@ sub CanBookBeRenewed {
         {
             return ( 0, 'overdue' );
         } elsif ( $finesblockrenewing && $balance > $finesblockrenewing ) {
-            return ( 0, 'too_much_oweing' );
+            return ( 0, 'too_much_owing' );
         }
 
     }
@@ -5053,7 +5053,7 @@ sub _CanBookBeAutoRenewed {
             ? $patron->account->balance
             : $patron->account->outstanding_debits->total_outstanding;
         if ( $amountoutstanding and $amountoutstanding > $fine_no_renewals ) {
-            return "auto_too_much_oweing";
+            return "auto_too_much_owing";
         }
     }
 

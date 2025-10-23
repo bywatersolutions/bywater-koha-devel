@@ -125,7 +125,7 @@ if ( !$can_place_holds ) {
         if ( $msg->message eq 'expired' ) {
             $template->param( expired_patron => 1 );
         } elsif ( $msg->message eq 'debt_limit' ) {
-            $template->param( too_much_oweing => sprintf( "%.02f", $msg->{payload}->{total_outstanding} ) );
+            $template->param( too_much_owing => sprintf( "%.02f", $msg->{payload}->{total_outstanding} ) );
         } elsif ( $msg->message eq 'bad_address' ) {
             $template->param( GNA => 1 );
         } elsif ( $msg->message eq 'card_lost' ) {

@@ -1246,7 +1246,7 @@ sub handle_fee_paid {
         "auto_account_expired" =>
             "Scheduled for automatic renewal and cannot be renewed because the patron's account has expired",
         "auto_renew"                  => "Scheduled for automatic renewal",
-        "auto_too_much_oweing"        => "Scheduled for automatic renewal",
+        "auto_too_much_owing"         => "Scheduled for automatic renewal",
         "on_reserve"                  => "On hold for another patron",
         "patron_restricted"           => "Patron is currently restricted",
         "item_denied_renewal"         => "Item is not allowed renewal",
