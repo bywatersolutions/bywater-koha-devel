@@ -158,7 +158,7 @@ subtest 'note scrubber functionality' => sub {
 };
 
 subtest 'record_display profile tests' => sub {
-    plan tests => 26;
+    plan tests => 27;
 
     my $scrubber = C4::Scrubber->new('record_display');
 
@@ -318,4 +318,142 @@ subtest 'record_display profile tests' => sub {
         '<ul><li>Bad class</li></ul>',
         'invalid list class attribute removed'
     );
+
+    subtest 'opac profile tests' => sub {
+        plan tests => 20;
+
+        my $scrubber = C4::Scrubber->new('opac');
+
+        # Test basic allowed elements
+        is(
+            $scrubber->scrub('<div id="card-container" class="virtual-card">hello world!</div>'),
+            '<div id="card-container" class="virtual-card">hello world!</div>',
+            'div with id and class allowed'
+        );
+
+        is(
+            $scrubber->scrub('<p id="patron-name" class="card-text">Luke G</p>'),
+            '<p id="patron-name" class="card-text">Luke G</p>',
+            'p with id and class allowed'
+        );
+
+        is(
+            $scrubber->scrub('<span class="highlight">Important</span>'),
+            '<span class="highlight">Important</span>',
+            'span with class allowed'
+        );
+
+        is(
+            $scrubber->scrub('<h1>Card Title</h1><h2>supercalifragilisticexpialidocious</h2>'),
+            '<h1>Card Title</h1><h2>supercalifragilisticexpialidocious</h2>',
+            'heading elements allowed'
+        );
+
+        # Test SVG with barcode attributes
+        is(
+            $scrubber->scrub('<svg id="patron-barcode" data-barcode="42" data-barcode-format="code39"></svg>'),
+            '<svg id="patron-barcode" data-barcode="42" data-barcode-format="code39"></svg>',
+            'svg with barcode attributes allowed'
+        );
+
+        is(
+            $scrubber->scrub(
+                '<div id="barcode-container"><svg id="patron-barcode" data-barcode="123456" data-barcode-format="qrcode"></svg></div>'
+            ),
+            '<div id="barcode-container"><svg id="patron-barcode" data-barcode="123456" data-barcode-format="qrcode"></svg></div>',
+            'div with svg barcode inside preserved'
+        );
+
+        # Test list elements
+        is(
+            $scrubber->scrub('<ul><li>Item 1</li><li>Item 2</li></ul>'),
+            '<ul><li>Item 1</li><li>Item 2</li></ul>',
+            'unordered lists allowed'
+        );
+
+        is(
+            $scrubber->scrub('<ol><li>First</li><li>Second</li></ol>'),
+            '<ol><li>First</li><li>Second</li></ol>',
+            'ordered lists allowed'
+        );
+
+        is(
+            $scrubber->scrub('<dl><dt>Term</dt><dd>Definition</dd></dl>'),
+            '<dl><dt>Term</dt><dd>Definition</dd></dl>',
+            'definition lists allowed'
+        );
+
+        # Test text formatting
+        is(
+            $scrubber->scrub('<strong>Bold</strong> <em>Italic</em> <u>Underline</u>'),
+            '<strong>Bold</strong> <em>Italic</em> <u>Underline</u>',
+            'text formatting elements allowed'
+        );
+
+        is(
+            $scrubber->scrub('<b>Bold</b> <i>Italic</i>'),
+            '<b>Bold</b> <i>Italic</i>',
+            'alternative text formatting allowed'
+        );
+
+        is(
+            $scrubber->scrub('<p>Line 1<br>Line 2</p>'),
+            '<p>Line 1<br>Line 2</p>',
+            'br tags allowed'
+        );
+
+        is(
+            $scrubber->scrub('<hr>'),
+            '<hr>',
+            'hr tags allowed'
+        );
+
+        # Test security - malicious content removal
+        is(
+            $scrubber->scrub('<script>alert("xss")</script><div>Safe content</div>'),
+            '<div>Safe content</div>',
+            'script tags removed while safe content preserved'
+        );
+
+        is(
+            $scrubber->scrub('<div onclick="evil()">Content</div>'),
+            '<div>Content</div>',
+            'onclick handler removed'
+        );
+
+        is(
+            $scrubber->scrub(
+                '<svg id="barcode" onload="alert(1)" data-barcode="42" data-barcode-format="code39"></svg>'),
+            '<svg id="barcode" data-barcode="42" data-barcode-format="code39"></svg>',
+            'svg onload handler removed while valid attributes preserved'
+        );
+
+        is(
+            $scrubber->scrub('<div style="background:url(javascript:alert(1))">Content</div>'),
+            '<div>Content</div>',
+            'inline styles removed'
+        );
+
+        # Test invalid attribute removal
+        is(
+            $scrubber->scrub('<div id="invalid id with spaces">Test</div>'),
+            '<div>Test</div>',
+            'invalid id with spaces removed'
+        );
+
+        is(
+            $scrubber->scrub('<svg data-barcode="42" data-invalid="bad">Content</svg>'),
+            '<svg data-barcode="42">Content</svg>',
+            'invalid svg attributes removed'
+        );
+
+        # Test the actual virtual card example
+        my $card_html =
+            '<div id="barcode-container"><svg id="patron-barcode" data-barcode="42" data-barcode-format="code39"></svg></div><br><div id="lib-container"><p id="patron-lib"><strong>Library:</strong> Centerville</p></div><div id="cardnumber-container"><p id="patron-cardnumber"><strong>Card number:</strong> 42</p></div>';
+        is(
+            $scrubber->scrub($card_html),
+            $card_html,
+            'complete virtual card HTML preserved'
+        );
+    };
 };
