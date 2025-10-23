@@ -203,6 +203,16 @@
     parameters:
       - $ref: "../swagger.yaml#/parameters/checkout_id_pp"
       - $ref: "../swagger.yaml#/parameters/seen_pp"
+      - name: x-koha-override
+        in: header
+        required: false
+        description: Overrides list sent as a request header
+        type: array
+        items:
+          type: string
+          enum:
+            - debt_limit
+        collectionFormat: csv
     produces:
       - application/json
     responses:
@@ -246,6 +256,16 @@
     parameters:
       - $ref: "../swagger.yaml#/parameters/checkout_id_pp"
       - $ref: "../swagger.yaml#/parameters/seen_pp"
+      - name: x-koha-override
+        in: header
+        required: false
+        description: Overrides list sent as a request header
+        type: array
+        items:
+          type: string
+          enum:
+            - debt_limit
+        collectionFormat: csv
     produces:
       - application/json
     responses:

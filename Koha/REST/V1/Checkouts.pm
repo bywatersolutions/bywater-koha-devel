@@ -375,6 +375,17 @@ sub renew {
     return try {
         my ( $can_renew, $error ) = CanBookBeRenewed( $checkout->patron, $checkout );
 
+        # Check if error is due to excessive fines and override is requested
+        if ( !$can_renew && ( $error eq 'too_much_owing' or $error eq 'auto_too_much_owing' ) ) {
+            my $overrides = $c->stash('koha.overrides');
+            if ( $overrides->{debt_limit} && C4::Context->preference("AllowFineOverrideRenewing") ) {
+
+                # Override is allowed, proceed with renewal
+                $can_renew = 1;
+                $error     = undef;
+            }
+        }
+
         if ( !$can_renew ) {
             return $c->render(
                 status  => 403,
