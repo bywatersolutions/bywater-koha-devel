@@ -324,7 +324,7 @@ sub _choose_records {
         map [ _get_id($_),
         $choose_subs[0] ? $choose_subs[0]->($_) : 0,
         $choose_subs[1] ? $choose_subs[1]->($_) : 0,
-        $choose_subs[2] ? $choose_subs[2]->($_) : 0 ] => ( $records[0], @candidate_auths );
+        $choose_subs[2] ? $choose_subs[2]->($_) : 0 ] => (@candidate_auths);
 
     return @candidate_authids;
 }
