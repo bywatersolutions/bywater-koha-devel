@@ -313,6 +313,7 @@
                             <th id="call_number" data-colname="call_number">Call number</th>
                             <th id="enumchron" data-colname="enumchron">Serial enumeration / chronology</th>
                             <th id="library" data-colname="library">Library</th>
+                            <th id="location" data-colname="location">Location</th>
                             <th id="collection" data-colname="collection">Collection</th>
                             <th id="title" data-colname="title" class="anti-the">Title</th>
                             <th id="notforloan" data-colname="notforloan">Not for loan</th>
@@ -340,8 +341,9 @@
                                     <span class="enumchron">[% result.enumchron | html %]</span>
                                 </td>
 
+                                <td> [% Branches.GetName( result.homebranch ) | html %] </td>
+
                                 <td>
-                                    [% Branches.GetName( result.homebranch ) | html %]
                                     <span class="shelvingloc">[% result.location | html %]</span>
                                 </td>
 
