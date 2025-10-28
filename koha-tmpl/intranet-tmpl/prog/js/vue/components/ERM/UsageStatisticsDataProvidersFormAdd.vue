@@ -618,7 +618,10 @@ export default {
             } else {
                 initialized.value = true;
             }
-            if (from.value.params.erm_usage_data_provider_id) {
+            if (
+                from.value.name === "UsageStatisticsDataProvidersShow" &&
+                from.value.params.erm_usage_data_provider_id
+            ) {
                 previous_route.value = "data_provider_show";
             } else {
                 previous_route.value = "data_provider_list";
