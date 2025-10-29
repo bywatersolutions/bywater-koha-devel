@@ -27,6 +27,7 @@ use C4::Breeding qw( Z3950Search Z3950SearchAuth );
 use MARC::Record;
 use Koha::Authorities;
 use Koha::Authority::Types;
+use Koha::Z3950Servers;
 use C4::AuthoritiesMarc qw( GetAuthority );
 
 my $input  = CGI->new;
@@ -97,13 +98,16 @@ $template->param(
 );
 
 if ( $op ne "cud-do_search" ) {
-    my $sth = $dbh->prepare(
-        "SELECT id,host,servername,checked FROM z3950servers WHERE recordtype = 'authority' ORDER BY `rank`, servername"
+    my $servers = Koha::Z3950Servers->search_with_library_limits(
+        {
+            recordtype => 'authority',
+        },
+        {
+            order_by => [ 'rank', 'servername' ],
+        },
     );
-    $sth->execute();
-    my $serverloop = $sth->fetchall_arrayref( {} );
     $template->param(
-        serverloop => $serverloop,
+        serverloop => $servers,
         opsearch   => "cud-search",
         index      => $index,
     );

@@ -30,6 +30,7 @@ use Koha::Database;
 use Koha::MarcSubfieldStructures;
 use Koha::BiblioFrameworks;
 use Koha::KeyboardShortcuts;
+use Koha::Z3950Servers;
 
 my $input = CGI->new;
 
@@ -76,14 +77,14 @@ $template->{VARS}->{authtags} = $authtags;
 my $frameworks = Koha::BiblioFrameworks->search( {}, { order_by => ['frameworktext'] } );
 $template->{VARS}->{frameworks} = $frameworks;
 
-# Z39.50 servers
-my $dbh = C4::Context->dbh;
-$template->{VARS}->{z3950_servers} = $dbh->selectall_arrayref(
-    q{
-    SELECT * FROM z3950servers
-    WHERE recordtype != 'authority' AND servertype = 'zed'
-    ORDER BY `rank`,servername
-}, { Slice => {} }
+$template->param(
+    z3950_servers => Koha::Z3950Servers->search_with_library_limits(
+        {
+            recordtype => { '!=' => 'authority' },
+            servertype => 'zed'
+        },
+        { order_by => [ 'rank', 'servername' ] },
+    )
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;

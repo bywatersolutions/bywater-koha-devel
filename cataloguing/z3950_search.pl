@@ -26,6 +26,8 @@ use C4::Output qw( output_html_with_http_headers );
 use C4::Context;
 use C4::Breeding qw( Z3950Search );
 
+use Koha::Z3950Servers;
+
 my $input           = CGI->new;
 my $error           = $input->param('error');
 my $biblionumber    = $input->param('biblionumber') || 0;
@@ -74,19 +76,17 @@ $template->param(
 );
 
 if ( $op ne "cud-do_search" ) {
-    my $schema = Koha::Database->new()->schema();
-    my $rs     = $schema->resultset('Z3950server')->search(
+    my $servers = Koha::Z3950Servers->search_with_library_limits(
         {
             recordtype => 'biblio',
             servertype => [ 'zed', 'sru' ],
         },
         {
-            result_class => 'DBIx::Class::ResultClass::HashRefInflator',
-            order_by     => [ 'rank', 'servername' ],
+            order_by => [ 'rank', 'servername' ],
         },
     );
     $template->param(
-        serverloop => [ $rs->all ],
+        serverloop => $servers,
         opsearch   => "cud-search",
     );
     output_html_with_http_headers $input, $cookie, $template->output;
