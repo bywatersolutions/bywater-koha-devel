@@ -28,10 +28,10 @@ use CGI qw ( -utf8 );
 use C4::Context;
 use C4::Auth   qw( get_template_and_user );
 use C4::Output qw( output_html_with_http_headers );
-use Koha::Database;
 use Koha::Z3950Servers;
+use Try::Tiny qw( catch try );
 
-# Initialize CGI, template, database
+# Initialize CGI, template
 
 my $input       = CGI->new;
 my $op          = $input->param('op')   || 'list';
@@ -47,8 +47,6 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         flagsrequired => { parameters => 'manage_search_targets' },
     }
 );
-
-my $schema = Koha::Database->new()->schema();
 
 # Main code
 # First process a confirmed delete, or save a validated record
@@ -67,18 +65,30 @@ if ( $op eq 'cud-delete_confirmed' && $id ) {
         recordtype checked servername servertype sru_options sru_fields attributes
         add_xslt/;
     my $formdata = _form_data_hashref( $input, \@fields );
+    my @branches = grep { $_ ne q{} } $input->multi_param('branches');
+
     if ($id) {
         my $server = Koha::Z3950Servers->find($id);
         if ($server) {
-            $server->set($formdata)->store;
-            $template->param( msg_updated => 1, msg_add => $formdata->{servername} );
+            try {
+                $server->set($formdata)->store;
+                $server->replace_library_limits( \@branches );
+                $template->param( msg_updated => 1, msg_add => $formdata->{servername} );
+            } catch {
+                $template->param( msg_error => 1, msg_add => $formdata->{servername} );
+            };
         } else {
             $template->param( msg_notfound => 1, msg_add => $id );
         }
         $id = 0;
     } else {
-        Koha::Z3950Server->new($formdata)->store;
-        $template->param( msg_added => 1, msg_add => $formdata->{servername} );
+        try {
+            my $server = Koha::Z3950Server->new($formdata)->store;
+            $server->replace_library_limits( \@branches );
+            $template->param( msg_added => 1, msg_add => $formdata->{servername} );
+        } catch {
+            $template->param( msg_error => 1, msg_add => $formdata->{servername} );
+        };
     }
 } elsif ( $op eq 'search' ) {
 
@@ -88,33 +98,43 @@ if ( $op eq 'cud-delete_confirmed' && $id ) {
 
 # Now list multiple records, or edit one record
 
-my $data = [];
-if ( $op eq 'add_form' || $op eq 'edit_form' ) {
-    $data = ServerSearch( $schema, $id, $searchfield ) if $searchfield || $id;
-    delete $data->[0]->{id}                            if @$data && $op eq 'add_form';    #cloning record
+if ( $op eq 'add_form' ) {
+    my $server;
+
+    if ($id) {
+        $server = Koha::Z3950Servers->find($id);
+        if ($server) {
+
+            # Cloning record - remove id
+            $server = $server->unblessed;
+            delete $server->{id};
+        }
+    }
+
     $template->param(
-        server => @$data ? $data->[0] : undef,
+        server => $server,
         op     => $op,
-        type   => ( $op eq 'add_form' ) ? lc $type : ''
+        type   => lc $type
     );
-} else {
-    $data = ServerSearch( $schema, $id, $searchfield );
+} elsif ( $op eq 'edit_form' ) {
+    my $server = Koha::Z3950Servers->find($id);
     $template->param(
-        loop => \@$data, searchfield => $searchfield, id => $id,
+        server => $server,
+        op     => $op,
+        type   => ''
+    );
+} else {    # search
+    my $data = Koha::Z3950Servers->search(
+        $id ? { id => $id } : { servername => { like => $searchfield . '%' } },
+    );
+    $template->param(
+        loop => $data, searchfield => $searchfield, id => $id,
         op   => 'list'
     );
 }
 output_html_with_http_headers $input, $cookie, $template->output;
 
 # End of main code
-
-sub ServerSearch {    #find server(s) by id or name
-    my ( $schema, $id, $searchstring ) = @_;
-
-    return Koha::Z3950Servers->search(
-        $id ? { id => $id } : { servername => { like => $searchstring . '%' } },
-    )->unblessed;
-}
 
 sub _form_data_hashref {
     my ( $input, $fieldref ) = @_;
