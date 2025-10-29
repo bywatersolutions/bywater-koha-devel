@@ -7099,6 +7099,23 @@ CREATE TABLE `z3950servers` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `z3950servers_branches`
+--
+
+DROP TABLE IF EXISTS `z3950servers_branches`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `z3950servers_branches` (
+  `server_id` int(11) NOT NULL COMMENT 'z3950server id',
+  `branchcode` varchar(10) NOT NULL COMMENT 'branch code',
+  PRIMARY KEY (`server_id`,`branchcode`),
+  KEY `z3950servers_branches_ibfk_2` (`branchcode`),
+  CONSTRAINT `z3950servers_branches_ibfk_1` FOREIGN KEY (`server_id`) REFERENCES `z3950servers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `z3950servers_branches_ibfk_2` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `zebraqueue`
 --
 
