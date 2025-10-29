@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 use Test::NoWarnings;
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Test::Exception;
 
 use t::lib::TestBuilder;
@@ -102,6 +102,69 @@ subtest 'Host, syntax and encoding are NOT NULL now (BZ 30571)' => sub {
 
     $server->encoding('utf8');
     lives_ok { $server->store } 'No exceptions anymore';
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'library_limits' => sub {
+    plan tests => 8;
+
+    $schema->storage->txn_begin;
+
+    my $library1 = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $library2 = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    my $server = $builder->build_object(
+        {
+            class => 'Koha::Z3950Servers',
+            value => {
+                host => 'test.example.com',
+                port => 210,
+                db   => 'testdb'
+            }
+        }
+    );
+
+    # Test adding library limit
+    $server->add_library_limit( $library1->branchcode );
+    my $limits = $server->library_limits();
+    is( $limits->count,            1,                     'One library limit added' );
+    is( $limits->next->branchcode, $library1->branchcode, 'Correct library limit' );
+
+    # Test search with library limits
+    my $servers = Koha::Z3950Servers->search_with_library_limits(
+        { id => $server->id },
+        {},
+        $library1->branchcode
+    );
+    is( $servers->count, 1, 'Server found for authorized library' );
+
+    $servers = Koha::Z3950Servers->search_with_library_limits(
+        { id => $server->id },
+        {},
+        $library2->branchcode
+    );
+    is( $servers->count, 0, 'Server not found for unauthorized library' );
+
+    # Test replacing library limits
+    $server->library_limits( [ $library1->branchcode, $library2->branchcode ] );
+    $limits = $server->library_limits();
+    is( $limits->count, 2, 'Two library limits set' );
+
+    # Test removing library limit
+    $server->del_library_limit( $library1->branchcode );
+    $limits = $server->library_limits();
+    is( $limits->count,            1,                     'One library limit remains' );
+    is( $limits->next->branchcode, $library2->branchcode, 'Correct remaining limit' );
+
+    # Test server with no limits (available to all)
+    my $unrestricted_server = $builder->build_object( { class => 'Koha::Z3950Servers' } );
+    $servers = Koha::Z3950Servers->search_with_library_limits(
+        { id => $unrestricted_server->id },
+        {},
+        $library1->branchcode
+    );
+    is( $servers->count, 1, 'Unrestricted server available to all libraries' );
 
     $schema->storage->txn_rollback;
 };

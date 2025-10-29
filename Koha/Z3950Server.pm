@@ -19,7 +19,7 @@ use Modern::Perl;
 
 use Koha::Database;
 
-use base qw(Koha::Object);
+use base qw(Koha::Object Koha::Object::Limit::Library);
 
 =head1 NAME
 
@@ -27,9 +27,21 @@ Koha::Z3950Server - Koha Z3950Server Object class
 
 =head1 API
 
-=head2 Class Methods
+=head2 Internal methods
+
+=head3 _library_limits
+
+Configure library limits for Z39.50 servers
 
 =cut
+
+sub _library_limits {
+    return {
+        class   => "Z3950serversBranch",
+        id      => "server_id",
+        library => "branchcode",
+    };
+}
 
 =head3 _type
 
