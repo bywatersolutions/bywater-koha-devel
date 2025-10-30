@@ -31,11 +31,12 @@ export class CirculationAPIClient {
                 this.httpClient.post({
                     endpoint: "renew",
                     body:
-                        "itemnumber=%s&borrowernumber=%s&branchcode=%s&override_limit=%s".format(
+                        "itemnumber=%s&borrowernumber=%s&branchcode=%s&override_limit=%s&override_debt=%s".format(
                             checkout.item_id,
                             checkout.patron_id,
                             checkout.library_id,
-                            checkout.override_limit
+                            checkout.override_limit,
+                            checkout.override_debt || 0
                         ) +
                         (checkout.seen !== undefined
                             ? "&seen=%s".format(checkout.seen)

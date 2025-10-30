@@ -59,9 +59,11 @@ describe("Circulation - FineNoRenewals and AllowFineOverrideRenewing", () => {
 
             // Should see error message about patron debt
             cy.get(".dialog.alert").should("be.visible");
-            cy.get(".dialog.alert li").should(
+            cy.get(".dialog.alert").should("contain", "total debt of");
+            cy.get(".dialog.alert").should("contain", "non-issuing charges");
+            cy.get(".dialog.alert").should(
                 "contain",
-                `The patron has a debt of`
+                "Renewals are blocked when non-issuing charges exceed"
             );
         });
 
@@ -80,11 +82,8 @@ describe("Circulation - FineNoRenewals and AllowFineOverrideRenewing", () => {
 
             // Should see error message about patron debt
             cy.get(".dialog.alert").should("be.visible");
-
-            cy.get(".dialog.alert li").should(
-                "contain",
-                `The patron has a debt of`
-            );
+            cy.get(".dialog.alert").should("contain", "total debt of");
+            cy.get(".dialog.alert").should("contain", "non-issuing charges");
 
             // Should see override button
             cy.get('.dialog.alert form button[type="submit"].approve').should(
@@ -111,9 +110,11 @@ describe("Circulation - FineNoRenewals and AllowFineOverrideRenewing", () => {
 
             // Should see error message about patron debt
             cy.get(".dialog.alert").should("be.visible");
-            cy.get(".dialog.alert li").should(
+            cy.get(".dialog.alert").should("contain", "total debt of");
+            cy.get(".dialog.alert").should("contain", "non-issuing charges");
+            cy.get(".dialog.alert").should(
                 "contain",
-                `The patron has a debt of`
+                "Renewals are blocked when non-issuing charges exceed"
             );
 
             // Should NOT see override button

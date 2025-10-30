@@ -65,6 +65,10 @@
                         <label for="override_limit">Override renewal restrictions:</label>
                         <input type="checkbox" name="override_limit" id="override_limit" value="1" />
                     [% END %]
+                    [% IF Koha.Preference( 'AllowFineOverrideRenewing' ) %]
+                        <label for="override_debt">Override fine restrictions:</label>
+                        <input type="checkbox" name="override_debt" id="override_debt" value="1" />
+                    [% END %]
                 [% END %]
                 [% IF ( CAN_user_circulate_circulate_remaining_permissions ) %]
                     [% IF Koha.Preference( 'UnseenRenewals' ) %]
@@ -76,6 +80,12 @@
                     <button class="btn btn-default" id="RenewAll"><i class="fa fa-book"></i> Renew all</button>
                 [% END %]
             </fieldset>
+            [% IF patron.account.non_issues_charges >= Koha.Preference('FineNoRenewals') %]
+                <p
+                    ><strong>Note: </strong> Patron has <strong><span id="patron-non-issues-charges">[% patron.account.non_issues_charges | $Price %]</span></strong> of non-issuing charges outstanding, renewals are restricted at
+                    <strong><span id="fine-no-renewals-limit">[% Koha.Preference('FineNoRenewals') | $Price %]</span></strong></p
+                >
+            [% END %]
 
             [% IF Koha.Preference('ExportCircHistory') %]
                 <fieldset>

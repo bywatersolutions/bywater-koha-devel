@@ -129,11 +129,14 @@
             [% ELSIF error == "auto_renew" or error == "auto_too_much_owing" %]
                 <p>[% INCLUDE 'biblio-title.inc' biblio=item.biblio link = 1 %] ( [% item.barcode | html %] ) has been scheduled for automatic renewal. </p>
                 [% IF error == "auto_too_much_owing" %]
-                    [% IF balance %]
-                        <ul>
-                            <li>The patron has a debt of [% balance | $Price %] and renewals are restricted at [% Koha.Preference('FineNoRenewals') | $Price %].</li>
-                        </ul>
-                    [% END %]
+                    [% SET patron_account = borrower.account %]
+                    [% SET total_balance = patron_account.balance %]
+                    [% SET non_issues_charges = patron_account.non_issues_charges %]
+                    [% SET fine_no_renewals = Koha.Preference('FineNoRenewals') %]
+                    <ul>
+                        <li>The patron has a total debt of [% total_balance | $Price %], of which [% non_issues_charges | $Price %] are non-issuing charges.</li>
+                        <li>Renewals are blocked when non-issuing charges exceed [% fine_no_renewals | $Price %].</li>
+                    </ul>
                     [% IF Koha.Preference('AllowFineOverrideRenewing') %]
                         <form method="post" action="/cgi-bin/koha/circ/renew.pl">
                             [% INCLUDE 'csrf-token.inc' %]
@@ -156,8 +159,13 @@
                     [% END %]
                 [% END %]
             [% ELSIF error == "too_much_owing" %]
+                [% SET patron_account = borrower.account %]
+                [% SET total_balance = patron_account.balance %]
+                [% SET non_issues_charges = patron_account.non_issues_charges %]
+                [% SET fine_no_renewals = Koha.Preference('FineNoRenewals') %]
                 <ul>
-                    <li>The patron has a debt of [% balance | $Price %] and renewals are restricted at [% Koha.Preference('FineNoRenewals') | $Price %].</li>
+                    <li>The patron has a total debt of [% total_balance | $Price %], of which [% non_issues_charges | $Price %] are non-issuing charges.</li>
+                    <li>Renewals are blocked when non-issuing charges exceed [% fine_no_renewals | $Price %].</li>
                 </ul>
                 [% IF Koha.Preference('AllowFineOverrideRenewing') %]
                     <form method="post" action="/cgi-bin/koha/circ/renew.pl">

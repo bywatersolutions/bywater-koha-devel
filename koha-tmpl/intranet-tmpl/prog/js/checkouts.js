@@ -424,7 +424,7 @@ function LoadIssuesTable() {
                                 "</span>";
 
                             span_style = "display: none";
-                            span_class = "renewals-allowed";
+                            span_class = "renewals-allowed-too_many";
                         } else if (oObj.can_renew_error == "too_unseen") {
                             msg +=
                                 "<span>" +
@@ -478,7 +478,7 @@ function LoadIssuesTable() {
                                 "</span>";
 
                             span_style = "display: none";
-                            span_class = "renewals-allowed";
+                            span_class = "renewals-allowed-auto_too_much_owing";
                         } else if (
                             oObj.can_renew_error == "auto_account_expired"
                         ) {
@@ -507,13 +507,12 @@ function LoadIssuesTable() {
                             msg +=
                                 "<span class='renewals-disabled'>" +
                                 __(
-                                    "Cannot renew, the patron has a debt of " +
-                                        parseFloat(oObj.fine).format_price()
+                                    "Cannot renew - patron has debts blocking renewal"
                                 ) +
                                 "</span>";
 
                             span_style = "display: none";
-                            span_class = "renewals-allowed";
+                            span_class = "renewals-allowed-too_much_owing";
                         } else {
                             msg +=
                                 "<span class='renewals-disabled'>" +
@@ -1010,6 +1009,7 @@ $(document).ready(function () {
 
         function renew(item_id) {
             var override_limit = $("#override_limit").is(":checked") ? 1 : 0;
+            var override_debt = $("#override_debt").is(":checked") ? 1 : 0;
 
             $(this)
                 .parent()
@@ -1029,6 +1029,7 @@ $(document).ready(function () {
                 patron_id: borrowernumber,
                 library_id: branchcode,
                 override_limit: override_limit,
+                override_debt: override_debt,
             };
 
             if (UnseenRenewals) {
@@ -1420,16 +1421,28 @@ $(document).ready(function () {
             .click(function () {
                 if (this.checked) {
                     if (AllowRenewalLimitOverride) {
-                        $(".renewals-allowed").show();
-                        $(".renewals-disabled").hide();
+                        $(".renewals-allowed-too_many").show();
                     }
                     if (AllowRenewalOnHoldOverride) {
                         $(".renewals-allowed-on_reserve").show();
                     }
                 } else {
-                    $(".renewals-allowed").hide();
+                    $(".renewals-allowed-too_many").hide();
                     $(".renewals-allowed-on_reserve").hide();
-                    $(".renewals-disabled").show();
+                }
+            })
+            .prop("checked", false);
+    }
+
+    if (AllowFineOverrideRenewing) {
+        $("#override_debt")
+            .click(function () {
+                if (this.checked) {
+                    $(".renewals-allowed-too_much_owing").show();
+                    $(".renewals-allowed-auto_too_much_owing").show();
+                } else {
+                    $(".renewals-allowed-too_much_owing").hide();
+                    $(".renewals-allowed-auto_too_much_owing").hide();
                 }
             })
             .prop("checked", false);

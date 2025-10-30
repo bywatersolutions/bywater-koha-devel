@@ -53,7 +53,7 @@ my $hard_due_date  = $cgi->param('hard_due_date');
 
 my ( $item, $checkout, $patron );
 my $error = q{};
-my ( $soonest_renew_date, $latest_auto_renew_date, $balance );
+my ( $soonest_renew_date, $latest_auto_renew_date );
 
 if ( $op eq 'cud-renew' && $barcode ) {
     $barcode = barcodedecode($barcode) if $barcode;
@@ -100,8 +100,6 @@ if ( $op eq 'cud-renew' && $barcode ) {
                         $can_renew = 1;
                         $error     = undef;
                     } else {
-                        $balance = $patron->account->balance;
-                        $template->param( balance => $balance );
                         $can_renew = 0;
                     }
                 }
