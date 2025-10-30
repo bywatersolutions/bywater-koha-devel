@@ -165,4 +165,30 @@ sub list {
     };
 }
 
+=head3 restore
+
+Controller function that handles restoring a single deleted biblio object
+
+=cut
+
+sub restore {
+    my $c = shift->openapi->valid_input or return;
+
+    my $deleted_biblio = Koha::Old::Biblios->find( $c->param('biblio_id') );
+
+    return $c->render_resource_not_found("Bibliographic record")
+        unless $deleted_biblio;
+
+    return try {
+        my $biblio = $deleted_biblio->restore;
+
+        return $c->render(
+            status  => 200,
+            openapi => { biblio_id => $biblio->biblionumber }
+        );
+    } catch {
+        $c->unhandled_exception($_);
+    };
+}
+
 1;
