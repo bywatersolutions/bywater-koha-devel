@@ -164,4 +164,4 @@
           $ref: "../swagger.yaml#/definitions/error"
     x-koha-authorization:
       permissions:
-        editcatalogue: edit_catalogue
+        tools: records_restore
