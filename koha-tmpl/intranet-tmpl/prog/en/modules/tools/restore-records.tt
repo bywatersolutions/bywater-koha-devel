@@ -1,0 +1,322 @@
+[% USE raw %]
+[% USE Asset %]
+[% USE KohaDates %]
+[% USE Koha %]
+[% PROCESS 'i18n.inc' %]
+[% SET footerjs = 1 %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>
+    [% FILTER collapse %]
+        [% t("Restore deleted records") | html %]
+        &rsaquo; [% t("Tools") | html %] &rsaquo; [% t("Koha") | html %]
+    [% END %]
+</title>
+[% INCLUDE 'doc-head-close.inc' %]
+</head>
+
+<body id="tools_restore-records" class="tools">
+[% WRAPPER 'header.inc' %]
+    [% INCLUDE 'cat-search.inc' %]
+[% END %]
+
+[% WRAPPER 'sub-header.inc' %]
+    [% WRAPPER breadcrumbs %]
+        [% WRAPPER breadcrumb_item %]
+            <a href="/cgi-bin/koha/tools/tools-home.pl">Tools</a>
+        [% END %]
+        [% WRAPPER breadcrumb_item bc_active= 1 %]
+            <span>Restore deleted records</span>
+        [% END %]
+    [% END #/ WRAPPER breadcrumbs %]
+[% END #/ WRAPPER sub-header.inc %]
+
+[% SET asides = [] %]
+[% asides.push('cat-menu') %]
+
+[% WRAPPER 'main-container.inc' %]
+    <div class="row">
+        <div class="col-md-10 col-md-push-2">
+            <main>
+                <h1>Restore deleted records</h1>
+
+                <div id="messages"></div>
+
+                <h2>Deleted bibliographic records</h2>
+                <div class="page-section">
+                    <table id="deleted_biblios_table" class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>Biblio ID</th>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Deleted on</th>
+                                <th class="NoSort">Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+
+                <h2>Deleted items</h2>
+                <div class="page-section">
+                    <table id="deleted_items_table" class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>Item ID</th>
+                                <th>Biblio ID</th>
+                                <th>Barcode</th>
+                                <th>Call number</th>
+                                <th>Home library</th>
+                                <th>Deleted on</th>
+                                <th class="NoSort">Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+[% END #/ WRAPPER main-container.inc %]
+
+[% MACRO jsinclude BLOCK %]
+    [% Asset.js("js/tools-menu.js") | $raw %]
+    [% INCLUDE 'datatables.inc' %]
+    <script>
+        function showMessage(message, type) {
+            var alert = $('<div class="alert alert-' + type + '">' + message + "</div>");
+            $("#messages").append(alert);
+
+            setTimeout(function () {
+                alert.fadeOut(400, function () {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+
+        $(document).ready(function () {
+            // Deleted biblios DataTable
+            var biblios_table = $("#deleted_biblios_table").kohaTable({
+                ajax: {
+                    url: "/api/v1/deleted/biblios",
+                },
+                order: [[3, "desc"]],
+                columns: [
+                    {
+                        data: "biblio_id",
+                        searchable: true,
+                        orderable: true,
+                    },
+                    {
+                        data: "title",
+                        searchable: true,
+                        orderable: true,
+                        render: function (data, type, row) {
+                            if (type === "display") {
+                                return $("<div/>").text(data).html();
+                            }
+                            return data;
+                        },
+                    },
+                    {
+                        data: "author",
+                        searchable: true,
+                        orderable: true,
+                        render: function (data, type, row) {
+                            if (type === "display") {
+                                return data ? $("<div/>").text(data).html() : "";
+                            }
+                            return data || "";
+                        },
+                    },
+                    {
+                        data: "deleted_on",
+                        searchable: false,
+                        orderable: true,
+                        render: function (data, type, row) {
+                            if (type === "display" && data) {
+                                return $date(data);
+                            }
+                            return data;
+                        },
+                    },
+                    {
+                        data: function (row, type) {
+                            if (type === "display") {
+                                return (
+                                    '<button class="btn btn-sm btn-default restore-biblio" data-biblio-id="' +
+                                    row.biblio_id +
+                                    '" data-title="' +
+                                    $("<div/>").text(row.title).html() +
+                                    '"><i class="fa fa-undo" aria-hidden="true"></i> ' +
+                                    _("Restore") +
+                                    "</button>"
+                                );
+                            }
+                            return "";
+                        },
+                        searchable: false,
+                        orderable: false,
+                    },
+                ],
+            });
+            var biblios_table_api = biblios_table.DataTable();
+
+            // Deleted items DataTable
+            var items_table = $("#deleted_items_table").kohaTable({
+                ajax: {
+                    url: "/api/v1/deleted/items",
+                },
+                order: [[5, "desc"]],
+                columns: [
+                    {
+                        data: "item_id",
+                        searchable: true,
+                        orderable: true,
+                    },
+                    {
+                        data: "biblio_id",
+                        searchable: true,
+                        orderable: true,
+                    },
+                    {
+                        data: "external_id",
+                        searchable: true,
+                        orderable: true,
+                        render: function (data, type, row) {
+                            if (type === "display") {
+                                return data ? $("<div/>").text(data).html() : "";
+                            }
+                            return data || "";
+                        },
+                    },
+                    {
+                        data: "callnumber",
+                        searchable: true,
+                        orderable: true,
+                        render: function (data, type, row) {
+                            if (type === "display") {
+                                return data ? $("<div/>").text(data).html() : "";
+                            }
+                            return data || "";
+                        },
+                    },
+                    {
+                        data: "home_library_id",
+                        searchable: true,
+                        orderable: true,
+                        render: function (data, type, row) {
+                            if (type === "display") {
+                                return data ? $("<div/>").text(data).html() : "";
+                            }
+                            return data || "";
+                        },
+                    },
+                    {
+                        data: "deleted_on",
+                        searchable: false,
+                        orderable: true,
+                        render: function (data, type, row) {
+                            if (type === "display" && data) {
+                                return $date(data);
+                            }
+                            return data || "";
+                        },
+                    },
+                    {
+                        data: function (row, type) {
+                            if (type === "display") {
+                                return (
+                                    '<button class="btn btn-sm btn-default restore-item" data-item-id="' +
+                                    row.item_id +
+                                    '" data-barcode="' +
+                                    $("<div/>")
+                                        .text(row.external_id || row.item_id)
+                                        .html() +
+                                    '"><i class="fa fa-undo" aria-hidden="true"></i> ' +
+                                    _("Restore") +
+                                    "</button>"
+                                );
+                            }
+                            return "";
+                        },
+                        searchable: false,
+                        orderable: false,
+                    },
+                ],
+            });
+            var items_table_api = items_table.DataTable();
+
+            // Restore biblio handler
+            $("#deleted_biblios_table").on("click", ".restore-biblio", function (e) {
+                e.preventDefault();
+                var button = $(this);
+                var biblio_id = button.data("biblio-id");
+                var title = button.data("title");
+
+                if (!confirm(_("Are you sure you want to restore bibliographic record %s '%s'?").format(biblio_id, title))) {
+                    return;
+                }
+
+                button.prop("disabled", true);
+
+                $.ajax({
+                    url: "/api/v1/deleted/biblios/" + biblio_id,
+                    type: "POST",
+                    headers: {
+                        "x-koha-request-id": Math.random(),
+                    },
+                    success: function (data) {
+                        $("#messages").append(
+                            '<div class="alert alert-success">' + '<button type="button" class="close" data-dismiss="alert">&times;</button>' + _("Bibliographic record %s restored successfully").format(biblio_id) + "</div>"
+                        );
+                        biblios_table_api.ajax.reload();
+                        items_table_api.ajax.reload();
+                    },
+                    error: function (xhr) {
+                        var error_msg = _("Error restoring bibliographic record %s").format(biblio_id);
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            error_msg += ": " + xhr.responseJSON.error;
+                        }
+                        $("#messages").append('<div class="alert alert-danger">' + '<button type="button" class="close" data-dismiss="alert">&times;</button>' + error_msg + "</div>");
+                        button.prop("disabled", false);
+                    },
+                });
+            });
+
+            // Restore item handler
+            $("#deleted_items_table").on("click", ".restore-item", function (e) {
+                e.preventDefault();
+                var button = $(this);
+                var item_id = button.data("item-id");
+                var barcode = button.data("barcode");
+
+                if (!confirm(_("Are you sure you want to restore item %s (%s)?").format(item_id, barcode))) {
+                    return;
+                }
+
+                button.prop("disabled", true);
+
+                $.ajax({
+                    url: "/api/v1/deleted/items/" + item_id,
+                    type: "PUT",
+                    headers: {
+                        "x-koha-request-id": Math.random(),
+                    },
+                    success: function (data) {
+                        showMessage(_("Item %s restored successfully").format(item_id), "success");
+                        items_table_api.ajax.reload();
+                    },
+                    error: function (xhr) {
+                        var error_msg = _("Error restoring item %s").format(item_id);
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            error_msg += ": " + xhr.responseJSON.error;
+                        }
+                        showMessage(error_msg, "danger");
+                        button.prop("disabled", false);
+                    },
+                });
+            });
+        });
+    </script>
+[% END %]
+
+[% INCLUDE 'intranet-bottom.inc' %]

@@ -43,7 +43,7 @@
         </ul>
     [% END %]
 
-    [% IF ( CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel || CAN_user_tools_records_batchmod || CAN_user_tools_records_batchdel || CAN_user_tools_marc_modification_templates ) %]
+    [% IF ( CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel || CAN_user_tools_records_batchmod || CAN_user_tools_records_batchdel || CAN_user_tools_marc_modification_templates || CAN_user_editcatalogue_edit_catalogue ) %]
         <h5>Batch editing</h5>
         <ul>
             [% IF ( CAN_user_tools_items_batchmod ) %]
@@ -64,6 +64,11 @@
             [% IF CAN_user_tools_records_batchdel %]
                 <li>
                     <a href="/cgi-bin/koha/tools/batch_delete_records.pl">Batch record deletion</a>
+                </li>
+            [% END %]
+            [% IF ( CAN_user_editcatalogue_edit_catalogue ) %]
+                <li>
+                    <a href="/cgi-bin/koha/tools/restore-records.pl">Restore deleted records</a>
                 </li>
             [% END %]
             [% IF ( CAN_user_tools_marc_modification_templates ) %]
