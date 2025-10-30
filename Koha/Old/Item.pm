@@ -20,8 +20,10 @@ use Modern::Perl;
 use base qw(Koha::Object);
 
 use Koha::Biblio;
+use Koha::Biblios;
 use Koha::Exceptions;
 use Koha::Item;
+use Koha::Old::Biblios;
 use Koha::SearchEngine::Indexer;
 
 =head1 NAME
@@ -33,6 +35,24 @@ Koha::Old::Item - Koha Old::Item Object class
 =head2 Class methods
 
 =cut
+
+=head3 biblio
+
+    my $biblio = $deleted_item->biblio;
+
+Returns the Koha::Biblio or Koha::Old::Biblio object for this item,
+checking first in the biblio table and then in deletedbiblio table.
+
+=cut
+
+sub biblio {
+    my ($self) = @_;
+
+    my $biblio = Koha::Biblios->find( $self->biblionumber );
+    return $biblio if $biblio;
+
+    return Koha::Old::Biblios->find( $self->biblionumber );
+}
 
 =head3 restore
 
