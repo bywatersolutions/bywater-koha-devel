@@ -36,7 +36,7 @@
 [% SET aside = Koha.Preference('CircSidebar') ? 'circ-nav' : '' %]
 [% WRAPPER 'main-container.inc' aside=aside %]
     [% IF error %]
-        <div class="alert alert-warning">
+        <div class="dialog alert alert-warning">
             <h1>Cannot renew:</h1>
 
             [% IF error == "no_item" %]
@@ -128,26 +128,44 @@
                 [% END %]
             [% ELSIF error == "auto_renew" or error == "auto_too_much_owing" %]
                 <p>[% INCLUDE 'biblio-title.inc' biblio=item.biblio link = 1 %] ( [% item.barcode | html %] ) has been scheduled for automatic renewal. </p>
-                [% SET override_limit = error == "auto_renew" ? "AUTO_RENEW" : "TOO_MUCH" %]
-
-                [% IF Koha.Preference('AllowRenewalLimitOverride') %]
-                    <form method="post" action="/cgi-bin/koha/circ/renew.pl">
-                        [% INCLUDE 'csrf-token.inc' %]
-                        <input type="hidden" name="barcode" value="[% item.barcode | html %]" />
-                        <input type="hidden" name="override_limit" value="[% override_limit | html %]" />
-                        <input type="hidden" name="op" value="cud-renew" />
-                        <button type="submit" class="btn btn-default approve"><i class="fa fa-check"></i> Override limit and renew</button>
-                    </form>
+                [% IF error == "auto_too_much_owing" %]
+                    [% IF balance %]
+                        <ul>
+                            <li>The patron has a debt of [% balance | $Price %] and renewals are restricted at [% Koha.Preference('FineNoRenewals') | $Price %].</li>
+                        </ul>
+                    [% END %]
+                    [% IF Koha.Preference('AllowFineOverrideRenewing') %]
+                        <form method="post" action="/cgi-bin/koha/circ/renew.pl">
+                            [% INCLUDE 'csrf-token.inc' %]
+                            <input type="hidden" name="barcode" value="[% item.barcode | html %]" />
+                            <input type="hidden" name="override_debt" value="1" />
+                            <input type="hidden" name="op" value="cud-renew" />
+                            <button type="submit" class="btn btn-default approve"><i class="fa fa-check"></i> Override and renew</button>
+                        </form>
+                    [% END %]
+                [% ELSE %]
+                    [% SET override_limit = "AUTO_RENEW" %]
+                    [% IF Koha.Preference('AllowRenewalLimitOverride') %]
+                        <form method="post" action="/cgi-bin/koha/circ/renew.pl">
+                            [% INCLUDE 'csrf-token.inc' %]
+                            <input type="hidden" name="barcode" value="[% item.barcode | html %]" />
+                            <input type="hidden" name="override_limit" value="[% override_limit | html %]" />
+                            <input type="hidden" name="op" value="cud-renew" />
+                            <button type="submit" class="btn btn-default approve"><i class="fa fa-check"></i> Override limit and renew</button>
+                        </form>
+                    [% END %]
                 [% END %]
             [% ELSIF error == "too_much_owing" %]
-                <li>The patron has a debt of [% balance | $Price %].</li>
+                <ul>
+                    <li>The patron has a debt of [% balance | $Price %] and renewals are restricted at [% Koha.Preference('FineNoRenewals') | $Price %].</li>
+                </ul>
                 [% IF Koha.Preference('AllowFineOverrideRenewing') %]
                     <form method="post" action="/cgi-bin/koha/circ/renew.pl">
                         [% INCLUDE 'csrf-token.inc' %]
                         <input type="hidden" name="barcode" value="[% item.barcode | html %]" />
                         <input type="hidden" name="override_debt" value="1" />
                         <input type="hidden" name="op" value="cud-renew" />
-                        <button type="submit" class="approve"><i class="fa fa-check"></i>Renew checkout(s)</button>
+                        <button type="submit" class="btn btn-default approve"><i class="fa fa-check"></i> Override and renew</button>
                     </form>
                 [% END %]
             [% ELSIF error == "on_reserve" %]
@@ -189,7 +207,7 @@
     [% END %]
 
     [% IF date_due %]
-        <div class="alert alert-info">
+        <div class="dialog message alert alert-info">
             <h1>Item renewed:</h1>
             <p>
                 [% INCLUDE 'biblio-title.inc' biblio=item.biblio link = 1 %] (
@@ -219,7 +237,7 @@
                         <input value="1" name="unseen" id="unseen" type="checkbox" />
                     </div>
                 [% ELSE %]
-                    <input name="barcode" size="14" class="barcode focus" type="text" placeholder="Enter item barcode" />
+                    <input name="barcode" id="barcode" size="14" class="barcode focus" type="text" placeholder="Enter item barcode" />
                 [% END %]
                 <input type="hidden" name="op" value="cud-renew" />
                 <div id="show-circ-settings">
