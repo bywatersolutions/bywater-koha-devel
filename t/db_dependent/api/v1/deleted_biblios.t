@@ -21,7 +21,7 @@ use utf8;
 use Encode;
 
 use Test::NoWarnings;
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warn;
@@ -264,6 +264,75 @@ subtest 'list() tests' => sub {
     my $tomas_biblio = $builder->build_sample_biblio( { isbn => 'TOMAS' } );
     DelBiblio( $tomas_biblio->id );
     $t->get_ok( "//$userid:$password@/api/v1/biblios?q=$isbn_query" => { Accept => 'text/plain' } )->status_is(200);
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'restore() tests' => sub {
+
+    plan tests => 13;
+
+    $schema->storage->txn_begin;
+
+    my $librarian = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => { flags => 0 }
+        }
+    );
+    my $password = 'thePassword123';
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    $builder->build(
+        {
+            source => 'UserPermission',
+            value  => {
+                borrowernumber => $librarian->borrowernumber,
+                module_bit     => 13,
+                code           => 'records_restore',
+            }
+        }
+    );
+
+    my $patron = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => { flags => 0 }
+        }
+    );
+
+    $patron->set_password( { password => $password, skip_validation => 1 } );
+    my $unauth_userid = $patron->userid;
+
+    my $biblio = $builder->build_sample_biblio(
+        {
+            title  => 'Test Restore Biblio',
+            author => 'Test Author'
+        }
+    );
+
+    my $biblionumber = $biblio->biblionumber;
+
+    DelBiblio($biblionumber);
+
+    is( Koha::Biblios->find($biblionumber), undef, 'Biblio deleted successfully' );
+    my $deleted_biblio = Koha::Old::Biblios->find($biblionumber);
+    ok( $deleted_biblio, 'Biblio found in deleted table' );
+
+    $t->put_ok("//$unauth_userid:$password@/api/v1/deleted/biblios/$biblionumber")->status_is(403);
+
+    $t->put_ok("//$userid:$password@/api/v1/deleted/biblios/$biblionumber")->status_is(200)
+        ->json_is( '/biblio_id' => $biblionumber );
+
+    my $restored_biblio = Koha::Biblios->find($biblionumber);
+    ok( $restored_biblio, 'Biblio restored successfully' );
+    is( $restored_biblio->title,  'Test Restore Biblio', 'Biblio title preserved' );
+    is( $restored_biblio->author, 'Test Author',         'Biblio author preserved' );
+
+    is( Koha::Old::Biblios->find($biblionumber), undef, 'Biblio removed from deleted table' );
+
+    $t->put_ok("//$userid:$password@/api/v1/deleted/biblios/$biblionumber")->status_is(404);
 
     $schema->storage->txn_rollback;
 };
