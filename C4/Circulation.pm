@@ -3274,6 +3274,10 @@ sub CanBookBeRenewed {
         my $account                  = $patron->account;
         my $balance                  = $account->balance;
         my $non_issues_charges       = $account->non_issues_charges;
+        my $amountoutstanding_for_renewal =
+            C4::Context->preference("OPACFineNoRenewalsIncludeCredits")
+            ? $balance
+            : $non_issues_charges;
 
         if ( $restricted and $restrictionblockrenewing ) {
             return ( 0, 'restriction' );
@@ -3281,7 +3285,7 @@ sub CanBookBeRenewed {
             || ( $issue->is_overdue and $overduesblockrenewing eq 'blockitem' ) )
         {
             return ( 0, 'overdue' );
-        } elsif ( $finesblockrenewing && $non_issues_charges > $finesblockrenewing ) {
+        } elsif ( $finesblockrenewing && $amountoutstanding_for_renewal > $finesblockrenewing ) {
             return ( 0, 'too_much_owing' );
         }
 
@@ -5049,10 +5053,13 @@ sub _CanBookBeAutoRenewed {
     }
 
     if ( C4::Context->preference('OPACFineNoRenewalsBlockAutoRenew') ) {
-        my $fine_no_renewals   = C4::Context->preference("FineNoRenewals");
-        my $account            = $patron->account;
-        my $non_issues_charges = $account->non_issues_charges;
-        if ( $non_issues_charges and $non_issues_charges > $fine_no_renewals ) {
+        my $fine_no_renewals = C4::Context->preference("FineNoRenewals");
+        my $account          = $patron->account;
+        my $amountoutstanding =
+            C4::Context->preference("OPACFineNoRenewalsIncludeCredits")
+            ? $account->balance
+            : $account->non_issues_charges;
+        if ( $amountoutstanding and $amountoutstanding > $fine_no_renewals ) {
             return "auto_too_much_owing";
         }
     }
