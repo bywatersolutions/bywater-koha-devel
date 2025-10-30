@@ -1,0 +1,145 @@
+---
+"/deleted/items":
+  get:
+    x-mojo-to: DeletedItems#list
+    operationId: listDeletedItems
+    tags:
+      - items
+    summary: List deleted items
+    parameters:
+      - $ref: "../swagger.yaml#/parameters/page"
+      - $ref: "../swagger.yaml#/parameters/per_page"
+      - $ref: "../swagger.yaml#/parameters/match"
+      - $ref: "../swagger.yaml#/parameters/order_by"
+      - $ref: "../swagger.yaml#/parameters/q_param"
+      - $ref: "../swagger.yaml#/parameters/q_body"
+      - $ref: "../swagger.yaml#/parameters/request_id_header"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: A list of deleted items
+        schema:
+          type: array
+          items:
+            $ref: "../swagger.yaml#/definitions/item"
+      "400":
+        description: |
+          Bad request. Possible `error_code` attribute values:
+
+            * `invalid_query`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+"/deleted/items/{item_id}":
+  get:
+    x-mojo-to: DeletedItems#get
+    operationId: getDeletedItem
+    tags:
+      - items
+    summary: Get deleted item
+    parameters:
+      - $ref: "../swagger.yaml#/parameters/item_id_pp"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: A deleted item
+        schema:
+          $ref: "../swagger.yaml#/definitions/item"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Item not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        catalogue: "1"
+  put:
+    x-mojo-to: DeletedItems#restore
+    operationId: restoreDeletedItem
+    tags:
+      - items
+    summary: Restore deleted item
+    parameters:
+      - $ref: "../swagger.yaml#/parameters/item_id_pp"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: Item restored successfully
+        schema:
+          $ref: "../swagger.yaml#/definitions/item"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Deleted item not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        editcatalogue: edit_catalogue

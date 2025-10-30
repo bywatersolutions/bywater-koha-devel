@@ -157,6 +157,12 @@ properties:
     type: string
     format: date-time
     description: Date and time this item was last altered
+  deleted_on:
+    type:
+      - string
+      - "null"
+    format: date-time
+    description: Date and time this item was deleted
   location:
     type:
       - string
