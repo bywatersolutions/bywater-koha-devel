@@ -105,6 +105,49 @@
     </div>
 </div>
 
+<!-- Modal for biblio restoration with items -->
+<div class="modal" id="restoreBiblioModal" tabindex="-1" role="dialog" aria-labelledby="restoreBiblioModalLabel">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="restoreBiblioModalLabel">Restore bibliographic record with items</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Restore bibliographic record:</p>
+                <dl>
+                    <dt>Biblio ID:</dt>
+                    <dd id="restore-modal-biblio-id"></dd>
+                    <dt>Title:</dt>
+                    <dd id="restore-modal-biblio-title"></dd>
+                    <dt>Author:</dt>
+                    <dd id="restore-modal-biblio-author"></dd>
+                </dl>
+                <div id="items-section">
+                    <hr />
+                    <p><strong>This bibliographic record has deleted items. Select items to restore:</strong></p>
+                    <table class="table table-sm table-bordered" id="deleted-items-list">
+                        <thead>
+                            <tr>
+                                <th class="NoSort"><input type="checkbox" id="select-all-items" /></th>
+                                <th>Item ID</th>
+                                <th>Barcode</th>
+                                <th>Call number</th>
+                                <th>Home library</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="restore-biblio-with-items-button">Restore</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
@@ -126,6 +169,7 @@
                 ajax: {
                     url: "/api/v1/deleted/biblios",
                 },
+                embed: "items",
                 order: [[3, "desc"]],
                 columns: [
                     {
@@ -274,41 +318,100 @@
             });
             var items_table_api = items_table.DataTable();
 
+            // Initialize the modal items table as kohaTable
+            var modal_items_table = null;
+            var modal_items_table_api = null;
+
             // Restore biblio handler
             $("#deleted_biblios_table").on("click", ".restore-biblio", function (e) {
                 e.preventDefault();
                 var button = $(this);
                 var biblio_id = button.data("biblio-id");
                 var title = button.data("title");
+                var row = biblios_table_api.row(button.closest("tr")).data();
 
-                if (!confirm(_("Are you sure you want to restore bibliographic record %s '%s'?").format(biblio_id, title))) {
-                    return;
+                // Populate modal with biblio info
+                $("#restore-modal-biblio-id").text(biblio_id);
+                $("#restore-modal-biblio-title").text(title || _("(No title)"));
+                $("#restore-modal-biblio-author").text(row.author || _("(No author)"));
+
+                // Check if there are deleted items
+                var items = row.items || [];
+                if (items.length > 0) {
+                    $("#items-section").show();
+
+                    // Destroy existing DataTable if it exists
+                    if (modal_items_table_api) {
+                        modal_items_table_api.destroy();
+                    }
+
+                    // Initialize kohaTable with the items data
+                    modal_items_table = $("#deleted-items-list").kohaTable({
+                        data: items,
+                        paging: false,
+                        info: false,
+                        columns: [
+                            {
+                                data: function (row, type) {
+                                    if (type === "display") {
+                                        return '<input type="checkbox" class="item-checkbox" data-item-id="' + row.item_id + '">';
+                                    }
+                                    return "";
+                                },
+                                searchable: false,
+                                orderable: false,
+                            },
+                            {
+                                data: "item_id",
+                                searchable: true,
+                                orderable: true,
+                            },
+                            {
+                                data: "external_id",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row) {
+                                    if (type === "display") {
+                                        return data ? $("<div/>").text(data).html() : _("(No barcode)");
+                                    }
+                                    return data || "";
+                                },
+                            },
+                            {
+                                data: "callnumber",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row) {
+                                    if (type === "display") {
+                                        return data ? $("<div/>").text(data).html() : "";
+                                    }
+                                    return data || "";
+                                },
+                            },
+                            {
+                                data: "home_library_id",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row) {
+                                    if (type === "display") {
+                                        return data ? $("<div/>").text(data).html() : "";
+                                    }
+                                    return data || "";
+                                },
+                            },
+                        ],
+                    });
+                    modal_items_table_api = modal_items_table.DataTable();
+                } else {
+                    $("#items-section").hide();
                 }
 
-                button.prop("disabled", true);
+                // Store biblio data
+                $("#restore-biblio-with-items-button").data("biblio-id", biblio_id);
+                $("#restore-biblio-with-items-button").data("restore-button", button);
 
-                $.ajax({
-                    url: "/api/v1/deleted/biblios/" + biblio_id,
-                    type: "POST",
-                    headers: {
-                        "x-koha-request-id": Math.random(),
-                    },
-                    success: function (data) {
-                        $("#messages").append(
-                            '<div class="alert alert-success">' + '<button type="button" class="close" data-dismiss="alert">&times;</button>' + _("Bibliographic record %s restored successfully").format(biblio_id) + "</div>"
-                        );
-                        biblios_table_api.ajax.reload();
-                        items_table_api.ajax.reload();
-                    },
-                    error: function (xhr) {
-                        var error_msg = _("Error restoring bibliographic record %s").format(biblio_id);
-                        if (xhr.responseJSON && xhr.responseJSON.error) {
-                            error_msg += ": " + xhr.responseJSON.error;
-                        }
-                        $("#messages").append('<div class="alert alert-danger">' + '<button type="button" class="close" data-dismiss="alert">&times;</button>' + error_msg + "</div>");
-                        button.prop("disabled", false);
-                    },
-                });
+                var modal = new bootstrap.Modal(document.getElementById("restoreBiblioModal"));
+                modal.show();
             });
 
             // Restore item handler
@@ -381,6 +484,89 @@
                     success: function (data) {
                         showMessage(_("Bibliographic record %s restored successfully").format(biblio_id), "success");
                         bootstrap.Modal.getInstance(document.getElementById("deletedBiblioModal")).hide();
+                        biblios_table_api.ajax.reload();
+                        items_table_api.ajax.reload();
+                        button.prop("disabled", false);
+                    },
+                    error: function (xhr) {
+                        var error_msg = _("Error restoring bibliographic record %s").format(biblio_id);
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            error_msg += ": " + xhr.responseJSON.error;
+                        }
+                        showMessage(error_msg, "danger");
+                        button.prop("disabled", false);
+                    },
+                });
+            });
+
+            // Select all items checkbox
+            $("#select-all-items").on("change", function () {
+                var checked = $(this).prop("checked");
+                $(".item-checkbox").prop("checked", checked);
+            });
+
+            // Restore biblio with items
+            $("#restore-biblio-with-items-button").on("click", function () {
+                var button = $(this);
+                var biblio_id = button.data("biblio-id");
+                var restore_button = button.data("restore-button");
+
+                button.prop("disabled", true);
+
+                $.ajax({
+                    url: "/api/v1/deleted/biblios/" + biblio_id,
+                    type: "PUT",
+                    headers: {
+                        "x-koha-request-id": Math.random(),
+                    },
+                    success: function (data) {
+                        showMessage(_("Bibliographic record %s restored successfully").format(biblio_id), "success");
+
+                        var selected_items = [];
+                        $(".item-checkbox:checked").each(function () {
+                            selected_items.push($(this).data("item-id"));
+                        });
+
+                        if (selected_items.length > 0) {
+                            var items_restored = 0;
+                            var items_failed = 0;
+
+                            selected_items.forEach(function (item_id) {
+                                $.ajax({
+                                    url: "/api/v1/deleted/items/" + item_id,
+                                    type: "PUT",
+                                    headers: {
+                                        "x-koha-request-id": Math.random(),
+                                    },
+                                    success: function (data) {
+                                        items_restored++;
+                                        if (items_restored + items_failed === selected_items.length) {
+                                            if (items_restored > 0) {
+                                                showMessage(_("%s item(s) restored successfully").format(items_restored), "success");
+                                            }
+                                            if (items_failed > 0) {
+                                                showMessage(_("%s item(s) failed to restore").format(items_failed), "danger");
+                                            }
+                                            items_table_api.ajax.reload();
+                                        }
+                                    },
+                                    error: function (xhr) {
+                                        items_failed++;
+                                        if (items_restored + items_failed === selected_items.length) {
+                                            if (items_restored > 0) {
+                                                showMessage(_("%s item(s) restored successfully").format(items_restored), "success");
+                                            }
+                                            if (items_failed > 0) {
+                                                showMessage(_("%s item(s) failed to restore").format(items_failed), "danger");
+                                            }
+                                            items_table_api.ajax.reload();
+                                        }
+                                    },
+                                });
+                            });
+                        }
+
+                        bootstrap.Modal.getInstance(document.getElementById("restoreBiblioModal")).hide();
                         biblios_table_api.ajax.reload();
                         items_table_api.ajax.reload();
                         button.prop("disabled", false);
