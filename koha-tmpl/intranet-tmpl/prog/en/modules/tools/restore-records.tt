@@ -77,6 +77,34 @@
     </div>
 [% END #/ WRAPPER main-container.inc %]
 
+<!-- Modal for deleted biblio warning -->
+<div class="modal" id="deletedBiblioModal" tabindex="-1" role="dialog" aria-labelledby="deletedBiblioModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="deletedBiblioModalLabel">Bibliographic record deleted</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This item belongs to a deleted bibliographic record:</p>
+                <dl>
+                    <dt>Biblio ID:</dt>
+                    <dd id="modal-biblio-id"></dd>
+                    <dt>Title:</dt>
+                    <dd id="modal-biblio-title"></dd>
+                    <dt>Author:</dt>
+                    <dd id="modal-biblio-author"></dd>
+                </dl>
+                <p><strong>You must restore the bibliographic record before restoring this item.</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="restore-biblio-button">Restore bibliographic record</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
@@ -165,6 +193,7 @@
                 ajax: {
                     url: "/api/v1/deleted/items",
                 },
+                embed: "biblio",
                 order: [[5, "desc"]],
                 columns: [
                     {
@@ -288,6 +317,24 @@
                 var button = $(this);
                 var item_id = button.data("item-id");
                 var barcode = button.data("barcode");
+                var row = items_table_api.row(button.closest("tr")).data();
+
+                // Check if biblio is deleted
+                if (row.biblio && row.biblio.deleted_on) {
+                    // Show modal with biblio info
+                    $("#modal-biblio-id").text(row.biblio.biblio_id);
+                    $("#modal-biblio-title").text(row.biblio.title || _("(No title)"));
+                    $("#modal-biblio-author").text(row.biblio.author || _("(No author)"));
+
+                    // Store the item and biblio data for later
+                    $("#restore-biblio-button").data("biblio-id", row.biblio.biblio_id);
+                    $("#restore-biblio-button").data("item-id", item_id);
+                    $("#restore-biblio-button").data("item-button", button);
+
+                    var modal = new bootstrap.Modal(document.getElementById("deletedBiblioModal"));
+                    modal.show();
+                    return;
+                }
 
                 if (!confirm(_("Are you sure you want to restore item %s (%s)?").format(item_id, barcode))) {
                     return;
@@ -307,6 +354,39 @@
                     },
                     error: function (xhr) {
                         var error_msg = _("Error restoring item %s").format(item_id);
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            error_msg += ": " + xhr.responseJSON.error;
+                        }
+                        showMessage(error_msg, "danger");
+                        button.prop("disabled", false);
+                    },
+                });
+            });
+
+            // Restore biblio from modal
+            $("#restore-biblio-button").on("click", function () {
+                var button = $(this);
+                var biblio_id = button.data("biblio-id");
+                var item_id = button.data("item-id");
+                var item_button = button.data("item-button");
+
+                button.prop("disabled", true);
+
+                $.ajax({
+                    url: "/api/v1/deleted/biblios/" + biblio_id,
+                    type: "PUT",
+                    headers: {
+                        "x-koha-request-id": Math.random(),
+                    },
+                    success: function (data) {
+                        showMessage(_("Bibliographic record %s restored successfully").format(biblio_id), "success");
+                        bootstrap.Modal.getInstance(document.getElementById("deletedBiblioModal")).hide();
+                        biblios_table_api.ajax.reload();
+                        items_table_api.ajax.reload();
+                        button.prop("disabled", false);
+                    },
+                    error: function (xhr) {
+                        var error_msg = _("Error restoring bibliographic record %s").format(biblio_id);
                         if (xhr.responseJSON && xhr.responseJSON.error) {
                             error_msg += ": " + xhr.responseJSON.error;
                         }
