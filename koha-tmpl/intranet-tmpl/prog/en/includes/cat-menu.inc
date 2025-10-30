@@ -43,7 +43,7 @@
         </ul>
     [% END %]
 
-    [% IF ( CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel || CAN_user_tools_records_batchmod || CAN_user_tools_records_batchdel || CAN_user_tools_marc_modification_templates || CAN_user_editcatalogue_edit_catalogue ) %]
+    [% IF ( CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel || CAN_user_tools_records_batchmod || CAN_user_tools_records_batchdel || CAN_user_tools_records_restore || CAN_user_tools_marc_modification_templates || CAN_user_editcatalogue_edit_catalogue ) %]
         <h5>Batch editing</h5>
         <ul>
             [% IF ( CAN_user_tools_items_batchmod ) %]
@@ -66,14 +66,14 @@
                     <a href="/cgi-bin/koha/tools/batch_delete_records.pl">Batch record deletion</a>
                 </li>
             [% END %]
-            [% IF ( CAN_user_editcatalogue_edit_catalogue ) %]
-                <li>
-                    <a href="/cgi-bin/koha/tools/restore-records.pl">Restore deleted records</a>
-                </li>
-            [% END %]
             [% IF ( CAN_user_tools_marc_modification_templates ) %]
                 <li>
                     <a href="/cgi-bin/koha/tools/marc_modification_templates.pl">MARC modification templates</a>
+                </li>
+            [% END %]
+            [% IF ( CAN_user_tools_records_restore ) %]
+                <li>
+                    <a href="/cgi-bin/koha/tools/restore-records.pl">Restore deleted records</a>
                 </li>
             [% END %]
         </ul>
