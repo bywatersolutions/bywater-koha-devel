@@ -25,6 +25,7 @@ use Koha::Biblioitem;
 use Koha::Biblio::Metadata;
 use Koha::Old::Biblio::Metadatas;
 use Koha::Old::Biblioitems;
+use Koha::SearchEngine::Indexer;
 
 =head1 NAME
 
@@ -140,7 +141,8 @@ sub to_api_mapping {
 
 Restores the deleted biblio record back to the biblio table along with
 its biblioitems and metadata. This removes the record from the deleted tables
-and re-inserts it into the active tables.
+and re-inserts it into the active tables. The biblio record will be reindexed
+after restoration.
 
 Returns the newly restored Koha::Biblio object.
 
@@ -168,6 +170,9 @@ sub restore {
     $metadata->delete;
     $biblioitem->delete;
     $self->delete;
+
+    my $indexer = Koha::SearchEngine::Indexer->new( { index => $Koha::SearchEngine::BIBLIOS_INDEX } );
+    $indexer->index_records( $new_biblio->biblionumber, "specialUpdate", "biblioserver" );
 
     return $new_biblio;
 }

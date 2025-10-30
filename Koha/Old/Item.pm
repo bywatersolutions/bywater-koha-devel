@@ -19,7 +19,10 @@ use Modern::Perl;
 
 use base qw(Koha::Object);
 
+use Koha::Biblio;
+use Koha::Exceptions;
 use Koha::Item;
+use Koha::SearchEngine::Indexer;
 
 =head1 NAME
 
@@ -37,6 +40,9 @@ Koha::Old::Item - Koha Old::Item Object class
 
 Restores the deleted item record back to the items table. This removes
 the record from the deleteditems table and re-inserts it into the items table.
+The biblio record will be reindexed after restoration.
+
+Throws an exception if the biblio record does not exist.
 
 Returns the newly restored Koha::Item object.
 
@@ -45,12 +51,20 @@ Returns the newly restored Koha::Item object.
 sub restore {
     my ($self) = @_;
 
+    my $biblio = Koha::Biblios->find( $self->biblionumber );
+
+    Koha::Exceptions::ObjectNotFound->throw("Bibliographic record not found for item")
+        unless $biblio;
+
     my $item_data = $self->unblessed;
     delete $item_data->{deleted_on};
 
     my $new_item = Koha::Item->new($item_data)->store;
 
     $self->delete;
+
+    my $indexer = Koha::SearchEngine::Indexer->new( { index => $Koha::SearchEngine::BIBLIOS_INDEX } );
+    $indexer->index_records( $new_item->biblionumber, "specialUpdate", "biblioserver" );
 
     return $new_item;
 }
