@@ -19,6 +19,10 @@ use Modern::Perl;
 
 use base qw(Koha::Object);
 
+use Koha::Database;
+use Koha::Biblio;
+use Koha::Biblioitem;
+use Koha::Biblio::Metadata;
 use Koha::Old::Biblio::Metadatas;
 use Koha::Old::Biblioitems;
 
@@ -128,6 +132,44 @@ sub to_api_mapping {
         datecreated   => 'creation_date',
         timestamp     => 'deleted_on',
     };
+}
+
+=head3 restore
+
+    my $biblio = $deleted_biblio->restore;
+
+Restores the deleted biblio record back to the biblio table along with
+its biblioitems and metadata. This removes the record from the deleted tables
+and re-inserts it into the active tables.
+
+Returns the newly restored Koha::Biblio object.
+
+=cut
+
+sub restore {
+    my ($self) = @_;
+
+    my $biblio_data     = $self->unblessed;
+    my $biblioitem      = $self->biblioitem;
+    my $biblioitem_data = $biblioitem->unblessed;
+    my $metadata        = $self->metadata;
+    my $metadata_data   = $metadata->unblessed;
+
+    my $new_biblio = Koha::Biblio->new($biblio_data)->store;
+
+    $biblioitem_data->{biblionumber}     = $new_biblio->biblionumber;
+    $biblioitem_data->{biblioitemnumber} = $new_biblio->biblionumber;
+    Koha::Biblioitem->new($biblioitem_data)->store;
+
+    delete $metadata_data->{id};
+    $metadata_data->{biblionumber} = $new_biblio->biblionumber;
+    Koha::Biblio::Metadata->new($metadata_data)->store;
+
+    $metadata->delete;
+    $biblioitem->delete;
+    $self->delete;
+
+    return $new_biblio;
 }
 
 =head2 Internal methods

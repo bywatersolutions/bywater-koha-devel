@@ -19,6 +19,8 @@ use Modern::Perl;
 
 use base qw(Koha::Object);
 
+use Koha::Item;
+
 =head1 NAME
 
 Koha::Old::Item - Koha Old::Item Object class
@@ -28,6 +30,30 @@ Koha::Old::Item - Koha Old::Item Object class
 =head2 Class methods
 
 =cut
+
+=head3 restore
+
+    my $item = $deleted_item->restore;
+
+Restores the deleted item record back to the items table. This removes
+the record from the deleteditems table and re-inserts it into the items table.
+
+Returns the newly restored Koha::Item object.
+
+=cut
+
+sub restore {
+    my ($self) = @_;
+
+    my $item_data = $self->unblessed;
+    delete $item_data->{deleted_on};
+
+    my $new_item = Koha::Item->new($item_data)->store;
+
+    $self->delete;
+
+    return $new_item;
+}
 
 =head2 Internal methods
 
