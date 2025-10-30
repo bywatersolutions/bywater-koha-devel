@@ -25,6 +25,7 @@ use Koha::Biblioitem;
 use Koha::Biblio::Metadata;
 use Koha::Old::Biblio::Metadatas;
 use Koha::Old::Biblioitems;
+use Koha::Old::Items;
 use Koha::SearchEngine::Indexer;
 
 =head1 NAME
@@ -91,6 +92,19 @@ Returns the related Koha::Old::Biblioitem object for this Biblio object
 sub biblioitem {
     my ($self) = @_;
     return Koha::Old::Biblioitems->find( { biblionumber => $self->biblionumber } );
+}
+
+=head3 items
+
+my $items = $deleted_biblio->items;
+
+Returns the related Koha::Old::Items for this deleted biblio
+
+=cut
+
+sub items {
+    my ($self) = @_;
+    return Koha::Old::Items->search( { biblionumber => $self->biblionumber } );
 }
 
 =head3 to_api
