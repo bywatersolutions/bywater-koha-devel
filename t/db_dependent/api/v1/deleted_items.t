@@ -127,7 +127,7 @@ subtest 'get() tests' => sub {
 
 subtest 'restore() tests' => sub {
 
-    plan tests => 11;
+    plan tests => 15;
 
     $schema->storage->txn_begin;
 
@@ -182,6 +182,17 @@ subtest 'restore() tests' => sub {
     is( Koha::Old::Items->find($item_id), undef, 'Item removed from deleted table' );
 
     $t->put_ok("//$userid:$password@/api/v1/deleted/items/$item_id")->status_is(404);
+
+    my $item_without_biblio = $builder->build_sample_item( { barcode => 'TEST_NO_BIBLIO' } );
+    my $orphan_item_id      = $item_without_biblio->itemnumber;
+    my $orphan_biblio_id    = $item_without_biblio->biblionumber;
+    my $orphan_item_data    = $item_without_biblio->unblessed;
+    my $deleted_orphan_item = Koha::Old::Item->new($orphan_item_data)->store;
+    $item_without_biblio->delete;
+    Koha::Biblios->find($orphan_biblio_id)->delete;
+
+    $t->put_ok("//$userid:$password@/api/v1/deleted/items/$orphan_item_id")->status_is(409)->json_has('/error')
+        ->json_like( '/error', qr/Bibliographic record not found/ );
 
     $schema->storage->txn_rollback;
 };

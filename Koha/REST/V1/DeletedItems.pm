@@ -19,9 +19,11 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 
+use Koha::Exceptions;
 use Koha::Old::Items;
 
-use Try::Tiny qw( catch try );
+use Scalar::Util qw( blessed );
+use Try::Tiny    qw( catch try );
 
 =head1 API
 
@@ -90,6 +92,15 @@ sub restore {
             openapi => $c->objects->to_api($item),
         );
     } catch {
+        if ( blessed $_ && $_->isa('Koha::Exceptions::ObjectNotFound') ) {
+            return $c->render(
+                status  => 409,
+                openapi => {
+                    error =>
+                        "Bibliographic record not found for this item. Cannot restore item without its bibliographic record."
+                }
+            );
+        }
         $c->unhandled_exception($_);
     };
 }
