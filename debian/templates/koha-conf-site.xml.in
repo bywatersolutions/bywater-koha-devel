@@ -500,5 +500,21 @@ __END_SRU_PUBLICSERVER__
    <parallel_loops_count>1</parallel_loops_count>
  </auto_renew_cronjob>
 
+ <content_security_policy>
+   <opac>
+     <!-- supported values: report-only, enabled. Any other value, including unset, disables the feature. -->
+     <csp_mode></csp_mode>
+     <!-- defines the value of the CSP header. _CSP_NONCE_ can be used as a placeholder for the generated CSP nonce. -->
+     <csp_header_value>default-src 'self'; script-src 'self' 'unsafe-eval' 'nonce-_CSP_NONCE_'; style-src 'self' 'unsafe-inline' 'nonce-_CSP_NONCE_'; img-src 'self' data:; font-src 'self'; object-src 'none'</csp_header_value>
+   </opac>
+
+   <intranet>
+     <!-- supported values: report-only, enabled. Any other value, including unset, disables the feature. -->
+     <csp_mode></csp_mode>
+     <!-- defines the value of the CSP header. _CSP_NONCE_ can be used as a placeholder for the generated CSP nonce. -->
+     <csp_header_value>default-src 'self'; script-src 'self' 'unsafe-eval' 'nonce-_CSP_NONCE_'; style-src 'self' 'unsafe-inline' 'nonce-_CSP_NONCE_'; img-src 'self' data:; font-src 'self'; object-src 'none'</csp_header_value>
+   </intranet>
+ </content_security_policy>
+
 </config>
 </yazgfs>
