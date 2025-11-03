@@ -308,6 +308,9 @@ tbody tr.active:nth-child( 2n+1 ) td,
 tbody tr.active td {
     background-color: #FFFFCC;
 }
+tbody tr.previous td {
+    background-color: #CCFFFF;
+}
 
 #loading {
     background-color: #FFF;
