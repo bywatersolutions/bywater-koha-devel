@@ -14,7 +14,12 @@
                     const categorySelected = form.categorycode_filter && form.categorycode_filter.value !== "";
 
                     if (!searchTerm && !branchSelected && !categorySelected) {
-                        alert("Please enter a search term or select a library/category");
+                        $(form.searchmember)
+                            .tooltip({ trigger: "manual", placement: "bottom", title: _("Search criterea required") })
+                            .tooltip("show");
+                        $(document).on("click", function () {
+                            $(form.searchmember).tooltip("hide");
+                        });
                         return false;
                     }
                     return true;
