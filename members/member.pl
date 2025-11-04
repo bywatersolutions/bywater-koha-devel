@@ -69,16 +69,19 @@ my $searchtype       = $input->param('searchtype');
 
 $template->param( 'alphabet' => C4::Context->preference('alphabet') || join ' ', 'A' .. 'Z' );
 
+my $branchcode_filter   = scalar $input->param('branchcode_filter');
+my $categorycode_filter = scalar $input->param('categorycode_filter');
+
 $template->param(
     patron_lists        => [ GetPatronLists() ],
     searchmember        => $searchmember,
-    branchcode_filter   => scalar $input->param('branchcode_filter'),
-    categorycode_filter => scalar $input->param('categorycode_filter'),
+    branchcode_filter   => $branchcode_filter,
+    categorycode_filter => $categorycode_filter,
     searchtype          => $searchtype,
     searchfieldstype    => $searchfieldstype,
     PatronsPerPage      => C4::Context->preference("PatronsPerPage") || 20,
     circsearch          => $circsearch,
-    defer_loading       => $searchmember ? 0 : 1,
+    defer_loading       => ( $searchmember || $branchcode_filter || $categorycode_filter ) ? 0 : 1,
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;

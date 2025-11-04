@@ -6,7 +6,20 @@
 [% IF CAN_user_borrowers_edit_borrowers || CAN_user_borrowers_list_borrowers %]
     [%- SET searchtype = searchtype || Koha.Preference('DefaultPatronSearchMethod') -%]
     [% WRAPPER tab_panel tabname="patron_search" bt_active= bs_tab_active %]
-        <form method="get" action="/cgi-bin/koha/members/member.pl">
+        <form method="get" action="/cgi-bin/koha/members/member.pl" onsubmit="return validatePatronSearch(this);">
+            <script>
+                function validatePatronSearch(form) {
+                    const searchTerm = form.searchmember.value.trim();
+                    const branchSelected = form.branchcode_filter && form.branchcode_filter.value !== "";
+                    const categorySelected = form.categorycode_filter && form.categorycode_filter.value !== "";
+
+                    if (!searchTerm && !branchSelected && !categorySelected) {
+                        alert("Please enter a search term or select a library/category");
+                        return false;
+                    }
+                    return true;
+                }
+            </script>
             <input type="hidden" name="quicksearch" value="1" />
 
             <div class="form-title">
@@ -23,7 +36,7 @@
                 <button type="button" class="form-extra-content-toggle" title="More options"><i class="form-extra-content-icon fa-solid fa-sliders" aria-hidden="true"></i></button>
             </div>
 
-            <button type="submit" aria-label="Search"><i class="fa fa-arrow-right"></i></button>
+            <button type="submit" class="btn btn-primary" aria-label="Search"><i class="fa fa-arrow-right"></i></button>
 
             <div class="form-extra-content">
                 <div> [% INCLUDE patron_fields_dropdown search_box=1 %] </div>
