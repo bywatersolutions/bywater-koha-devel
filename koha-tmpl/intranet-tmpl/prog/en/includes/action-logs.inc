@@ -61,6 +61,8 @@
         <span>Modify</span>
     [% CASE 'REVOKE' %]
         <span>Revoke</span>
+    [% CASE 'RESTORE' %]
+        <span>Restore</span>
     [% CASE 'ISSUE' %]
         <span>Checkout</span>
     [% CASE 'RETURN' %]

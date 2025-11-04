@@ -19,6 +19,8 @@ use Modern::Perl;
 
 use base qw(Koha::Object);
 
+use C4::Context;
+use C4::Log qw( logaction );
 use Koha::Biblio;
 use Koha::Biblios;
 use Koha::Exceptions;
@@ -85,6 +87,9 @@ sub restore {
 
     my $indexer = Koha::SearchEngine::Indexer->new( { index => $Koha::SearchEngine::BIBLIOS_INDEX } );
     $indexer->index_records( $new_item->biblionumber, "specialUpdate", "biblioserver" );
+
+    logaction( "CATALOGUING", "RESTORE", $new_item->itemnumber, "item", undef, $new_item )
+        if C4::Context->preference("CataloguingLog");
 
     return $new_item;
 }

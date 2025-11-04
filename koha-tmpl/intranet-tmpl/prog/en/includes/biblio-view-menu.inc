@@ -81,7 +81,7 @@
 
         [%- IF ( CAN_user_tools_view_system_logs ) -%]
             <li [% IF logview %]class="active"[% END %]>
-                <a href="/cgi-bin/koha/tools/viewlog.pl?do_it=1&amp;modules=CATALOGUING&amp;action=MODIFY&amp;object=[% biblio_object_id | url %]&amp;object_type=biblio">Modification log</a>
+                <a href="/cgi-bin/koha/tools/viewlog.pl?do_it=1&amp;modules=CATALOGUING&amp;actions=MODIFY&amp;actions=RESTORE&amp;object=[% biblio_object_id | url %]&amp;object_type=biblio">Modification log</a>
             </li>
         [%- END -%]
 
