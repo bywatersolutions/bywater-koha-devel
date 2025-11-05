@@ -154,18 +154,32 @@ sub to_api_mapping {
 =head3 restore
 
     my $biblio = $deleted_biblio->restore;
+    my $biblio = $deleted_biblio->restore({
+        patron      => $patron,
+        item_ids    => \@item_ids,
+        restore_all => 0
+    });
 
 Restores the deleted biblio record back to the biblio table along with
 its biblioitems and metadata. This removes the record from the deleted tables
 and re-inserts it into the active tables. The biblio record will be reindexed
 after restoration.
 
+Optional parameters:
+  patron - Koha::Patron object. If provided, only items the patron can edit will be restored.
+  item_ids - Arrayref of item IDs to restore. If not provided and restore_all is false,
+             no items will be restored.
+  restore_all - Boolean. If true and no item_ids provided, restore all items the patron
+                has permission to edit.
+
 Returns the newly restored Koha::Biblio object.
 
 =cut
 
 sub restore {
-    my ($self) = @_;
+    my ( $self, $params ) = @_;
+
+    $params //= {};
 
     my $biblio_data     = $self->unblessed;
     my $biblioitem      = $self->biblioitem;
@@ -187,13 +201,43 @@ sub restore {
     $biblioitem->delete;
     $self->delete;
 
+    my $patron      = $params->{patron};
+    my $item_ids    = $params->{item_ids};
+    my $restore_all = $params->{restore_all} // 0;
+
+    my @restored_items;
+    my @skipped_items;
+
+    if ( $restore_all || $item_ids ) {
+        my $deleted_items = $self->items;
+        while ( my $deleted_item = $deleted_items->next ) {
+            my $should_restore = 0;
+
+            if ($item_ids) {
+                $should_restore = grep { $_ == $deleted_item->itemnumber } @$item_ids;
+            } elsif ($restore_all) {
+                $should_restore = 1;
+            }
+
+            if ($should_restore) {
+                if ( $patron && !$patron->can_edit_items_from( $deleted_item->homebranch ) ) {
+                    push @skipped_items, $deleted_item->itemnumber;
+                    next;
+                }
+
+                $deleted_item->restore;
+                push @restored_items, $deleted_item->itemnumber;
+            }
+        }
+    }
+
     my $indexer = Koha::SearchEngine::Indexer->new( { index => $Koha::SearchEngine::BIBLIOS_INDEX } );
     $indexer->index_records( $new_biblio->biblionumber, "specialUpdate", "biblioserver" );
 
     logaction( "CATALOGUING", "RESTORE", $new_biblio->biblionumber, "biblio", undef, $new_biblio )
         if C4::Context->preference("CataloguingLog");
 
-    return $new_biblio;
+    return wantarray ? ( $new_biblio, \@restored_items, \@skipped_items ) : $new_biblio;
 }
 
 =head2 Internal methods

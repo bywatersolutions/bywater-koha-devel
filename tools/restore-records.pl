@@ -17,10 +17,12 @@
 
 use Modern::Perl;
 
-use CGI qw ( -utf8 );
+use CGI  qw ( -utf8 );
+use JSON qw( encode_json );
 
 use C4::Auth   qw( get_template_and_user );
 use C4::Output qw( output_html_with_http_headers );
+use Koha::Patrons;
 
 my $input = CGI->new;
 
@@ -31,6 +33,13 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         type          => "intranet",
         flagsrequired => { tools => 'records_restore' },
     }
+);
+
+my $patron                   = Koha::Patrons->find($loggedinuser);
+my @libraries_where_can_edit = $patron->libraries_where_can_edit_items;
+
+$template->param(
+    libraries_where_can_edit_json => encode_json( \@libraries_where_can_edit ),
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;

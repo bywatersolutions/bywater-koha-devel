@@ -85,6 +85,15 @@ sub restore {
         unless $deleted_item;
 
     return try {
+        my $patron = $c->stash('koha.user');
+
+        unless ( $patron->can_edit_items_from( $deleted_item->homebranch ) ) {
+            return $c->render(
+                status  => 403,
+                openapi => { error => "You do not have permission to restore items from this library." }
+            );
+        }
+
         my $item = $deleted_item->restore;
 
         return $c->render(

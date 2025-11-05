@@ -190,6 +190,16 @@
         }
 
         $(document).ready(function () {
+            var librariesWhereCanEdit = [% libraries_where_can_edit_json | $raw %];
+            var canEditAnyLibrary = librariesWhereCanEdit.length === 0;
+
+            function canEditItem(homebranch) {
+                if (canEditAnyLibrary) {
+                    return true;
+                }
+                return librariesWhereCanEdit.includes(homebranch);
+            }
+
             var oneYearAgo = new Date();
             oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
             var today = new Date();
@@ -365,17 +375,22 @@
                     {
                         data: function (row, type) {
                             if (type === "display") {
-                                return (
-                                    '<button class="btn btn-sm btn-default restore-item" data-item-id="' +
+                                var canEdit = canEditItem(row.home_library_id);
+                                var disabled = canEdit ? '' : ' disabled';
+                                var button = '<button class="btn btn-sm btn-default restore-item" data-item-id="' +
                                     row.item_id +
                                     '" data-barcode="' +
                                     $("<div/>")
                                         .text(row.external_id || row.item_id)
                                         .html() +
-                                    '"><i class="fa fa-undo" aria-hidden="true"></i> ' +
+                                    '"' + disabled + '><i class="fa fa-undo" aria-hidden="true"></i> ' +
                                     _("Restore") +
-                                    "</button>"
-                                );
+                                    "</button>";
+
+                                if (!canEdit) {
+                                    return '<span title="' + _("You do not have permission to restore items from this library") + '" style="cursor: not-allowed;">' + button + '</span>';
+                                }
+                                return button;
                             }
                             return "";
                         },
@@ -422,7 +437,14 @@
                             {
                                 data: function (row, type) {
                                     if (type === "display") {
-                                        return '<input type="checkbox" class="item-checkbox" data-item-id="' + row.item_id + '">';
+                                        var canEdit = canEditItem(row.home_library_id);
+                                        var disabled = canEdit ? '' : ' disabled';
+                                        var checkbox = '<input type="checkbox" class="item-checkbox" data-item-id="' + row.item_id + '"' + disabled + '>';
+
+                                        if (!canEdit) {
+                                            return '<span title="' + _("You do not have permission to restore items from this library") + '">' + checkbox + '</span>';
+                                        }
+                                        return checkbox;
                                     }
                                     return "";
                                 },
@@ -462,7 +484,12 @@
                                 orderable: true,
                                 render: function (data, type, row) {
                                     if (type === "display") {
-                                        return data ? $("<div/>").text(data).html() : "";
+                                        var text = data ? $("<div/>").text(data).html() : "";
+                                        var canEdit = canEditItem(data);
+                                        if (!canEdit) {
+                                            text += ' <span class="badge bg-warning text-dark">' + _("No permission") + '</span>';
+                                        }
+                                        return text;
                                     }
                                     return data || "";
                                 },
@@ -570,7 +597,7 @@
             // Select all items checkbox
             $("#select-all-items").on("change", function () {
                 var checked = $(this).prop("checked");
-                $(".item-checkbox").prop("checked", checked);
+                $(".item-checkbox:not(:disabled)").prop("checked", checked);
             });
 
             // Restore biblio with items

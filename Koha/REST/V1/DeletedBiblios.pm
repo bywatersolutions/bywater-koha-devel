@@ -180,12 +180,31 @@ sub restore {
     return $c->render_resource_not_found("Bibliographic record")
         unless $deleted_biblio;
 
+    my $body        = $c->req->json;
+    my $item_ids    = $body->{item_ids};
+    my $restore_all = $body->{restore_all} // 0;
+
     return try {
-        my $biblio = $deleted_biblio->restore;
+        my $patron = $c->stash('koha.user');
+
+        my ( $biblio, $restored_items, $skipped_items ) = $deleted_biblio->restore(
+            {
+                patron      => $patron,
+                item_ids    => $item_ids,
+                restore_all => $restore_all
+            }
+        );
+
+        my $response = { biblio_id => $biblio->biblionumber };
+
+        if ( $item_ids || $restore_all ) {
+            $response->{restored_items} = $restored_items if @$restored_items;
+            $response->{skipped_items}  = $skipped_items  if @$skipped_items;
+        }
 
         return $c->render(
             status  => 200,
-            openapi => { biblio_id => $biblio->biblionumber }
+            openapi => $response
         );
     } catch {
         $c->unhandled_exception($_);
