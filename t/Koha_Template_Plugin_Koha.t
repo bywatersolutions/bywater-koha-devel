@@ -63,7 +63,8 @@ subtest "Koha::Template::Plugin::Koha::Version tests" => sub {
             minor       => $minor,
             release     => $major . "." . $minor,
             maintenance => $major . "." . $minor . "." . $maintenance,
-            development => $development
+            development => $development,
+            version     => $version,
         },
         "Correct development version"
     );
@@ -82,7 +83,8 @@ subtest "Koha::Template::Plugin::Koha::Version tests" => sub {
             minor       => $minor,
             release     => $major . "." . $minor,
             maintenance => $major . "." . $minor . "." . $maintenance,
-            development => undef
+            development => undef,
+            version     => $version,
         },
         "Correct maintenance version"
     );

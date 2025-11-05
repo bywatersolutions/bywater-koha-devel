@@ -24,6 +24,7 @@ use base qw( Template::Plugin );
 use C4::Context;
 use Koha::Token;
 use Koha;
+use Koha::Status;
 use Koha::Cache::Memory::Lite;
 use Koha::ContentSecurityPolicy;
 
@@ -131,16 +132,7 @@ Missing POD for Version.
 =cut
 
 sub Version {
-    my $version_string = Koha::version();
-    my ( $major, $minor, $maintenance, $development ) = split( '\.', $version_string );
-
-    return {
-        major       => $major,
-        minor       => $minor,
-        release     => $major . "." . $minor,
-        maintenance => $major . "." . $minor . "." . $maintenance,
-        development => ( $development ne '000' ) ? $development : undef,
-    };
+    return Koha::Status->new()->version();
 }
 
 =head3 GenerateCSRF
