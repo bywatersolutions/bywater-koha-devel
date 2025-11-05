@@ -21,7 +21,7 @@ use utf8;
 use Encode;
 
 use Test::NoWarnings;
-use Test::More tests => 4;
+use Test::More tests => 5;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warn;
@@ -40,6 +40,10 @@ use Koha::Database;
 use Koha::DateUtils qw( dt_from_string output_pref );
 use Koha::Checkouts;
 use Koha::Old::Checkouts;
+use Koha::Library::Groups;
+use Koha::Old::Biblioitem;
+use Koha::Old::Biblioitems;
+use Koha::Old::Biblio::Metadata;
 
 use Mojo::JSON qw(encode_json);
 
@@ -333,6 +337,96 @@ subtest 'restore() tests' => sub {
     is( Koha::Old::Biblios->find($biblionumber), undef, 'Biblio removed from deleted table' );
 
     $t->put_ok("//$userid:$password@/api/v1/deleted/biblios/$biblionumber")->status_is(404);
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'restore() with library group permissions tests' => sub {
+
+    plan tests => 9;
+
+    $schema->storage->txn_begin;
+
+    my $librarian = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => { flags => 0 }
+        }
+    );
+    my $password = 'thePassword123';
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    $builder->build(
+        {
+            source => 'UserPermission',
+            value  => {
+                borrowernumber => $librarian->borrowernumber,
+                module_bit     => 13,
+                code           => 'records_restore',
+            }
+        }
+    );
+
+    my $library1 = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $library2 = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    $librarian->branchcode( $library1->branchcode )->store;
+
+    my $library_group = Koha::Library::Group->new( { title => 'Test Group', ft_limit_item_editing => 1 } )->store;
+    Koha::Library::Group->new(
+        {
+            parent_id  => $library_group->id,
+            branchcode => $library1->branchcode,
+        }
+    )->store;
+
+    my $biblio = $builder->build_sample_biblio;
+    my $item1 =
+        $builder->build_sample_item( { biblionumber => $biblio->biblionumber, homebranch => $library1->branchcode } );
+    my $item2 =
+        $builder->build_sample_item( { biblionumber => $biblio->biblionumber, homebranch => $library2->branchcode } );
+
+    my $biblionumber = $biblio->biblionumber;
+    my $item1_id     = $item1->itemnumber;
+    my $item2_id     = $item2->itemnumber;
+
+    my $biblio_data     = $biblio->unblessed;
+    my $biblioitem_data = $biblio->biblioitem->unblessed;
+    my $metadata_data   = $biblio->metadata->unblessed;
+    my $item1_data      = $item1->unblessed;
+    my $item2_data      = $item2->unblessed;
+
+    my $deleted_biblio = Koha::Old::Biblio->new($biblio_data)->store;
+    Koha::Old::Biblioitem->new($biblioitem_data)->store;
+    Koha::Old::Biblio::Metadata->new($metadata_data)->store;
+    Koha::Old::Item->new($item1_data)->store;
+    Koha::Old::Item->new($item2_data)->store;
+
+    $item1->delete;
+    $item2->delete;
+    $biblio->metadata->delete;
+    $biblio->biblioitem->delete;
+    $biblio->delete;
+
+    my $body = encode_json( { item_ids => [ $item1_id, $item2_id ] } );
+
+    $t->put_ok(
+        "//$userid:$password@/api/v1/deleted/biblios/$biblionumber" => { 'Content-Type' => 'application/json' } =>
+            $body )->status_is(200)->json_is( '/biblio_id' => $biblionumber )
+        ->json_is( '/restored_items/0' => $item1_id )->json_is( '/skipped_items/0' => $item2_id );
+
+    my $restored_biblio = Koha::Biblios->find($biblionumber);
+    ok( $restored_biblio, 'Biblio restored' );
+
+    my $restored_item1 = Koha::Items->find($item1_id);
+    ok( $restored_item1, 'Item from allowed library restored' );
+
+    my $restored_item2 = Koha::Items->find($item2_id);
+    is( $restored_item2, undef, 'Item from restricted library not restored' );
+
+    my $deleted_item2 = Koha::Old::Items->find($item2_id);
+    ok( $deleted_item2, 'Restricted item still in deleted table' );
 
     $schema->storage->txn_rollback;
 };

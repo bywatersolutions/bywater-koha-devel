@@ -18,7 +18,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 4;
+use Test::More tests => 5;
 use Test::Mojo;
 
 use t::lib::TestBuilder;
@@ -27,6 +27,7 @@ use t::lib::Mocks;
 use Koha::Items;
 use Koha::Old::Items;
 use Koha::Database;
+use Koha::Library::Groups;
 
 my $schema  = Koha::Database->new->schema;
 my $builder = t::lib::TestBuilder->new;
@@ -162,8 +163,11 @@ subtest 'restore() tests' => sub {
     $patron->set_password( { password => $password, skip_validation => 1 } );
     my $unauth_userid = $patron->userid;
 
-    my $item         = $builder->build_sample_item( { barcode => 'TEST_RESTORE_ITEM' } );
-    my $item_id      = $item->itemnumber;
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+    $librarian->branchcode( $library->branchcode )->store;
+
+    my $item    = $builder->build_sample_item( { barcode => 'TEST_RESTORE_ITEM', homebranch => $library->branchcode } );
+    my $item_id = $item->itemnumber;
     my $item_data    = $item->unblessed;
     my $deleted_item = Koha::Old::Item->new($item_data)->store;
     $item->delete;
@@ -183,7 +187,8 @@ subtest 'restore() tests' => sub {
 
     $t->put_ok("//$userid:$password@/api/v1/deleted/items/$item_id")->status_is(404);
 
-    my $item_without_biblio = $builder->build_sample_item( { barcode => 'TEST_NO_BIBLIO' } );
+    my $item_without_biblio =
+        $builder->build_sample_item( { barcode => 'TEST_NO_BIBLIO', homebranch => $library->branchcode } );
     my $orphan_item_id      = $item_without_biblio->itemnumber;
     my $orphan_biblio_id    = $item_without_biblio->biblionumber;
     my $orphan_item_data    = $item_without_biblio->unblessed;
@@ -193,6 +198,75 @@ subtest 'restore() tests' => sub {
 
     $t->put_ok("//$userid:$password@/api/v1/deleted/items/$orphan_item_id")->status_is(409)->json_has('/error')
         ->json_like( '/error', qr/Bibliographic record not found/ );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'restore() with library group permissions tests' => sub {
+
+    plan tests => 7;
+
+    $schema->storage->txn_begin;
+
+    my $librarian = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => { flags => 0 }
+        }
+    );
+    my $password = 'thePassword123';
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    $builder->build(
+        {
+            source => 'UserPermission',
+            value  => {
+                borrowernumber => $librarian->borrowernumber,
+                module_bit     => 13,
+                code           => 'records_restore',
+            }
+        }
+    );
+
+    my $library1 = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $library2 = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    $librarian->branchcode( $library1->branchcode )->store;
+
+    my $library_group = Koha::Library::Group->new( { title => 'Test Group', ft_limit_item_editing => 1 } )->store;
+    Koha::Library::Group->new(
+        {
+            parent_id  => $library_group->id,
+            branchcode => $library1->branchcode,
+        }
+    )->store;
+
+    my $item_allowed    = $builder->build_sample_item( { homebranch => $library1->branchcode } );
+    my $item_restricted = $builder->build_sample_item( { homebranch => $library2->branchcode } );
+
+    my $item_allowed_id    = $item_allowed->itemnumber;
+    my $item_restricted_id = $item_restricted->itemnumber;
+
+    my $item_allowed_data    = $item_allowed->unblessed;
+    my $item_restricted_data = $item_restricted->unblessed;
+
+    my $deleted_item_allowed    = Koha::Old::Item->new($item_allowed_data)->store;
+    my $deleted_item_restricted = Koha::Old::Item->new($item_restricted_data)->store;
+
+    $item_allowed->delete;
+    $item_restricted->delete;
+
+    $t->put_ok("//$userid:$password@/api/v1/deleted/items/$item_allowed_id")->status_is(200);
+
+    my $restored_item = Koha::Items->find($item_allowed_id);
+    ok( $restored_item, 'Item from allowed library restored' );
+
+    $t->put_ok("//$userid:$password@/api/v1/deleted/items/$item_restricted_id")->status_is(403)
+        ->json_is( '/error' => 'You do not have permission to restore items from this library.' );
+
+    my $not_restored = Koha::Items->find($item_restricted_id);
+    is( $not_restored, undef, 'Item from restricted library not restored' );
 
     $schema->storage->txn_rollback;
 };
