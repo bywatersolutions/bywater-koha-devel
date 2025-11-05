@@ -1,0 +1,30 @@
+---
+type: object
+properties:
+  version:
+    type: string
+    description: Full version string
+    example: "25.06.00.029"
+  major:
+    type: string
+    description: Major version number
+    example: "25"
+  minor:
+    type: string
+    description: Minor version number
+    example: "06"
+  release:
+    type: string
+    description: Release version (major.minor)
+    example: "25.06"
+  maintenance:
+    type: string
+    description: Maintenance version (major.minor.maintenance)
+    example: "25.06.00"
+  development:
+    type:
+      - string
+      - "null"
+    description: Development version number (null if not a development version)
+    example: "029"
+additionalProperties: false
