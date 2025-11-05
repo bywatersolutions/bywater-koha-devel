@@ -124,6 +124,8 @@ definitions:
     $ref: ./definitions/import_batch_profiles.yaml
   import_record_match:
     $ref: ./definitions/import_record_match.yaml
+  koha_version:
+    $ref: definitions/koha_version.yaml
   record_source:
     $ref: ./definitions/record_source.yaml
   invoice:
@@ -637,6 +639,8 @@ paths:
     $ref: ./paths/transfer_limits.yaml#/~1transfer_limits~1batch
   "/transfer_limits/{limit_id}":
     $ref: "./paths/transfer_limits.yaml#/~1transfer_limits~1{limit_id}"
+  /status/version:
+    $ref: ./paths/status.yaml#/~1status~1version
 parameters:
   advancededitormacro_id_pp:
     description: Advanced editor macro internal identifier
@@ -1409,6 +1413,9 @@ tags:
   - description: "Manage file transport configurations\n"
     name: file_transports
     x-displayName: File transports
+  - description: "System status\n"
+    name: status
+    x-displayName: Status
   - description: "Manage tickets\n"
     name: tickets
     x-displayName: Tickets
