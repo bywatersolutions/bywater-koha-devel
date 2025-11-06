@@ -15,7 +15,7 @@
 
                     if (!searchTerm && !branchSelected && !categorySelected) {
                         $(form.searchmember)
-                            .tooltip({ trigger: "manual", placement: "bottom", title: _("Search criterea required") })
+                            .tooltip({ trigger: "manual", placement: "bottom", title: _("Please enter a card number or name") })
                             .tooltip("show");
                         $(document).on("click", function () {
                             $(form.searchmember).tooltip("hide");
@@ -41,7 +41,7 @@
                 <button type="button" class="form-extra-content-toggle" title="More options"><i class="form-extra-content-icon fa-solid fa-sliders" aria-hidden="true"></i></button>
             </div>
 
-            <button type="submit" class="btn btn-primary" aria-label="Search"><i class="fa fa-arrow-right"></i></button>
+            <button type="submit" aria-label="Search"><i class="fa fa-arrow-right"></i></button>
 
             <div class="form-extra-content">
                 <div> [% INCLUDE patron_fields_dropdown search_box=1 %] </div>
