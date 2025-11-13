@@ -18,7 +18,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 2;
+use Test::More tests => 3;
 use Test::Exception;
 
 use Koha::Database;
@@ -58,6 +58,27 @@ subtest 'enqueue() tests' => sub {
     is( $job->size,   scalar @{$biblio_ids}, 'Size is correct' );
     is( $job->status, 'new',                 'Initial status set correctly' );
     is( $job->queue,  'default',             'BatchUpdateItem should use the default queue' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'prevent duplicate jobs tests' => sub {
+
+    plan tests => 4;
+
+    $schema->storage->txn_begin;
+
+    t::lib::Mocks::mock_preference( 'RealTimeHoldsQueue', 1 );
+
+    Koha::BackgroundJobs->search()->delete();
+
+    my $job_id = Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue->new->enqueue( { biblio_ids => [1] } );
+    isnt( $job_id, undef, "Job id was returned for background job with no duplicate" );
+    is( Koha::BackgroundJobs->search()->count(), 1, "Found one enqueued background job" );
+
+    $job_id = Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue->new->enqueue( { biblio_ids => [1] } );
+    is( $job_id,                                 undef, "No job id was returned for background job with duplicate" );
+    is( Koha::BackgroundJobs->search()->count(), 1,     "Still found one enqueued background job" );
 
     $schema->storage->txn_rollback;
 };
