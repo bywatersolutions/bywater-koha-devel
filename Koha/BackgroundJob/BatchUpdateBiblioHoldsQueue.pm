@@ -19,6 +19,7 @@ use Modern::Perl;
 
 use Try::Tiny;
 
+use Koha::BackgroundJobs;
 use Koha::Biblios;
 use Koha::Exceptions;
 
@@ -133,6 +134,13 @@ sub enqueue {
         unless exists $args->{biblio_ids};
 
     my @biblio_ids = @{ $args->{biblio_ids} };
+
+    # If any given bib has a specific job already queued, we can skip this job. Limited to single bib jobs for performance.
+    @biblio_ids = grep {
+        Koha::BackgroundJobs->count( { type => $self->job_type, status => 'new', data => qq/{"biblio_ids":["$_"]}/ } )
+            == 0
+    } @biblio_ids;
+    return unless @biblio_ids;
 
     $self->SUPER::enqueue(
         {
