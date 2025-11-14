@@ -1085,7 +1085,8 @@ CREATE TABLE `background_jobs` (
   PRIMARY KEY (`id`),
   KEY `borrowernumber` (`borrowernumber`),
   KEY `queue` (`queue`),
-  KEY `status` (`status`)
+  KEY `status` (`status`),
+  KEY `idx_data_255` (`data`(255))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
