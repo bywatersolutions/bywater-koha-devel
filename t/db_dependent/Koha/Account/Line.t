@@ -1581,7 +1581,14 @@ subtest 'debit description from notice' => sub {
 
     $schema->storage->txn_begin;
 
-    my $patron = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $patron = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => {
+                lang => 'default',
+            }
+        }
+    );
 
     # Create a debit type
     my $debit_type = $builder->build_object(
@@ -1665,7 +1672,7 @@ subtest 'debit description from notice' => sub {
         }
     )->store;
 
-    is( $account_line3->description, 'Manual description', 'System defined description is used' );
+    is( $account_line3->description, 'From notice', 'Notice overrides manual description' );
 
     $schema->storage->txn_rollback;
 };
