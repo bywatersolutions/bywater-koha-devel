@@ -88,7 +88,7 @@ my %scrubbertypes = (
             },
         ],
     },
-    opac => {
+    opac_virtual_card => {
         allow => [
             qw(
                 div span h1 h2 h3 h4 h5 h6 p br
@@ -105,6 +105,10 @@ my %scrubbertypes = (
             },
 
             span => {
+                class => qr/^[\w\s\-_]+$/,
+                id    => qr/^[\w\-_]+$/,
+            },
+            p => {
                 class => qr/^[\w\s\-_]+$/,
                 id    => qr/^[\w\-_]+$/,
             },

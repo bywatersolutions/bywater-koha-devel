@@ -322,7 +322,7 @@ subtest 'record_display profile tests' => sub {
     subtest 'opac profile tests' => sub {
         plan tests => 20;
 
-        my $scrubber = C4::Scrubber->new('opac');
+        my $scrubber = C4::Scrubber->new('opac_virtual_card');
 
         # Test basic allowed elements
         is(

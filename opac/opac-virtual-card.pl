@@ -76,7 +76,7 @@ my $content = C4::Letters::GetPreparedLetter(
     )
 );
 
-my $scrubber = C4::Scrubber->new('opac');
+my $scrubber = C4::Scrubber->new('opac_virtual_card');
 my $scrubbed = $scrubber->scrub( $content->{content} );
 
 $content->{content} = $scrubbed;
