@@ -128,7 +128,7 @@ my $amountoutstanding = $patron->account->balance;
 my $no_renewal_amt    = C4::Context->preference('FineNoRenewals');
 $no_renewal_amt = undef unless looks_like_number($no_renewal_amt);
 my $amountoutstandingfornewal =
-    C4::Context->preference("OPACFineNoRenewalsIncludeCredits")
+    C4::Context->preference("FineNoRenewalsIncludeCredits")
     ? $amountoutstanding
     : $patron->account->outstanding_debits->total_outstanding;
 

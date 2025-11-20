@@ -333,6 +333,16 @@ if ( $patron && ( $op eq 'cud-renew' ) ) {
 
         if ( $patron->checkouts->find( { itemnumber => $item->itemnumber } ) ) {
             my ( $status, $renewerror ) = CanBookBeRenewed( $patron, $item->checkout );
+
+            # Override FineNoRenewals check if FineNoRenewalsBlockSelfCheckRenew is disabled
+            if (  !$status
+                && $renewerror eq 'too_much_owing'
+                && !C4::Context->preference('FineNoRenewalsBlockSelfCheckRenew') )
+            {
+                $status     = 1;
+                $renewerror = undef;
+            }
+
             if ($status) {
                 AddRenewal(
                     {
@@ -361,6 +371,16 @@ if ($patron) {
         while ( my $c = $pending_checkouts->next ) {
             my $checkout = $c->unblessed_all_relateds;
             my ( $can_be_renewed, $renew_error ) = CanBookBeRenewed( $patron, $c );
+
+            # Override FineNoRenewals check if FineNoRenewalsBlockSelfCheckRenew is disabled
+            if (  !$can_be_renewed
+                && $renew_error eq 'too_much_owing'
+                && !C4::Context->preference('FineNoRenewalsBlockSelfCheckRenew') )
+            {
+                $can_be_renewed = 1;
+                $renew_error    = undef;
+            }
+
             $checkout->{can_be_renewed} = $can_be_renewed;    # In the future this will be $checkout->can_be_renewed
             $checkout->{renew_error}    = $renew_error;
             $checkout->{overdue}        = $c->is_overdue;

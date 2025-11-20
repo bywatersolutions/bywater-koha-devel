@@ -3275,7 +3275,7 @@ sub CanBookBeRenewed {
         my $balance                  = $account->balance;
         my $non_issues_charges       = $account->non_issues_charges;
         my $amountoutstanding_for_renewal =
-            C4::Context->preference("OPACFineNoRenewalsIncludeCredits")
+            C4::Context->preference("FineNoRenewalsIncludeCredits")
             ? $balance
             : $non_issues_charges;
 
@@ -5052,11 +5052,11 @@ sub _CanBookBeAutoRenewed {
         }
     }
 
-    if ( C4::Context->preference('OPACFineNoRenewalsBlockAutoRenew') ) {
+    if ( C4::Context->preference('FineNoRenewalsBlockAutoRenew') ) {
         my $fine_no_renewals = C4::Context->preference("FineNoRenewals");
         my $account          = $patron->account;
         my $amountoutstanding =
-            C4::Context->preference("OPACFineNoRenewalsIncludeCredits")
+            C4::Context->preference("FineNoRenewalsIncludeCredits")
             ? $account->balance
             : $account->non_issues_charges;
         if ( $amountoutstanding and $amountoutstanding > $fine_no_renewals ) {

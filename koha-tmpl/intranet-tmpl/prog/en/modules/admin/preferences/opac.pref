@@ -652,7 +652,7 @@ OPAC:
                   opacrenew: "'OPACRenew'"
             - as branchcode to store in the statistics table for renewals done in the OPAC.
         -
-            - pref: OPACFineNoRenewalsIncludeCredits
+            - pref: FineNoRenewalsIncludeCredits
               choices:
                   1: Include
                   0: "Don't include"

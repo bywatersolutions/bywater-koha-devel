@@ -516,11 +516,18 @@ Circulation:
                   block: block renewing for all the patron's items.
         -
             - If a patron owes more than the value of <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=FineNoRenewals">FineNoRenewals</a>,
-            - pref: OPACFineNoRenewalsBlockAutoRenew
+            - pref: FineNoRenewalsBlockAutoRenew
               choices:
                   1: block
                   0: allow
             - their auto-renewals.
+        -
+            - If a patron owes more than the value of <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=FineNoRenewals">FineNoRenewals</a>,
+            - pref: FineNoRenewalsBlockSelfCheckRenew
+              choices:
+                  1: block
+                  0: allow
+            - renewals via the self-checkout system.
         -
             - If a patron pays off all fines on an overdue item that is accruing fines,
             - pref: RenewAccruingItemWhenPaid
