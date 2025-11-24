@@ -3,6 +3,7 @@
 /var/log/koha/*/*.log {
     rotate 5
     weekly
+    size 500M
     missingok
     copytruncate
     compress
