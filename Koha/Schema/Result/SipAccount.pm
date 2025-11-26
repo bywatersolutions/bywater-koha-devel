@@ -42,6 +42,12 @@ Foreign key to sip_institutions.sip_institution_id
   data_type: 'text'
   is_nullable: 1
 
+=head2 patron_branchcode_in_ao
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 1
+
 =head2 allow_additional_materials_checkout
 
   data_type: 'tinyint'
@@ -252,6 +258,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "ae_field_template",
   { data_type => "text", is_nullable => 1 },
+  "patron_branchcode_in_ao",
+  { data_type => "tinyint", default_value => 0, is_nullable => 1 },
   "allow_additional_materials_checkout",
   { data_type => "tinyint", is_nullable => 1 },
   "allow_empty_passwords",
