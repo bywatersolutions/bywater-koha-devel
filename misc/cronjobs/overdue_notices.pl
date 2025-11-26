@@ -578,6 +578,8 @@ END_SQL
 
             if ($owning_library) {
                 $borrower_sql .= ' AND items.homebranch=? ';
+            } elsif ($patron_homelibrary) {
+                $borrower_sql .= ' AND borrowers.branchcode=? ';
             } else {
                 $borrower_sql .= ' AND issues.branchcode=? ';
             }
@@ -748,7 +750,7 @@ END_SQL
                 $item_statement->finish;
 
                 my @message_transport_types =
-                    @{ GetOverdueMessageTransportTypes( $branchcode, $overdue_rules->{categorycode}, $i ) };
+                    @{ GetOverdueMessageTransportTypes( $notice_branchcode, $overdue_rules->{categorycode}, $i ) };
                 @message_transport_types =
                     @{ GetOverdueMessageTransportTypes( q{}, $overdue_rules->{categorycode}, $i ) }
                     unless @message_transport_types;
