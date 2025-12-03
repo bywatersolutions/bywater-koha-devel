@@ -2395,8 +2395,7 @@ sub AddReturn {
         die "The item is not issed and cannot be returned" unless $issue;    # Just in case...
         $patron or warn "AddReturn without current borrower";
 
-        my $logger = Koha::Logger->get( { prefix => 0, interface => 'offlinecirc', category => 'issue' } );
-        $logger->error( "\treturn\t" . $item->barcode . "\t$branch" . "\n" );
+        Koha::Logger::koc_line( "return", $item->barcode, $branch );
 
         if ($patron) {
             eval {
