@@ -236,7 +236,7 @@ sub koc_line {
 
     my $line   = join( "\t", map { $_ || q{} } @_ );
     my $logger = Koha::Logger->get( { prefix => 0, interface => 'offlinecirc', category => 'issue' } );
-    $logger->error("\t$line");
+    $logger->error("\t$line\n");
 }
 
 1;
