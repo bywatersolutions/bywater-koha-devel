@@ -284,7 +284,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('FacetOrder','Alphabetical','Alphabetical|Usage|Stringwise','Specify the order of facets within each category','Choice'),
 ('FacetSortingLocale','default',NULL,'Choose the locale for sorting facet names when FacetOrder is set to Alphabetical. This enables proper Unicode-aware sorting of accented characters and locale-specific alphabetical ordering.','Choice'),
 ('FailedLoginAttempts','',NULL,'Number of login attempts before lockout the patron account','Integer'),
-('FallbackToSMSIfNoEmail', '0', NULL, 'Send messages by SMS if no patron email is defined', 'YesNo'),
+('FallbackToSMSIfNoEmail', '0', 'Enable|Disable', 'Send messages by SMS if no patron email is defined', 'YesNo'),
 ('FeeOnChangePatronCategory','1',NULL,'If set, when a patron changes to a category with enrolment fee, a fee is charged','YesNo'),
 ('FilterBeforeOverdueReport','0',NULL,'Do not run overdue report until filter selected','YesNo'),
 ('FilterSearchResultsByLoggedInBranch','0',NULL,'Option to filter location column on staff search results by logged in branch','YesNo'),
