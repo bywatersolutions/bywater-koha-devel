@@ -19,7 +19,8 @@
 
 use Modern::Perl;
 
-use Test::More tests => 6;
+use Test::More tests => 7;
+use Test::NoWarnings;
 
 use Koha::Database;
 use C4::Circulation qw(CreateBranchTransferLimit);

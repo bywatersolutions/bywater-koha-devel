@@ -34,6 +34,7 @@ use Koha::Account::Lines;
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Items;
 use Koha::Patrons;
+use Koha::Library::FloatLimits;
 
 use MARC::Record;
 use MARC::Field;
