@@ -117,15 +117,15 @@ sub lowest_ratio_library {
             )->count;
             $item_count = $at_branch_count + $in_transit_to_count - $in_transit_from_count;
 
-            # artifically adjust counts for the item being checked in
+            # artificially adjust counts for the item being checked in
             if ($from_branch) {
 
-                # This is the checkin branch - artifically add 1
+                # This is the checkin branch - artificially add 1
                 if ( $branch eq $branchcode ) {
                     $item_count++;
                 }
 
-                # This is where the item came from - artifically subtract 1
+                # This is where the item came from - artificially subtract 1
                 if ( $branch eq $from_branch ) {
                     $item_count--;
                 }
@@ -172,15 +172,15 @@ sub lowest_ratio_library {
             )->count;
             $item_count = $at_branch_count + $in_transit_to_count - $in_transit_from_count;
 
-            # artifically adjust counts for the item being checked in
+            # artificially adjust counts for the item being checked in
             if ($from_branch) {
 
-                # This is the checkin branch - artifically add 1
+                # This is the checkin branch - artificially add 1
                 if ( $branch eq $branchcode ) {
                     $item_count++;
                 }
 
-                # This is where the item came from - artifically subtract 1
+                # This is where the item came from - artificially subtract 1
                 if ( $branch eq $from_branch ) {
                     $item_count--;
                 }
@@ -198,7 +198,7 @@ sub lowest_ratio_library {
 
     # sort the branches by lowest ratio
     # in the event of a tie the item should stay where it is, if the current branch is involved in the tie
-    # when the current branch is not involved in the tie a random branch is choosen from those who tied
+    # when the current branch is not involved in the tie a random branch is chosen from those who tied
     @candidates = sort {
                $a->{ratio} <=> $b->{ratio}
             || ( $a->{branchcode} eq $branchcode ? -1 : 0 ) - ( $b->{branchcode} eq $branchcode ? -1 : 0 )
