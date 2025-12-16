@@ -87,7 +87,11 @@ if ( defined( $config->{'server-params'} ) ) {
 
 # Add user and group to prevent warn from Net::Server.
 push @params, 'user=' . $>;
-push @params, 'group=' . $>;
+
+# $) can contain supplementary groups like "1010 1010" -> Net::Server tries setgroups() and fails.
+my ($egid) = split /\s+/, $);
+$egid ||= $(;    # fallback to real gid just in case
+push @params, 'group=' . $egid;
 
 #
 # This is the main event.
