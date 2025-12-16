@@ -3,10 +3,11 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 131;
+use Test::More tests => 134;
 
 use Koha::Database;
 use Koha::SimpleMARC;
+use JSON qw( encode_json decode_json );
 
 use t::lib::Mocks;
 
@@ -14,7 +15,7 @@ use_ok("MARC::Field");
 use_ok("MARC::Record");
 use_ok(
     'C4::MarcModificationTemplates',
-    qw( AddModificationTemplate AddModificationTemplateAction GetModificationTemplateAction GetModificationTemplateActions ModModificationTemplateAction MoveModificationTemplateAction DelModificationTemplate DelModificationTemplateAction ModifyRecordWithTemplate GetModificationTemplates )
+    qw( AddModificationTemplate AddModificationTemplateAction GetModificationTemplateAction GetModificationTemplateActions ModModificationTemplateAction MoveModificationTemplateAction DelModificationTemplate DelModificationTemplateAction ModifyRecordWithTemplate GetModificationTemplates ExportModificationTemplates ImportModificationTemplates )
 );
 
 my $schema = Koha::Database->new->schema;
@@ -1074,5 +1075,259 @@ subtest "Bug 32950: Moving subfield preserves values in repeatable fields" => su
         is( scalar @z_subfields, 0, 'No $z subfields should remain' );
     }
 
+    DelModificationTemplate($template_id);
+};
+
+# Test export and import functionality
+subtest 'Export and Import MARC modification templates' => sub {
+    plan tests => 16;
+
+    $dbh->do(q|DELETE FROM marc_modification_templates|);
+
+    my $template_id = AddModificationTemplate("Test Template for Export/Import");
+    ok( $template_id, "Template created successfully" );
+
+    ok(
+        AddModificationTemplateAction(
+            $template_id,
+            'update_field',
+            '1',
+            '020',
+            'a',
+            '__BRANCHCODE__-',
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            'Add branch code prefix to ISBN'
+        ),
+        "First action added"
+    );
+
+    ok(
+        AddModificationTemplateAction(
+            $template_id,
+            'add_field',
+            '1',
+            '952',
+            'a',
+            'EXPORTED',
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            'Mark as exported'
+        ),
+        "Second action added"
+    );
+
+    my $json = ExportModificationTemplates( [$template_id] );
+    ok( defined $json && length($json) > 0, "Template exported successfully" );
+
+    my $decoded = eval { decode_json($json) };
+    ok( !$@ && $decoded,                                                 "JSON is valid" );
+    ok( exists $decoded->{version},                                      "JSON has version" );
+    ok( exists $decoded->{templates} && @{ $decoded->{templates} } == 1, "JSON has one template" );
+
+    my $skip_existing = 0;
+    my $result        = ImportModificationTemplates( $json, $skip_existing );
+
+    ok( $result->{success} == 1,               "Template imported successfully with skip_existing=0" );
+    ok( $result->{skipped} == 0,               "No templates skipped when skip_existing=0" );
+    ok( scalar( @{ $result->{errors} } ) == 0, "No import errors" );
+
+    # Test skip_existing=1: Template should be skipped if it already exists
+    $result = ImportModificationTemplates( $json, 1 );
+    ok( $result->{success} == 0,               "Template not imported when skip_existing=1 and template exists" );
+    ok( $result->{skipped} == 1,               "Template skipped when skip_existing=1" );
+    ok( scalar( @{ $result->{errors} } ) == 0, "No import errors with skip_existing=1" );
+
+    # Verify the original template actions are still intact after skip
+    my @actions = GetModificationTemplateActions($template_id);
+    is( scalar(@actions),      2,              "Template still has 2 actions after skip" );
+    is( $actions[0]->{action}, 'update_field', "First action still update_field" );
+    is( $actions[1]->{action}, 'add_field',    "Second action still add_field" );
+
+    DelModificationTemplate($template_id);
+};
+
+# Test skip_existing parameter with overwrite behavior
+subtest 'Import with skip_existing=0 overwrites existing templates' => sub {
+    plan tests => 12;
+
+    $dbh->do(q|DELETE FROM marc_modification_templates|);
+
+    # Create a template with specific actions
+    my $template_id = AddModificationTemplate("Overwrite Test Template");
+    ok( $template_id, "Template created successfully" );
+
+    ok(
+        AddModificationTemplateAction(
+            $template_id,
+            'update_field',
+            '1',
+            '020',
+            'a',
+            'ORIGINAL_VALUE',
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            'Original action'
+        ),
+        "Original action added"
+    );
+
+    # Export the template
+    my $json = ExportModificationTemplates( [$template_id] );
+    ok( defined $json && length($json) > 0, "Template exported successfully" );
+
+    # Modify the template in the database (add a new action)
+    ok(
+        AddModificationTemplateAction(
+            $template_id,
+            'add_field',
+            '1',
+            '999',
+            'a',
+            'MODIFIED',
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            'Modified action'
+        ),
+        "Modified action added to existing template"
+    );
+
+    # Verify template now has 2 actions
+    my @actions = GetModificationTemplateActions($template_id);
+    is( scalar(@actions), 2, "Template has 2 actions before import" );
+
+    # Import with skip_existing=0 (should overwrite)
+    my $result = ImportModificationTemplates( $json, 0 );
+    ok( $result->{success} == 1,               "Template imported successfully with skip_existing=0" );
+    ok( $result->{skipped} == 0,               "No templates skipped" );
+    ok( $result->{overwrite} == 1,             "One template overwritten" );
+    ok( scalar( @{ $result->{errors} } ) == 0, "No import errors" );
+
+    # Verify the template was overwritten (should have only 1 action now)
+    @actions = GetModificationTemplateActions($template_id);
+    is( scalar(@actions),           1,                "Template has 1 action after overwrite" );
+    is( $actions[0]->{action},      'update_field',   "Action is update_field (original)" );
+    is( $actions[0]->{field_value}, 'ORIGINAL_VALUE', "Field value is original value" );
+
+    # Clean up
+    DelModificationTemplate($template_id);
+};
+
+# Test skip_existing parameter with skip behavior
+subtest 'Import with skip_existing=1 skips existing templates' => sub {
+    plan tests => 11;
+
+    $dbh->do(q|DELETE FROM marc_modification_templates|);
+
+    # Create a template with specific actions
+    my $template_id = AddModificationTemplate("Skip Test Template");
+    ok( $template_id, "Template created successfully" );
+
+    ok(
+        AddModificationTemplateAction(
+            $template_id,
+            'update_field',
+            '1',
+            '020',
+            'a',
+            'ORIGINAL_VALUE',
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            'Original action'
+        ),
+        "Original action added"
+    );
+
+    # Export the template
+    my $json = ExportModificationTemplates( [$template_id] );
+    ok( defined $json && length($json) > 0, "Template exported successfully" );
+
+    # Modify the template in the database (add a new action)
+    ok(
+        AddModificationTemplateAction(
+            $template_id,
+            'add_field',
+            '1',
+            '999',
+            'a',
+            'MODIFIED',
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            undef,
+            'Modified action'
+        ),
+        "Modified action added to existing template"
+    );
+
+    # Verify template now has 2 actions
+    my @actions = GetModificationTemplateActions($template_id);
+    is( scalar(@actions), 2, "Template has 2 actions before import" );
+
+    # Import with skip_existing=1 (should skip)
+    my $result = ImportModificationTemplates( $json, 1 );
+    ok( $result->{success} == 0,               "Template not imported when skip_existing=1" );
+    ok( $result->{skipped} == 1,               "Template skipped when skip_existing=1" );
+    ok( scalar( @{ $result->{errors} } ) == 0, "No import errors" );
+
+    # Verify the template was NOT modified (still has 2 actions)
+    @actions = GetModificationTemplateActions($template_id);
+    is( scalar(@actions),      2,              "Template still has 2 actions after skip" );
+    is( $actions[0]->{action}, 'update_field', "First action is still update_field" );
+    is( $actions[1]->{action}, 'add_field',    "Second action is still add_field" );
+
+    # Clean up
     DelModificationTemplate($template_id);
 };
