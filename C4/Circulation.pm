@@ -123,6 +123,7 @@ use Koha::Exceptions::Checkout;
 use Koha::Plugins;
 use Koha::Recalls;
 use Koha::Library::Hours;
+use Koha::Library::FloatLimits;
 use Carp            qw( carp );
 use List::MoreUtils qw( any );
 use Scalar::Util    qw( looks_like_number blessed );
