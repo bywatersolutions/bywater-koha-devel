@@ -34,6 +34,7 @@ use Koha::SimpleMARC qw(
 );
 use Koha::MoreUtils;
 use Koha::DateUtils qw( dt_from_string );
+use JSON            qw( encode_json decode_json );
 
 use vars qw(@ISA @EXPORT);
 
@@ -54,6 +55,9 @@ BEGIN {
 
         ModifyRecordsWithTemplate
         ModifyRecordWithTemplate
+
+        ExportModificationTemplates
+        ImportModificationTemplates
     );
 }
 
@@ -734,6 +738,191 @@ sub ModifyRecordWithTemplate {
     }
 
     return;
+}
+
+=head2
+  ExportModificationTemplates
+
+  my $json = ExportModificationTemplates( $template_ids );
+
+  Exports MARC modification templates to JSON format.
+  If $template_ids is provided, only export those templates.
+  If not provided, export all templates.
+
+  Returns a JSON string containing the exported templates.
+=cut
+
+sub ExportModificationTemplates {
+    my ($template_ids) = @_;
+
+    my $dbh = C4::Context->dbh;
+
+    my @templates;
+    if ( $template_ids && @$template_ids ) {
+        my $placeholders = join( ',', ('?') x @$template_ids );
+        my $sth          = $dbh->prepare(
+            "SELECT * FROM marc_modification_templates WHERE template_id IN ($placeholders) ORDER BY name");
+        $sth->execute(@$template_ids);
+        while ( my $template = $sth->fetchrow_hashref() ) {
+            push( @templates, $template );
+        }
+    } else {
+        my $sth = $dbh->prepare("SELECT * FROM marc_modification_templates ORDER BY name");
+        $sth->execute();
+        while ( my $template = $sth->fetchrow_hashref() ) {
+            push( @templates, $template );
+        }
+    }
+
+    my $export_data = {
+        version   => 1,
+        templates => [],
+    };
+
+    foreach my $template (@templates) {
+        my $template_id = $template->{'template_id'};
+        my @actions     = GetModificationTemplateActions($template_id);
+
+        my $template_export = {
+            template_id => $template_id,
+            name        => $template->{'name'},
+            actions     => [],
+        };
+
+        foreach my $action (@actions) {
+            my $action_export = {
+                mmta_id                => $action->{'mmta_id'},
+                ordering               => $action->{'ordering'},
+                action                 => $action->{'action'},
+                field_number           => $action->{'field_number'},
+                from_field             => $action->{'from_field'},
+                from_subfield          => $action->{'from_subfield'},
+                field_value            => $action->{'field_value'},
+                to_field               => $action->{'to_field'},
+                to_subfield            => $action->{'to_subfield'},
+                to_regex_search        => $action->{'to_regex_search'},
+                to_regex_replace       => $action->{'to_regex_replace'},
+                to_regex_modifiers     => $action->{'to_regex_modifiers'},
+                conditional            => $action->{'conditional'},
+                conditional_field      => $action->{'conditional_field'},
+                conditional_subfield   => $action->{'conditional_subfield'},
+                conditional_comparison => $action->{'conditional_comparison'},
+                conditional_value      => $action->{'conditional_value'},
+                conditional_regex      => $action->{'conditional_regex'},
+                description            => $action->{'description'},
+            };
+
+            push( @{ $template_export->{actions} }, $action_export );
+        }
+
+        push( @{ $export_data->{templates} }, $template_export );
+    }
+
+    return encode_json($export_data);
+}
+
+=head2
+  ImportModificationTemplates
+
+  my $result = ImportModificationTemplates( $json, $skip_existing );
+
+  Imports MARC modification templates from JSON format.
+  $json is the JSON string to import.
+  $skip_existing: if true, skip templates that already exist (default: false)
+
+  Returns a hashref with:
+    - success: number of successfully imported templates
+    - skipped: number of skipped templates
+    - errors: arrayref of error messages
+=cut
+
+sub ImportModificationTemplates {
+    my ( $json, $skip_existing ) = @_;
+
+    my $result = {
+        success => 0,
+        skipped => 0,
+        errors  => [],
+    };
+
+    my $data;
+    eval { $data = decode_json($json); };
+    if ($@) {
+        push( @{ $result->{errors} }, "Failed to parse JSON: $@" );
+        return $result;
+    }
+
+    my $version = $data->{version} || 0;
+    if ( $version != 1 ) {
+        push( @{ $result->{errors} }, "Unsupported export version: $version" );
+        return $result;
+    }
+
+    my $templates = $data->{templates} || [];
+    my $dbh       = C4::Context->dbh;
+
+    foreach my $template_data (@$templates) {
+        my $template_name = $template_data->{name};
+        my $actions       = $template_data->{actions} || [];
+
+        # Check if template already exists
+        my $sth = $dbh->prepare("SELECT template_id FROM marc_modification_templates WHERE name = ?");
+        $sth->execute($template_name);
+        my $existing = $sth->fetchrow_hashref();
+
+        if ( $existing && $skip_existing ) {
+            $result->{skipped}++;
+            next;
+        }
+
+        my $template_id;
+        if ($existing) {
+            $template_id = $existing->{template_id};
+
+            # Delete existing actions for this template
+            $sth = $dbh->prepare("DELETE FROM marc_modification_template_actions WHERE template_id = ?");
+            $sth->execute($template_id);
+            $result->{overwrote}++;
+        } else {
+
+            # Create new template
+            $sth = $dbh->prepare("INSERT INTO marc_modification_templates (name) VALUES (?)");
+            $sth->execute($template_name);
+
+            $sth = $dbh->prepare("SELECT template_id FROM marc_modification_templates WHERE name = ?");
+            $sth->execute($template_name);
+            my $row = $sth->fetchrow_hashref();
+            $template_id = $row->{template_id};
+        }
+
+        # Add new actions
+        foreach my $action_data (@$actions) {
+            AddModificationTemplateAction(
+                $template_id,
+                $action_data->{action},
+                $action_data->{field_number},
+                $action_data->{from_field},
+                $action_data->{from_subfield},
+                $action_data->{field_value},
+                $action_data->{to_field},
+                $action_data->{to_subfield},
+                $action_data->{to_regex_search},
+                $action_data->{to_regex_replace},
+                $action_data->{to_regex_modifiers},
+                $action_data->{conditional},
+                $action_data->{conditional_field},
+                $action_data->{conditional_subfield},
+                $action_data->{conditional_comparison},
+                $action_data->{conditional_value},
+                $action_data->{conditional_regex},
+                $action_data->{description},
+            );
+        }
+
+        $result->{success}++;
+    }
+
+    return $result;
 }
 1;
 __END__

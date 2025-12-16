@@ -27,8 +27,10 @@ use C4::MarcModificationTemplates qw(
     AddModificationTemplateAction
     DelModificationTemplate
     DelModificationTemplateAction
+    ExportModificationTemplates
     GetModificationTemplateActions
     GetModificationTemplates
+    ImportModificationTemplates
     ModModificationTemplateAction
     MoveModificationTemplateAction
 );
@@ -114,6 +116,61 @@ if ( $op eq "cud-create_template" ) {
 } elsif ( $op eq "move_action" ) {
 
     MoveModificationTemplateAction( scalar $cgi->param('mmta_id'), scalar $cgi->param('where') );
+
+} elsif ( $op eq "export" ) {
+
+    my @template_ids;
+    if ( $cgi->param('export_all') ) {
+
+        # Export all templates
+        my @templates = GetModificationTemplates();
+        @template_ids = map { $_->{template_id} } @templates;
+    } else {
+
+        # Export selected templates
+        @template_ids = $cgi->multi_param('template_ids');
+    }
+
+    my $json = ExportModificationTemplates( \@template_ids );
+
+    print $cgi->header(
+        -type       => 'application/json',
+        -attachment => 'marc_modification_templates.json',
+        -charset    => 'utf-8',
+    );
+    print $json;
+
+    exit;
+
+} elsif ( $op eq "cud-import" ) {
+
+    my $upload = $cgi->upload('import_file');
+    if ($upload) {
+        my $json;
+        {
+            local $/;
+            while ( my $line = <$upload> ) {
+                $json .= $line;
+            }
+        }
+
+        my $skip_existing = $cgi->param('skip_existing') ? 1 : 0;
+
+        my $result = ImportModificationTemplates( $json, $skip_existing );
+
+        $template->param(
+            import_success    => $result->{success},
+            import_skipped    => $result->{skipped},
+            import_overwrote  => $result->{overwrote},
+            import_errors     => $result->{errors},
+            show_import_modal => 1,
+        );
+    } else {
+        $template->param(
+            import_error      => 'no_file_uploaded',
+            show_import_modal => 1,
+        );
+    }
 
 }
 
