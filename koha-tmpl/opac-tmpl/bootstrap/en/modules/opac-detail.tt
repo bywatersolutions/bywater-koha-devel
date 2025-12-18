@@ -148,22 +148,6 @@
                                 </div>
                             [% END %]
 
-                            [% bt_id = ( normalized_upc || normalized_isbn ) %]
-                            [% IF ( BakerTaylorEnabled && bt_id ) %]
-                                <div class="cover-image" id="bakertaylor-coverimg">
-                                    [% IF BakerTaylorBookstoreURL %]
-                                        <a href="https://[% BakerTaylorBookstoreURL | url %][% bt_id | url %]">
-                                            <img alt="See Baker &amp; Taylor" src="[% BakerTaylorImageURL | url %][% bt_id | uri %]" />
-                                        </a>
-                                    [% ELSE %]
-                                        <a href="[% BakerTaylorImageURL | url %][% bt_id | uri %]">
-                                            <img alt="See Baker &amp; Taylor" src="[% BakerTaylorImageURL | url %][% bt_id | uri %]" />
-                                        </a>
-                                    [% END %]
-                                    <div class="hint">Image from Baker &amp; Taylor</div>
-                                </div>
-                            [% END %]
-
                             [% IF Koha.Preference('OPACCustomCoverImages') && Koha.Preference('CustomCoverImagesURL') %]
                                 [% SET custom_cover_image_url = biblio.custom_cover_image_url %]
                                 [% IF custom_cover_image_url %]
@@ -404,13 +388,6 @@
                             </div>
                         </form>
                     [% END # / IF OpacStarRatings != 'disable' %]
-
-                    [% IF ( BakerTaylorContentURL ) %]
-                        <span class="results_summary">
-                            <span class="label">Enhanced content: </span>
-                            [% IF ( OPACURLOpenInNewWindow ) %]<a href="[% BakerTaylorContentURL | url %]" target="_blank" rel="noreferrer">Content Cafe</a>[% ELSE %]<a href="[% BakerTaylorContentURL | url %]">Content Cafe</a>[% END %]
-                        </span>
-                    [% END # / IF BakerTaylorContentURL %]
 
                     [% IF ( NovelistSelectProfile && (normalized_isbn || normalized_upc) ) %]
                         [% IF ( NovelistSelectView == 'above') %]
@@ -1793,8 +1770,6 @@
                                     }
                                     div.find(".hint").html(coce_description);
                                     lightbox_descriptions.push(coce_description);
-                                } else if (div.attr("id") == "bakertaylor-coverimg") {
-                                    lightbox_descriptions.push(_("Image from Baker &amp; Taylor"));
                                 } else if (div.attr("class") == "cover-image local-coverimg") {
                                     lightbox_descriptions.push(_("Local cover image"));
                                 } else {

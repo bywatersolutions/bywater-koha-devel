@@ -164,19 +164,8 @@
                             [% END %]
                         [% END %]
 
-                        [% IF Koha.Preference( "BakerTaylorEnabled" ) || Koha.Preference( "SyndeticsEnabled" ) && Koha.Preference( "SyndeticsCoverImages" ) %]
+                        [% IF Koha.Preference( "SyndeticsEnabled" ) && Koha.Preference( "SyndeticsCoverImages" ) %]
                             [% SET normalized_upc = biblio.normalized_upc %]
-                        [% END %]
-                        [% IF Koha.Preference( "BakerTaylorEnabled" ) %]
-                            [% bt_id = ( normalized_upc || normalized_isbn ) %]
-                            [% IF ( bt_id ) %]
-                                <a href="https://[% Koha.Preference( "BakerTaylorBookstoreURL" ) | uri %][% bt_id | uri %]"><img alt="See Baker &amp; Taylor" src="[% BakerTaylorImageURL | html %][% bt_id | html %]" /></a>
-                            [% ELSE %]
-                                <span class="no-image">No cover image available</span>
-                            [% END %]
-                        [% END %]
-
-                        [% IF SyndeticsEnabled && SyndeticsCoverImages %]
                             <img
                                 src="https://secure.syndetics.com/index.aspx?isbn=[% normalized_isbn | html %]/[% SyndeticsCoverImageSize | uri %].GIF&amp;client=[% SyndeticsClientCode | html %]&amp;type=xw10&amp;upc=[% normalized_upc | html %]&amp;oclc=[% biblio.normalized_oclc | html %]"
                                 alt=""

@@ -366,16 +366,6 @@
                                                                     [% END %]
                                                                 [% END %]
 
-                                                                [% IF ( BakerTaylorEnabled ) %]
-                                                                    [% bt_id = ( ISSUE.normalized_upc || ISSUE.normalized_isbn ) %]
-                                                                    [% IF ( bt_id ) %]
-                                                                        <a href="https://[% BakerTaylorBookstoreURL | uri %][% bt_id | uri %]"><img alt="See Baker &amp; Taylor" src="[% BakerTaylorImageURL | html %][% bt_id | html %]" /></a>
-                                                                    [% ELSE %]
-                                                                        <span class="no-image">No cover image available</span
-                                                                        ><!-- BakerTaylor needs normalized_upc or normalized_isbn! -->
-                                                                    [% END %]
-                                                                [% END %]
-
                                                                 [% IF Koha.Preference('OPACCustomCoverImages') AND Koha.Preference('CustomCoverImagesURL') %]
                                                                     [% SET custom_cover_image_url = ISSUE.biblio_object.custom_cover_image_url %]
                                                                     [% IF custom_cover_image_url %]
@@ -734,16 +724,6 @@
                                                                     <div style="display:block;" title="Click to view in Google Books" class="[% OVERDUE.normalized_isbn | html %]" id="gbs-thumbnail[% loop.count | html %]"></div>
                                                                 [% ELSE %]
                                                                     <a href="http://books.google.com/books?q=[% OVERDUE.title |url %]"><span class="no-image">No cover image available</span></a>
-                                                                [% END %]
-                                                            [% END %]
-
-                                                            [% IF ( BakerTaylorEnabled ) %]
-                                                                [% bt_id = ( OVERDUE.normalized_upc || OVERDUE.normalized_isbn ) %]
-                                                                [% IF ( bt_id ) %]
-                                                                    <a href="https://[% BakerTaylorBookstoreURL | uri %][% bt_id | uri %]"><img alt="See Baker &amp; Taylor" src="[% BakerTaylorImageURL | html %][% bt_id | html %]" /></a>
-                                                                [% ELSE %]
-                                                                    <span class="no-image">No cover image available</span
-                                                                    ><!-- BakerTaylor needs normalized_upc or normalized_isbn! -->
                                                                 [% END %]
                                                             [% END %]
 

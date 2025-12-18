@@ -157,15 +157,6 @@
     [% Asset.js("js/localcovers.js") | $raw %]
 [% END %]
 
-[% IF ( BakerTaylorEnabled ) %]
-    [% Asset.js("js/bakertaylorimages.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
-        $(window).load(function () {
-            bt_verify_images();
-        });
-    </script>
-[% END %]
-
 [% IF Koha.Preference( 'OpacNewsLibrarySelect' ) %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
         $("#news-branch-select").change(function () {

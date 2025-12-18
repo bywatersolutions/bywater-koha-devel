@@ -242,7 +242,6 @@ sub _shared_preferences {
         AmazonCoverImages
         OPACAmazonCoverImages
         Babeltheque
-        BakerTaylorEnabled
         GoogleJackets
         HTML5MediaEnabled
         LibraryThingForLibrariesEnabled

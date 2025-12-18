@@ -33,11 +33,6 @@
                             />
                         [% END %][% END %][% END %]
 
-                        [% bt_id = ( review.normalized_upc || review.normalized_isbn ) %]
-                        [% IF ( BakerTaylorEnabled && bt_id ) %]
-                            <a href="https://[% BakerTaylorBookstoreURL | uri %][% bt_id | uri %]"><img alt="See Baker &amp; Taylor" src="[% BakerTaylorImageURL | html %][% bt_id | html %]" /></a>
-                        [% END %]
-
                         [% IF Koha.Preference('OPACCustomCoverImages') AND Koha.Preference('CustomCoverImagesURL') %]
                             [% SET custom_cover_image_url = review.biblio_object.custom_cover_image_url %]
                             [% IF custom_cover_image_url %]

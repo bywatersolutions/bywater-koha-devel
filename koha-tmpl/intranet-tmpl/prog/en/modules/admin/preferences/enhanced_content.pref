@@ -64,26 +64,6 @@ Enhanced content:
             - pref: Babeltheque_url_update
               class: url
             - (e.g. http://www.babeltheque.com/.../file.csv.bz2).
-    Baker and Taylor:
-        -
-            - pref: BakerTaylorEnabled
-              choices:
-                  1: Add
-                  0: "Don't add"
-            - Baker and Taylor links and cover images to the OPAC and staff interface. This requires that you have entered in a username and password (which can be seen in image links).
-        -
-            - 'Baker and Taylor "My Library Bookstore" links should be accessed at <code>https://'
-            - pref: BakerTaylorBookstoreURL
-              class: url
-            - <em>isbn</em></code> (this should be filled in with something like <code>ocls.mylibrarybookstore.com/MLB/actions/searchHandler.do?nextPage=bookDetails&amp;parentNum=10923&amp;key=</code>). Leave it blank to disable these links.
-        -
-            - Access Baker and Taylor using username
-            - pref: BakerTaylorUsername
-              class: password
-            - and password
-            - pref: BakerTaylorPassword
-              class: password
-            - .
     Novelist Select:
         -
             - pref: NovelistSelectEnabled

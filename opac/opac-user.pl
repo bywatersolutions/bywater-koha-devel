@@ -28,9 +28,8 @@ use C4::Koha qw(
     GetNormalizedUPC
     GetNormalizedOCLCNumber
 );
-use C4::Circulation           qw( CanBookBeRenewed GetRenewCount GetIssuingCharges );
-use C4::External::BakerTaylor qw( image_url link_url );
-use C4::Reserves              qw( GetReserveStatus );
+use C4::Circulation qw( CanBookBeRenewed GetRenewCount GetIssuingCharges );
+use C4::Reserves    qw( GetReserveStatus );
 use C4::Members;
 use C4::Output qw( output_html_with_http_headers );
 use Koha::Account::Lines;
@@ -298,8 +297,7 @@ if ( $pending_checkouts->count ) {    # Useless test
         my $isbn = GetNormalizedISBN( $issue->{'isbn'} );
         $issue->{normalized_isbn} = $isbn;
 
-        if (   C4::Context->preference('BakerTaylorEnabled')
-            || C4::Context->preference('SyndeticsEnabled')
+        if (   C4::Context->preference('SyndeticsEnabled')
             || C4::Context->preference('SyndeticsCoverImages') )
         {
             my $marcrecord = $biblio_object->metadata_record(
@@ -357,18 +355,8 @@ if ( C4::Context->preference('UseRecalls') ) {
     $template->param( RECALLS => $recalls );
 }
 
-if ( C4::Context->preference('BakerTaylorEnabled') ) {
-    $template->param(
-        BakerTaylorEnabled      => 1,
-        BakerTaylorImageURL     => &image_url(),
-        BakerTaylorLinkURL      => &link_url(),
-        BakerTaylorBookstoreURL => C4::Context->preference('BakerTaylorBookstoreURL'),
-    );
-}
-
 if (   C4::Context->preference("OPACAmazonCoverImages")
     or C4::Context->preference("GoogleJackets")
-    or C4::Context->preference("BakerTaylorEnabled")
     or C4::Context->preference("SyndeticsCoverImages")
     or ( C4::Context->preference('OPACCustomCoverImages') and C4::Context->preference('CustomCoverImagesURL') ) )
 {

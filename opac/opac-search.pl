@@ -54,7 +54,6 @@ use C4::Koha   qw( GetItemTypesCategorized getitemtypeimagelocation GetAuthorise
 use C4::Tags   qw( get_tags );
 use C4::SocialData;
 use C4::External::OverDrive;
-use C4::External::BakerTaylor qw( image_url link_url );
 
 use Koha::CirculationRules;
 use Koha::Libraries;
@@ -172,15 +171,6 @@ if ( C4::Context->preference("marcflavour") eq "UNIMARC" ) {
 $template->param( 'OPACNoResultsFound' => C4::Context->preference('OPACNoResultsFound') );
 
 $template->param( OpacStarRatings => C4::Context->preference("OpacStarRatings") );
-
-if ( C4::Context->preference('BakerTaylorEnabled') ) {
-    $template->param(
-        BakerTaylorEnabled      => 1,
-        BakerTaylorImageURL     => &image_url(),
-        BakerTaylorLinkURL      => &link_url(),
-        BakerTaylorBookstoreURL => C4::Context->preference('BakerTaylorBookstoreURL'),
-    );
-}
 
 ## URI Re-Writing
 # Deprecated, but preserved because it's interesting :-)

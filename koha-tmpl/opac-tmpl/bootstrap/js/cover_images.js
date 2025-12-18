@@ -73,10 +73,6 @@ function verify_cover_images() {
                         }
                         div.find(".hint").html(coce_description);
                         lightbox_descriptions.push(coce_description);
-                    } else if (div.hasClass("bakertaylor-coverimg")) {
-                        lightbox_descriptions.push(
-                            __("Image from Baker &amp; Taylor")
-                        );
                     } else if (div.hasClass("cover-image local-coverimg")) {
                         lightbox_descriptions.push(__("Local cover image"));
                     } else {

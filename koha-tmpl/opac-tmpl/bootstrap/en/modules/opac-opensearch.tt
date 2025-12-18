@@ -80,12 +80,6 @@
                                         [% END %]
                                     [% END %]
                                 [% END %]
-                                [% bt_id = ( SEARCH_RESULT.normalized_upc || SEARCH_RESULT.normalized_isbn ) %]
-                                [% IF ( BakerTaylorEnabled ) %]
-                                    [% IF bt_id %]
-                                        <![CDATA[ <a href="https://[% BakerTaylorBookstoreURL |url %][% bt_id | uri %]"><img alt="See Baker &#38; Taylor" src="[% BakerTaylorImageURL |url %][% bt_id | uri %]" /></a> ]]>
-                                    [% END %]
-                                [% END %]
 
                                 [% IF Koha.Preference('OPACCustomCoverImages') AND Koha.Preference('CustomCoverImagesURL') %]
                                     [% SET custom_cover_image_url = SEARCH_RESULT.biblio_object.custom_cover_image_url %]
@@ -190,12 +184,6 @@
                                                 alt=""
                                             />
                                         [% END %]
-                                    [% END %]
-                                [% END %]
-                                [% bt_id = ( SEARCH_RESULT.normalized_upc || SEARCH_RESULT.normalized_isbn ) %]
-                                [% IF ( BakerTaylorEnabled ) %]
-                                    [% IF bt_id %]
-                                        <a href="https://[% BakerTaylorBookstoreURL |url %][% bt_id | uri %]"><img alt="See Baker &#38; Taylor" src="[% BakerTaylorImageURL |url %][% bt_id | uri %]" /></a>
                                     [% END %]
                                 [% END %]
 

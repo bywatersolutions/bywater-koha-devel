@@ -43,12 +43,11 @@ use C4::Biblio  qw(
     GetMarcSubjects
     GetMarcUrls
 );
-use C4::Record                qw( marc2cites );
-use C4::Tags                  qw( get_tags );
-use C4::XISBN                 qw( get_xisbns );
-use C4::External::Amazon      qw( get_amazon_tld );
-use C4::External::BakerTaylor qw( image_url link_url );
-use C4::External::Syndetics   qw(
+use C4::Record              qw( marc2cites );
+use C4::Tags                qw( get_tags );
+use C4::XISBN               qw( get_xisbns );
+use C4::External::Amazon    qw( get_amazon_tld );
+use C4::External::Syndetics qw(
     get_syndetics_anotes
     get_syndetics_excerpt
     get_syndetics_index
@@ -1142,27 +1141,6 @@ if ( C4::Context->preference("OPACShelfBrowser") ) {
 }
 
 $template->param( AmazonTld => get_amazon_tld() ) if ( C4::Context->preference("OPACAmazonCoverImages") );
-
-if ( C4::Context->preference("BakerTaylorEnabled") ) {
-    $template->param(
-        BakerTaylorEnabled      => 1,
-        BakerTaylorImageURL     => &image_url(),
-        BakerTaylorLinkURL      => &link_url(),
-        BakerTaylorBookstoreURL => C4::Context->preference('BakerTaylorBookstoreURL'),
-    );
-    my ( $bt_user, $bt_pass );
-    if (    $isbn
-        and $bt_user = C4::Context->preference('BakerTaylorUsername')
-        and $bt_pass = C4::Context->preference('BakerTaylorPassword') )
-    {
-        $template->param(
-            BakerTaylorContentURL => sprintf(
-                "https://contentcafe2.btol.com/ContentCafeClient/ContentCafe.aspx?UserID=%s&Password=%s&ItemKey=%s&Options=Y",
-                $bt_user, $bt_pass, $isbn
-            )
-        );
-    }
-}
 
 my $tag_quantity;
 if ( C4::Context->preference('TagsEnabled') and $tag_quantity = C4::Context->preference('TagsShowOnDetail') ) {

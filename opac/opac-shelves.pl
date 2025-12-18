@@ -19,11 +19,10 @@
 
 use Modern::Perl;
 
-use CGI                       qw ( -utf8 );
-use C4::Auth                  qw( get_template_and_user );
-use C4::Biblio                qw( GetBiblioData GetFrameworkCode );
-use C4::External::BakerTaylor qw( image_url link_url );
-use C4::Koha                  qw(
+use CGI        qw ( -utf8 );
+use C4::Auth   qw( get_template_and_user );
+use C4::Biblio qw( GetBiblioData GetFrameworkCode );
+use C4::Koha   qw(
     GetNormalizedEAN
     GetNormalizedISBN
     GetNormalizedOCLCNumber
@@ -80,13 +79,6 @@ if ( $op eq 'view' || $op eq 'list' ) {
             type            => "opac",
             authnotrequired => 0,
         }
-    );
-}
-
-if ( C4::Context->preference("BakerTaylorEnabled") ) {
-    $template->param(
-        BakerTaylorImageURL => &image_url(),
-        BakerTaylorLinkURL  => &link_url(),
     );
 }
 

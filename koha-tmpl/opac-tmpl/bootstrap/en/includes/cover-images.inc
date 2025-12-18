@@ -81,22 +81,6 @@
             </div>
         [% END %]
 
-        [% bt_id = ( SEARCH_RESULT.normalized_upc || SEARCH_RESULT.normalized_isbn ) %]
-        [% IF ( BakerTaylorEnabled && bt_id ) %]
-            <div class="cover-image bakertaylor-coverimg">
-                [% IF BakerTaylorBookstoreURL %]
-                    <a href="https://[% BakerTaylorBookstoreURL | url %][% bt_id | url %]">
-                        <img alt="See Baker &amp; Taylor" id="bakertaylor-thumbnail-[% SEARCH_RESULT.biblionumber | html %]" src="[% BakerTaylorImageURL | url %][% bt_id | uri %]" />
-                    </a>
-                [% ELSE %]
-                    <a href="[% BakerTaylorImageURL | url %][% bt_id | uri %]">
-                        <img alt="See Baker &amp; Taylor" id="bakertaylor-thumbnail-[% SEARCH_RESULT.biblionumber | html %]" src="[% BakerTaylorImageURL | url %][% bt_id | uri %]" />
-                    </a>
-                [% END %]
-                <div class="hint">Image from Baker &amp; Taylor</div>
-            </div>
-        [% END %]
-
         [% IF OPACCustomCoverImages %]
             [% SET custom_cover_image_url = SEARCH_RESULT.biblio_object.custom_cover_image_url %]
             [% IF custom_cover_image_url %]

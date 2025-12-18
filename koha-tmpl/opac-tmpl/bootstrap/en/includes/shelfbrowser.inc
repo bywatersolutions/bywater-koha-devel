@@ -32,7 +32,7 @@
                                 [% img_title = item.biblionumber %]
                             [% END %]
 
-                            [% IF ( OPACLocalCoverImages || OPACAmazonCoverImages || ( SyndeticsEnabled && SyndeticsCoverImages ) || GoogleJackets || BakerTaylorEnabled || ( Koha.Preference('OpacCoce') && Koha.Preference('CoceProviders') ) || ( Koha.Preference('OPACCustomCoverImages') AND Koha.Preference('CustomCoverImagesURL') ) ) %]
+                            [% IF ( OPACLocalCoverImages || OPACAmazonCoverImages || ( SyndeticsEnabled && SyndeticsCoverImages ) || GoogleJackets || ( Koha.Preference('OpacCoce') && Koha.Preference('CoceProviders') ) || ( Koha.Preference('OPACCustomCoverImages') AND Koha.Preference('CustomCoverImagesURL') ) ) %]
                                 <a
                                     class="shelfbrowser_cover"
                                     href="/cgi-bin/koha/opac-detail.pl?biblionumber=[% item.biblionumber | uri %]&amp;shelfbrowse_itemnumber=[% item.itemnumber | uri %]#shelfbrowser"
@@ -72,14 +72,6 @@
                                     [% IF ( Koha.Preference('OpacCoce') && Koha.Preference('CoceProviders') ) %]
                                         [% coce_id = item.browser_normalized_ean || item.browser_normalized_isbn | html %]
                                         <div title="[% img_title | html %]" class="[% coce_id | html %]" id="coce-thumbnail-preview-[% coce_id | html %]"></div>
-                                    [% END %]
-                                    [% IF ( BakerTaylorEnabled ) %]
-                                        [% bt_id = ( item.browser_normalized_upc || item.browser_normalized_isbn ) | html %]
-                                        [% IF ( bt_id ) %]
-                                            <img alt="See Baker &amp; Taylor" src="[% BakerTaylorImageURL | html %][% bt_id | html %]" />
-                                        [% ELSE %]
-                                            <span class="no-image">No cover image available</span>
-                                        [% END %]
                                     [% END %]
                                     [% IF Koha.Preference('OPACCustomCoverImages') AND Koha.Preference('CustomCoverImagesURL') %]
                                         [% SET custom_cover_image_url = item.biblio_object.custom_cover_image_url %]
