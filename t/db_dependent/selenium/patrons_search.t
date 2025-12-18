@@ -541,7 +541,7 @@ subtest 'Search patrons' => sub {
 
         sub get_dob_search_filter {
             return $s->driver->find_element(
-                '//table[@id="' . shift . '"]//th[@aria-label="Date of birth: Activate to sort"]/input' );
+                '//table[@id="' . shift . '"]//input[@placeholder="Date of birth search"]' );
         }
 
         # We have a patron with date of birth=1980-06-17 => formatted as 17/06/1980
