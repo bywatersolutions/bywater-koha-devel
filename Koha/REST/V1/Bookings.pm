@@ -75,7 +75,36 @@ sub add {
     my $c = shift->openapi->valid_input or return;
 
     return try {
-        my $booking = Koha::Booking->new_from_api( $c->req->json );
+        my $body = $c->req->json;
+
+        # Validate that exactly one of item_id or itemtype_id is provided
+        my $has_item_id     = defined $body->{item_id};
+        my $has_itemtype_id = defined $body->{itemtype_id};
+
+        if ( !$has_item_id && !$has_itemtype_id ) {
+            return $c->render(
+                status  => 400,
+                openapi => { error => "Either item_id or itemtype_id must be provided" }
+            );
+        }
+
+        if ( $has_item_id && $has_itemtype_id ) {
+            return $c->render(
+                status  => 400,
+                openapi => { error => "Cannot specify both item_id and itemtype_id" }
+            );
+        }
+
+        # Extract and remove itemtype_id from body (it's not a database column)
+        my $itemtype_id = delete $body->{itemtype_id};
+
+        my $booking = Koha::Booking->new_from_api($body);
+
+        # Set transient itemtype filter if provided (for server-side optimal selection)
+        if ($itemtype_id) {
+            $booking->set_itemtype_filter($itemtype_id);
+        }
+
         $booking->store;
         $booking->discard_changes;
         $c->res->headers->location( $c->req->url->to_string . '/' . $booking->booking_id );
@@ -117,7 +146,18 @@ sub update {
         unless $booking;
 
     return try {
-        $booking->set_from_api( $c->req->json );
+        my $body = $c->req->json;
+
+        # Extract and remove itemtype_id from body (it's not a database column)
+        my $itemtype_id = delete $body->{itemtype_id};
+
+        $booking->set_from_api($body);
+
+        # Set transient itemtype filter if provided (for server-side optimal selection)
+        if ($itemtype_id) {
+            $booking->set_itemtype_filter($itemtype_id);
+        }
+
         $booking->store();
         $booking->discard_changes;
         return $c->render( status => 200, openapi => $c->objects->to_api($booking) );
