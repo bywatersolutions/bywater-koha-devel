@@ -1,4 +1,5 @@
 [% USE raw %]
+[% USE To %]
 [% USE Koha %]
 [% USE Branches %]
 [% USE Price %]
@@ -130,6 +131,10 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'calendar.inc' %]
     <script>
+        const logged_in_user = [% To.json(logged_in_user.unblessed) | $raw %];
+    </script>
+
+    <script>
         $(document).ready(function() {
            var suggestionst = $("#suggestionst").kohaTable({
                columnDefs: [
@@ -140,7 +145,7 @@
            let table_dt = suggestionst.DataTable();
            $("#show_only_mine").on('click', function(e){
                e.preventDefault();
-               table_dt.columns(0).search('^[% logged_in_user.borrowernumber | html %]$', true).draw();
+               table_dt.columns(0).search(`^${logged_in_user.borrowernumber}$`, true).draw();
            });
            $("#show_all").on('click', function(e){
                e.preventDefault();
