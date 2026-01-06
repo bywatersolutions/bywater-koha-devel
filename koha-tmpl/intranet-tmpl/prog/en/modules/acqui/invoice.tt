@@ -577,15 +577,23 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/modals/edifact-modal.js") | $raw %]
     <script>
+        addPrefs({
+            AcqEnableFiles: [% Koha.Preference('AcqEnableFiles') ? 1 : 0 | html %],
+        });
+        const invoiceincgst = [% invoiceincgst ? 1 : 0 | html %];
+        const has_files = [% files ? 1 : 0 | html %];
+    </script>
+
+    <script>
         function updateColumnsVisibility(visible) {
             if ( visible ) {
                 $("table .tax_excluded, .tax_included").show();
             } else {
-                [% IF ( invoiceincgst ) %]
+                if (invoiceincgst){
                     $("table .tax_excluded").hide();
-                [% ELSE %]
+                } else {
                     $("table .tax_included").hide();
-                [% END %]
+                }
             }
         }
 
@@ -596,14 +604,14 @@
                 searching: false,
                 dom: "t",
             });
-            [% IF ( (Koha.Preference('AcqEnableFiles')) && files ) %]
+            if (prefs.AcqEnableFiles && has_files){
                 $("#invoice_files_table").kohaTable({
                     info: false,
                     paging: false,
                     searching: false,
                     dom: "t",
                 });
-            [% END %]
+            }
             $("#show_all_details").click(function(){
                 updateColumnsVisibility( $(this).is(":checked") );
             });
