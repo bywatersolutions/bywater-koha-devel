@@ -375,6 +375,10 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'calendar.inc' %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'lateorders', 'late_orders', 'json' ) | $raw %];
+    </script>
+
+    <script>
         var late_orderst;
         function check_uncheck() {
             var all_nodes = late_orderst.DataTable().rows().nodes();
@@ -388,7 +392,6 @@
 
         $(document).ready(function() {
 
-            var table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'lateorders', 'late_orders', 'json' ) | $raw %];
             late_orderst = $("#late_orders").kohaTable({
                 order: [[ 1, "asc" ]],
                 pagingType: "full",
