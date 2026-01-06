@@ -315,6 +315,11 @@
     [% Asset.js("js/acq.js") | $raw %]
     [% Asset.js("js/funds_sorts.js") | $raw %]
     <script>
+        const op = "[% op | html %]";
+        const has_results = [% result_order_loop ? 1 : 0 | html %];
+    </script>
+
+    <script>
         function update_ordernumber_list(){
             var ordernumbers = [];
             $("input[name='ordernumber']").filter(":checked").each(function(){
@@ -331,7 +336,7 @@
                 paging: false,
             });
 
-            [% IF op == 'search' OR op == 'select' %]
+            if (op == 'search' || op == 'select'){
                 patron_autocomplete($("#find_patron"), {
                     "on-select-add-to": {
                         container: $("#basket_creators"),
@@ -342,20 +347,20 @@
                         return false;
                     }
                 });
-            [% END %]
+            }
 
             $("#show_orders_filters, #hide_orders_filters").on('click', function(e) {
                 e.preventDefault();
                 $('#orders_filters').toggle();
                 $('.toggle_orders_filters').toggle();
             });
-            [% IF op == 'search' OR op == 'select' AND NOT result_order_loop %]
+            if ( op == 'search' || op == 'select' && !has_result ){
                 $("#show_orders_filters").hide();
                 $("#orders_filters").show();
-            [% ELSE %]
+            } else {
                 $("#hide_orders_filters").hide();
                 $("#orders_filters").hide();
-            [% END %]
+            }
 
             $("input[name='ordernumber']").on("change", function(){
                 if ( $(this).is(':checked') ) {
