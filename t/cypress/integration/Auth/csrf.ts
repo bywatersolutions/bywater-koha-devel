@@ -109,7 +109,7 @@ describe("CSRF", () => {
             .find(".alert")
             .contains(/Library added successfully/);
 
-        cy.get("select[name='libraries_length']").select("-1");
+        cy.get("select.dt-input").select("-1");
         cy.get("td").contains(branchcode);
 
         cy.task("query", {
@@ -127,7 +127,7 @@ describe("CSRF", () => {
         });
 
         cy.visit("/cgi-bin/koha/admin/branches.pl");
-        cy.get("select[name='libraries_length']").select("-1");
+        cy.get("select.dt-input").select("-1");
         cy.get("#delete_library_" + branchcode).click({ force: true });
 
         // Remove CSRF Token
@@ -156,7 +156,7 @@ describe("CSRF", () => {
         });
 
         cy.visit("/cgi-bin/koha/admin/branches.pl");
-        cy.get("select[name='libraries_length']").select("-1");
+        cy.get("select.dt-input").select("-1");
         cy.get("#delete_library_" + branchcode).click({ force: true });
 
         cy.contains("Yes, delete").click();
