@@ -68,6 +68,13 @@ Cypress.on("uncaught:exception", (err, runnable) => {
     return true;
 });
 
+Cypress.on("uncaught:exception", err => {
+    // Ignoring 'ResizeObserver loop limit exceeded' message from DataTables
+    if (err.message.match(/ResizeObserver loop limit exceeded/)) {
+        return false;
+    }
+});
+
 function get_fallback_login_value(param) {
     var env_var = param == "username" ? "KOHA_USER" : "KOHA_PASS";
 
