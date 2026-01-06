@@ -454,6 +454,22 @@
     [% INCLUDE 'js-date-format.inc' %]
     [% INCLUDE 'format_price.inc' %]
     <script>
+        var edit_mode = "[% edit | html %]";
+        var invoiceincgst = "[% invoiceincgst | html %]";
+        var active_currency = "[% active_currency.currency | html %]";
+        var invoice_id = "[% invoiceid | html %]";
+        const multiple_orders = "[% multiple_orders | html %]";
+        const only_one_order = [% only_one_order ? 1 : 0 | html %];
+        addPrefs({
+            AcqCreateItem: [% Koha.Preference('AcqCreateItem') ? 1 : 0 | html %],
+            UniqueItemFields: [% Koha.Preference('UniqueItemFields') ? 1 : 0 | html %],
+        });
+        addPermissions({
+            CAN_user_acquisition: [% CAN_user_acquisition ? 1 : 0 | html %],
+        });
+    </script>
+
+    <script>
         function display_string(key, strings, fallback) {
             if ( strings.hasOwnProperty(key) ) {
                 return strings[key].str && escape_str(strings[key].str) || '';
@@ -538,18 +554,10 @@
         var SAVE_WARNING_TITLE = _("Warning");
         var SAVE_ERROR_TITLE = _("Error");
 
-
-        var CAN_user_acquisition = "[% CAN_user_acquisition | html %]";
-        var AcqCreateItem = "[% Koha.Preference('AcqCreateItem') | html %]";
-        var edit_mode = "[% edit | html %]";
-        var invoiceincgst = "[% invoiceincgst | html %]";
-        var active_currency = "[% active_currency.currency | html %]";
-        var invoice_id = "[% invoiceid | html %]";
-
         $(document).ready(function(){
             // keep a copy for re-rendering
             var $funds_tree = $('#bookfund').html();
-            var base_query = { "order_id": {"-in": [[% multiple_orders | html %]]}};
+            var base_query = { "order_id": {"-in": multiple_orders.split(',')}};
             var pending_orders_url = "/api/v1/acquisitions/orders?only_active=1";
             var options = {
                 ajax: {
@@ -640,11 +648,12 @@
                         }
                     }
                 ],
-                [% IF only_one_order %]
+                ...(only_one_order?
+                    {
                     drawCallback: function( settings ) {
                         $("#order_edit").modal("show");
                     },
-                [% END %]
+                    } : {}),
             };
             var orders_table = $("#multiple_orders").kohaTable(options);
             var api = orders_table.api();
@@ -669,11 +678,11 @@
                 }
             });
 
-            [% IF only_one_order %]
-            $("#quantity").on('change', function() {
-                $('.modal-save').prop('disabled', $(this).val() < 1 );
-            });
-            [% END %]
+            if (only_one_order){
+                $("#quantity").on('change', function() {
+                    $('.modal-save').prop('disabled', $(this).val() < 1 );
+                });
+            }
 
             var _doSave = function(params) {
                 params.data.csrf_token = $('meta[name="csrf-token"]').attr('content');
@@ -705,7 +714,7 @@
                 params['quantity'] = row.quantity;
                 params['quantityrec'] = row.quantity_received;
                 params['origquantityrec'] = origrec;
-                var effective_create_items = row.basket.create_items || AcqCreateItem;
+                var effective_create_items = row.basket.create_items || prefs.AcqCreateItem;
                 params['tax_rate'] = (effective_create_items == 'receiving')?row.tax_rate_on_receiving:row.tax_rate_on_ordering;
                 params['replacementprice'] = row.replacement_price;
                 params['unitprice'] = ( invoiceincgst=="1" ) ? ( row.unit_price_tax_included || row.ecost_tax_included ) : ( row.unit_price_tax_excluded || row.ecost_tax_excluded );
@@ -894,9 +903,9 @@
                 $("#quantity").val(qty);
                 var row = $("#order_edit").data('row');
                 row.quantity_received = qty;
-            [% IF only_one_order %]
-                $('.modal-save').prop('disabled', qty < 1 );
-            [% END %]
+                if (only_one_order){
+                    $('.modal-save').prop('disabled', qty < 1 );
+                }
             })
 
             $("#order_edit").on("change", "#tax_rate", function() {
@@ -904,7 +913,7 @@
                 if(val === null) $(this).val($('option:first-child', this).attr('value'));
                 val = $(this).val();
                 var row = $("#order_edit").data('row');
-                var effective_create_items = row.basket.create_items || AcqCreateItem;
+                var effective_create_items = row.basket.create_items || prefs.AcqCreateItem;
                 if(effective_create_items == 'receiving') {
                     row.tax_rate_on_receiving = val;
                 } else {
@@ -1032,7 +1041,7 @@
                             orderable: false,
                             data: function(row, type, val, meta) {
                                 if(row.invoice) {
-                                    if(CAN_user_acquisition) {
+                                    if(permissions.CAN_user_acquisition) {
                                         return '<a href="/cgi-bin/koha/acqui/invoice.pl?invoiceid='+row.invoice_id+'" title="Invoice detail page">'+row.invoice.invoice_number+"</a>";
                                     }
                                     return row.invoice.invoice_number;
@@ -1104,7 +1113,7 @@
             var set_editor = function() {
                 var modal = $("#order_edit");
                 var row = modal.data('row');
-                var effective_create_items = row.basket.create_items || AcqCreateItem;
+                var effective_create_items = row.basket.create_items || prefs.AcqCreateItem;
                 var origrec = $("#order_edit").data('origrec')||{};
                 if(!origrec.hasOwnProperty(row.order_id)) {
                     origrec[row.order_id] = row.quantity_received;
@@ -1188,9 +1197,9 @@
                 }
                 $("#quantity").val( row.quantity_received )
                               .prop('readonly', !row.subscription_id && effective_create_items == 'receiving');
-                [% IF only_one_order %]
+                if (only_one_order){
                     $(".modal-save").prop('disabled', $("#quantity").val() == 0);
-                [% END %]
+                }
                 $('#qtyrecerror').hide();
                 var tax_rate = row.tax_rate_on_receiving || row.tax_rate_on_ordering;
                 $("#tax_rate").val(tax_rate).change();
@@ -1234,7 +1243,7 @@
                         $("#acq-create-ordering").hide();
                         if(row.items && row.items.length) {
                             row.items.forEach(function(item, index) {
-                                cloneItemBlock(index, '[% UniqueItemFields | html %]', function(block_id) {
+                                cloneItemBlock(index, prefs.UniqueItemFields, function(block_id) {
                                     var block = $('#'+block_id).hide();
                                     Object.keys(item).forEach(function(key) {
                                         block
@@ -1243,14 +1252,14 @@
                                             .find('*[name=field_value]')
                                             .val(item[key].field_value);
                                     });
-                                    addItemInList(block_id, '[% UniqueItemFields | html %]');
+                                    addItemInList(block_id, prefs.UniqueItemFields);
                                     block.find("input[name='buttonPlus']").val( (window.MSG_ADDITEM_JS_UPDATEITEM ) );
                                     block.find("input[name='buttonPlusMulti']").remove();
                                     block.find("input[name='multiValue']").remove();
                                 });
                             });
                         }
-                        cloneItemBlock((row.items && row.items.length) || 0, '[% UniqueItemFields | html %]');
+                        cloneItemBlock((row.items && row.items.length) || 0, prefs.UniqueItemFields);
                     } else if (effective_create_items == 'ordering') {
                         $("#acq-create-receiving").hide();
                         $("#acq-create-ordering").show();
@@ -1361,9 +1370,9 @@
                 var saved_rows = save_row();
                 if(Object.keys(saved_rows).length) $('.save').prop('disabled', false);
                 $("#order_edit").modal('hide');
-                [% IF only_one_order %]
+                if (only_one_order){
                     $(".save").click();
-                [% END %]
+                }
             })
 
             $("#order_edit").on("show.bs.modal", function (event) {

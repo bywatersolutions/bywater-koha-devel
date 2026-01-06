@@ -166,16 +166,15 @@ unless ($acq_fw) {
 my @gst_values = map { option => $_ + 0.0 }, split( '\|', C4::Context->preference("TaxRates") );
 
 $template->param(
-    freight          => $freight,
-    name             => $bookseller->name,
-    active_currency  => $active_currency,
-    currencies       => $currencies->search( { rate => { '!=' => 1 } } ),
-    invoiceincgst    => $bookseller->invoiceincgst,
-    invoiceid        => $invoice->{invoiceid},
-    invoice          => $invoice->{invoicenumber},
-    gst_values       => \@gst_values,
-    vendor           => $bookseller,
-    UniqueItemFields => C4::Context->preference('UniqueItemFields'),
+    freight         => $freight,
+    name            => $bookseller->name,
+    active_currency => $active_currency,
+    currencies      => $currencies->search( { rate => { '!=' => 1 } } ),
+    invoiceincgst   => $bookseller->invoiceincgst,
+    invoiceid       => $invoice->{invoiceid},
+    invoice         => $invoice->{invoicenumber},
+    gst_values      => \@gst_values,
+    vendor          => $bookseller,
 );
 
 my $patron = Koha::Patrons->find($loggedinuser)->unblessed;
