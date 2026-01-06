@@ -42,7 +42,7 @@
                 [% IF Koha.Preference('EasyAnalyticalRecords') %]<th id="[% tab | html %]_hostrecord" data-colname="hostrecord">Host records</th>[% END %]
                 [% IF ( analyze ) %]<th id="[% tab | html %]_usedin" data-colname="usedin">Used in</th><th></th>[% END %]
                 [% IF Koha.Preference('UseCourseReserves') %]<th id="[% tab | html %]_course_reserves" data-colname="course_reserves">Course reserves</th>[% END %]
-                [% IF ( SpineLabelShowPrintOnBibDetails ) %]<th id="[% tab | html %]_spinelabel" data-colname="spinelabel" class="no-sort">Spine label</th>[% END %]
+                [% IF Koha.Preference('SpineLabelShowPrintOnBibDetails') %]<th id="[% tab | html %]_spinelabel" data-colname="spinelabel" class="no-sort">Spine label</th>[% END %]
                 [% IF ( CAN_user_editcatalogue_edit_items ) %]<th id="[% tab | html %]_actions" data-colname="actions" class="no-sort no-export">&nbsp;</th>[% END %]
             </tr>
         </thead>
@@ -95,7 +95,77 @@
 [% BLOCK build_items_table_js %]
     <script>
         let hide_patron_name = [% IF Koha.Preference('HidePatronName') %]true[% ELSE %]false[% END %];
+        const all_libraries = [% To.json(Branches.all) | $raw %].map(e => {
+                    e["_id"] = e["branchcode"];
+                    e["_str"] = e["branchname"];
+                    return e;
+                });
+        const libraries_names = new Map(all_libraries.map( l => [l.branchcode, l.branchname] ));
+        const all_item_types = [% To.json(ItemTypes.Get) | $raw %].map(e => {
+                    e["_id"] = e["itemtype"];
+                    e["_str"] = e["translated_description"];
+                    return e;
+                });
+        const item_types_notforloan = new Map(all_item_types.map( it => [it.itemtype, it.notforloan] ));
 
+        const can_edit_items_from = [% To.json(can_edit_items_from || []) | $raw %];
+        const item_type_image_locations = [% To.json(item_type_image_locations) | $raw %];
+        const av_loc = new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.location' })) | $raw %].map( av => [av.lib, av.authorised_value]));
+        const av_lost = new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.itemlost' })) | $raw %].map( av => [av.authorised_value, av.lib]));
+        const av_withdrawn = new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.withdrawn' })) | $raw %].map( av => [av.authorised_value, av.lib]));
+        const av_damaged = new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.damaged' })) | $raw %].map( av => [av.authorised_value, av.lib]));
+        const av_not_for_loan= new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.notforloan' })) | $raw %].map( av => [av.authorised_value, av.lib]));
+        const av_restricted = new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.restricted' })) | $raw %].map( av => [av.authorised_value, av.lib]));
+        [% IF Koha.Preference('UseCourseReserves') %]
+            const av_courses_term = new Map([% To.json(AuthorisedValues.Get('TERM')) | $raw %].map( av => [av.authorised_value, av.lib]));
+        [% END %]
+        const av_ccode = new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.ccode' })) | $raw %].map( av => [av.lib, av.authorised_value]));
+
+        [% IF Koha.Preference('URLLinkText') %]
+            const url_link_text = "[% Koha.Preference('URLLinkText') | html %]";
+        [% ELSE %]
+            const url_link_text = _("Link to resource");
+        [% END %]
+
+        var biblionumber = [% biblio.biblionumber | html %];
+        const is_serial = [% biblio.serial ? 1 : 0 | html %];
+        const analyze = [% analyze ? 1 : 0 | html %];
+        const hidden_count = [% hidden_count ? 1 : 0 | html %];
+        const bundlesEnabled = [% bundlesEnabled ? 1 : 0 | html %];
+        addPrefs({
+            LocalCoverImages: [% Koha.Preference('LocalCoverImages') ? 1 : 0 | html %],
+            OPACLocalCoverImages: [% Koha.Preference('OPACLocalCoverImages') ? 1 : 0 | html %],
+            EnableItemGroups: [% Koha.Preference('EnableItemGroups') ? 1 : 0 | html %],
+            UseRecalls: [% Koha.Preference('UseRecalls') ? 1 : 0 | html %],
+            UseCourseReserves: [% Koha.Preference('UseCourseReserves') ? 1 : 0 | html %],
+            ClaimReturnedLostValue: [% Koha.Preference('ClaimReturnedLostValue') | html %],
+            EasyAnalyticalRecords: [% Koha.Preference('EasyAnalyticalRecords') ? 1 : 0| html %],
+            SeparateHoldings: [% Koha.Preference('SeparateHoldings') ? 1 : 0 | html %],
+            SeparateHoldingsBranch: "[% Koha.Preference('SeparateHoldingsBranch') || 'homebranch' | html %]",
+            item_level_itypes: [% item_level_itypes ? 1 : 0 | html %],
+            noItemTypeImages: [% Koha.Preference('noItemTypeImages') ? 1 : 0 | html %],
+            DisplayPublishedDate: [% Koha.Preference('DisplayPublishedDate') ? 1 : 0 | html %],
+            canreservefromotherbranches: [% Koha.Preference('canreservefromotherbranches') ? 1 : 0 | html %],
+            SpineLabelShowPrintOnBibDetails: [% Koha.Preference('SpineLabelShowPrintOnBibDetails') ? 1 : 0 | html %],
+        });
+        addPermissions({
+            CAN_user_editcatalogue_edit_items: [% CAN_user_editcatalogue_edit_items ? 1 : 0 | html %],
+        });
+        const logged_in_branchcode = '[% Branches.GetLoggedInBranchcode() | html %]';
+
+        var items_table_settings = {
+            holdings: [% TablesSettings.GetTableSettings('catalogue', 'detail','holdings_table','json') | $raw %],
+            otherholdings: [% TablesSettings.GetTableSettings('catalogue', 'detail','otherholdings_table','json')  | $raw %],
+        };
+
+        let table_nodes = {
+            holdings: "[% PROCESS 'build_table' tab="holdings" | collapse | $tojson %]",
+            otherholdings: "[% PROCESS 'build_table' tab="otherholdings" | collapse | $tojson %]",
+        };
+
+    </script>
+
+    <script>
         let items_selection = {};
 
         function _itemSelectionBuildLink(tab_id, link_class) {
@@ -205,39 +275,14 @@
             });
         });
 
-        const all_libraries = [% To.json(Branches.all) | $raw %].map(e => {
-                    e["_id"] = e["branchcode"];
-                    e["_str"] = e["branchname"];
-                    return e;
-                });
-        const libraries_names = new Map(all_libraries.map( l => [l.branchcode, l.branchname] ));
-        const all_item_types = [% To.json(ItemTypes.Get) | $raw %].map(e => {
-                    e["_id"] = e["itemtype"];
-                    e["_str"] = e["translated_description"];
-                    return e;
-                });
-        const item_types_notforloan = new Map(all_item_types.map( it => [it.itemtype, it.notforloan] ));
-
         const statuses = {checked_out: _("Checked out"), local_use: _("On-site checkout"), in_transit: _("In transit"), lost: _("Lost"), withdrawn: _("Withdrawn"), damaged:_("Damaged"), not_for_loan: _("Not for loan"), on_hold: _("On hold"), recalled: _("Recalled"), available: _("Available"), restricted: _("Restricted"), in_bundle: _("In bundle")};
         const all_statuses = Object.keys(statuses).map(k => {return {_id: k, _str: statuses[k]}});
-
-        const can_edit_items_from = [% To.json(can_edit_items_from || []) | $raw %];
-        const item_type_image_locations = [% To.json(item_type_image_locations) | $raw %];
-        const av_loc = new Map([% To.json(AuthorisedValues.Get('LOC')) | $raw %].map( av => [av.authorised_value, av.lib]));
-        const av_lost = new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.itemlost' })) | $raw %].map( av => [av.authorised_value, av.lib]));
-        const av_withdrawn = new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.withdrawn' })) | $raw %].map( av => [av.authorised_value, av.lib]));
-        const av_damaged = new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.damaged' })) | $raw %].map( av => [av.authorised_value, av.lib]));
-        const av_not_for_loan= new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.notforloan' })) | $raw %].map( av => [av.authorised_value, av.lib]));
-        const av_restricted = new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.restricted' })) | $raw %].map( av => [av.authorised_value, av.lib]));
-        [% IF Koha.Preference('UseCourseReserves') %]
-            const av_courses_term = new Map([% To.json(AuthorisedValues.Get('TERM')) | $raw %].map( av => [av.authorised_value, av.lib]));
-        [% END %]
 
         var coded_values = {
             library: new Map(all_libraries.map( l => [l.branchname, l.branchcode] )),
             item_type: new Map(all_item_types.map( i => [i.translated_description, i.itemtype] )),
-            collection_code: new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.ccode' })) | $raw %].map( av => [av.lib, av.authorised_value])),
-            location: new Map([% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.location' })) | $raw %].map( av => [av.lib, av.authorised_value])),
+            collection_code: av_ccode,
+            location: av_loc,
         };
 
         let filters_options = {
@@ -247,55 +292,41 @@
             statuses: all_statuses,
         };
 
-        [% IF Koha.Preference('URLLinkText') %]
-            const url_link_text = "[% Koha.Preference('URLLinkText') | html %]";
-        [% ELSE %]
-            const url_link_text = _("Link to resource");
-        [% END %]
-        [%# FIXME The X-Base-Total-Count will be the number of items of the biblios %]
-        [%# In case or SeparateHoldings we may need to display the number of biblios in each tab %]
-        [%# Do we need separate/new endpoints or do we hack the somewhere client-side? %]
-        let item_table_url = "/api/v1/biblios/[% biblio.biblionumber | uri %]/items?";
+        // FIXME The X-Base-Total-Count will be the number of items of the biblios
+        // In case or SeparateHoldings we may need to display the number of biblios in each tab
+        // Do we need separate/new endpoints or do we hack the somewhere client-side?
+        let item_table_url = `/api/v1/biblios/${biblionumber}/items?`;
         let embed = ["+strings,_status,home_library,holding_library,checkout,checkout.patron,transfer,transfer+strings,first_hold,first_hold+strings,first_hold.patron,first_hold.desk"];
-        [% IF Koha.Preference('LocalCoverImages') %]
+        if (prefs.LocalCoverImages){
             embed.push('cover_image_ids');
-        [% END %]
-        [% IF Koha.Preference('EnableItemGroups') %]
+        }
+        if (prefs.EnableItemGroups){
             embed.push('item_group_item.item_group.description');
-        [% END %]
-        [% IF biblio.serial %]
+        }
+        if (is_serial){
             embed.push('serial_item.serial');
-        [% END %]
-        [% IF Koha.Preference('UseRecalls') %]
+        }
+        if (prefs.UseRecalls){
             embed.push('recall', 'recall+strings', 'recall.patron')
-        [% END %]
+        }
         embed.push('in_bundle', 'bundle_host', 'bundle_host.biblio', 'bundle_items_lost+count', 'bundle_items_not_lost+count');
-        [% IF Koha.Preference('UseCourseReserves') %]
+        if (prefs.UseCourseReserves){
             embed.push('course_item.course_reserves.course');
-        [% END %]
-        [% IF Koha.Preference('ClaimReturnedLostValue') %]
+        }
+        if (prefs.ClaimReturnedLostValue){
             embed.push('return_claims');
-        [% END %]
+        }
 
-        [% IF Koha.Preference('EasyAnalyticalRecords') %]
+        if (prefs.EasyAnalyticalRecords){
             // For host records
             embed.push('biblio.title');
-        [% END %]
+        }
 
-        [% IF analyze %]
+        if (analyze){
             embed.push('analytics_count');
-        [% END %]
-
-        var items_table_settings = {
-            holdings: [% TablesSettings.GetTableSettings('catalogue', 'detail','holdings_table','json') | $raw %],
-            otherholdings: [% TablesSettings.GetTableSettings('catalogue', 'detail','otherholdings_table','json')  | $raw %],
-        };
+        }
 
         let user_colvis = {holdings: {}, otherholdings: {}};
-        let table_nodes = {
-            holdings: "[% PROCESS 'build_table' tab="holdings" | collapse | $tojson %]",
-            otherholdings: "[% PROCESS 'build_table' tab="otherholdings" | collapse | $tojson %]",
-        };
         function build_items_table (tab_id, add_filters, dt_options, drawcallback) {
 
             let table_dt;
@@ -311,19 +342,18 @@
                 user_colvis[tab_id] = user_colvis_bak;
             }
             let default_filters = {};
-            [% IF Koha.Preference('SeparateHoldings') %]
-                [% SET SeparateHoldingsBranch = Koha.Preference('SeparateHoldingsBranch') || 'homebranch' %];
-                let branch = '[% IF SeparateHoldingsBranch == 'homebranch' %]me.home_library_id[% ELSE %]me.holding_library_id[% END %]';
+            if (prefs.SeparateHoldings){
+                let branch = prefs.SeparateHoldingsBranch == 'homebranch' ? 'me.home_library_id' : 'me.holding_library_id';
                 if ( tab_id == 'holdings' ) {
-                    default_filters[branch] = '[% Branches.GetLoggedInBranchcode() | html %]';
+                    default_filters[branch] = logged_in_branchcode;
                 } else {
-                    default_filters[branch] = { '!=': '[% Branches.GetLoggedInBranchcode() | html  %]' };
+                    default_filters[branch] = { '!=': logged_in_branchcode };
                 }
-            [% END %]
+            }
 
-            [% IF hidden_count %]
+            if (hidden_count){
                 default_filters.lost_status = "0";
-            [% END %]
+            }
             if ( !items_selection.hasOwnProperty(tab_id) ){
                 items_selection[tab_id] = [];
             }
@@ -332,13 +362,7 @@
                 return $("#" + tab_id + "_status select").val();
             };
 
-            var items_table = $("#" + tab_id + '_table').kohaTable({
-                ajax: { url: item_table_url },
-                order: [],
-                embed,
-                autoWidth: false,
-                bKohaColumnsUseNames: true,
-                columns: [
+var columns = [
                 {
                     data: "me.item_id",
                     searchable: false,
@@ -355,8 +379,8 @@
                         }
                     }
                 },
-                [% IF Koha.Preference('LocalCoverImages') %]
-                {
+                ...(prefs.LocalCoverImages ?
+                [{
                     data: "",
                     className: "cover",
                     searchable: false,
@@ -378,10 +402,9 @@
                         node += '</div>';
                         return node;
                     }
-                },
-                [% END %]
-                [% IF ( item_level_itypes ) %]
-                {
+                }] : []),
+                ...(prefs.item_level_itypes ?
+                [{
                     data: "me.item_type_id", // FIXME Cannot filter by biblioitem.itemtype
                     datatype: "coded_value:item_type",
                     dataFilter: "item_types",
@@ -391,17 +414,16 @@
                     render: function (data, type, row, meta) {
                         let node = '';
                         let item_type_description = row._strings.item_type_id ? row._strings.item_type_id.str : row.item_type_id;
-                        [% UNLESS noItemTypeImages %]
+                        if (prefs.noItemTypeImages){
                             let image_location = item_type_image_locations[row.item_type_id];
                             node += image_location
                                 ? '<img class="itemtype-image" src="%s" alt="" /> '.format(escape_str(image_location), escape_str(item_type_description), escape_str(item_type_description))
                                 : '';
-                        [% END %]
+                        }
                         node += '<span class="itypedesc itypetext">%s</span>'.format(escape_str(item_type_description));
                         return node;
                     }
-                },
-                [% END %]
+                }] : []),
                 {
                     data: "holding_library.name:me.holding_library_id",
                     datatype: "coded_value:library",
@@ -431,9 +453,9 @@
                     orderable: true,
                     render: function (data, type, row, meta) {
                         let nodes = '<span class="shelvingloc">';
-                        [%# If permanent location is defined, show description or code and             %]
-                        [%# display current location in parentheses. If not, display current location. %]
-                        [%# Note that permanent location is a code, and location may be an authval.    %]
+                        // If permanent location is defined, show description or code and
+                        // display current location in parentheses. If not, display current location.
+                        // Note that permanent location is a code, and location may be an authval.
                         let loc_str = row._strings.location ? row._strings.location.str : row.location;
                         if ( row.permanent_location && row.permanent_location != row.location ) {
                             let permanent_loc_str = av_loc.get(row.permanent_location);
@@ -454,8 +476,8 @@
                         return escape_str(row._strings.collection_code ? row._strings.collection_code.str : row.collection_code);
                     }
                 },
-                [% IF Koha.Preference('EnableItemGroups') %]
-                {
+                ...(prefs.EnableItemGroups ?
+                [{
                     data: "item_group_item.item_group.description",
                     className: "item_group",
                     searchable: true,
@@ -467,8 +489,7 @@
                             return "";
                         }
                     }
-                },
-                [% END %]
+                }] : []),
                 {
                     data: "me.callnumber",
                     className: "itemcallnumber",
@@ -486,7 +507,7 @@
                     orderable: true,
                     render: function (data, type, row, meta) {
                         let nodes = "";
-                        [%# FIXME Previously we displayed the column if at least one item of the biblio had an enumchron/serial_issue_number. Now it's only if one item of the ones displayed on the current page, how is that bad? How can it be fixed in an elegant way? Should we display the column only if biblio.serial? %]
+                        // FIXME Previously we displayed the column if at least one item of the biblio had an enumchron/serial_issue_number. Now it's only if one item of the ones displayed on the current page, how is that bad? How can it be fixed in an elegant way? Should we display the column only if biblio.serial?
                         let serial = row.serial_item ? row.serial_item.serial : null;
                         if ( row.serial_issue_number && serial && serial.serialseq ) {
                             nodes += '<span class="enum">%s</span>'.format(escape_str(row.serial_issue_number));
@@ -499,11 +520,11 @@
                         } else if ( serial && serial.serialseq ) {
                             nodes += '<span class="serialseq">%s</span>'.format(escape_str(serial.serialseq));
                         }
-                        [% IF Koha.Preference('DisplayPublishedDate') %]
+                        if (prefs.DisplayPublishedDate){
                             if ( serial && serial.publisheddate ) {
                                 nodes += ' <span class="pubdate">(%s)</span>'.format($date(serial.publisheddate));
                             }
-                        [% END %]
+                        }
                         return nodes;
                     }
                 },
@@ -519,7 +540,7 @@
                             if ( status == 'checked_out' || status == 'local_use') {
                                 nodes += '<span>';
 
-                                [%# Hacky for patron_to_html in case we simply want to display the patron's library name %]
+                                // Hacky for patron_to_html in case we simply want to display the patron's library name
                                 row.checkout.patron.library = { name: libraries_names.get(row.checkout.patron.library_id) };
                                 let patron_to_html = $patron_to_html(row.checkout.patron, { url: true, display_cardnumber: true, hide_patron_name });
 
@@ -574,33 +595,33 @@
                                     } else {
                                         nodes += '<span class="waitingat">%s</span>'.format(_("Waiting at %s since %s.").format(row.first_hold._strings.pickup_library_id.str, $date(row.first_hold.waiting_date)));
                                     }
-                                    [% IF Koha.Preference('canreservefromotherbranches') %]
+                                    if (prefs.canreservefromotherbranches){
                                         if ( row.first_hold.waiting_date || row.first_hold.priority == 1 ) {
-                                            [%# Hacky for patron_to_html in case we simply want to display the patron's library name %]
+                                            // Hacky for patron_to_html in case we simply want to display the patron's library name
                                             row.first_hold.patron.library = { name: libraries_names.get(row.first_hold.patron.library_id) };
 
                                             let patron_to_html = $patron_to_html(row.first_hold.patron, { url: true, display_cardnumber: true, hide_patron_name });
                                             nodes += ' <span class="heldfor">%s</span>'.format(_("Hold for: %s").format(patron_to_html));
                                         }
-                                    [% END %]
+                                    }
                                 } else {
                                     nodes += ' <span class="holdonitem">%s</span>'.format(_("There is an item level hold on this item (priority = %s).").format(row.first_hold.priority));
                                 }
                             }
 
-                        [% IF Koha.Preference('UseRecalls') %]
+                        if (prefs.UseRecalls){
                             if ( row.recall && ( row.item_id === row.recall.item_id ) ) {
                                 if ( row.recall.waiting_date ) {
                                     nodes += '<span class="holding_status recallwaiting">%s</span>'.format(_("Waiting recall at %s since %s").format(escape_str(row.recall._strings.pickup_library_id.str), $date(row.recall.waiting_date)));
                                 } else {
-                                    [%# Hacky for patron_to_html in case we simply want to display the patron's library name %]
+                                    // Hacky for patron_to_html in case we simply want to display the patron's library name
                                     row.recall.patron.library = { name: libraries_names.get(row.recall.patron.library_id) };
 
                                     let patron_to_html = $patron_to_html(row.recall.patron, {url: true, display_cardnumber: true, hide_patron_name });
                                     nodes += '<span class="holding_status recalledby">%s</span>'.format(_("Recalled by %s on %s").format(patron_to_html, $date(row.recall.created_date)))
                                 }
                             }
-                        [% END %]
+                        }
                             if ( status == 'available' ) {
                                 nodes += ' <span>%s</span>'.format(_("Available"))
                             }
@@ -759,19 +780,18 @@
                         return escape_str(row.internal_notes);
                     }
                 },
-                [% IF Koha.Preference('EasyAnalyticalRecords') %]
-                {
+                ...(prefs.EasyAnalyticalRecords?
+                [{
                     data: "biblio.title",
                     searchable: false,
                     orderable: true,
                     render: function (data, type, row, meta) {
-                        if ( row.biblio_id == [% biblio.biblionumber | html %] ) return "";
+                        if ( row.biblio_id == biblionumber ) return "";
                         return '<a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=%s">%s</a>'.format(row.biblio_id, row.biblio.title);
                     }
-                },
-                [% END %]
-                [% IF analyze %]
-                {
+                }]:[]),
+                ...(analyze ?
+                [{
                     data: "analytics_count",
                     searchable: false,
                     orderable: false,
@@ -787,10 +807,9 @@
                     render: function (data, type, row, meta) {
                         return '<a href="/cgi-bin/koha/cataloguing/addbiblio.pl?hostbiblionumber=%s&amp;hostitemnumber=%s">%s</a>'.format(row.biblio_id, row.item_id, _("Create analytics"));
                     }
-                },
-                [% END %]
-                [% IF Koha.Preference('UseCourseReserves') %]
-                {
+                }]:[]),
+                ...(prefs.UseCourseReserves?
+                [{
                     data: "course_item.course_reserves.course.course_name",
                     searchable: true,
                     orderable: true,
@@ -813,46 +832,50 @@
                         });
                         return nodes;
                     }
-                },
-                [% END %]
-                [% IF ( SpineLabelShowPrintOnBibDetails ) %]
-                {
+                }]:[]),
+                ...(prefs.SpineLabelShowPrintOnBibDetails?
+                [{
                     data: "",
                     searchable: false,
                     orderable: false,
                     render: function (data, type, row, meta) {
                         return '<a class="btn btn-default btn-xs print-label" href="/cgi-bin/koha/labels/spinelabel-print.pl?barcode=%s"><i class="fa fa-print"></i> Print label</a>'.format(escape_str(row.external_id));
                     }
-                },
-                [% END %]
-                [% IF CAN_user_editcatalogue_edit_items %]
-                {
+                }]:[]),
+                ...(permissions.CAN_user_editcatalogue_edit_items ?
+                [{
                     data: function( row, type, val, meta ) {
                         let nodes = '';
                         if ( can_edit_items_from.includes(row.home_library_id) || !can_edit_items_from.length ){
-                            [% IF Koha.Preference('LocalCoverImages') OR Koha.Preference('OPACLocalCoverImages') %]
+                            if (prefs.LocalCoverImages || prefs.OPACLocalCoverImages){
                                 nodes += '<div class="btn-group dropup">';
                                 nodes += ' <a class="btn btn-default btn-xs" href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=%s&itemnumber=%s#edititem"><i class="fa-solid fa-pencil"></i> %s</a><a class="btn btn-default btn-xs dropdown-toggle" data-bs-toggle="dropdown"><span class="caret"></span></a>'.format(row.biblio_id, row.item_id, _("Edit"));
                                 nodes += ' <ul class="dropdown-menu">';
                                 nodes += '  <li><a class="dropdown-item" href="/cgi-bin/koha/tools/upload-cover-image.pl?itemnumber=%s&amp;filetype=image"><i class="fa fa-upload"></i> %s</a></li>'.format(row.item_id, _("Upload image"));
                                 nodes += ' </ul>';
                                 nodes += '</div>';
-                            [% ELSE %]
+                            } else {
                                 nodes += '<a class="btn btn-default btn-xs" href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=%s&itemnumber=%s#edititem"><i class="fa-solid fa-pencil"></i> %s</a>'.format(row.biblio_id, row.item_id, _("Edit"));
-                            [% END %]
+                            }
                         }
-                        [% IF bundlesEnabled %]
+                        if (bundlesEnabled){
                             nodes += '<button class="btn btn-default btn-xs details-control"><i class="fa fa-folder"></i> %s</button>'.format(_("Manage bundle (%s|%s)").format(row.bundle_items_not_lost_count, row.bundle_items_lost_count));
-                        [% END %]
+                        }
 
                         return nodes;
                     },
                     className: "actions",
                     searchable: false,
                     orderable: false
-                }
-                [% END %]
-                ],
+                }]:[])
+                ];
+            var items_table = $("#" + tab_id + '_table').kohaTable({
+                ajax: { url: item_table_url },
+                order: [],
+                embed,
+                autoWidth: false,
+                bKohaColumnsUseNames: true,
+                columns,
                 initComplete: function( settings, json ){
                     itemSelectionBuildActionLinks(tab_id);
                 },
@@ -885,13 +908,13 @@
                         container.find(".bottom.pager").remove();
                     }
 
-                    [% IF ( SpineLabelShowPrintOnBibDetails ) %]
+                    if (prefs.SpineLabelShowPrintOnBibDetails){
                          $(".print-label").on("click", function(e){
                             e.preventDefault();
                             link = $(this).attr("href");
                             openWindow(link,"Print spine label",400,400);
                         });
-                    [% END %]
+                    }
 
                     if ( api.data().length ) {
                         update_columns_visibility(api, items_table_settings[tab_id], user_colvis[tab_id]);

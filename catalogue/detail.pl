@@ -174,8 +174,6 @@ my $fw           = GetFrameworkCode($biblionumber);
 my $showallitems = $query->param('showallitems');
 my $marcflavour  = C4::Context->preference("marcflavour");
 
-$template->param( 'SpineLabelShowPrintOnBibDetails' => C4::Context->preference("SpineLabelShowPrintOnBibDetails") );
-
 $template->param( ocoins => !$invalid_marc_record ? $biblio->get_coins : undef );
 
 # some useful variables for enhanced content;

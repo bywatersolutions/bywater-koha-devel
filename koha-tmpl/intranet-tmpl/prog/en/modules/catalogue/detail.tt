@@ -1291,9 +1291,13 @@
     [% END %]
     [% IF ( ( Koha.Preference('CatalogConcerns') || Koha.Preference('OpacCatalogConcerns') ) && CAN_user_editcatalogue_edit_catalogue ) %]
         <script>
+            var table_settings = [% TablesSettings.GetTableSettings( 'catalogue', 'concerns', 'table_concerns', 'json' ) | $raw %];
+            const biblio_id = "[% biblionumber | html %]";
+        </script>
+
+        <script>
             $(document).ready(function() {
                 $("#bibliodetails a:first").tab("show");
-                var table_settings = [% TablesSettings.GetTableSettings( 'catalogue', 'concerns', 'table_concerns', 'json' ) | $raw %];
 
                 let additional_filters = {
                     resolved_date: function(){
@@ -1304,7 +1308,7 @@
                         }
                     },
                     source: 'catalog',
-                    biblio_id: [% biblionumber | uri %]
+                    biblio_id,
                 };
                 let external_filter_nodes = {
                     hide_resolved_concerns: "#hide_resolved_concerns",
@@ -1737,6 +1741,7 @@
     [% IF Koha.Preference('EnableBooking') %]
         [% Asset.js("js/modals/place_booking.js") | $raw %]
     [% END %]
+
     <script>
         var browser;
         browser = KOHA.browser("[% searchid | html %]", parseInt(biblionumber, 10));
@@ -1744,21 +1749,32 @@
 
         [% IF bundlesEnabled %]
             var bundle_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail','bundle_tables','json') | $raw %];
-            var bundle_lost_value = [% Koha.Preference('BundleLostValue') | html %];
         [% END %]
 
+        addPrefs({
+            AlwaysShowHoldingsTableFilters: [% Koha.Preference('AlwaysShowHoldingsTableFilters') ? 1 : 0 | html %],
+            bundlesEnabled: [% Koha.Preference('bundlesEnabled') ? 1 : 0 | html %],
+            BundleLostValue: "[% Koha.Preference('BundleLostValue') | html %]",
+        });
+
+        addPermissions({
+            CAN_user_editcatalogue_manage_item_groups: [% CAN_user_editcatalogue_manage_item_groups ? 1 : 0 | html %],
+        });
+    </script>
+
+    <script>
         let items_tab_ids = [ 'holdings', 'otherholdings' ];
         items_tab_ids.forEach( function( tab_id, index ) {
 
             // Early return if the tab is not shown (ie. no table)
             if (!$("#%s_table".format(tab_id)).length) return;
-            [% IF Koha.Preference('AlwaysShowHoldingsTableFilters') %]
+            if (prefs.AlwaysShowHoldingsTableFilters){
                 build_items_table(tab_id, true, {}, build_items_table_drawncallback);
-            [% ELSE %]
+            } else {
                 build_items_table(tab_id, false, {}, build_items_table_drawncallback);
-            [% END %]
+            }
 
-            [% IF bundlesEnabled %]
+            if (prefs.bundlesEnabled){
                 // Add event listener for opening and closing bundle details
                 $('#' + tab_id + '_table tbody').on('click', 'button.details-control', function () {
                     var button = $(this);
@@ -1782,10 +1798,10 @@
                         button.addClass('active');
                     }
                 });
-            [% END # /IF bundlesEnabled %]
+            }
         });
 
-        [% IF bundlesEnabled %] // Bundle handling
+        if (bundlesEnabled){ // Bundle handling
             function createChild ( row, itemnumber, duedate ) {
                 // Toolbar
                 var bundle_toolbar = $('<div id="toolbar" class="btn-toolbar"></div>');
@@ -1863,7 +1879,7 @@
                             "searchable": false,
                             "orderable": false,
                             "render": function(data, type, row, meta) {
-                                if ( row.lost_status == bundle_lost_value ) {
+                                if ( row.lost_status == prefs.BundleLostValue ) {
                                     let out = '<span class="lost">' + _("Last seen") + ': ' + $date(row.last_seen_date) + '</span>';
                                     if ( row.return_claim ) {
                                         out = out + '<span class="claims_return">' + _("Claims returned by") + ': ' + $patron_to_html( row.return_claim.patron, { display_cardnumber: false, url: true } ) + '</span>';
@@ -2093,11 +2109,16 @@
                 bundle_changed = 0;
             });
             // End bundle handling
-        [% END # /IF bundlesEnabled %]
+        }
+    </script>
 
-        $(document).ready(function() {
-            [% IF Koha.Preference('AcquisitionDetails') %]
-                var table_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail', 'acquisitiondetails-table', 'json') | $raw %];
+    [% IF Koha.Preference('AcquisitionDetails') %]
+        <script>
+            var table_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail', 'acquisitiondetails-table', 'json') | $raw %];
+        </script>
+
+        <script>
+            $(document).ready(function() {
                 var acquisitiondetails_table = $("#orders").kohaTable(
                     {
                         dom: 'C<"top pager"ilpfB><"#filter_c">tr<"bottom pager"ip>',
@@ -2107,16 +2128,28 @@
                     },
                     table_settings
                 );
-            [% END %]
+            });
+        </script>
+    [% END %]
 
-            [% IF suggestions.count %]
+    [% IF suggestions.count %]
+        <script>
+            $(document).ready(function() {
                 $("#suggestions").kohaTable({
                     pagingType: "full",
                 });
-            [% END %]
+            });
+        </script>
+    [% END %]
 
-            [% IF ( reviews ) %]
-                var comment_table_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail', 'comments-table', 'json') | $raw %];
+    [% IF ( reviews ) %]
+        <script>
+            var comment_table_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail', 'comments-table', 'json') | $raw %];
+        </script>
+
+        <script>
+            $(document).ready(function() {
+
                 var comments_table = $("#comments_table").kohaTable(
                     {
                         paging: false,
@@ -2125,19 +2158,25 @@
                     },
                     comment_table_settings
                 );
-            [% END %]
-        });
+            });
+        </script>
+    [% END %]
 
-        [% IF found1 && Koha.Preference('RetainCatalogSearchTerms') %]
+    [% IF found1 && Koha.Preference('RetainCatalogSearchTerms') %]
+        <script>
             $(document).ready(function() {
                 var search_index = localStorage.getItem("cat_search_pulldown_selection");
                 var search_value = localStorage.getItem("searchbox_value");
                 if ( search_index ){ $('#cat-search-block select.advsearch').val(search_index)};
                 if ( search_value ){ $('#cat-search-block #search-form').val(search_value)};
             });
-        [% END %]
+        </script>
+    [% END %]
 
-        [% IF Koha.Preference('EnableItemGroups') %]
+    [% IF Koha.Preference('EnableItemGroups') %]
+        <script>
+            $(document).ready(function() {
+
             // Load item groups table
             var itemGroupsTable = $("#items-group-table").kohaTable({
                 autoWidth: false,
@@ -2157,7 +2196,7 @@
                     },
                     {
                         data: function( oObj ) {
-                            [% IF CAN_user_editcatalogue_manage_item_groups %]
+                            if (permissions.CAN_user_editcatalogue_manage_item_groups){
                                 return `<button class='item-group-edit btn btn-default btn-xs' data-item-group-id='${oObj.item_group_id}'>
                                     <i class="fa-solid fa-pencil" aria-hidden="true"></i> ${_("Edit")}
                                 </button>`
@@ -2165,9 +2204,9 @@
                                 + `<button class='item-group-delete btn btn-default btn-xs' data-item-group-id='${oObj.item_group_id}'>
                                     <i class='fa fa-trash-can'></i> ${('Delete')}
                                 </button>`;
-                            [% ELSE %]
+                            } else {
                                 return "";
-                            [% END %]
+                            }
                         },
                         searchable: false,
                         orderable: false,
@@ -2342,7 +2381,7 @@
                     if (itemnumbers.length > 0) {
                         let url = '/cgi-bin/koha/catalogue/detail.pl?op=set_item_group';
                         url += '&itemnumber=' + itemnumbers.join('&itemnumber=');
-                        url += '&biblionumber=[% biblionumber | uri %]';
+                        url += '&biblionumber=' + biblionumber;
                         url += `&item_group_id=${item_group_id}`;
 
                         window.location.replace(url);
@@ -2368,7 +2407,7 @@
                 if (itemnumbers.length > 0) {
                     let url = '/cgi-bin/koha/catalogue/detail.pl?op=unset_item_group';
                     url += '&itemnumber=' + itemnumbers.join('&itemnumber=');
-                    url += '&biblionumber=[% biblionumber | uri %]';
+                    url += '&biblionumber=' + biblionumber;
 
                     window.location.replace(url);
                 }
@@ -2376,8 +2415,11 @@
                 $('#modal-item-group-unset').modal('hide');
             });
 
-        [% END # /IF EnableItemGroups %]
+        });
+        </script>
+    [% END # /IF EnableItemGroups %]
 
+    <script>
         $(".delete-comment").on("click", function(){
             return confirm( _("Are you sure you want to delete this comment?") );
         });
