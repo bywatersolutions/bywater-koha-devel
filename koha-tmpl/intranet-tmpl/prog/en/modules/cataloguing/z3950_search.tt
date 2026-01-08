@@ -277,8 +277,11 @@
     [% INCLUDE 'z3950_search.inc' %]
     [% Asset.js("js/z3950_search.js") | $raw %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings( 'cataloguing', 'z3950_search', 'resultst', 'json' ) | $raw %];
+    </script>
+
+    <script>
         $(document).ready(function(){
-            var table_settings = [% TablesSettings.GetTableSettings( 'cataloguing', 'z3950_search', 'resultst', 'json' ) | $raw %];
             var thetable = $("#resultst").kohaTable(
                 {
                     columnDefs: [{ targets: [1], type: "nsb-nse" }],
