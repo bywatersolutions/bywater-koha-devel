@@ -238,6 +238,14 @@
             [% END %]
         ];
 
+        const op = "[% op | html %]";
+        const job = {
+            status: "[% job.status | html %]",
+            type: "[% job.type | html %]",
+        };
+    </script>
+
+    <script>
         function get_job_type (job_type) {
             let job_type_lib = job_types.find( t => t._id == job_type );
             if ( job_type_lib ) {
@@ -247,11 +255,11 @@
         }
 
         $(document).ready(function() {
-            [% IF op == 'view' %]
-                $("#job_status_description").html( get_job_status("[% job.status | html %]") );
-                $("#job_type_description").html( get_job_type("[% job.type | html %]") );
+            if (op == 'view'){
+                $("#job_status_description").html( get_job_status(job.status) );
+                $("#job_type_description").html( get_job_type(job.type) );
                 $("#job_details").show();
-            [% END %]
+            }
 
             let only_current_filter = function(){
                 if ( $("#only_current").is(":checked") ) {
@@ -324,7 +332,7 @@
                         data: function( row, type, val, meta ) {
                             var result = '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/admin/background_jobs.pl?op=view&amp;id='+ encodeURIComponent(row.job_id) +'"><i class="fa-solid fa-eye aria-hidden="true"></i> '+_("View")+'</a>'+"\n";
                             if ( row.status == 'new' || row.status == 'started' ) {
-                                result += '<a class="btn btn-default btn-xs submit-form-link" role="button" href="#" data-action="/cgi-bin/koha/admin/background_jobs.pl" data-method="post" data-op="cud-cancel" data-confirmation-msg="[% t('Are you sure you want to cancel this job?') | html %]" data-id="'+ encodeURIComponent(row.job_id) +'"><i class="fa fa-trash-can" aria-hidden="true"></i> '+_("Cancel")+'</a>';
+                                result += '<a class="btn btn-default btn-xs submit-form-link" role="button" href="#" data-action="/cgi-bin/koha/admin/background_jobs.pl" data-method="post" data-op="cud-cancel" data-confirmation-msg="' + _("Are you sure you want to cancel this job?") + '" data-id="'+ encodeURIComponent(row.job_id) +'"><i class="fa fa-trash-can" aria-hidden="true"></i> '+_("Cancel")+'</a>';
                             }
                             return result;
                         },
