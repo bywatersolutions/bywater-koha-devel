@@ -384,6 +384,34 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        // FIXME This does not work, we need to pass table settings, not the columns
+        columns_settings = [% FILTER collapse %]
+            [
+                {
+                    "is_hidden": 0,
+                    "columnname": "[% mainloo.line | html %]_[% mainloo.column | html %]",
+                    "cannot_be_toggled": 1,
+                    "cannot_be_modified": 1
+                },
+                [% FOREACH loopco IN mainloo.loopcol %]
+                    {
+                        "is_hidden": 0,
+                        "columnname": "[% loopco.coltitle | html %]",
+                        "cannot_be_toggled": 0,
+                        "cannot_be_modified": 0
+                    },
+                [% END %]
+                {
+                    "is_hidden": 0,
+                    "columnname": "total",
+                    "cannot_be_toggled": 0,
+                    "cannot_be_modified": 0
+                },
+            ];
+        [% END %]
+    </script>
+
+    <script>
         function changeRemovedDateTrStatus() {
             var Cellvalue = $("input[name='Cellvalue']:checked").val();
             if(Cellvalue == "deleteditems") {
@@ -405,32 +433,6 @@
                 changeRemovedDateTrStatus();
             });
             changeRemovedDateTrStatus();
-
-            // FIXME This does not work, we need to pass table settings, not the columns
-            columns_settings = [% FILTER collapse %]
-                [
-                    {
-                        "is_hidden": 0,
-                        "columnname": "[% mainloo.line | html %]_[% mainloo.column | html %]",
-                        "cannot_be_toggled": 1,
-                        "cannot_be_modified": 1
-                    },
-                    [% FOREACH loopco IN mainloo.loopcol %]
-                        {
-                            "is_hidden": 0,
-                            "columnname": "[% loopco.coltitle | html %]",
-                            "cannot_be_toggled": 0,
-                            "cannot_be_modified": 0
-                        },
-                    [% END %]
-                    {
-                        "is_hidden": 0,
-                        "columnname": "total",
-                        "cannot_be_toggled": 0,
-                        "cannot_be_modified": 0
-                    },
-                ];
-            [% END %]
 
             var catalogue_stats = $("#catalogue_stats").kohaTable(
                 {
