@@ -319,6 +319,10 @@
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        var categories = [% To.json( categories ) | $raw %];
+    </script>
+
+    <script>
         $(document).ready(function(){
 
             var validator = $( "#marc-overlay-rules-form" ).validate({
@@ -491,7 +495,6 @@
               }
             });
 
-            var categories = [% To.json( categories ) | $raw %];
             // Add * => * to this array of objects, and *reduce* it to one object
             // Note: This allows displaying a sorted list of categories later, but we still depend on an object!
             categories.unshift({ categorycode: '*', description: '*'});
