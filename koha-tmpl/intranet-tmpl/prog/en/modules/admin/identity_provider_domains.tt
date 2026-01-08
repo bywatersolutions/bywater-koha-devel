@@ -328,21 +328,25 @@
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     <script>
-        $(document).ready(function() {
+        var identity_provider_domains_url = '/api/v1/auth/identity_providers/[%- identity_provider_id | html -%]/domains';
+        [% SET categories = Categories.all() %]
+        var categories = {
+        [% FOREACH category IN categories %]
+            "[% category.categorycode | html %]": "[% category.description | html %]",
+        [% END %]
+        };
+        [% SET libraries = Branches.all() %]
+        var libraries = {
+        [% FOREACH library IN libraries %]
+            "[% library.branchcode | html %]": "[% library.branchname | html %]",
+        [% END %]
+        };
 
-            var identity_provider_domains_url = '/api/v1/auth/identity_providers/[%- identity_provider_id | html -%]/domains';
-            [% SET categories = Categories.all() %]
-            var categories = {
-            [% FOREACH category IN categories %]
-                "[% category.categorycode | html %]": "[% category.description | html %]",
-            [% END %]
-            };
-            [% SET libraries = Branches.all() %]
-            var libraries = {
-            [% FOREACH library IN libraries %]
-                "[% library.branchcode | html %]": "[% library.branchname | html %]",
-            [% END %]
-            };
+        const identity_provider_id = "[%- identity_provider_id | html -%]";
+    </script>
+
+    <script>
+        $(document).ready(function() {
             window.identity_provider_domains = $("#identity_provider_domains").kohaTable({
                 ajax: {
                     "url": identity_provider_domains_url
@@ -449,7 +453,7 @@
                     },
                     {
                         data: function( row, type, val, meta ) {
-                            var result = '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/admin/identity_providers.pl?domain_ops=1&amp;identity_provider_id=[%- identity_provider_id | html -%]&amp;op=edit_form&amp;identity_provider_domain_id='+ encodeURIComponent(row.identity_provider_domain_id) +'"><i class="fa-solid fa-pencil" aria-hidden="true"></i> '+_("Edit")+'</a>'+"\n";
+                            var result = '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/admin/identity_providers.pl?domain_ops=1&amp;identity_provider_id=' + identity_provider_id + '&amp;op=edit_form&amp;identity_provider_domain_id='+ encodeURIComponent(row.identity_provider_domain_id) +'"><i class="fa-solid fa-pencil" aria-hidden="true"></i> '+_("Edit")+'</a>'+"\n";
                             result += '<a class="btn btn-default btn-xs delete_identity_provider_domain" role="button" href="#" data-bs-toggle="modal" data-bs-target="#delete_confirm_modal" data-auth-provider-domain-id="'+ encodeURIComponent(row.identity_provider_domain_id) +'" data-auth-provider-domain="'+ encodeURIComponent((row.domain || '').escapeHtml()) +'"><i class="fa fa-trash-can" aria-hidden="true"></i> '+_("Delete")+'</a>';
                             return result;
                         },
