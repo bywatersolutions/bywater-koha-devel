@@ -1613,16 +1613,7 @@
         [% SET url_biblio_params = url_biblio_params _ "&amp;multi_hold=1" %]
     [% END %]
     <script>
-        $(document).ready(function () {
-            hold_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holds', 'patron_holds_table', 'json' ) | $raw %];
-            $("#patron_holds_table").kohaTable(
-                {
-                    paging: false,
-                    bKohaColumnsUseNames: true,
-                },
-                hold_table_settings
-            );
-        });
+        var hold_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holds', 'patron_holds_table', 'json' ) | $raw %];
         var biblionumbers = [[% biblionumbers.join(', ') | $raw %]];
         var borrowernumber = "[% patron.borrowernumber | $raw %]";
         var patron_homebranch = "[% To.json( Branches.GetName( patron.branchcode ) ) | $raw %]";
@@ -1633,6 +1624,30 @@
             },
             [% END %][% END %][% END %]
         };
+
+        const active_tab = [% clubs ? 1 : 0 | html %];
+
+        addPrefs({
+            UseBranchTransferLimits: [% Koha.Preference('UseBranchTransferLimits') ? 1 : 0 | html %],
+            EnableItemGroupHolds: [% Koha.Preference('EnableItemGroupHolds') ? 1 : 0 | html %],
+        });
+        const multi_hold = [% multi_hold ? 1 : 0 | html %];
+
+        const apply_patron_autocomplete = [% !( patron || patron.borrowernumber || borrowers || noitems || nobiblio ) && PatronAutoComplete ? 1 : 0 | html %];
+        const url_biblio_params = '[% url_biblio_params | url %]';
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            $("#patron_holds_table").kohaTable(
+                {
+                    paging: false,
+                    bKohaColumnsUseNames: true,
+                },
+                hold_table_settings
+            );
+        });
+
         var ERROR_MAP = {
             damaged: _("Item damaged"),
             ageRestricted: _("Age restricted"),
@@ -1661,9 +1676,8 @@
             });
 
             if( $("#circ_holds_select").length > 0 ){
-                [% SET active = clubs ? 1 : 0 %]
                 /* Set active tab based on whether a club search was submitted */
-                var tabs = $("#circ_holds_select li:eq(" + [% active | $raw %] + ") a").tab("show");
+                var tabs = $("#circ_holds_select li:eq(" + active_tab + ") a").tab("show");
                 $( tabs[0].hash ).find("input.focus").focus();
 
                 /* Change active focus when tabs change */
@@ -1679,7 +1693,7 @@
                 ToggleHoldsToPlace();
             });
 
-            [% IF Koha.Preference('UseBranchTransferLimits') %]
+            if (prefs.UseBranchTransferLimits){
                 $("#pickup,#pickup-next-avail,#pickup-item-group").on('change', function(){
                     var pickup = $(this).val();
                     var url = "?pickup=" + pickup;
@@ -1687,7 +1701,7 @@
                     url += "&biblionumber=" + biblionumbers[0];
                     window.location.replace(url);
                 });
-            [% END %]
+            }
 
             var my_table = $("#requestspecific").kohaTable({
                 paging: false,
@@ -1748,15 +1762,15 @@
                 return false;
             });
 
-            [% UNLESS ( multi_hold ) %]
+            if (!multi_hold){
                 $("#hold-request-form").on("submit", function(e){
                     return check(e, $(this));
                 });
-            [% ELSE %]
+            } else {
                 $("#hold-request-form").on("submit", function(){
                     return checkMultiHold();
                 });
-            [% END %]
+            }
 
             $(".pickup_location_dropdown").each( function () {
                 $(this).pickup_locations_dropdown();
@@ -1995,13 +2009,11 @@
                 $("#" + fieldID).val("");
             });
 
-            [% UNLESS ( patron || patron.borrowernumber || borrowers || noitems || nobiblio ) %]
-                [% IF ( PatronAutoComplete ) %]
-                    patron_autocomplete($(".search_patron_filter"), { 'link-to': 'reserve', 'url-params': '[% url_biblio_params | url %]' });
-                [% END %]
-            [% END %]
+            if (apply_patron_autocomplete){
+                patron_autocomplete($(".search_patron_filter"), { 'link-to': 'reserve', 'url-params': url_biblio_params });
+            }
 
-            [% IF Koha.Preference('EnableItemGroupHolds') %]
+            if (prefs.EnableItemGroupHolds){
                 $(':radio[name="item_group_id"]').change(function(){
                     $('input[name="checkitem"]').prop('checked', false);
                 });
@@ -2009,7 +2021,7 @@
                 $('input[name="checkitem"]').change(function(){
                     $(':radio[name="item_group_id"]').prop('checked', false);
                 });
-            [% END %]
+            }
 
             $(".hold-arrow").click(function(e) {
                 e.preventDefault();
