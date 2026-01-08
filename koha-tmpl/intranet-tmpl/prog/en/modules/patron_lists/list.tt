@@ -235,10 +235,13 @@
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings('members', 'patron-lists', 'patron-list-table', 'json') | $raw %]
+    </script>
+
+    <script>
         $(document).ready(function() {
             $('#patrons_to_add_fieldset').hide();
 
-                var table_settings = [% TablesSettings.GetTableSettings('members', 'patron-lists', 'patron-list-table', 'json') | $raw %]
                 $("#patron-list-table").kohaTable(
                     {
                         pagingType: "full",
