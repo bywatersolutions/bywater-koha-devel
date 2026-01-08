@@ -234,6 +234,17 @@
     [% Asset.js("js/members-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings('members', 'pay', 'pay-fines-table', 'json') | $raw %];
+        const payment_id = "[% payment_id | html %]";
+        const change_given = "[% change_given | html %]";
+        const total = "[% total | $Price %]";
+        const patron_id = "[% patron.borrowernumber | html %]";
+        addPrefs({
+            FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
+        });
+    </script>
+
+    <script>
         function enableCheckboxActions(){
             // Enable/disable controls if checkboxes are checked
             var checkedBoxes = $("input.cb:checked");
@@ -244,13 +255,13 @@
             }
         }
         $(document).ready(function(){
-            [% IF payment_id && Koha.Preference('FinePaymentAutoPopup') %]
-                window.open('/cgi-bin/koha/members/printfeercpt.pl?action=print&accountlines_id=[% payment_id | html %]&change_given=[% change_given | html %]&borrowernumber=[% patron.borrowernumber | html %]', '_blank');
-            [% END %]
+            if (payment_id && prefs.FinePaymentAutoPopup){
+                window.open(`/cgi-bin/koha/members/printfeercpt.pl?action=print&accountlines_id=${payment_id}&change_given=${change_given}&borrowernumber=${patron_id}', '_blank');
+            }
 
             $('#pay-fines-form').preventDoubleFormSubmit();
             $("#woall").click(function(event){
-                var msg = _("Are you sure you want to write off %s in outstanding charges? This cannot be undone!").format( "[% total | $Price %]" );
+                var msg = _("Are you sure you want to write off %s in outstanding charges? This cannot be undone!").format(total);
                 var answer = confirm(msg);
                     if (!answer){
                         event.preventDefault();
@@ -287,7 +298,6 @@
                 this_td.find(".add-note").show();
             });
 
-            var table_settings = [% TablesSettings.GetTableSettings('members', 'pay', 'pay-fines-table', 'json') | $raw %];
             $("#finest").kohaTable(
                 {
                     paging: false,
