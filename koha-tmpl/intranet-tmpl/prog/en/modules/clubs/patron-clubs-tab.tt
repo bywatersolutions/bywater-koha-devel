@@ -59,16 +59,22 @@
     </table>
 [% END %]
 <script>
+    const borrowernumber = "[% borrowernumber | html %]";
+</script>
+
+<script>
     var clubs_dt_params = {
         paging: true,
     };
     $("#table_clubnoenrollmemnts").kohaTable(clubs_dt_params);
     $("#table_clubenrollments").kohaTable(clubs_dt_params);
+</script>
 
-    [% IF CAN_user_clubs_enroll %]
+[% IF CAN_user_clubs_enroll %]
+<script>
     function loadEnrollmentForm( id, enrollent_id = 0 ) {
         $("body").css("cursor", "progress");
-        $('#clubs_panel').load('/cgi-bin/koha/clubs/patron-enroll.pl?borrowernumber=[% borrowernumber | html %]&id=' + id +'&enrollent_id='+ enrollent_id, function() {
+        $('#clubs_panel').load('/cgi-bin/koha/clubs/patron-enroll.pl?borrowernumber=" + borrowernumber + " &id=' + id +'&enrollent_id='+ enrollent_id, function() {
             $("body").css("cursor", "default");
         });
 
@@ -81,7 +87,7 @@
         client.enrollments.cancel(id).then(
             success => {
                 if ( success.success ) {
-                    $('#clubs_panel').load('/cgi-bin/koha/clubs/patron-clubs-tab.pl?borrowernumber=[% borrowernumber | html %]', function() {
+                    $('#clubs_panel').load('/cgi-bin/koha/clubs/patron-clubs-tab.pl?borrowernumber=" + borrowernumber + "', function() {
                         $("body").css("cursor", "default");
                     });
                 } else {
@@ -95,5 +101,5 @@
         );
         return false;
     }
-    [% END %]
 </script>
+[% END %]
