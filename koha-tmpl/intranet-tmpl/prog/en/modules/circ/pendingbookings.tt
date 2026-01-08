@@ -123,7 +123,9 @@
                 e['_str'] = e.branchname;
                 return e;
             });
+    </script>
 
+    <script>
             var coded_values = {
                 library: new Map(all_libraries.map( l => [l.branchname, l.branchcode] )),
             };
