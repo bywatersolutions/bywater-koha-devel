@@ -283,6 +283,7 @@
     [% INCLUDE 'datatables.inc' %]
     <script>
         var subscriptionid = "[% subscriptionid | html %]";
+        const edit_action_link = "[% edit_action_link | html %]";
     </script>
     [% Asset.js("js/serials-toolbar.js") | $raw %]
     <script>
@@ -293,7 +294,7 @@
             });
 
             if (subscription_ids.length > 0) {
-                var url = "[% edit_action_link | html %]";
+                var url = edit_action_link;
                 url += '&subscriptionid=' + subscription_ids.join('&subscriptionid=');
                 location.href = url;
             } else {
@@ -352,15 +353,19 @@
                 var tab = $(this).data("tab");
                 itemSelectionBuildEditLink( tab );
             });
+        });
+    </script>
 
-            [% IF ( mana ) %]
+    [% IF ( mana ) %]
+        <script>
+            $(document).ready(function() {
                 $(".local").hide();
                 [% FOR field IN additional_fields_for_subscription %]
                       $("label[for=additional_field_[% field.id | $raw %]], input#additional_field_[% field.id | $raw %]").hide();
                 [% END %]
-            [% END %]
-        });
-    </script>
+            });
+        </script>
+    [% END %]
 [% END %]
 
 [% INCLUDE 'intranet-bottom.inc' %]
