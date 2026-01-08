@@ -72,6 +72,11 @@
         var bookings_table;
         var timeline;
         let biblionumber = "[% biblionumber | uri %]";
+        addPermissions({
+            CAN_user_circulate_manage_bookings: [% CAN_user_circulate_manage_bookings ? 1 : 0 | html %],
+        });
+    </script>
+    <script>
         $(document).ready(function(){
 
             var items = $.ajax({
@@ -118,11 +123,10 @@
                             end: $toDisplayDate(endServerTz),
                             content: !isActive ? `<s>${patronContent}</s>` : patronContent,
                             className: booking.status === "cancelled" ? "cancelled" : "",
-                            [% IF CAN_user_circulate_manage_bookings %]
-                            editable: !["cancelled", "completed"].includes(booking.status) ? { remove: true, updateTime: true } : false,
-                            [% ELSE %]
-                            editable: false,
-                            [% END %]
+                            ...(permissions.CAN_user_circulate_manage_bookings
+                                ? {editable: !["cancelled", "completed"].includes(booking.status) ? { remove: true, updateTime: true } : false}
+                                : {editable: false}
+                            ),
                             type: 'range',
                             group: booking.item_id ?? 0,
                         });
@@ -173,7 +177,7 @@
                             // set end datetime hours and minutes to the end of the day
                             let endDate = dayjs(data.end).endOf('day');
 
-                            $('#placeBookingModal').modal('show', $('<button data-booking="'+data.id+'"  data-biblionumber="[% biblionumber | uri %]"  data-itemnumber="'+data.group+'" data-patron="'+data.patron+'" data-pickup_library="'+data.pickup_library+'" data-start_date="'+startDate.toISOString()+'" data-end_date="'+endDate.toISOString()+'">'));
+                            $('#placeBookingModal').modal('show', $('<button data-booking="'+data.id+'"  data-biblionumber="' + biblionumber + '"  data-itemnumber="'+data.group+'" data-patron="'+data.patron+'" data-pickup_library="'+data.pickup_library+'" data-start_date="'+startDate.toISOString()+'" data-end_date="'+endDate.toISOString()+'">'));
                             $('#placeBookingModal').on('hide.bs.modal', function(e) {
                                 if (update_success) {
                                     update_success = 0;
@@ -366,8 +370,7 @@
                     render: function(data, type, row, meta) {
                         let result = "";
                         const is_readonly = ["cancelled", "completed"].includes(row.status);
-                        [% IF CAN_user_circulate_manage_bookings %]
-                        if (!is_readonly) {
+                        if (permissions.CAN_user_circulate_manage_bookings && !is_readonly) {
                             result += `
                                 <button type="button" class="btn btn-default btn-xs edit-action"
                                     data-bs-toggle="modal"
@@ -406,9 +409,10 @@
                                 escape_str(row.booking_id),
                                 _("Cancel")
                             );
+                            const csrf_token = $('meta[name="csrf-token"]').attr("content");
                             result += `
                                 <form name="checkout-transform" method="post" action="/cgi-bin/koha/circ/circulation.pl?borrowernumber=%s">
-                                    [% INCLUDE 'csrf-token.inc' %]
+                                    <input type="hidden" name="csrf_token" value="${csrf_token}" />
                                     <input type="hidden" name="op" value="cud-checkout"/>
                                     <input type="hidden" name="borrowernumber" value="%s"/>
                                     <input type="hidden" name="barcode" value="%s"/>
@@ -425,7 +429,6 @@
                                 _("Transform to checkout")
                             );
                         }
-                        [% END %]
                         return result;
                     }
                 }]
