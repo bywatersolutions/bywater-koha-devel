@@ -524,6 +524,15 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        let requested_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'article-requests', 'article-requests-requested-table', 'json' ) | $raw %]
+        let pending_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'article-requests', 'article-requests-pending-table', 'json' ) | $raw %]
+        let processing_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'article-requests', 'article-requests-processing-table', 'json' ) | $raw %]
+
+        const interface = "[% interface | html %]";
+        const theme = "[% theme | html %]";
+    </script>
+
+    <script>
         var active_tab = "#article-requests-requested_panel";
         var last_cancel_reason, requested_datatable, pending_datatable, processing_datatable, active_datatable, requested_dt, pending_dt, processing_dt;
         $(document).ready(function() {
@@ -574,10 +583,6 @@
                 var link = $('span#url_'+ id).parent().parent().find('td.ar-actions').find('div.dropdown a');
                 if( link.length > 0 ) link[0].focus();
             });
-
-            let requested_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'article-requests', 'article-requests-requested-table', 'json' ) | $raw %]
-            let pending_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'article-requests', 'article-requests-pending-table', 'json' ) | $raw %]
-            let processing_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'article-requests', 'article-requests-processing-table', 'json' ) | $raw %]
 
             requested_datatable = $("#article-requests-requested-table").kohaTable({}, requested_table_settings);
             requested_dt = requested_datatable.DataTable();
@@ -644,7 +649,7 @@
                 table_row.find('input[type="checkbox"]').prop('checked', false);
 
 
-                a.closest('td').prepend('<img src="[% interface | html %]/[% theme | html %]/img/spinner-small.gif"/>').find('div.dropdown').hide();
+                a.closest('td').prepend('<img src="' + interface + '/' + theme + '/img/spinner-small.gif"/>').find('div.dropdown').hide();
                 $.ajax({
                     type: "DELETE",
                     url: '/api/v1/article_requests/'+id+query,
@@ -686,7 +691,7 @@
             var table = a.closest('table');
             var orig_dt = table.attr('id')==='article-requests-pending-table'?pending_dt:requested_dt;
 
-            a.closest('td').prepend('<img src="[% interface | html %]/[% theme | html %]/img/spinner-small.gif" class="spinner"/>').find('div.dropdown').hide();
+            a.closest('td').prepend('<img src="' + interface + '/' + theme + '/img/spinner-small.gif" class="spinner"/>').find('div.dropdown').hide();
 
             const client = APIClient.article_request;
             await client.articleRequests.process(id).then(
@@ -716,7 +721,7 @@
                 alert( _("Please fill URL before completing request.") );
                 return;
             }
-            a.closest('td').prepend('<img src="[% interface | html %]/[% theme | html %]/img/spinner-small.gif"/>').find('div.dropdown').hide();
+            a.closest('td').prepend('<img src="' + interface + '/' + theme + '/img/spinner-small.gif"/>').find('div.dropdown').hide();
             const client = APIClient.article_request;
             await client.articleRequests.complete(id).then(
                 success => {
@@ -739,7 +744,7 @@
             var table_row = a.closest('tr');
             table_row.find('.ar-set-pending-request').remove();
             table_row.find('input[type="checkbox"]').prop('checked', false);
-            a.closest('td').prepend('<img src="[% interface | html %]/[% theme | html %]/img/spinner-small.gif" class="spinner"/>').find('div.dropdown').hide();
+            a.closest('td').prepend('<img src="' + interface + '/' + theme + '/img/spinner-small.gif" class="spinner"/>').find('div.dropdown').hide();
             const client = APIClient.article_request;
             await client.articleRequests.pending(id).then(
                 success => {
