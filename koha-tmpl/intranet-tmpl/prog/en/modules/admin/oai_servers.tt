@@ -184,14 +184,23 @@
     [% IF op == 'list' %]
         [% INCLUDE 'datatables.inc' %]
     [% END %]
-    <script>
-        [% IF op == 'edit_form' || op == 'add_form' %]
+    [% IF server %]
+        <script>
+            const server = {
+                dataformat: "[% server.dataformat | html %]",
+                recordtype: "[% server.recordtype | html %]",
+            };
+        </script>
+    [% END %]
+    [% IF op == 'edit_form' || op == 'add_form' %]
+        <script>
             $(document).ready(function(){
                 // Update selects for dataformat and recordtype
-                [% IF server %]
-                    $("#dataformat").val('[% server.dataformat | html %]');
-                    $("#recordtype").val('[% server.recordtype | html %]');
-                [% END %]
+                // FIXME Do not do this in JS!
+                if (typeof server !== "undefined"){
+                    $("#dataformat").val(server.dataformat);
+                    $("#recordtype").val(server.recordtype);
+                }
                 $( "#serverentry" ).validate({
                     rules: {
                         servername: { required: true },
@@ -210,7 +219,9 @@
                     toUC(this);
                 });
             });
-        [% ELSE %]
+        </script>
+    [% ELSE %]
+        <script>
             $(document).ready(function() {
                 $("#serverst").kohaTable({
                     pagingType: "full",
@@ -226,7 +237,7 @@
                     }
                 });
             });
-        [% END %]
-    </script>
+        </script>
+    [% END %]
 [% END %]
 [% INCLUDE 'intranet-bottom.inc' %]
