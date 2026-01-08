@@ -436,6 +436,10 @@
     [% Asset.js( "lib/sortable/Sortable.min.js" ) | $raw %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     <script>
+        const tagsubfield = [% IF tabsubfield %]"[% tabsubfield | html %]"[% ELSE %]null[% END %];
+    </script>
+
+    <script>
         $(document).ready(function() {
             $("#table_authsubfieldstructure").kohaTable({
                 order: [],
@@ -443,13 +447,13 @@
             });
 
             if ($("#subfieldtabs").length > 0) {
-                [% IF ( tagsubfield && tagsubfield == "@") %]
+                if (tagsubfield && tagsubfield == "@"){
                     $("#subfieldtabs a[href='#AT_panel']").tab("show");
-                [% ELSIF ( tagsubfield && tagsubfield != "@") %]
-                    $("#subfieldtabs a[href='#[% tagsubfield | html %]_panel']").tab("show");
-                [% ELSE  %]
+                } else if ( tagsubfield && tagsubfield != "@") {
+                    $(`#subfieldtabs a[href='#${tagsubfield}_panel']`).tab("show");
+                } else {
                     $("#subfieldtabs a:first").tab("show");
-                [% END %]
+                }
 
                 var subfields_list = $("#subfieldtabs > ul");
                 var sortable_subfields = new Sortable(subfields_list[0], {
