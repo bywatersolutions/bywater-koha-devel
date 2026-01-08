@@ -299,6 +299,10 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/hold-group.js") | $raw %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings('circ', 'holds', 'holds-to-pull', 'json') | $raw %];
+    </script>
+
+    <script>
         function get_options(column){
             let regex = /(<([^>]+)>)/ig; // Remove html tags
             let options = [... new Set(column
@@ -322,8 +326,6 @@
                 pickup_locations : (table_dt) => get_options(table_dt.column(15)),
             };
 
-
-            var table_settings = [% TablesSettings.GetTableSettings('circ', 'holds', 'holds-to-pull', 'json') | $raw %];
             var holdst = $("#holdst").kohaTable(
                 {
                     pagingType: "full_numbers",
