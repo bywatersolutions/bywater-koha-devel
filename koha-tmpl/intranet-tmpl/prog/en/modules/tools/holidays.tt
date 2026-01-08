@@ -449,6 +449,11 @@
             day_month_holidays["[% DAY_MONTH_HOLIDAYS_LOO.KEY | html %]"] = {title:"[% DAY_MONTH_HOLIDAYS_LOO.TITLE | replace('"','\"') | html %]", description:"[% DAY_MONTH_HOLIDAYS_LOO.DESCRIPTION | replace('"','\"') | html %]"};
         [% END %]
 
+        const calendardate = "[% calendardate | html %]";
+        const keydate = "[% keydate | html %]";
+    </script>
+
+    <script>
         function holidayOperation(formObject, opType) {
             var op = document.getElementsByName('operation');
             op[0].value = opType;
@@ -518,7 +523,7 @@
 
         function changeBranch () {
             var branch = $("#branch option:selected").val();
-            location.href='/cgi-bin/koha/tools/holidays.pl?branch=' + branch + '&calendardate=' + "[% calendardate | html %]";
+            location.href='/cgi-bin/koha/tools/holidays.pl?branch=' + branch + '&calendardate=' + calendardate;
         }
 
         /**
@@ -677,7 +682,7 @@
                     }
 
                 },
-                defaultDate: new Date("[% keydate | html %]")
+                defaultDate: new Date(keydate);
             });
 
             $(".hidePanel").on("click",function(){
