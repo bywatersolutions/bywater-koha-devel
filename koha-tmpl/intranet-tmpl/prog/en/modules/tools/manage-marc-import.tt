@@ -458,6 +458,16 @@
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        const interface = "[% interface | html %]";
+        const theme = "[% theme | html %]";
+        const import_batch_id = "[% import_batch_id | html %]";
+        const record_type = "[% record_type | html %]";
+        addPermissions({
+            CAN_user_editcatalogue_edit_catalogue: [% CAN_user_editcatalogue_edit_catalogue ? 1 : 0 | html %],
+        });
+    </script>
+
+    <script>
         $(document).ready(function() {
             $("#staged-record-matching-rules select").change(function() {
                 var str = $(this).attr("id");
@@ -470,7 +480,7 @@
                 $(this).parent().hide();
             });
 
-            [% IF import_batch_id %]
+            if (import_batch_id){
                 $("#records-table").kohaTable({
                     autoWidth: false,
                     searching: false,
@@ -479,7 +489,7 @@
                     ajax: {
                         url: "batch_records_ajax.pl",
                         data: function ( d ) {
-                            d.import_batch_id = [% import_batch_id | html %];
+                            d.import_batch_id = import_batch_id;
                             return d;
                         },
                     },
@@ -496,16 +506,8 @@
                         { data: "matched" }
                     ],
                     rowCallback: function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                        [% IF(record_type == 'auth') %]
-                            var record_details_url = "/cgi-bin/koha/authorities/detail.pl?authid=";
-                        [% ELSE %]
-                            var record_details_url = "/cgi-bin/koha/catalogue/detail.pl?biblionumber=";
-                        [% END %]
-                        [% IF(record_type == 'auth') %]
-                            var record_edit_url = "/cgi-bin/koha/authorities/authorities.pl?authid=";
-                        [% ELSE %]
-                            var record_edit_url = "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=";
-                        [% END %]
+                        var record_details_url = record_type == 'auth' ? "/cgi-bin/koha/authorities/detail.pl?authid=":"/cgi-bin/koha/catalogue/detail.pl?biblionumber=";
+                        var record_edit_url = record_type == 'auth' ? "/cgi-bin/koha/authorities/authorities.pl?authid=":"/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=";
 
                         var additional_details = "";
                         if( aData['author'] ){
@@ -575,7 +577,7 @@
                                         + item.candidate_match_id + '">' + match_citation + '</a></label></li>')
                                 );
                                 $('td:eq(5) ul', nRow).append('<li><a href="'
-                                        + diff_url.format( [% import_batch_id | html %], aData['import_record_id'], item.candidate_match_id, item.record_type) + '">' + _("View") + '</a></li>');
+                                        + diff_url.format(import_batch_id, aData['import_record_id'], item.candidate_match_id, item.record_type) + '">' + _("View") + '</a></li>');
                                 checked = "";
                             });
                             if( !any_checked ){ checked = 'checked="checked"'; }
@@ -591,10 +593,10 @@
                             $('td:eq(6)', nRow).html(
                                 '<a class="btn btn-default btn-xs" target="_blank" href="' + record_details_url
                                 + aData['matched'] + '"><i class="fa-solid fa-eye"></i> ' + _("View") + '</a> '
-                                [% IF ( CAN_user_editcatalogue_edit_catalogue ) %]
+                                if (perms.CAN_user_editcatalogue_edit_catalogue){
                                     + '<a class="btn btn-default btn-xs" target="_blank" href="' + record_edit_url
                                     + aData['matched'] + '"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' + _("Edit") + '</a>'
-                                [% END %]
+                                }
                             );
                         }
                     },
@@ -602,7 +604,7 @@
                 $("#revert_batch_form").on("submit", function() {
                     return confirm(_("Are you sure you want to undo the import of this batch into the catalog?"));
                 });
-            [% END %]
+            }
 
             $("body").on("change", ".chosen", function(e) {
                 let apimethod = "DELETE";
@@ -612,7 +614,7 @@
                     apidata = JSON.stringify({ candidate_match_id: $(this).val() });
                 }
                 $.ajax({
-                    url: '/api/v1/import_batches/[% import_batch_id | html %]/records/'+$(this).data('import_record_id')+'/matches/chosen',
+                    url: '/api/v1/import_batches/' + import_batch_id + '/records/'+$(this).data('import_record_id')+'/matches/chosen',
                     method: apimethod,
                     data: apidata,
                     contentType: 'application/json'
@@ -629,7 +631,7 @@
             });
             $("#marcPreview").on("hidden.bs.modal", function() {
                 $("#marcPreviewLabel").html("");
-                $("#marcPreview .modal-body").html("<div id=\"loading\"><img src=\"[% interface | html %]/[% theme | html %]/img/spinner-small.gif\" alt=\"\" /> " + _("Loading") + "</div>");
+                $("#marcPreview .modal-body").html("<div id=\"loading\"><img src=\"" + interface + "/" + theme + "/img/spinner-small.gif\" alt=\"\" /> " + _("Loading") + "</div>");
             });
             $(".batch_form").on("submit", function() {
                 if ($(this).hasClass("batch_delete")) {
@@ -642,14 +644,19 @@
                     }
                 }
             });
-            [% IF job_enqueued %]
+        });
+    </script>
+
+    [% IF job_enqueued %]
+        <script>
+            $(document).ready(function() {
                 setTimeout(
                     function() { window.location.href=$('a.job_details').attr('href'); },
                     5000, // 5 secs to read
                 );
-            [% END %]
-        });
-    </script>
+            });
+        </script>
+    [% END %]
 [% END %]
 [% INCLUDE 'intranet-bottom.inc' %]
 [% BLOCK pagination %]
