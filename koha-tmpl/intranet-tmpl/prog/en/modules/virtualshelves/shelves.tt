@@ -638,14 +638,21 @@
             });
         </script>
     [% END #/print %]
+
     <script>
         var MSG_NO_ITEM_SELECTED = _("Nothing is selected.");
         var MSG_REMOVE_FROM_LIST = _("Are you sure you want to remove these records from the list?");
         var MSG_CONFIRM_DELETE_LIST = _("Are you sure you want to remove this list?");
+    </script>
 
-        [% IF op == 'list' %]
+    [% IF op == 'list' %]
+        <script>
+            var public = [% public | html %];
+            const allow_transfer = [% allow_transfer ? 1 : 0 | html %];
+        </script>
+
+        <script>
             $(document).ready(function(){
-                var public = [% public | html %];
 
                 let sorton = [
                             'vs.shelfname',
@@ -672,7 +679,7 @@
                                 owner: $("#searchowner_filter").val(),
                                 sortby: $("#searchsortby_filter").val(),
                                 template_path: 'virtualshelves/tables/shelves_results.tt',
-                                allow_transfer: '[% allow_transfer | html %]',
+                                allow_transfer,
                             });
                         }
                     },
@@ -720,35 +727,22 @@
                     return confirmDelete(MSG_CONFIRM_DELETE_LIST);
                 });
             });
-        [% END # /IF op == 'list' %]
+        </script>
+    [% END # /IF op == 'list' %]
 
-        [% IF shelf AND op == 'view' %]
-            $(document).ready(function(){
-                $("span.clearall").html("<a id=\"CheckNone\" href=\"/cgi-bin/koha/shelves.pl\"><i class=\"fa fa-times\"></i>"+_(" Clear all")+"<\/a>");
-                $("span.checkall").html("<a id=\"CheckAll\" href=\"/cgi-bin/koha/shelves.pl\"><i class=\"fa fa-check\"></i>"+_(" Select all")+"<\/a>");
-                $("#CheckAll").click(function(e){
-                    e.preventDefault();
-                    $(".selection").each(function(){
-                        $(this).prop("checked", true);
-                    });
-                });
+    [% IF shelf AND op == 'view' %]
+        <script>
+            addPrefs({
+                intranetbookbag: [% Koha.Preference("intranetbookbag") ? 1 : 0 | html %],
+                virtualshelves: [% Koha.Preference("virtualshelves") ? 1 : 0 | html %],
+            });
 
-                $("#CheckNone").click(function(e){
-                    e.preventDefault();
-                    $(".selection").each(function(){
-                        $(this).prop("checked", false);
-                    });
-                });
-                $(".placehold").on("click",function(e){
-                    placeHold();
-                    e.preventDefault();
-                });
-                $(".addtocart").show();
+            function build_dropdown(){
                 var param1 = "| <label for=\"addto\">"+_("Add to:")+"<\/label><select name=\"addto\" id=\"addto\"><option value=\"\"><\/option>";
-                [% IF (Koha.Preference("intranetbookbag")) %]
+                if (prefs.intranetbookbag){
                      param1 += "<option value=\"addtocart\">"+_("Cart")+"<\/option>";
-                [% END %]
-                [% IF Koha.Preference('virtualshelves') %]
+                }
+                if (prefs.virtualshelves){
                     [% IF add_to_some_private_shelves.count %]
                         param1 += "<optgroup label=\""+_("Your lists:")+"\">";
                         [% SET number_of_private_shelves = 0 %]
@@ -777,9 +771,36 @@
                         param1 += "<option value=\"morelists\">[ "+_("More lists")+" ]<\/option>";
                     [% END %]
                     param1 +="<option value=\"newlist\">"+_("[ New list ]")+"<\/option>"
-                [% END %]
+                }
                 param1 += "<\/select> <button id=\"cartsubmit\" type=\"submit\" class=\"btn btn-default btn-xs\">"+_("Save")+"</button>";
-                $("span.addto").html(param1);
+                return param1;
+            }
+        </script>
+
+        <script>
+            $(document).ready(function(){
+                $("span.clearall").html("<a id=\"CheckNone\" href=\"/cgi-bin/koha/shelves.pl\"><i class=\"fa fa-times\"></i>"+_(" Clear all")+"<\/a>");
+                $("span.checkall").html("<a id=\"CheckAll\" href=\"/cgi-bin/koha/shelves.pl\"><i class=\"fa fa-check\"></i>"+_(" Select all")+"<\/a>");
+                $("#CheckAll").click(function(e){
+                    e.preventDefault();
+                    $(".selection").each(function(){
+                        $(this).prop("checked", true);
+                    });
+                });
+
+                $("#CheckNone").click(function(e){
+                    e.preventDefault();
+                    $(".selection").each(function(){
+                        $(this).prop("checked", false);
+                    });
+                });
+                $(".placehold").on("click",function(e){
+                    placeHold();
+                    e.preventDefault();
+                });
+                $(".addtocart").show();
+                let dropdown = build_dropdown();
+                $("span.addto").html(dropdown);
                 $("#cartsubmit").on("click",function(e){
                     cartList();
                     e.preventDefault();
@@ -811,14 +832,18 @@
                     $("#barcodes").focus();
                 });
             });
-        [% END # /IF shelf %]
+        </script>
+    [% END # /IF shelf AND op == 'view' %]
 
-        [% IF shelf AND op == 'edit_form' %]
+    [% IF shelf AND op == 'edit_form' %]
+        <script>
             $(document).ready(function(){
                 AdjustRemark();
             });
-        [% END %]
+        </script>
+    [% END %]
 
+    <script>
         /**
          * This function checks if the adequate number of records are checked for merging
          */
@@ -943,8 +968,10 @@
                 $("#permitted_staff_remark").hide();
             }
         }
-        [% IF op == 'view' %]
+    </script>
 
+    [% IF op == 'view' %]
+        <script>
             function sendList(){
                 openWindow( CGIBIN + 'virtualshelves/sendshelf.pl?shelfid=[% shelf.shelfnumber | html %]' );
              }
@@ -955,9 +982,9 @@
                     return false;
                 });
              });
+        </script>
+    [% END %]
 
-        [% END %]
-    </script>
     [% IF op == 'transfer' %]
         <script>
             $(document).ready(function () {
