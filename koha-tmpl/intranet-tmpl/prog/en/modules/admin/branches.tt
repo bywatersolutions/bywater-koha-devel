@@ -820,7 +820,9 @@
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'admin', 'libraries', 'libraries', 'json' ) | $raw %];
         var calendarFirstDayOfWeek = '[% Koha.Preference('CalendarFirstDayOfWeek') | html %]';
+    </script>
 
+    <script>
         var libraries_table;
         $(document).ready(function() {
 
@@ -983,18 +985,6 @@
                 ],
                 bKohaColumnsUseNames: true,
             }, table_settings);
-
-            [% UNLESS library %]
-                $("#Aform").on("submit", function( event ) {
-                    if ( $("#branchcode").val().match(/\s/) ) {
-                        event.preventDefault();
-                        alert(_("The library code entered contains whitespace characters. Please remove any whitespace characters from the library code"));
-                        return false;
-                    } else {
-                        return true;
-                    }
-                });
-            [% END %]
         });
 
         $( ".expand-textarea" ).on("click", function(e){
@@ -1035,6 +1025,21 @@
             $( "#" + target ).hide();
         });
     </script>
+
+    [% UNLESS library %]
+        <script>
+            $("#Aform").on("submit", function( event ) {
+                if ( $("#branchcode").val().match(/\s/) ) {
+                    event.preventDefault();
+                    alert(_("The library code entered contains whitespace characters. Please remove any whitespace characters from the library code"));
+                    return false;
+                } else {
+                    return true;
+                }
+            });
+        </script>
+    [% END %]
+
 [% END %]
 
 [% INCLUDE 'intranet-bottom.inc' %]
