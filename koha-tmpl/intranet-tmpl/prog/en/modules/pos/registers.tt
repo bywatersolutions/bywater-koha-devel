@@ -218,11 +218,15 @@
     [% Asset.js("js/modal_printer.js") | $raw %]
     <script>
         $(document).ready(function () {
-
             [%# js used here as we don't have access to these template variables where we need them #%]
             $("#bankable").text('[% bankable | $Price %]');
             $("#income").text('[% ctotal | $Price %] ([% cctotal | $Price %])');
             $("#outgoing").text('[% dtotal | $Price %] ([% cdtotal | $Price %])');
+        });
+    </script>
+
+    <script>
+        $(document).ready(function () {
 
             var registers_table = $("#registers").kohaTable({
                 searching: false,
