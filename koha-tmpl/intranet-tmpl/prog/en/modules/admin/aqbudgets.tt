@@ -676,9 +676,13 @@
     [% ELSIF op == 'list' %]
         [% INCLUDE 'datatables.inc' %]
         [% Asset.js("lib/jquery/plugins/treetable/jquery.treetable.js") | $raw %]
-        <script>
-            $(document).ready(function() {
-                [% IF budgets %]
+        [% IF budgets %]
+            <script>
+                const budget_period_id = [% budget_period_id || 'null' | html %];
+            </script>
+
+            <script>
+                $(document).ready(function() {
                     var oTable = $("#budgeth").kohaTable({
                         drawCallback: function ( oSettings ) {
                             if ( oSettings.aiDisplay.length == 0 )
@@ -734,7 +738,7 @@
                         $(oTable).treetable('collapseAll');
                     });
 
-                    [% UNLESS budget_period_id %]
+                    if (!budget_period_id){
                       $("#hide_inactive").click(function(e){
                         e.preventDefault();
                         table_dt.columns(0).search(1).draw(); // Show only active=1
@@ -744,9 +748,13 @@
                         table_dt.columns(0).search("").draw(); // Show only active=1
                       });
                       $("#hide_inactive").click();
-                    [% END %]
-                [% END %]
+                    }
+                });
+            </script>
+        [% END %]
 
+        <script>
+            $(document).ready(function() {
                 $(".deletefund-disabled").on("click", function(e){
                     e.preventDefault();
                     alert(_("This fund has sub funds. It cannot be deleted."));
