@@ -164,14 +164,14 @@
     [% INCLUDE 'js-date-format.inc' %]
     [% Asset.js("js/checkout_renewals_modal.js") | $raw %]
     <script>
+        // FIXME This cannot work without bKohaColumnsUseNames
+        var column_sort = [% Koha.Preference('RecordStaffUserOnCheckout') ? 11 : 10 | html %];
+
+        var table_settings = [% TablesSettings.GetTableSettings('members', 'checkouthistory', 'checkouthistory-table', 'json') | $raw %];
+    </script>
+
+    <script>
         $(document).ready(function() {
-            [% IF Koha.Preference('RecordStaffUserOnCheckout') %]
-                // FIXME This cannot work without bKohaColumnsUseNames
-                var column_sort = 11;
-            [% ELSE %]
-                var column_sort = 10;
-            [% END %]
-            var table_settings = [% TablesSettings.GetTableSettings('members', 'checkouthistory', 'checkouthistory-table', 'json') | $raw %];
             var table = $("#table_readingrec").kohaTable(
                 {
                     pagingType: "full",
