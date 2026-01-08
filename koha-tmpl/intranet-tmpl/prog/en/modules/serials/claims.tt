@@ -218,10 +218,14 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings( "serials", "claims", "claimst", "json" ) | $raw %];
+        const vendor_id = "[% supplierid | html %]";
+    </script>
+
+    <script>
         var sTable;
         $(document).ready(function () {
             enableSelectedActions();
-            var table_settings = [% TablesSettings.GetTableSettings( "serials", "claims", "claimst", "json" ) | $raw %];
             sTable = $("#claimst").kohaTable(
                 {
                     autowidth: false,
@@ -242,7 +246,7 @@
             $("#ExportSelected").click(function () {
                 // We need to use "input[name=serialid]:checked" instead of "input:checked". Otherwise, the "check all" box will pass the value of "on" as a serialid, which produces a SQL error.
                 var selected = $("input[name=serialid]:checked");
-                var supplierid = [% supplierid | html %]
+                var supplierid = vendor_id;
 
                 if (selected.length == 0) {
                     alert(_("Please select at least one item to export."));
