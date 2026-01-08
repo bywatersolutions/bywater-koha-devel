@@ -123,18 +123,26 @@
     <p>Patron is not on any list. <a href="/cgi-bin/koha/patron_lists/add-modify.pl">Create a new patron list</a>.</p>
 [% END %]
 <script>
+    const patron_id = "[% borrowernumber | html %]";
+    const cardnumber = "[% cardnumber | html %]";
+    addPermissions({
+        CAN_user_tools_manage_patron_lists: [% CAN_user_tools_manage_patron_lists ? 1 : 0 | html %],
+    });
+</script>
+
+<script>
     var patron_lists_dt_params = {
         sPaginationType: "full",
     };
     $("#table_listnopatron").kohaTable(patron_lists_dt_params);
     $("#table_inlists").kohaTable(patron_lists_dt_params);
 
-    [% IF CAN_user_tools_manage_patron_lists %]
+    if (permissions.CAN_user_tools_manage_patron_lists){
         function addToList() {
             var list_id = $("#add_to_patron_list_id_select").val();
             $('#pat_lists_panel').text(_("Loading..."));
             $("body").css("cursor", "progress");
-            $('#pat_lists_panel').load('/cgi-bin/koha/patron_lists/patron-lists-tab.pl?borrowernumber=[% borrowernumber | html %]&patron_list_id=' + list_id + '&patrons_to_add=[% cardnumber | html %]', function() {
+            $('#pat_lists_panel').load(`/cgi-bin/koha/patron_lists/patron-lists-tab.pl?borrowernumber=${patron_id}&patron_list_id=${list_id}&patrons_to_add=${cardnumber}, function() {
                 $("body").css("cursor", "default");
             });
 
@@ -144,11 +152,11 @@
         function removeFromList( list_id, patron_list_patron_id ) {
             $('#pat_lists_panel').text(_("Loading..."));
             $("body").css("cursor", "progress");
-            $('#pat_lists_panel').load('/cgi-bin/koha/patron_lists/patron-lists-tab.pl?borrowernumber=[% borrowernumber | html %]&patron_list_id=' + list_id + '&patrons_to_remove=' + patron_list_patron_id, function() {
+            $('#pat_lists_panel').load(`/cgi-bin/koha/patron_lists/patron-lists-tab.pl?borrowernumber=${patron_id}&patron_list_id=${list_id}&patrons_to_remove=${patron_list_patron_id}`, function() {
                 $("body").css("cursor", "default");
             });
 
             return false;
         }
-    [% END %]
+    }
 </script>
