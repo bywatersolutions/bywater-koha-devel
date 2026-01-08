@@ -320,6 +320,11 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
     <script>
+        const interface = "[% interface | html %]";
+        const theme = "[% theme | html %]";
+    </script>
+
+    <script>
         function update_tab_display(){
             let selected_type = $('input[name="recordtype"]:checked').val();
             if (selected_type == 'authority') {
@@ -412,7 +417,7 @@
             });
             $("#marcPreview").on("hidden.bs.modal", function() {
                 $("#marcPreviewLabel").html("");
-                $("#marcPreview .modal-body").html("<div id=\"loading\"><img src=\"[% interface | html %]/[% theme | html %]/img/spinner-small.gif\" alt=\"\" /> " + _("Loading") + "</div>");
+                $("#marcPreview .modal-body").html("<div id=\"loading\"><img src=\"" + interface + "/" + theme + "/img/spinner-small.gif\" alt=\"\" /> " + _("Loading") + "</div>");
             });
         });
     </script>
