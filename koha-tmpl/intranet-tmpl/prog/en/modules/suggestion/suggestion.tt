@@ -1252,6 +1252,12 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'calendar.inc' %]
     <script>
+        const logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
+        const managedby_patron_borrowernumber = "[% suggestion.manager.borrowernumber | html %]";
+        const op = "[% op | html %]";
+    </script>
+
+    <script>
         function select_manager(borrowernumber, borrower) {
             let tab = $('#suggestiontabs .active table').data('tab-name');
             if ( tab ) {
@@ -1272,20 +1278,16 @@
                 managedby.val(borrowernumber);
             }
 
-            [% IF op == "save" %]
+            if (op == "save"){
                 var notify = $('#notify');
                 if ( notify.length ) {
-                    [% IF suggestion.manager %]
-                        if ( borrowernumber == [% logged_in_user.borrowernumber | html %] || borrowernumber == [% suggestion.manager.borrowernumber | html %] ) {
-                    [% ELSE %]
-                        if ( borrowernumber == [% logged_in_user.borrowernumber | html %] ) {
-                    [% END %]
+                    if ((managedby_patron_borrowernumber && (borrowernumber == logged_in_user_borrowernumber || borrowernumber == managedby_patron_borrowernumber )) || (!managedby_patron_borrowernumber && borrowernumber == logged_in_user_borrowernumber )){
                         $(notify).prop('checked', false).prop('disabled', true);
                     } else {
                         $(notify).prop('disabled', false);
                     }
                 }
-            [% END %]
+            }
         }
 
         function select_suggester(borrowernumber, borrower) {
@@ -1335,12 +1337,20 @@
         </script>
     [% END %]
     [% IF op == 'else' %]
+        <script>
+            const has_suggestions = [% suggestions.size ? 1 : 0 | html %];
+            let suggestionData = [% To.json(suggestions) | $raw %];
+            var suggestions_table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'suggestions', 'suggestions', 'json' ) | $raw %]
+            addPermissions({
+                CAN_user_suggestions_suggestions_manage: [% CAN_user_suggestions_suggestions_manage ? 1 : 0 | html %],
+                CAN_user_suggestions_suggestions_delete: [% CAN_user_suggestions_suggestions_delete ? 1 : 0 | html %],
+            });
+        </script>
+
         [% INCLUDE 'datatables.inc' %]
         <script>
             $(document).ready(function() {
-                [% IF suggestions.size %]
-                    let suggestionData = [% To.json(suggestions) | $raw %];
-                    var table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'suggestions', 'suggestions', 'json' ) | $raw %]
+                if (has_suggestions){
                     function loadDatatable(tabName) {
                         let tabSuggestionData = suggestionData.find(s => s.suggestiontype === `${tabName}`)
                         $("#table_" + tabName).kohaTable(
@@ -1526,14 +1536,14 @@
                                         searchable: false,
                                         orderable: false,
                                         render: function (data, type, row, meta) {
-                                            [% IF CAN_user_suggestions_suggestions_manage %]
+                                            if (permissions.CAN_user_suggestions_suggestions_manage){
                                                 let node = '<div class="btn-group dropup">'
                                                 node += '<a class="btn btn-default btn-xs" role="button" href="suggestion.pl?suggestionid=%s&amp;op=edit_form"><i class="fa-solid fa-pencil" aria-hidden="true"></i> %s</a>'.format(row.suggestion_id, _("Edit"))
                                                 node += '<a class="btn btn-default btn-xs dropdown-toggle" id="more_actions_%s" role="button" data-bs-toggle="dropdown" href="#"><b class="caret"></b></a>'.format(row.suggestion_id)
                                                 node += '<ul class="dropdown-menu" role="menu" aria-labelledby="more_actions_%s">'.format(row.suggestion_id)
-                                                [% IF CAN_user_suggestions_suggestions_delete %]
+                                                if (permissions.CAN_user_suggestions_suggestions_delete){
                                                     node += '<li><a href="#" data-op="cud-delete" data-suggestionid="%s" class="dropdown-item trigger_action">%s</a></li>'.format(row.suggestion_id, _("Delete"))
-                                                [% END %]
+                                                }
                                                 if (!row.archived){
                                                     node += '<li><a href="#" class="dropdown-item trigger_action" data-op="cud-archive" data-suggestionid="%s">%s</a></li>'.format(row.suggestion_id, _("Archive"))
                                                 } else {
@@ -1541,9 +1551,9 @@
                                                 }
                                                 node += '</ul></div>'
                                                 return node
-                                            [% ELSIF CAN_user_suggestions_suggestions_delete %]
+                                            } else if (permissions.CAN_user_suggestions_suggestions_delete){
                                                 return '<button data-op="cud-delete" data-suggestionid="%s" class="btn btn-xs btn-default trigger_action"><i class="fa fa-trash-can"></i> %s</button>'.format(row.suggestion_id, _("Delete"))
-                                            [% END %]
+                                            }
                                         },
                                         createdCell: function (cell, cellData, rowData, rowIndex, colIndex) {
                                             $(cell).find(".trigger_action").on("click", function(e) {
@@ -1562,7 +1572,7 @@
                                     },
                                 ]
                             },
-                            table_settings
+                            suggestions_table_settings
                         );
                     }
                     if( $("#suggestiontabs .tab-pane.active").length < 1 ){
@@ -1571,19 +1581,19 @@
                         $("#suggestiontabs a:first").attr("data-table_loaded", 'true')
                     }
 
-                    [% FOREACH suggestion IN suggestions %]
-                        $("#suggestiontabs #[% suggestion.suggestiontype | html %]-tab").on("click", function() {
+                    suggestionData.forEach(suggestion => {
+                        $(`#suggestiontabs #${suggestion.suggestiontype}-tab`).on("click", function() {
                             if(!$(this).data("table_loaded")) {
-                                loadDatatable("[% suggestion.suggestiontype | html%]")
-                                $(this).attr("data-table_loaded", "true")
+                                loadDatatable(`${suggestion.suggestiontype}`);
+                                $(this).attr("data-table_loaded", "true");
                             }
                         });
-                    [% END %]
-                [% END %]
+                    });
+                }
 
                 $("#branchcode").on('change',function(){
-                [%# Modify the hidden input in the filters block from the library %]
-                [%# dropdown list at the top of suggestion list %]
+                    // Modify the hidden input in the filters block from the library
+                    // dropdown list at the top of suggestion list
                     let branchcode = $(this).val();
                     $('input[name="branchcode"]').val( branchcode );
                     $('form[name="suggestionfilter"]').submit();
