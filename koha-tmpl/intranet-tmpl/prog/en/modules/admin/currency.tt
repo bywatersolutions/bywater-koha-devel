@@ -267,6 +267,10 @@
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        let table_settings = [% TablesSettings.GetTableSettings( 'admin', 'currency', 'currencies-table', 'json' ) | $raw %]
+    </script>
+
+    <script>
         function check_currency(val) {
             if ( val == 1.0 ) {
                 $("#active").prop('disabled', false);
@@ -279,7 +283,6 @@
         }
 
         $(document).ready(function() {
-            let table_settings = [% TablesSettings.GetTableSettings( 'admin', 'currency', 'currencies-table', 'json' ) | $raw %]
             $("#currencies-table").kohaTable({}, table_settings);
 
             // prevents users to check active with a currency != 1
