@@ -249,6 +249,17 @@
     [% INCLUDE 'format_price.inc' %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        var items_table_settings = [% TablesSettings.GetTableSettings('pos', 'pay', 'invoices', 'json') | $raw %];
+        var zero_formatted = "[% 0 | $Price %]";
+        const payment_id = "[% payment_id | html %]";
+        const tendered = "[% tendered | html %]";
+        const change = "[% change | html %]";
+        addPrefs({
+            FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
+        });
+    </script>
+
+    <script>
         function moneyFormat(textObj) {
             var newValue = textObj.value;
             var decAmount = "";
@@ -315,7 +326,6 @@
 
         function updateChangeValues() {
             var change = $('#change')[0];
-            var zero_formatted = "[% 0 | $Price %]";
             change.innerHTML = Math.round(($('#tendered')[0].value - $('#paid')[0].value) * 100) / 100;
             if (change.innerHTML <= 0) {
                 var paid = $('#paid')[0];
@@ -438,7 +448,6 @@
                 }
             });
 
-            var items_table_settings = [% TablesSettings.GetTableSettings('pos', 'pay', 'invoices', 'json') | $raw %];
             var items_table = $("#invoices").kohaTable(
                 {
                     pagingType: "full",
@@ -519,13 +528,13 @@
                 }
             });
 
-            [% IF payment_id && Koha.Preference('FinePaymentAutoPopup') %]
+            if (payment_id && prefs.FinePaymentAutoPopup){
                 $("#printReceipt").click(function() {
-                    var win = window.open('/cgi-bin/koha/pos/printreceipt.pl?action=print&accountlines_id=[% payment_id | uri %]&tendered=[% tendered | uri %]&change=[% change | uri %]', '_blank');
+                    var win = window.open(`/cgi-bin/koha/pos/printreceipt.pl?action=print&accountlines_id=${payment_id}&tendered=${tendered}&change=${change}`, '_blank');
                     win.focus();
                 });
                 $("#printReceipt").click();
-            [% END %]
+            }
         });
     </script>
 [% END %]
