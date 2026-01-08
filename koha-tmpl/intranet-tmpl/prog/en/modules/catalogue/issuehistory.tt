@@ -128,12 +128,15 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail', 'checkoutshistory-table', 'json') | $raw %];
+        [% UNLESS show_patron_column %]
+            // Remove the patron column definition
+            table_settings['columns'].splice(0,1);
+        [% END %]
+    </script>
+
+    <script>
         $(document).ready(function() {
-            var table_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail', 'checkoutshistory-table', 'json') | $raw %];
-            [% UNLESS show_patron_column %]
-                // Remove the patron column definition
-                table_settings['columns'].splice(0,1);
-            [% END %]
             var table = $("#table_issues").kohaTable(
                 {
                     dom: 'C<"top pager"ilpfB><"#filter_c">tr<"bottom pager"ip>',
