@@ -320,6 +320,12 @@
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        const i18n = {
+            on: "[% tp("Active", "On") | html %]";
+        };
+    </script>
+
+    <script>
         $(document).ready(function() {
 
             var smtp_servers_url = '/api/v1/config/smtp_servers';
@@ -396,7 +402,7 @@
                     {
                         data: function( row, type, val, meta ) {
                             if ( row.debug ) {
-                                let result = '<span class="badge text-bg-warning">' + "[% tp("Active", "On") | html %]" + '</span>';
+                                let result = '<span class="badge text-bg-warning">' + i18n.on + '</span>';
                                 return result;
                             }
                             else {
