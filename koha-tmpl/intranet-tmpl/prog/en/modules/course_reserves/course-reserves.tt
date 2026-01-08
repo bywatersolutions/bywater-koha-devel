@@ -96,6 +96,9 @@
     [% INCLUDE 'datatables.inc' %]
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'coursereserves', 'courses', 'course_reserves_table', 'json' ) | $raw %];
+    </script>
+
+    <script>
         $(document).ready(function() {
             var ctable = $("#course_reserves_table").kohaTable(
                 {
