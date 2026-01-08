@@ -232,6 +232,11 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/labels-menu.js") | $raw %]
     <script>
+        const batch_id = "[% batch_id | html %]";
+        const has_entries = [% table_loop ? 1 : 0 | html %];
+    </script>
+
+    <script>
         function dofocus() {    // named function req'd for body onload event by some FF and IE7 security models
             $(".focus:last").select();
         }
@@ -278,7 +283,7 @@
         function Add() {
             var number_list = document.getElementById("number_list");
             if (number_list.value == '') {
-                window.open("/cgi-bin/koha/labels/label-item-search.pl?batch_id=[% batch_id | html %]&amp;type=labels",'FindABibIndex','width=875,height=400,toolbar=no,scrollbars=yes');
+                window.open("/cgi-bin/koha/labels/label-item-search.pl?batch_id=" + batch_id + "&amp;type=labels",'FindABibIndex','width=875,height=400,toolbar=no,scrollbars=yes');
             } else {
                 document.forms["add_by_number"].submit();
             }
@@ -290,7 +295,7 @@
         }
 
         function DeDuplicate() {
-            window.location = "/cgi-bin/koha/labels/label-edit-batch.pl?op=de_duplicate&amp;batch_id=[% batch_id | html %]";
+            window.location = "/cgi-bin/koha/labels/label-edit-batch.pl?op=de_duplicate&amp;batch_id=" + batch_id;
         }
 
         function Xport(mode) {
@@ -314,9 +319,9 @@
                     alert(_("Please select at least one label to export."));
                     return;     // no batch selected
                 }
-                location.href = "/cgi-bin/koha/labels/label-print.pl?batch_id=[% batch_id | html %]&" + getstr;
+                location.href = "/cgi-bin/koha/labels/label-print.pl?batch_id=" + batch_id + "&" + getstr;
             } else if (mode == 'batch') {
-                location.href = "/cgi-bin/koha/labels/label-print.pl?batch_id=[% batch_id | html %]";
+                location.href = "/cgi-bin/koha/labels/label-print.pl?batch_id=" + batch_id;
             } else {
                 // some pass-through error trapping just in case...
             }
@@ -340,11 +345,11 @@
 
         $(document).ready(function() {
             $('.sidebar_menu a[href$="/cgi-bin/koha/labels/label-home.pl"]').addClass("current");
-            [% IF table_loop %]
+            if (has_entries){
                 $("#description").show();
-            [% ELSE %]
+            } else {
                 $("#description").hide();
-            [% END %]
+            }
             $("#batcht").kohaTable({
                 dom: '<"dt-info"i><"top pager"<"table_entries"lp><"table_controls"f>>tr<"bottom pager"ip>',
                 autoWidth: false,
