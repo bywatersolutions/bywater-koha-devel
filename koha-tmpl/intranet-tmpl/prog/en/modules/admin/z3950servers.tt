@@ -272,15 +272,26 @@
     [% IF op == 'list' %]
         [% INCLUDE 'datatables.inc' %]
     [% END %]
-    <script>
-        [% IF op == 'edit_form' || op == 'add_form' %]
+
+    [% IF server %]
+        <script>
+            const server = {
+                syntax: "[% server.syntax | html %]",
+                encoding: "[% server.encoding | html %]",
+                recordtype: "[% server.recordtype | html %]",
+            };
+        </script>
+    [% END %]
+
+    [% IF op == 'edit_form' || op == 'add_form' %]
+        <script>
             $(document).ready(function(){
                 // Update selects for syntax, encoding and recordtype
-                [% IF server %]
-                    $("#syntax").val('[% server.syntax | html %]');
-                    $("#encoding").val('[% server.encoding | html %]');
-                    $("#recordtype").val('[% server.recordtype | html %]');
-                [% END %]
+                if (typeof server !== 'undefined'){
+                    $("#syntax").val(server.syntax);
+                    $("#encoding").val(server.encoding);
+                    $("#recordtype").val(server.recordtype);
+                }
                 $( "#serverentry" ).validate({
                     rules: {
                         servername: { required: true },
@@ -316,7 +327,9 @@
                 var type= $('#recordtype').val();
                 window.open('/cgi-bin/koha/admin/sru_modmapping.pl?mapping='+map + '&type=' + type,'popup','width=800,height=400,resizable=yes,toolbar=false,scrollbars=yes,top');
             }
-        [% ELSE %]
+        </script>
+    [% ELSE %]
+        <script>
             $(document).ready(function() {
                 $("#serverst").kohaTable({
                     pagingType: "full",
@@ -332,7 +345,7 @@
                     }
                 });
             });
-        [% END %]
-    </script>
+        </script>
+    [% END %]
 [% END %]
 [% INCLUDE 'intranet-bottom.inc' %]
