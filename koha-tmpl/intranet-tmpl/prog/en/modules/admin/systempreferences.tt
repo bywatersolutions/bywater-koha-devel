@@ -491,28 +491,30 @@
 [% MACRO jsinclude BLOCK %]
     [%# Add WYSIWYG editor for htmlarea system preferences %]
     [% INCLUDE 'wysiwyg-systempreferences.inc' %]
-    [% IF ( else ) %]
+    [% IF else && loop %]
         [% INCLUDE 'datatables.inc' %]
         <script>
             $(document).ready(function() {
-               [% IF ( loop ) %]
-                   $("#sysprefst").kohaTable({
-                       dom: '<"top pager"ilf>t',
-                       paging: false,
-                   });
-               [% END %]
+               $("#sysprefst").kohaTable({
+                   dom: '<"top pager"ilf>t',
+                   paging: false,
+               });
             });
         </script>
     [% END %]
-    <script>
-        [% IF ( add_form ) %]
+
+    [% IF ( add_form ) %]
+        <script>
             $(document).ready(function() {
                 $('.variabletype').css({ color: "#0000CC", cursor: "pointer" });
                 $('.variabletype').click(function() {
                     $('#preftype').attr("value",$(this).attr("id"));
                 });
             });
-        [% END %]
+        </script>
+    [% END %]
+
+    <script>
             // FIXME: many of these js functions appear unused
         function isNotNull(f,noalert) {
                 if (f.value.length ==0) {
