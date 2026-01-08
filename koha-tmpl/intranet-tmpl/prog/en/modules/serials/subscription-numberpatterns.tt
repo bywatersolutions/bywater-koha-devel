@@ -330,12 +330,8 @@
     [% END %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
-        function confirmDelete() {
-            return confirm(_("Are you sure you want to delete this numbering pattern?"));
-        }
-
-        [% IF (new or modify) %]
+    [% IF (new or modify) %]
+        <script>
             function testPattern() {
                 var frequencyid = $("#frequency").val();
                 var firstacquidate = $("#firstacquidate").val();
@@ -383,11 +379,18 @@
                     }
                 });
             }
-        [% END %]
+        </script>
+    [% END %]
 
+    <script>
         function show_blocking_subs() {
             $("#blocking_subs").show();
         }
+
+        function confirmDelete() {
+            return confirm(_("Are you sure you want to delete this numbering pattern?"));
+        }
+
         $(document).ready(function(){
 
             $("#numberpatternst").kohaTable({
