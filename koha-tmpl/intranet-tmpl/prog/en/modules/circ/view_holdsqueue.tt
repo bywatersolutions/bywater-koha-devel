@@ -381,6 +381,10 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/hold-group.js") | $raw %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings('circ', 'view_holdsqueue', 'holds-table', 'json') | $raw %];
+    </script>
+
+    <script>
         $(document).ready(function() {
             // Apply select2 to all select fields having a "multiple" attribute
             let selectFields = document.querySelectorAll('select[multiple]');
@@ -405,7 +409,6 @@
             };
             $('#holdst thead input').on('change keyup keydown', filterColumn);
 
-            var table_settings = [% TablesSettings.GetTableSettings('circ', 'view_holdsqueue', 'holds-table', 'json') | $raw %];
             var holdst = $("#holdst").kohaTable(
                 {
                     dom: 'B<"clearfix">t',
