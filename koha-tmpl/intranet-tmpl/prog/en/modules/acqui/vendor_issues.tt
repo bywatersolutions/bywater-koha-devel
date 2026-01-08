@@ -211,8 +211,12 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        const vendor_id = [% vendor.id | html %];
+    </script>
+
+    <script>
         $(document).ready(function() {
-            var issues_table_url = '/api/v1/acquisitions/vendors/[% vendor.id | uri %]/issues?';
+            var issues_table_url = `/api/v1/acquisitions/vendors/${vendor_id}/issues?`;
 
             var issues_table = $("#vendor_issues").kohaTable({
                 ajax: {
