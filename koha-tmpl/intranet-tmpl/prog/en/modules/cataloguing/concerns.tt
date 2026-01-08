@@ -64,12 +64,13 @@
     [% INCLUDE 'js-date-format.inc' %]
     [% INCLUDE 'js-biblio-format.inc' %]
     <script>
+        logged_in_user_borrowernumber = [% logged_in_user.borrowernumber | html %];
+
+        var table_settings = [% TablesSettings.GetTableSettings('cataloguing', 'concerns', 'table_concerns', 'json') | $raw %];
+    </script>
+
+    <script>
         $(document).ready(function() {
-
-            logged_in_user_borrowernumber = [% logged_in_user.borrowernumber | html %];
-
-            var table_settings = [% TablesSettings.GetTableSettings('cataloguing', 'concerns', 'table_concerns', 'json') | $raw %];
-
             let additional_filters = {
                 resolved_date: function(){
                     if ( $("#hide_resolved_concerns").is(":checked") ) {
@@ -230,7 +231,11 @@
                 tickets.DataTable().draw();
             });
             adjust_filter_label();
+        });
+    </script>
 
+    <script>
+        $(document).ready(function() {
             [% FOR st IN status %]
             $('#[% st.authorised_value | html %]_filter').on("click", function() {
                 if ($("#hide_[% st.authorised_value | html %]").is(":checked")){
@@ -257,6 +262,7 @@
             [% END %]
         });
     </script>
+
     [% INCLUDE 'select2.inc' %]
     [% Asset.js("js/modals/display_ticket.js") | $raw %]
 [% END %]
