@@ -446,6 +446,13 @@
     [% Asset.js("js/modal_printer.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
     <script>
+        const register = {
+            id: "[% register.id | html %]",
+            description: "[% register.description | html %]",
+        };
+    </script>
+
+    <script>
         var sales_table = $("#sales").kohaTable({
             orderFixed: [ 0, 'asc'],
             ordering: false,
@@ -521,7 +528,7 @@
             win.focus();
         });
 
-        var cashups_table_url = "/api/v1/cash_registers/[% register.id | html %]/cashups?";
+        var cashups_table_url = `/api/v1/cash_registers/${register.id}/cashups?`;
         var cashups_table = $("#table_cashups").kohaTable({
             ajax: {
                 "url": cashups_table_url
@@ -565,7 +572,7 @@
                 },
                 {
                     data: function( row, type, val, meta ) {
-                        var result = '<a class="btn btn-default btn-xs" role="button" data-bs-toggle="modal" data-cashup="'+encodeURIComponent(row.cashup_id)+'" data-register="[% register.description | html %]" href="#cashupSummaryModal"><i class="fa-solid fa-pencil" aria-hidden="true"></i> '+_("Summary")+'</a>\n';
+                        var result = '<a class="btn btn-default btn-xs" role="button" data-bs-toggle="modal" data-cashup="'+encodeURIComponent(row.cashup_id)+'" data-register="${register.description}" href="#cashupSummaryModal"><i class="fa-solid fa-pencil" aria-hidden="true"></i> '+_("Summary")+'</a>\n';
                         return result;
                     },
                     searchable: false,
