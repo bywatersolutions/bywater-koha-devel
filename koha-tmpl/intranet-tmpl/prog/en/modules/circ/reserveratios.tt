@@ -216,6 +216,9 @@
     [% INCLUDE 'datatables.inc' %]
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holdsratios', 'holds-ratios', 'json' ) | $raw %];
+    </script>
+
+    <script>
          $(document).ready(function() {
              $("#holds-ratios").kohaTable(
                  {
