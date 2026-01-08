@@ -353,6 +353,10 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        // FIXME Why are we using a Perl variable here?
+        const today_due_date_and_time = "[% today_due_date_and_time | $KohaDates dateformat => 'iso', with_hours => 1 %]";
+    </script>
+    <script>
         $(document).ready(function() {
             if($('#barcodelist').length) {
                 $('#barcodelist').focus();
@@ -369,7 +373,7 @@
         function toggle_onsite_checkout(){
             if ( $("#onsite_checkout").prop('checked') ) {
                 const duedatespec_fp = document.querySelector("#duedatespec")._flatpickr;
-                duedatespec_fp.setDate("[% today_due_date_and_time | $KohaDates dateformat => 'iso', with_hours => 1 %]");
+                duedatespec_fp.setDate("today_due_date_and_time);
             };
         };
 
