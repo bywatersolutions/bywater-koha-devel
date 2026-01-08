@@ -84,17 +84,20 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        const ENABLE_OPAC_PAYMENTS = [% ENABLE_OPAC_PAYMENTS ? 1 : 0 | html %];
+    </script>
+
+    <script>
         $( document ).ready(function() {
 
             var txtActivefilter = _("Filter paid transactions");
             var txtInactivefilter = _("Show all transactions");
 
             var fines_table = $("#finestable").kohaTable({
-                 [% IF ENABLE_OPAC_PAYMENTS %]
-                 order: [[ 1, "desc" ]],
-                 [% ELSE %]
-                 order: [[ 0, "desc" ]],
-                 [% END %]
+                ...(ENABLE_OPAC_PAYMENTS
+                    ? {order: [[ 1, "desc" ]]}
+                    : {order: [[ 0, "desc" ]]}
+                ),
                  dom: '<"#filter_p">',
                  responsive: {
                     details: { "type": 'column',"target": -1 }
