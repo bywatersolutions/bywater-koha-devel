@@ -209,15 +209,19 @@
         $(document).ready(function() {
             var cities_table_url = '/api/v1/cities?';
 
-        [% IF city_name_filter %]
-            var city_name_filter = {
-                'name': {
-                    "like": '%[%- city_name_filter | html -%]%'
-                }
-            };
-            cities_table_url += 'q='+ encodeURIComponent(JSON.stringify(city_name_filter));
-        [% END %]
+            [% IF city_name_filter %]
+                var city_name_filter = {
+                    'name': {
+                        "like": '%[%- city_name_filter | html -%]%'
+                    }
+                };
+                cities_table_url += 'q='+ encodeURIComponent(JSON.stringify(city_name_filter));
+            [% END %]
+        });
+    </script>
 
+    <script>
+        $(document).ready(function() {
             var cities_table = $("#table_cities").kohaTable({
                 ajax: {
                     "url": cities_table_url
