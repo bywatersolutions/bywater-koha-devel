@@ -97,13 +97,20 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        let library_ids = [];
+        [% FOR library IN libraries %]
+            library_ids.push("[% library.branchcode | html %]");
+        [% END %]
+    </script>
+
+    <script>
         $(document).ready(function() {
-            [% FOREACH library IN libraries %]
-                $("#transferst[% library.branchcode | html %]").kohaTable({
+            library_ids.forEach(library_id => {
+                $(`#transferst${library_id}`).kohaTable({
                     dom: "t",
                     paging: false,
                 });
-            [% END %]
+            });
         });
     </script>
 [% END %]
