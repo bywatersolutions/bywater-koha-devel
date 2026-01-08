@@ -327,6 +327,14 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings( 'cataloguing', 'addbooks', 'reservoir-table', 'json' ) | $raw %]
+        const interface = "[% interface | html %]";
+        const theme = "[% theme | html %]";
+        const biblionumber = "[% biblionumber | html %]";
+        var logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
+    </script>
+
+    <script>
         $(document).ready(function() {
             //Set focus to cataloging search
             $("input[name=q]:eq(0)").focus();
@@ -352,7 +360,7 @@
             });
 
             $("#useadvanced").click(function(){
-                Cookies.set( "catalogue_editor_[% logged_in_user.borrowernumber | html %]", "advanced", { expires: 365, path: '/', sameSite: 'Lax' } );
+                Cookies.set( `catalogue_editor_${logged_in_user_borrowernumber}`, "advanced", { expires: 365, path: '/', sameSite: 'Lax' } );
                 return true;
             });
 
@@ -366,10 +374,9 @@
             });
             $("#dataPreview").on("hidden.bs.modal", function(){
                 $("#dataPreviewLabel").html("");
-                $("#dataPreview .modal-body").html("<div id=\"loading\"><img src=\"[% interface | html %]/[% theme | html %]/img/spinner-small.gif\" alt=\"\" /> "+_("Loading")+"</div>");
+                $("#dataPreview .modal-body").html("<div id=\"loading\"><img src=\"" + interface + "/" + theme + "/img/spinner-small.gif\" alt=\"\" /> "+_("Loading")+"</div>");
             });
 
-            var table_settings = [% TablesSettings.GetTableSettings( 'cataloguing', 'addbooks', 'reservoir-table', 'json' ) | $raw %]
             var reservoirt = $("#reservoir-table").kohaTable(
                 {
                     pagingType: "simple",
@@ -382,16 +389,8 @@
         function PopupZ3950(fw) {
             var strQuery = GetZ3950Terms(fw);
             if(strQuery){
-                window.open("/cgi-bin/koha/cataloguing/z3950_search.pl?biblionumber=[% biblionumber | html %]"+strQuery,"z3950search",'width=800,height=500,location=yes,toolbar=no,scrollbars=yes,resize=yes');
+                window.open("/cgi-bin/koha/cataloguing/z3950_search.pl?biblionumber=" + biblionumber + strQuery,"z3950search",'width=800,height=500,location=yes,toolbar=no,scrollbars=yes,resize=yes');
             }
-        }
-        /* provide Z3950 search points */
-        function GetZ3950Terms(fw){
-            var strQuery="&frameworkcode=" + fw;
-            [% FOREACH z3950_search_param IN z3950_search_params %]
-                strQuery += "&" + "[% z3950_search_param.name | uri %]" + "=" + "[% z3950_search_param.value | uri %]";
-            [% END %]
-            return strQuery;
         }
 
         /**
@@ -410,6 +409,17 @@
                 location.href = url;
             }
             return false;
+        }
+    </script>
+
+    <script>
+        /* provide Z3950 search points */
+        function GetZ3950Terms(fw){
+            var strQuery="&frameworkcode=" + fw;
+            [% FOREACH z3950_search_param IN z3950_search_params %]
+                strQuery += "&" + "[% z3950_search_param.name | uri %]" + "=" + "[% z3950_search_param.value | uri %]";
+            [% END %]
+            return strQuery;
         }
     </script>
 [% END %]
