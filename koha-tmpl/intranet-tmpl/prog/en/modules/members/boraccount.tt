@@ -578,14 +578,22 @@
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings('members', 'fines', 'account-fines', 'json') | $raw %];
+        addPrefs({
+            FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
+        });
+        const change_given = "[% change_given | html %]";
+        const payment_id = "[% payment_id | html %]";
+    </script>
+
+    <script>
         $(document).ready(function() {
-            [% IF payment_id && Koha.Preference('FinePaymentAutoPopup') %]
-                window.open('/cgi-bin/koha/members/printfeercpt.pl?action=print&change_given=[% change_given | html %]&accountlines_id=[% payment_id | html %]', '_blank');
-            [% END %]
+            if (payment_id && prefs.FinePaymentAutoPopup){
+                window.open(`/cgi-bin/koha/members/printfeercpt.pl?action=print&change_given=${change_given}&accountlines_id=${payment_id}`, '_blank');
+            }
 
             var txtActivefilter = _("Filter paid transactions");
             var txtInactivefilter = _("Show all transactions");
-            var table_settings = [% TablesSettings.GetTableSettings('members', 'fines', 'account-fines', 'json') | $raw %];
             var table_account_fines = $("#table_account_fines").kohaTable(
                 {
                     pagingType: "full",
