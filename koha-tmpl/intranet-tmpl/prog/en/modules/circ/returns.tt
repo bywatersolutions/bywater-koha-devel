@@ -1517,20 +1517,33 @@
     [% INCLUDE 'calendar.inc' %]
     [% Asset.js("js/pages/circulation.js") | $raw %]
     [% Asset.js("js/modal_printer.js") | $raw %]
+    <script>
+        /* Set a variable needed by resolve_claim_modal.js or add_catalog_concern.js */
+        var logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
+
+        var table_settings = [% TablesSettings.GetTableSettings( 'circ', 'returns', 'checkedintable', 'json' ) | $raw %]
+
+        const reserve_id = "[% reserve_id | html %]";
+        const recall_id = "[% recall_id | html %]";
+
+        const print_slip = [% print_slip ? 1 : 0 | html %];
+        const recall_slip = [% recall_slip ? 1 : 0 | html %];
+        const overduecharges = [% overduecharges ? 1 : 0 | html %];
+        const was_transferred = [% transfer ? 1 : 0 | html %];
+
+        addPrefs({
+            TransfersBlockCirc: [% Koha.Preference('TransfersBlockCirc') ? 1 : 0 | html %],
+            AutomaticConfirmTransfer: [% Koha.Preference('AutomaticConfirmTransfer') ? 1 : 0 | html %],
+        });
+    </script>
+
     [% IF ( ReturnClaims ) %]
-        <script>
-            /* Set a variable needed by resolve_claim_modal.js */
-            var logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
-        </script>
         [% Asset.js("js/resolve_claim_modal.js") | $raw %]
     [% END %]
     [% IF ( Koha.Preference('CatalogConcerns') ) %]
-        <script>
-            /* Set a variable needed by add_catalog_concern.js */
-            var logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
-        </script>
         [% Asset.js("js/modals/add_catalog_concern.js") | $raw %]
     [% END %]
+
     <script>
         function Dopop(link) {
             var newin = window.open(link, 'popup', 'width=600,height=400,resizable=1,toolbar=0,scrollbars=1,top');
@@ -1559,20 +1572,19 @@
                 e.preventDefault();
                 $(".modal.audio-alert-action").modal("show");
             });
-            [% IF reserve_id %]
+            if (reserve_id){
                 $(".print-slip").on('click', function(e) {
                     e.preventDefault();
-                    Dopop("hold-transfer-slip.pl?reserve_id=[% reserve_id | uri %]");
+                    Dopop("hold-transfer-slip.pl?reserve_id=" + reserve_id );
                 });
-                [% IF print_slip %]
-                    Dopop("hold-transfer-slip.pl?reserve_id=[% reserve_id | uri %]");
-                [% END %]
-            [% END %]
-            var table_settings = [% TablesSettings.GetTableSettings( 'circ', 'returns', 'checkedintable', 'json' ) | $raw %]
+                if (print_slip){
+                    Dopop("hold-transfer-slip.pl?reserve_id=" + reserve_id );
+                }
+            }
 
-            [% IF recall_slip %]
-                Dopop('/cgi-bin/koha/recalls/recall_pickup_slip.pl?recall_id=[% recall_id | uri %]');
-            [% END %]
+            if (recall_slip){
+                Dopop('/cgi-bin/koha/recalls/recall_pickup_slip.pl?recall_id=' + recall_id);
+            }
 
             var returns_table = $("#checkedintable").kohaTable(
                 {
@@ -1622,7 +1634,7 @@
                 $("#barcode").focus();
             });
 
-            [% IF(overduecharges) %]
+            if (overduecharges){
                 $("#barcode").focus(function () {
                     if (($("#exemptcheck").prop("checked") == true) || ($("#dropboxcheck").prop("checked") == true)) {
                         $("#barcode").addClass("input-warning");
@@ -1633,7 +1645,7 @@
                 $("#barcode").blur(function () {
                     $("#barcode").removeClass("input-warning");
                 });
-            [% END %]
+            }
 
             $('.openWin').on("click",function(e){
                 Dopop( $(this).data("url") );
@@ -1769,16 +1781,16 @@
                 ],
             });
 
-            [% IF ( !(Koha.Preference('TransfersBlockCirc')) && Koha.Preference('AutomaticConfirmTransfer') ) %]
+            if( !prefs.TransfersBlockCirc && prefs.AutomaticConfirmTransfer ){
                 $("#wrong-transfer-modal").on('hidden.bs.modal',function(){
                     $("#wrongtransferform").submit();
                 });
-                [% IF (transfer) %]
+                if (was_transferred){
                     $("#item-transfer-modal").on('hidden.bs.modal',function(){
                         $("#mainform").submit();
                     });
-                [% END %]
-            [% END %]
+                }
+            }
         });
     </script>
 [% END %]
