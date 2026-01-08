@@ -163,6 +163,11 @@
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        const interface = "[% interface | html %]";
+        const theme = "[% theme | html %]";
+    </script>
+
+    <script>
         $(document).ready(function() {
             var patronExportModal = $("#patronExportModal");
             var patronExportModalBody = $("#patronExportModal .modal-body");
@@ -211,13 +216,13 @@
             });
 
             patronExportModal.on("hidden.bs.modal", function(){
-                patronExportModalBody.html("<div id=\"loading\"><img src=\"[% interface | html %]/[% theme | html %]/img/spinner-small.gif\" alt=\"\" /> "+_("Loading")+"</div>");
+                patronExportModalBody.html("<div id=\"loading\"><img src=\"" + interface + "/" + theme + "/img/spinner-small.gif\" alt=\"\" /> "+_("Loading")+"</div>");
             });
 
             patronExportModal.on("submit", "#exportingf", function(e){
                 e.preventDefault();
                 modal_body = patronExportModalBody;
-                modal_body.html("<div id=\"loading\"><img src=\"[% interface | html %]/[% theme | html %]/img/spinner-small.gif\" alt=\"\" /> "+_("Loading")+"</div>");
+                modal_body.html("<div id=\"loading\"><img src=\"" + interface + "/" + theme + "/img/spinner-small.gif\" alt=\"\" /> "+_("Loading")+"</div>");
                 target_url = $(this).attr("action");
                 params =  $( this ).serialize();
                 $("#patronExportModal .modal-body").load( target_url + "?" + params + " #export_patron_list");
