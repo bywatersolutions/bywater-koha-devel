@@ -472,7 +472,19 @@
     <script>
         let pickups = [% To.json(curbside_pickups.unblessed) | $raw %];
         let policy = [% To.json(policy.unblessed) | $raw %];
+        let opening_slots = [% To.json(policy.opening_slots.unblessed) | $raw %];
 
+        let dt_settings = [];
+        dt_settings.push( [% TablesSettings.GetTableSettings('circ', 'curbside_pickups', 'to_be_stagedt', 'json') | $raw %] );
+        dt_settings.push( [% TablesSettings.GetTableSettings('circ', 'curbside_pickups', 'staged_and_readyt', 'json') | $raw %] );
+        dt_settings.push( [% TablesSettings.GetTableSettings('circ', 'curbside_pickups', 'patron_is_outsidet', 'json') | $raw %] );
+        dt_settings.push( [% TablesSettings.GetTableSettings('circ', 'curbside_pickups', 'delivered_todayt', 'json') | $raw %] );
+
+        const tab = "[% tab | html %]";
+
+    </script>
+
+    <script>
         let existingPickupMoments = [];
         pickups.forEach(function(pickup){
             let scheduled_pickup_datetime = pickup.scheduled_pickup_datetime;
@@ -481,7 +493,6 @@
             existingPickupMoments.push(pickupMoment);
         });
 
-        let opening_slots = [% To.json(policy.opening_slots.unblessed) | $raw %];
         let slots_per_day = {};
         opening_slots.forEach(function(slot){
             let day = slot.day;
@@ -495,9 +506,9 @@
                 $('#find-patron').focus();
             });
 
-            [% IF tab == 'schedule-pickup_panel' %]
+            if (tab == 'schedule-pickup_panel'){
                 $('#find-patron').focus();
-            [% END %]
+            }
 
             const pickup_date = document.querySelector("#pickup_date");
             if ( pickup_date ) {
@@ -628,13 +639,6 @@
             });
 
             set_interval_if_needed();
-
-
-            let dt_settings = [];
-            dt_settings.push( [% TablesSettings.GetTableSettings('circ', 'curbside_pickups', 'to_be_stagedt', 'json') | $raw %] );
-            dt_settings.push( [% TablesSettings.GetTableSettings('circ', 'curbside_pickups', 'staged_and_readyt', 'json') | $raw %] );
-            dt_settings.push( [% TablesSettings.GetTableSettings('circ', 'curbside_pickups', 'patron_is_outsidet', 'json') | $raw %] );
-            dt_settings.push( [% TablesSettings.GetTableSettings('circ', 'curbside_pickups', 'delivered_todayt', 'json') | $raw %] );
 
             let dt_tables = new Array("to_be_stagedt", "staged_and_readyt", "patron_is_outsidet", "delivered_todayt");
             dt_tables.forEach(function( id, index ){
