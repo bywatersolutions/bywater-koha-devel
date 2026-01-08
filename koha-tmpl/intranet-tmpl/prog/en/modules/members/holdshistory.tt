@@ -176,11 +176,13 @@
         };
 
         const show_itemtype_column = [% Koha.Preference('AllowHoldItemTypeSelection') ? 1 : 0 | html %];
+
+        var table_settings = [% TablesSettings.GetTableSettings('members', 'holdshistory', 'holdshistory-table', 'json') | $raw %];
+
+        const patron_id = "[% patron.borrowernumber | html %]";
     </script>
     <script>
         $(document).ready(function() {
-            var table_settings = [% TablesSettings.GetTableSettings('members', 'holdshistory', 'holdshistory-table', 'json') | $raw %];
-
             let item_type_column = table_settings.columns.find(c => c.columnname == 'itemtype');
             if ( !show_itemtype_column ) {
                 item_type_column.is_hidden = 1;
@@ -227,7 +229,7 @@
 
                 };
 
-                let table_url = '/api/v1/patrons/[% patron.borrowernumber | uri %]/holds';
+                let table_url = `/api/v1/patrons/${patron_id}/holds`;
                 let table_embeds = ['+strings', 'biblio', 'item', 'pickup_library'];
                 if (old){
                     table_url += '?old=1';
@@ -323,7 +325,8 @@
                                 return $date(row.cancellation_date)
                             }
                         },
-                        {
+                        ...(show_itemtype_column?
+                        [{
                             data: "item_type_id",
                             datatype: "coded_value:item_type",
                             dataFilter: "item_types",
@@ -340,7 +343,7 @@
                                     return "";
                                 [% END %]
                             }
-                        },
+                        ]:[]),
                         {
                             data: "status",
                             searchable: false,
