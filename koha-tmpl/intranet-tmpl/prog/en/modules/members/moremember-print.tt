@@ -176,7 +176,9 @@
         var checkouts_columns = [% TablesSettings.GetTableSettings( 'circ', 'print_summary', 'print-summary-checkouts', 'json' ) | $raw %];
         var holds_columns = [% TablesSettings.GetTableSettings( 'circ', 'print_summary', 'print-summary-holds', 'json' ) | $raw %];
         var fines_columns = [% TablesSettings.GetTableSettings( 'circ', 'print_summary', 'print-summary-fines', 'json' ) | $raw %];
+    </script>
 
+    <script>
         function initTables(){
             $("#print-summary-checkouts").kohaTable(
                 {
