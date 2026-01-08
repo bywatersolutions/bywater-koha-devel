@@ -399,7 +399,58 @@
     [% INCLUDE 'select2.inc' %]
     <script>
         var authorised_values = [% authorised_values_json | $raw %];
+        var table_settings = [% TablesSettings.GetTableSettings( 'catalogue', 'itemsearch', 'results', 'json' ) | $raw %];
+        addPermissions({
+            CAN_user_tools_items_batchmod: [% CAN_user_tools_items_batchmod ? 1 : 0 | html %],
+            CAN_user_tools_items_batchdel: [% CAN_user_tools_items_batchdel ? 1 : 0 | html %],
+        });
+        const all_libraries = [% To.json(Branches.all) | $raw %];
+        const libraries_filters = all_libraries.map(e => {
+                    e["_id"] = e["branchcode"];
+                    e["_str"] = e["branchname"];
+                    return e;
+                });
+        const libraries_names = new Map(all_libraries.map( l => [l.branchcode, l.branchname] ));
+        const all_item_types = [% To.json(ItemTypes.Get) | $raw %];
+        const item_types_filters = all_item_types.map(e => {
+                    e["_id"] = e["itemtype"];
+                    e["_str"] = e["translated_description"];
+                    return e;
+                });
+        const item_types_notforloan = new Map(all_item_types.map( it => [it.itemtype, it.notforloan] ));
+        const all_ccodes = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.ccode' })) | $raw %].map( av => {
+            av._id = av.authorised_value;
+            av._str = av.lib;
+            return av;
+        } );
+        const all_locations = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.location' })) | $raw %].map( av => {
+            av._id = av.authorised_value;
+            av._str = av.lib;
+            return av;
+        } );
+        const all_notforloans = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.notforloan' })) | $raw %].map( av => {
+            av._id = av.authorised_value;
+            av._str = av.lib;
+            return av;
+        } );
+        const all_losts = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.itemlost' })) | $raw %].map( av => {
+            av._id = av.authorised_value;
+            av._str = av.lib;
+            return av;
+        } );
+        const all_withdrawns = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.withdrawn' })) | $raw %].map( av => {
+            av._id = av.authorised_value;
+            av._str = av.lib;
+            return av;
+         } );
+        const all_damageds = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.damaged' })) | $raw %].map( av => {
+            av._id = av.authorised_value;
+            av._str = av.lib;
+            return av;
+        } );
+    </script>
 
+    <script>
         function showItemSelections( number ){
             let caret = ' <span class="caret">';
             if( number > 0 ){
@@ -457,9 +508,10 @@
                     `<input type="hidden" name="itemnumber" value="${itemnumber}">`
                 ).join('');
 
+                const csrf_token = $('meta[name="csrf-token"]').attr("content");
                 let form = $(`
                     <form method="POST" action="/cgi-bin/koha/catalogue/item-export.pl">
-                        [% INCLUDE 'csrf-token.inc' %]
+                        <input type="hidden" name="csrf_token" value="${csrf_token}" />
                         <input type="hidden" name="format" value="${format}">
                         <input type="hidden" name="op" value="cud-export">
                         ${inputs}
@@ -546,22 +598,22 @@
                 + '                <li><a class="dropdown-item" href="#" id="barcodesExportLink">' + _("Barcode file") + '</a></li>'
                 + '            </ul>'
                 + '        </div>';
-            [% IF ( CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel ) %]
+            if ( permissions.CAN_user_tools_items_batchmod || permissions.CAN_user_tools_items_batchdel ){
                 table += ''
                     + '        <div class="btn-group"><button class="btn btn-default btn-sm dropdown-toggle disabled" disabled="disabled" type="button" id="batch_mod_menu"data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true"> ' + _("Batch operations") + ' </button>'
                     + '            <ul class="dropdown-menu" aria-labelledby="batch_mod_menu">';
-                [% IF ( CAN_user_tools_items_batchmod ) %]
+                if ( permissions.CAN_user_tools_items_batchmod ){
                     table += ''
                         + '                <li> <a class="dropdown-item batch_op send_to_item_mod" href="#" data-submit="batch_item_modification" data-bs-toggle="tooltip" data-bs-placement="right" title="' + _("Send selected items to batch item modification") + '">' + _("Batch item modification") + '</a> </li>';
-                [% END %]
-                [% IF ( CAN_user_tools_items_batchdel ) %]
+                }
+                if ( permissions.CAN_user_tools_items_batchdel ){
                     table += ''
                         + '                <li> <a class="dropdown-item batch_op send_to_item_del"" href="#" data-submit="batch_item_deletion" data-bs-toggle="tooltip" data-bs-placement="right" title="' + _("Send selected items to batch item deletion") + '">' + _("Batch item deletion") + '</a> </li>';
-                [% END %]
+                }
                 table += ''
                     + '            </ul>'
                     + '        </div>';
-            [% END # /IF CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel %]
+            }
             table += ''
                 + '        <div id="table_search_selections" class="btn-group" style="display:none;">'
                 + '            <span></span>'
@@ -620,51 +672,6 @@
 
             var params = getParams($form);
 
-            const all_libraries = [% To.json(Branches.all) | $raw %];
-            const libraries_filters = all_libraries.map(e => {
-                        e["_id"] = e["branchcode"];
-                        e["_str"] = e["branchname"];
-                        return e;
-                    });
-            const libraries_names = new Map(all_libraries.map( l => [l.branchcode, l.branchname] ));
-            const all_item_types = [% To.json(ItemTypes.Get) | $raw %];
-            const item_types_filters = all_item_types.map(e => {
-                        e["_id"] = e["itemtype"];
-                        e["_str"] = e["translated_description"];
-                        return e;
-                    });
-            const item_types_notforloan = new Map(all_item_types.map( it => [it.itemtype, it.notforloan] ));
-            const all_ccodes = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.ccode' })) | $raw %].map( av => {
-                av._id = av.authorised_value;
-                av._str = av.lib;
-                return av;
-            } );
-            const all_locations = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.location' })) | $raw %].map( av => {
-                av._id = av.authorised_value;
-                av._str = av.lib;
-                return av;
-            } );
-            const all_notforloans = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.notforloan' })) | $raw %].map( av => {
-                av._id = av.authorised_value;
-                av._str = av.lib;
-                return av;
-            } );
-            const all_losts = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.itemlost' })) | $raw %].map( av => {
-                av._id = av.authorised_value;
-                av._str = av.lib;
-                return av;
-            } );
-            const all_withdrawns = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.withdrawn' })) | $raw %].map( av => {
-                av._id = av.authorised_value;
-                av._str = av.lib;
-                return av;
-             } );
-            const all_damageds = [% To.json(AuthorisedValues.GetDescriptionsByKohaField({ kohafield => 'items.damaged' })) | $raw %].map( av => {
-                av._id = av.authorised_value;
-                av._str = av.lib;
-                return av;
-            } );
-
             let filters_options = {
                 collection_codes: all_ccodes,
                 libraries: all_libraries,
@@ -676,7 +683,6 @@
                 av_damaged: all_damageds,
             };
 
-            var table_settings = [% TablesSettings.GetTableSettings( 'catalogue', 'itemsearch', 'results', 'json' ) | $raw %];
             $('#item_search').kohaTable( {
                 bKohaColumnsUseNames: true,
                 destroy: true,
