@@ -561,29 +561,31 @@
         [% Asset.js("lib/jquery/plugins/treetable/jquery.treetable.js") | $raw %]
     [% END %]
     [% Asset.js("js/acq.js") | $raw %]
-    <script>
-        $(document).ready(function() {
-            let dt_params = {
-                pagingType: "full",
-                autoWidth: false,
-            };
 
-            $("#activeperiodst").kohaTable(dt_params);
-            $("#inactiveperiodst").kohaTable(dt_params);
+    [% IF close_form %]
+        <script>
+            const budget_period_description = "[% budget_period_description | html %]";
+        </script>
 
-            [% IF close_form %]
+        <script>
+            $(document).ready(function() {
                 $("#budgeth").kohaTable({
                     dom: "t",
                 });
               $("#move_form").submit(function(){
-                var budget_from = "[% budget_period_description | html %]";
+                var budget_from = budget_period_description;
                 var budget_to = $("#to_budget_period_id").find("option:selected").html();
                 var alert_message = _("You have chosen to move all unreceived orders from '%s' to '%s'.").format(budget_from, budget_to);
                 alert_message += "\n" + _("This action cannot be reversed. Do you wish to continue?");
                 return confirm ( alert_message );
               });
-            [% END %]
-            [% IF closed %]
+            });
+        </script>
+    [% END %]
+
+    [% IF closed %]
+        <script>
+            $(document).ready(function() {
               var oTable = $("#closed_report").kohaTable({
                 // The following is a c/p from aqbudgets.tt and is a candidate for refactoring.
                 drawCallback: function ( oSettings ) {
@@ -621,7 +623,19 @@
                 autoWidth: false,
                 pagingType: "full_numbers"
               });
-            [% END %]
+            });
+        </script>
+    [% END %]
+    <script>
+        $(document).ready(function() {
+            let dt_params = {
+                pagingType: "full",
+                autoWidth: false,
+            };
+
+            $("#activeperiodst").kohaTable(dt_params);
+            $("#inactiveperiodst").kohaTable(dt_params);
+
             $("#add_modify_budget").validate({
                 rules: {
                     budget_period_startdate: "required",
