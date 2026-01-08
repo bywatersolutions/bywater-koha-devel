@@ -410,8 +410,11 @@
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings( 'admin', 'edi_accounts', 'edi_accounts_table', 'json' ) | $raw %];
+    </script>
+
+    <script>
         $(document).ready(function(){
-            var table_settings = [% TablesSettings.GetTableSettings( 'admin', 'edi_accounts', 'edi_accounts_table', 'json' ) | $raw %];
             $("#edi_accounts_table").kohaTable(
                 {
                     pagingType: "full",
