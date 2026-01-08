@@ -322,6 +322,12 @@
             [% END %]
         [% END %]
 
+        addPrefs({
+            OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
+        });
+    </script>
+
+    <script>
         let existingPickupMoments = [];
         pickups.forEach(function(pickup){
             let scheduled_pickup_datetime = pickup.scheduled_pickup_datetime;
@@ -331,11 +337,7 @@
             existingPickupMoments[pickup.branchcode].push(pickupMoment);
         });
 
-        [% IF ( Koha.Preference('OPACTableColExpandedByDefault') ) %]
-            var responsive_display = DataTable.Responsive.display.childRowImmediate;
-        [% ELSE %]
-            var responsive_display = DataTable.Responsive.display.childRow;
-        [% END %]
+        var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
 
         $(document).ready(function() {
             $("#pickups-table").kohaTable({
