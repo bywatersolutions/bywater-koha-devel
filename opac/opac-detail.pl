@@ -1180,15 +1180,6 @@ if ( C4::Context->preference('TagsEnabled') and $tag_quantity = C4::Context->pre
     );
 }
 
-if ( C4::Context->preference("OPACURLOpenInNewWindow") ) {
-
-    # These values are going to be read by Javascript, at least in the case
-    # of the google covers
-    $template->param( covernewwindow => 'true' );
-} else {
-    $template->param( covernewwindow => 'false' );
-}
-
 $template->param( borrowernumber => $borrowernumber );
 
 if ( C4::Context->preference('OpacStarRatings') !~ /disable/ ) {

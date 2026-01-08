@@ -1651,15 +1651,65 @@
         [% Asset.js("js/openlibrary.js") | $raw %]
     [% END %]
     <script>
+        const interface = "[% interface | html %]";
+        addPrefs({
+            OpacHighlightedWords: "[% Koha.Preference('OpacHighlightedWords') | html %]",
+            NotHighlightedWords: "[% Koha.Preference('NotHighlightedWords') | html %]",
+            GoogleJackets: [% Koha.Preference('GoogleJackets') ? 1 : 0 | html %],
+            OpacCoce: [% Koha.Preference('OpacCoce') ? 1 : 0 | html %],
+            CoceHost: "[% Koha.Preference('CoceHost') | html %]",
+            CoceProviders: "[% Koha.Preference('CoceProviders') | html %]",
+            OpenLibraryCovers: [% Koha.Preference('OpenLibraryCovers') ? 1 : 0 | html %],
+            OPACLocalCoverImages: [% Koha.Preference('OPACLocalCoverImages') ? 1 : 0 | html %],
+            OPACPopupAuthorsSearch: [% Koha.Preference('OPACPopupAuthorsSearch') ? 1 : 0 | html %],
+            OPACDetailQRCode: [% Koha.Preference('OPACDetailQRCode') ? 1 : 0 | html %],
+            OpacBrowseResults: [% Koha.Preference('OpacBrowseResults') ? 1 : 0 | html %],
+            TagsInputEnabled: [% Koha.Preference('TagsInputEnabled') ? 1 : 0 | html %],
+            OPACURLOpenInNewWindow: [% Koha.Preference('OPACURLOpenInNewWindow') ? 1 : 0 | html %],
+            OPACShelfBrowser: [% Koha.Preference('OPACShelfBrowser') ? 1 : 0 | html %],
+            OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
+        });
+        const busc = "[% busc | html %]";
+        const query_desc = "[% query_desc | html %]";
+        const loggedinusername = "[% loggedinusername | html %]";
+
+        var holdingst_table_settings = [% TablesSettings.GetTableSettings( 'opac', 'biblio-detail', 'holdingst', 'json' ) | $raw %];
+        [% IF ( !item_level_itypes || Koha.Preference('BiblioItemtypeInfo') ) %]
+            // The default in the yaml file is 1 "Item type".
+            // If item-level_itypes is off the column will not appear, then select column 2 "Current library"
+            if (holdingst_table_settings.default_sort_order == 1) {
+                holdingst_table_settings.default_sort_order = 2;
+            }
+        [% END %]
+        var otherholdingst_table_settings = JSON.parse(JSON.stringify(holdingst_table_settings)); // Clone
+
+        let column;
+        [% FOR k IN hidden_columns_force.holdingst %]
+            column = holdingst_table_settings.columns.find(c => c.columnname == '[% k | html %]');
+            column.is_hidden = 1;
+            column.cannot_be_toggled = 1;
+        [% END %]
+
+        [% FOR k IN hidden_columns_force.otherholdingst %]
+            column = otherholdingst_table_settings.columns.find(c => c.columnname == '[% k | html %]');
+            column.is_hidden = 1;
+            column.cannot_be_toggled = 1;
+        [% END %]
+
+        var serial_table_settings = [% TablesSettings.GetTableSettings( 'opac', 'biblio-detail', 'subscriptionst', 'json' ) | $raw %];
+
+        const defaulttab = "[% defaulttab | html %]";
+    </script>
+
+    <script>
         window.emojiPicker = new EmojiPicker({
         emojiable_selector: '[data-emojiable=true]',
-        assetsPath: '[% interface | html %]/lib/emoji-picker/img/',
+        assetsPath: `${interface}/lib/emoji-picker/img/`,
         popupButtonClasses: 'fa-solid fa-face-smile'
         });
         window.emojiPicker.discover();
 
-        var OPACPopupAuthorsSearch = "[% Koha.Preference('OPACPopupAuthorsSearch') | html %]";
-        [% IF ( OpacHighlightedWords ) %]
+        if (prefs.OpacHighlightedWords){
             var q_array = new Array();  // holds search terms if available
 
             function highlightOff() {
@@ -1672,7 +1722,7 @@
                     if ( q_array[x].length > 0 ) {
                         q_array[x] = q_array[x].replace(/\w*:([\w])/, "$1");
                         q_array[x] = q_array[x].toLowerCase();
-                        var myStopwords = "[% Koha.Preference('NotHighlightedWords') | html %]".toLowerCase().split('|');
+                        var myStopwords = prefs.NotHighlightedWords.toLowerCase().split('|');
                         if( $.inArray(q_array[x], myStopwords) == -1 ) {
                             $("#marcnotes").highlight(q_array[x]);
                             $(".title").highlight(q_array[x]);
@@ -1683,7 +1733,7 @@
                 }
                 $(".highlight_toggle").toggle();
             }
-        [% END # /IF OpacHighlightedWords %]
+        }
 
         function verify_cover_images() {
             // Loop over each container in the template which contains covers
@@ -1825,23 +1875,23 @@
             var loaded = 1;
             counter_wait++;
 
-            [% IF GoogleJackets %]
+            if (prefs.GoogleJackets){
                 if ( loaded ) {
                     loaded = KOHA.Google.done;
                 }
-            [% END %]
+            }
 
-            [% IF OpenLibraryCovers %]
+            if (prefs.OpenLibraryCovers){
                 if ( loaded ) {
                     loaded = KOHA.OpenLibrary.done;
                 }
-            [% END %]
+            }
 
-            [% IF ( Koha.Preference('OpacCoce') && Koha.Preference('CoceProviders') ) %]
+            if (prefs.OpacCoce && prefs.CoceProviders){
                 if ( loaded ) {
                     loaded = KOHA.coce.done;
                 }
-            [% END %]
+            }
 
             if (!loaded && counter_wait < 50) {// Do not wait more than 5 seconds
                 window.setTimeout(function(){wait_for_images(cb);}, 100);
@@ -1859,7 +1909,7 @@
 
         $(document).ready(function() {
 
-            [% IF ( Koha.Preference('OPACDetailQRCode') ) %]
+            if (prefs.OPACDetailQRCode){
 
                 var link_canonical = document.querySelector("link[rel=canonical]");
 
@@ -1883,24 +1933,21 @@
                         qrcodeImg.addClass("d-none");
                     }
                 });
-            [% END # /IF OPACDetailQRCode %]
+            }
 
-            [% SWITCH defaulttab -%]
-            [%   CASE 'holdings' -%]
-                showBsTab("bibliodescriptions", "holdings");
-            [%   CASE 'components' -%]
-                showBsTab("bibliodescriptions", "components");
-            [%   CASE 'descriptions' -%]
-                showBsTab("bibliodescriptions", "descriptions");
-            [%   CASE 'subscriptions' -%]
-                showBsTab("bibliodescriptions", "subscriptions");
-            [%   CASE 'serialcollection' -%]
-                showBsTab("bibliodescriptions", "serialcollection");
-            [%   CASE 'media' -%]
-                showBsTab("bibliodescriptions", "html5media");
-            [%   CASE  -%]
-                showBsTab("bibliodescriptions", "holdings");
-            [% END -%]
+            switch (defaulttab){
+                case 'holdings':
+                case 'descriptions':
+                case 'subscriptions':
+                case 'serialcollection':
+                    showBsTab("bibliodescriptions", defaulttab);
+                    break
+                case 'media'
+                    showBsTab("bibliodescriptions", "html5media");
+                    break
+                case:
+                    showBsTab("bibliodescriptions", "holdings");
+            }
 
             let urlParams = new URLSearchParams(window.location.search);
             if ( urlParams.has('tab') ) {
@@ -1910,7 +1957,7 @@
                 }
             }
 
-            [% IF ( Koha.Preference('OpacBrowseResults') && busc ) %]
+            if (prefs.OpacBrowseResults && busc){
                 $(".l_Results").show();
                 $("#a_listResults").on("click", function(e){
                     e.preventDefault();
@@ -1921,36 +1968,9 @@
                     e.preventDefault();
                     $(".results-pagination, .close_pagination, .pg_menu").toggle();
                 });
-            [% END # /IF OpacBrowseResults %]
+            }
 
-            var holdingst_table_settings = [% TablesSettings.GetTableSettings( 'opac', 'biblio-detail', 'holdingst', 'json' ) | $raw %];
-            [% IF ( !item_level_itypes || Koha.Preference('BiblioItemtypeInfo') ) %]
-                // The default in the yaml file is 1 "Item type".
-                // If item-level_itypes is off the column will not appear, then select column 2 "Current library"
-                if (holdingst_table_settings.default_sort_order == 1) {
-                    holdingst_table_settings.default_sort_order = 2;
-                }
-            [% END %]
-            var otherholdingst_table_settings = JSON.parse(JSON.stringify(holdingst_table_settings)); // Clone
-
-            let column;
-            [% FOR k IN hidden_columns_force.holdingst %]
-                column = holdingst_table_settings.columns.find(c => c.columnname == '[% k | html %]');
-                column.is_hidden = 1;
-                column.cannot_be_toggled = 1;
-            [% END %]
-
-            [% FOR k IN hidden_columns_force.otherholdingst %]
-                column = otherholdingst_table_settings.columns.find(c => c.columnname == '[% k | html %]');
-                column.is_hidden = 1;
-                column.cannot_be_toggled = 1;
-            [% END %]
-
-            [% IF ( Koha.Preference('OPACTableColExpandedByDefault') ) %]
-                var responsive_display = DataTable.Responsive.display.childRowImmediate;
-            [% ELSE %]
-                var responsive_display = DataTable.Responsive.display.childRow;
-            [% END %]
+            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
 
             $("#holdingst").kohaTable(
                 {
@@ -1981,8 +2001,6 @@
                 otherholdingst_table_settings,
             );
 
-            var serial_table_settings = [% TablesSettings.GetTableSettings( 'opac', 'biblio-detail', 'subscriptionst', 'json' ) | $raw %];
-
             $(".subscriptionst").kohaTable(
                 {
                     dom: '<"clearfix">t',
@@ -2004,7 +2022,7 @@
                 dTables.DataTable().responsive.recalc();
             } );
 
-            [% IF ( TagsInputEnabled && loggedinusername ) %]
+            if (prefs.TagsInputEnabled && loggedinusername){
                     $(".tag_add").click(function(){
                         var thisid = $(this).attr("id");
                         thisid = thisid.replace("tag_add","");
@@ -2033,30 +2051,30 @@
                         KOHA.Tags.add_tag_button(thisid, tag);
                         return false;
                     });
-            [% END %]
+            }
 
-            [% IF ( query_desc ) %]
-                [% IF ( OpacHighlightedWords ) %]
-                    var query_desc = "[% query_desc |replace("'", "\'") |replace('\n', '\\n') |replace('\r', '\\r') | html %]";
-                    q_array = query_desc.split(" ");
+            if (query_desc){
+                if (prefs.OpacHighlightedWords){
+                    var query_desc_replaced = query_desc.replace("'", "\'").replace('\n', '\\n').replace('\r', '\\r');
+                    q_array = query_desc_replaced.split(" ");
                     q_array = q_array.filter(function(n){ return n }); // Remove empty strings
                     highlightOn();
                     $("#highlight_toggle_on" ).hide().click(function() {highlightOn() ; return false;});
                     $("#highlight_toggle_off").show().click(function() {highlightOff(); return false;});
-                [% END %]
-            [% END %]
+                }
+            }
 
-            [% IF ( GoogleJackets ) %]
-                KOHA.Google.GetCoverFromIsbn([% covernewwindow | html %]);
-            [% END %]
+            if (prefs.GoogleJackets){
+                KOHA.Google.GetCoverFromIsbn(prefs.OPACURLOpenInNewWindow);
+            }
 
-            [% IF ( Koha.Preference('OpacCoce') && Koha.Preference('CoceProviders') ) %]
-                KOHA.coce.getURL('[% Koha.Preference('CoceHost') | html %]', '[% Koha.Preference('CoceProviders') | html %]', $('#biblio-cover-slider') );
-            [% END %]
+            if (prefs.OpacCoce && prefs.CoceProviders){
+                KOHA.coce.getURL(prefs.CoceHost, prefs_CoceProviders, $('#biblio-cover-slider') );
+            }
 
-            [% IF OpenLibraryCovers %]
+            if (prefs.OpenLibraryCovers){
                 KOHA.OpenLibrary.GetCoverFromIsbn();
-            [% END %]
+            }
 
             [% IF ( NovelistSelectProfile && ( normalized_isbn || normalized_upc ) ) %]
                 novSelect.loadContentForQuery(
@@ -2074,7 +2092,7 @@
                     });
             [% END %]
 
-            [% IF ( OPACShelfBrowser ) %]
+            if (prefs.OPACShelfBrowser){
                 // Focus on shelf browser if present
                 var shelfbrowser = $("#shelfbrowser");
                 if (shelfbrowser.length > 0) {
@@ -2100,18 +2118,18 @@
                             },
                             success: function(data){
                                 $("#shelfbrowser").replaceWith(data);
-                                [% IF ( GoogleJackets ) %]
-                                    KOHA.Google.GetCoverFromIsbn([% covernewwindow | html %]);
-                                [% END %]
-                                [% IF ( Koha.Preference('OpacCoce') && Koha.Preference('CoceProviders') ) %]
-                                    KOHA.coce.getURL('[% Koha.Preference('CoceHost') | html %]', '[% Koha.Preference('CoceProviders') | html %]', $("#bibliodescriptions"));
-                                [% END %]
-                                [% IF OpenLibraryCovers %]
+                                if (prefs.GoogleJackets){
+                                    KOHA.Google.GetCoverFromIsbn(prefs.OPACURLOpenInNewWindow);
+                                }
+                                if (prefs.OpacCoce && prefs.CoceProviders){
+                                    KOHA.coce.getURL(prefs.CoceHost, prefs.CoceProviders, $("#bibliodescriptions"));
+                                }
+                                if (prefs.OpenLibraryCovers){
                                     KOHA.OpenLibrary.GetCoverFromIsbn();
-                                [% END %]
-                                [% IF OPACLocalCoverImages %]
+                                }
+                                if (OPACLocalCoverImages){
                                     KOHA.LocalCover.GetCoverFromBibnumber(true);
-                                [% END %]
+                                }
                             }
                         });
                     });
@@ -2125,23 +2143,23 @@
                             },
                             success: function(data){
                                 $("#shelfbrowser").replaceWith(data);
-                                [% IF ( GoogleJackets ) %]
-                                    KOHA.Google.GetCoverFromIsbn([% covernewwindow | html %]);
-                                [% END %]
-                                [% IF ( Koha.Preference('OpacCoce') && Koha.Preference('CoceProviders') ) %]
-                                    KOHA.coce.getURL('[% Koha.Preference('CoceHost') | html %]', '[% Koha.Preference('CoceProviders') | html %]', $("#bibliodescriptions"));
-                                [% END %]
-                                [% IF OpenLibraryCovers %]
+                                if (prefs.GoogleJackets){
+                                    KOHA.Google.GetCoverFromIsbn(prefs.OPACURLOpenInNewWindow);
+                                }
+                                if (prefs.OpacCoce && prefs.CoceProviders){
+                                    KOHA.coce.getURL(prefs.CoceHost, prefs.CoceProviders, $("#bibliodescriptions"));
+                                }
+                                if (prefs.OpenLibraryCovers){
                                     KOHA.OpenLibrary.GetCoverFromIsbn();
-                                [% END %]
-                                [% IF OPACLocalCoverImages %]
+                                }
+                                if (prefs.OPACLocalCoverImages){
                                     KOHA.LocalCover.GetCoverFromBibnumber(true);
-                                [% END %]
+                                }
                             }
                         });
                     });
-                }());
-            [% END # /IF ( OPACShelfBrowser ) %]
+            }());
+        }
 
             $(".edit_comment").on("click", function(e){
                 e.preventDefault();
@@ -2150,7 +2168,7 @@
         });
 
         $(document).ready(function() {
-            if( OPACPopupAuthorsSearch == "1" ){
+            if( prefs.OPACPopupAuthorsSearch ){
                 var terms = {
                     contributors : {
                         "label" : "author",
@@ -2212,7 +2230,7 @@
                     e.preventDefault();
                     multiSearchRequest();
                 });
-            } /* if( OPACPopupAuthorsSearch == "1" ) */
+            }
 
             $(".library_info").on("click", function(e){
                 e.preventDefault();
