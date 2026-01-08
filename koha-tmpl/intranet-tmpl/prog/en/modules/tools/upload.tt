@@ -361,6 +361,22 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/file-upload.js") | $raw %]
     <script>
+        var plugin = [% plugin ? 1 : 0 | html %];
+        var plugin_index = "[% index | html %]";
+
+        var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'upload', 'uploadresults', 'json' ) | $raw %];
+        if (plugin){
+            table_settings['columns'].splice(6, 1);
+            table_settings['columns'].splice(5, 1);
+        }
+
+        addPrefs({
+            OPACBaseURL: "[% Koha.Preference('OPACBaseURL') | html %]",
+        });
+        const msg_alert = "[% msg | html %]";
+    </script>
+
+    <script>
         function StartUpload() {
             if( $('#fileToUpload').prop('files').length == 0 ) return;
             $('#fileToUpload').prop('disabled',true);
@@ -378,12 +394,12 @@
             if( $("#uploadcategory").val() )
                 cat = encodeURIComponent( $("#uploadcategory").val() );
             if( cat ) xtra= 'category=' + cat + '&';
-            [% IF plugin %]
+            if (plugin){
                 xtra = xtra + 'public=1&temp=0';
-            [% ELSE %]
+            } else {
                 if( !cat ) xtra = 'temp=1&';
                 if( $('#public').prop('checked') ) xtra = xtra + 'public=1';
-            [% END %]
+            }
             xhr= AjaxUpload( $('#fileToUpload'), $('#fileuploadprogress'), xtra, cbUpload );
         }
         function CancelUpload() {
@@ -473,30 +489,26 @@
             $("#form_delete").submit();
         }
         function ClearField() {
-            [% IF plugin %]
-                $(window.opener.document).find('#[% index | html %]').val( '' );
-            [% END %]
+            if (plugin){
+                $(window.opener.document).find('#' + plugin_index).val( '' );
+            }
         }
         function Choose(hashval) {
-            var res = '[% Koha.Preference('OPACBaseURL') | html %]';
+            var res = prefs.OPACBaseURL;
             res = res.replace( /\/$/, '');
             res = res + '/cgi-bin/koha/opac-retrieve-file.pl?id=' + hashval;
-            var index = '[% index | html %]';
+            var index = plugin_index;
             index = index.replace( /^buttonDot_/, '' );
             if(index) $(window.opener.document).find('#'+index).val( res );
             window.close();
         }
-        var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'upload', 'uploadresults', 'json' ) | $raw %];
-        [% IF plugin %]
-            table_settings['columns'].splice(6, 1);
-            table_settings['columns'].splice(5, 1);
-        [% END %]
+
         $(document).ready(function() {
             $("#uploadresults").kohaTable({}, table_settings);
 
-            [% IF msg %]
-                ShowAlerts( [% msg | html %] );
-            [% END %]
+            if (msg_alert){
+                ShowAlerts(msg_alert);
+            }
             $("#fileuploadcancel").hide();
             $("#public_cb").click(function() {
                 $("#public").click();
