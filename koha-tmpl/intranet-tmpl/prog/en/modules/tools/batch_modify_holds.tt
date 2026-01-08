@@ -249,7 +249,11 @@
         let hide_patron_name = [% IF Koha.Preference('HidePatronName') %]true[% ELSE %]false[% END %];
         let hold_ids = [% IF updated_holds %] [% updated_holds | $raw %] [% ELSE %] [] [% END %];
         let hold_ids_from_sql = [% IF reserve_ids_list  %] [% reserve_ids_list  | $raw %] [% ELSE %] [] [% END %];
+        var holds_to_modify_table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_hold_modification', 'holds_to_modify', 'json' ) | $raw %];
+        var modified_holds_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holds', 'modified_holds', 'json' ) | $raw %];
+    </script>
 
+    <script>
         $(document).ready(function() {
 
             // Apply select2 to all select fields having a "multiple" attribute
@@ -343,7 +347,6 @@
             }
 
             function search_holds(modify_holds_form){
-                var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_hold_modification', 'holds_to_modify', 'json' ) | $raw %];
                 var searchpattern = "";
                 var filters = {
                     "me.expirationdate": function(){
@@ -570,7 +573,7 @@
                             }
                         }
                     ],
-                }, table_settings, 0, filters);
+                }, holds_to_modify_table_settings, 0, filters);
 
                 $(".searchpattern").text(searchpattern);
 
@@ -643,11 +646,10 @@
             });
 
             //Modified holds table
-            var table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holds', 'modified_holds', 'json' ) | $raw %];
             $("#modified_holds").kohaTable({
                 pagingType: "full",
                 autoWidth: false
-            }, table_settings);
+            }, modified_holds_table_settings);
 
         });
     </script>
