@@ -176,12 +176,20 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     <script>
+        const batch_id = "[% batch_id | html %]";
+        addPrefs({
+            PatronsPerPage: "[% Koha.Preference('PatronsPerPage') | html %]",
+        });
+        const has_entries = [% table_loop ? 1 : 0 | html %];
+    </script>
+
+    <script>
         function DeleteConfirm() {
-            var msg = _("Are you sure you want to delete batch %s?").format("[% batch_id | html %]");
+            var msg = _("Are you sure you want to delete batch %s?").format(batch_id);
             var answer = confirm(msg);
             if (answer) {
                 $('#batch_form input[name="op"]').val('cud-delete');
-                $('#batch_form').append( '<input type="hidden" name="element_id" value="[% batch_id | html %]" />' );
+                $('#batch_form').append( `<input type="hidden" name="element_id" value="${batch_id}" />` );
                 $('#batch_form').append( '<input type="hidden" name="card_element" value="batch" />' );
                 $('#batch_form').submit();
             } else {
@@ -209,7 +217,7 @@
             var answer = confirm(msg);
             if (answer) {
                 $('#patron_form input[name="op"]').val('cud-remove');
-                $('#patron_form input[name="batch_id"]').val( [% batch_id | html %] );
+                $('#patron_form input[name="batch_id"]').val(batch_id);
                 $('#patron_form input[name="label_id"]').remove();
                 items.forEach( (item_id) => {
                     $('#patron_form').append( '<input type="hidden" name="label_id" value="' + item_id + '" />' );
@@ -240,7 +248,7 @@
 
         function DeDuplicate() {
             $('#patron_form input[name="op"]').val('cud-dedup');
-            $('#patron_form input[name="batch_id"]').val('[% batch_id | html %]');
+            $('#patron_form input[name="batch_id"]').val(batch_id);
             $('#patron_form').submit();
         }
 
@@ -264,9 +272,9 @@
                     alert(_("Please select at least one card to export."));
                     return;     // no batch selected
                 }
-                location.href = "/cgi-bin/koha/patroncards/print.pl?batch_id=[% batch_id | html %]&" + getstr;
+                location.href = `/cgi-bin/koha/patroncards/print.pl?batch_id=${batch_id}&${getstr}`;
             } else if (mode == 'batch') {
-                location.href = "/cgi-bin/koha/patroncards/print.pl?batch_id=[% batch_id | html %]";
+                location.href = `/cgi-bin/koha/patroncards/print.pl?batch_id=${batch_id`;
             } else {
                 // some pass-through error trapping just in case...
             }
@@ -291,23 +299,22 @@
             // Prepare DataTables settings
             var aLengthMenu = [10, 20, 50, 100, -1];
             var aLengthMenuLabel = [10, 20, 50, 100, _("All")];
-            var patronsPerPage = [% Koha.Preference('PatronsPerPage') | html %];
             for ( var i = 0; i < aLengthMenu.length; i++ ) {
-                if ( aLengthMenu[i] == patronsPerPage ) {
+                if ( aLengthMenu[i] == prefs.PatronsPerPage ) {
                     break;
                 }
-                if ( aLengthMenu[i] > patronsPerPage || aLengthMenu[i] == -1 ) {
-                    aLengthMenu.splice(i, 0, patronsPerPage);
-                    aLengthMenuLabel.splice(i, 0, patronsPerPage);
+                if ( aLengthMenu[i] > prefs.PatronsPerPage || aLengthMenu[i] == -1 ) {
+                    aLengthMenu.splice(i, 0, prefs.PatronsPerPage);
+                    aLengthMenuLabel.splice(i, 0, prefs.PatronsPerPage);
                     break;
                 }
             }
 
-            [% IF table_loop %]
+            if (has_entries){
                 $("#description").show();
-            [% ELSE %]
+            } else {
                 $("#description").hide();
-            [% END %]
+            }
             $("#batcht").kohaTable({
                 dom: '<"dt-info"i><"top pager"<"table_entries"lp><"table_controls"f>>tr<"bottom pager"ip>',
                 order: [[0, "asc"]],
