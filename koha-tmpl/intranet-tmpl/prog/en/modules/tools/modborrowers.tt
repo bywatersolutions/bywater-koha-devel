@@ -482,48 +482,66 @@
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% Asset.js("js/members-patron-selections.js") | $raw %]
     <script>
+        var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_patron_modification', 'borrowerst', 'json' ) | $raw %];
+        [% FOREACH attrh IN attributes_header %]
+            table_settings["columns"].push({
+                columname: "[% attrh.attribute | html %]",
+                cannot_be_modified: 0,
+                cannot_be_toggled: 0,
+                is_hidden: 0
+            });
+        [% END %]
+
+        const has_patrons = [% borrowers ? 1 : 0 | html %]
+        const op = "[% op | html %]";
+        addPermissions({
+            CanUpdatePasswordExpiration: [% CanUpdatePasswordExpiration ? 1 : 0 | html %],
+            CanUpdateProtectPatron: [% CanUpdateProtectPatron ? 1 : 0 | html %],
+        });
         var patron_attributes_lib = new Array();
         var patron_attributes_values = new Array();
+        var values = new Array();
+        var lib = new Array();
+        [% FOREACH pav IN patron_attributes_values %]
+            values = new Array();
+            lib = new Array();
+            [% FOREACH option IN pav.options %]
+                values.push("[% option.lib | html %]");
+                lib.push("[% option.authorised_value | html %]");
+            [% END %]
+            patron_attributes_lib["[% pav.attribute_code | html %]"] = values;
+            patron_attributes_values["[% pav.attribute_code | html %]"] = lib;
+        [% END %]
+    </script>
 
+    <script>
         $(document).ready(function() {
-            [% IF borrowers %]
-
-                var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_patron_modification', 'borrowerst', 'json' ) | $raw %];
-
-                [% FOREACH attrh IN attributes_header %]
-                    table_settings["columns"].push({
-                        columname: "[% attrh.attribute | html %]",
-                        cannot_be_modified: 0,
-                        cannot_be_toggled: 0,
-                        is_hidden: 0
-                    });
-                [% END %]
-
+            if (has_patrons){
                 let selections_column = table_settings.columns.find(c => c.columnname == 'batch_patron_edit_selections');
                 selections_column.cannot_be_modified = 1;
                 selections_column.cannot_be_toggled = 1;
                 selections_column.force_visibility = 1;
-                [% IF op == 'show' %]
+                if (op == 'show'){
                     selections_column.is_hidden = 0;
-                [% ELSE %]
+                } else {
                     selections_column.is_hidden = 1;
-                [% END %]
+                }
 
-                [% UNLESS CanUpdatePasswordExpiration %]
+                if (!permissions.CanUpdatePasswordExpiration){
                     let password_expiration_date_column = table_settings.columns.find(c => c.columnname == 'batch_patron_edit_password_expiration_date');
                     password_expiration_date_column.is_hidden = 1;
                     password_expiration_date_column.cannot_be_modified = 1;
                     password_expiration_date_column.cannot_be_toggled = 1;
                     password_expiration_date_column.force_visibility = 1;
-                [% END %]
+                }
 
-                [% UNLESS CanUpdateProtectPatron %]
+                if (!permissions.CanUpdateProtectPatron){
                     let protected_column = table_settings.columns.find(c => c.columnname == 'batch_patron_edit_protected');
                     protected_column.is_hidden = 1;
                     protected_column.cannot_be_modified = 1;
                     protected_column.cannot_be_toggled = 1;
                     protected_column.force_visibility = 1;
-                [% END %]
+                }
 
                 let patron_table = $("#borrowerst").kohaTable(
                     {
@@ -546,20 +564,7 @@
                     });
                     return false;
                 });
-            [% END %]
-
-            var values = new Array();
-            var lib = new Array();
-            [% FOREACH pav IN patron_attributes_values %]
-                values = new Array();
-                lib = new Array();
-                [% FOREACH option IN pav.options %]
-                    values.push("[% option.lib | html %]");
-                    lib.push("[% option.authorised_value | html %]");
-                [% END %]
-                patron_attributes_lib["[% pav.attribute_code | html %]"] = values;
-                patron_attributes_values["[% pav.attribute_code | html %]"] = lib;
-            [% END %]
+            }
 
             $('select[name="patron_attributes"]').change(function() {
                 updateAttrValues(this);
