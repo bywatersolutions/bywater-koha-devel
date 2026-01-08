@@ -264,6 +264,10 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        const record_type = "[% recordtype | html %]";
+    </script>
+
+    <script>
         var MSG_CANNOT_BE_DELETED = _("This record cannot be deleted, at least one item is currently checked out.");
         $(document).ready(function() {
 
@@ -337,14 +341,14 @@
 
           $("#selectall").click();
 
-          //Show a red cross if a biblio cannot be deleted
-          [% IF recordtype == 'biblio' %]
+          // Show a red cross if a biblio cannot be deleted
+          if (recordtype == 'biblio'){
             $(".records input:checkbox[data-issues!='0']").each(function(){
               $(this).parents('tr').find('td').css('background-color', '#ffff99')
               $(this).replaceWith("<span class='error'><i class='fa fa-times fa-lg'></i></span>")
               $(".records i").attr('title', MSG_CANNOT_BE_DELETED)
             });
-          [% END %]
+          }
 
           $("#biblios").kohaTable({
               columnDefs: [
