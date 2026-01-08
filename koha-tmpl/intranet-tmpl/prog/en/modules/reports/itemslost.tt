@@ -194,14 +194,16 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     <script>
-        $(document).ready(function() {
-            var table_settings = [% TablesSettings.GetTableSettings( 'reports', 'lostitems', 'lostitems-table', 'json' ) | $raw %];
-            [% IF csv_profiles.count %]
-                // Add the first (checkbox) column if it is displayed
-                // FIXME This cannot work without bKohaColumnsUseNames
-                table_settings['columns'].unshift({cannot_be_modified: 1, cannot_be_toggled: 1, columnname: 'itemnumber', is_hidden: 0});
-            [% END %]
+        var table_settings = [% TablesSettings.GetTableSettings( 'reports', 'lostitems', 'lostitems-table', 'json' ) | $raw %];
+        [% IF csv_profiles.count %]
+            // Add the first (checkbox) column if it is displayed
+            // FIXME This cannot work without bKohaColumnsUseNames
+            table_settings['columns'].unshift({cannot_be_modified: 1, cannot_be_toggled: 1, columnname: 'itemnumber', is_hidden: 0});
+        [% END %]
+    </script>
 
+    <script>
+        $(document).ready(function() {
             var lostitems_table = $("#lostitems-table").kohaTable(
                 {
                     order: [],
