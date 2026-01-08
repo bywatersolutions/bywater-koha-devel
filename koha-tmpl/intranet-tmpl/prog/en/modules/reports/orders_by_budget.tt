@@ -170,6 +170,9 @@
     [% INCLUDE 'datatables.inc' %]
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'reports', 'orders_by_fund', 'funds-table', 'json' ) | $raw %];
+    </script>
+
+    <script>
         $(document).ready( function () {
             var funds_table = $("#funds").kohaTable(
                 {
