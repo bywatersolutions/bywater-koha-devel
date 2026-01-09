@@ -638,84 +638,70 @@
             });
         </script>
     [% END #/print %]
-
     <script>
         var MSG_NO_ITEM_SELECTED = _("Nothing is selected.");
         var MSG_REMOVE_FROM_LIST = _("Are you sure you want to remove these records from the list?");
         var MSG_CONFIRM_DELETE_LIST = _("Are you sure you want to remove this list?");
     </script>
-
     [% IF op == 'list' %]
         <script>
             var public = [% public | html %];
             const allow_transfer = [% allow_transfer ? 1 : 0 | html %];
         </script>
-
         <script>
-            $(document).ready(function(){
-
-                let sorton = [
-                            'vs.shelfname',
-                            'count',
-                            'vs.public',
-                            'vs.owner',
-                            'vs.sortfield',
-                            'vs.created_on',
-                            'vs.lastmodified',
-                            ];
+            $(document).ready(function () {
+                let sorton = ["vs.shelfname", "count", "vs.public", "vs.owner", "vs.sortfield", "vs.created_on", "vs.lastmodified"];
 
                 var dtListResults = $("#listresultst").kohaTable({
-                    order: [[ 5, "asc" ]],
-                    serverSide:  true,
-                    ajax:  {
+                    order: [[5, "asc"]],
+                    serverSide: true,
+                    ajax: {
                         url: "/cgi-bin/koha/svc/virtualshelves/search",
-                        data: function ( d ) {
+                        data: function (d) {
                             let order_by = [];
                             d.order.forEach((o, i) => order_by.push(sorton[o.column - 1] + " " + o.dir));
-                            return $.extend( {}, d, {
+                            return $.extend({}, d, {
                                 public,
-                                order_by: order_by.join(','),
+                                order_by: order_by.join(","),
                                 shelfname: $("#searchshelfname_filter").val(),
                                 owner: $("#searchowner_filter").val(),
                                 sortby: $("#searchsortby_filter").val(),
-                                template_path: 'virtualshelves/tables/shelves_results.tt',
+                                template_path: "virtualshelves/tables/shelves_results.tt",
                                 allow_transfer,
                             });
-                        }
+                        },
                     },
                     bKohaAjaxSVC: true,
                     columns: [
-                        { data: 'dt_public' },
-                        { data: 'dt_shelfname' },
-                        { data: 'dt_count' },
-                        { data: 'dt_is_shared' },
-                        { data: 'dt_owner' },
-                        { data: 'dt_sortby' },
-                        { data: 'dt_created_on' },
-                        { data: 'dt_modification_time' },
-                        { data: 'dt_action', orderable: false, className:  'actions' }
+                        { data: "dt_public" },
+                        { data: "dt_shelfname" },
+                        { data: "dt_count" },
+                        { data: "dt_is_shared" },
+                        { data: "dt_owner" },
+                        { data: "dt_sortby" },
+                        { data: "dt_created_on" },
+                        { data: "dt_modification_time" },
+                        { data: "dt_action", orderable: false, className: "actions" },
                     ],
-                    columnDefs: [
-                        { visible: false, targets: [ 'NoVisible' ] }
-                    ],
+                    columnDefs: [{ visible: false, targets: ["NoVisible"] }],
                     autoWidth: false,
-                    pagingType: 'full_numbers',
+                    pagingType: "full_numbers",
                     searching: false,
                     processing: true,
-                    orderCellsTop: true
+                    orderCellsTop: true,
                 });
                 _dt_add_delay_filters(dtListResults.api(), $("#listresultst"));
 
                 /* Select correct tab based on URL parameter */
-                if( public == 0 ){
-                    $('a[href="#privateshelves_tab_panel"]').tab('show');
+                if (public == 0) {
+                    $('a[href="#privateshelves_tab_panel"]').tab("show");
                 } else {
                     $('a[href="#publicshelves_tab_panel"]').tab("show");
                 }
 
-                $('#tabs a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                $('#tabs a[data-bs-toggle="tab"]').on("shown.bs.tab", function (e) {
                     let target = $(this).attr("href");
-                    if( target == "#publicshelves_tab_panel" ){
+                    if (target == "#publicshelves_tab_panel") {
                         public = 1;
                     } else {
                         public = 0;
@@ -723,7 +709,7 @@
                     dtListResults.DataTable().draw();
                 });
 
-                $("body").on("click", ".deleteshelf", function(){
+                $("body").on("click", ".deleteshelf", function () {
                     return confirmDelete(MSG_CONFIRM_DELETE_LIST);
                 });
             });
@@ -776,59 +762,58 @@
                 return param1;
             }
         </script>
-
         <script>
-            $(document).ready(function(){
-                $("span.clearall").html("<a id=\"CheckNone\" href=\"/cgi-bin/koha/shelves.pl\"><i class=\"fa fa-times\"></i>"+_(" Clear all")+"<\/a>");
-                $("span.checkall").html("<a id=\"CheckAll\" href=\"/cgi-bin/koha/shelves.pl\"><i class=\"fa fa-check\"></i>"+_(" Select all")+"<\/a>");
-                $("#CheckAll").click(function(e){
+            $(document).ready(function () {
+                $("span.clearall").html('<a id="CheckNone" href="/cgi-bin/koha/shelves.pl"><i class="fa fa-times"></i>' + _(" Clear all") + "<\/a>");
+                $("span.checkall").html('<a id="CheckAll" href="/cgi-bin/koha/shelves.pl"><i class="fa fa-check"></i>' + _(" Select all") + "<\/a>");
+                $("#CheckAll").click(function (e) {
                     e.preventDefault();
-                    $(".selection").each(function(){
+                    $(".selection").each(function () {
                         $(this).prop("checked", true);
                     });
                 });
 
-                $("#CheckNone").click(function(e){
+                $("#CheckNone").click(function (e) {
                     e.preventDefault();
-                    $(".selection").each(function(){
+                    $(".selection").each(function () {
                         $(this).prop("checked", false);
                     });
                 });
-                $(".placehold").on("click",function(e){
+                $(".placehold").on("click", function (e) {
                     placeHold();
                     e.preventDefault();
                 });
                 $(".addtocart").show();
                 let dropdown = build_dropdown();
                 $("span.addto").html(dropdown);
-                $("#cartsubmit").on("click",function(e){
+                $("#cartsubmit").on("click", function (e) {
                     cartList();
                     e.preventDefault();
                 });
-                $("#addto").change(function(){
+                $("#addto").change(function () {
                     cartList();
                 });
-                $(".addto").find("input:submit").click(function(e){
-                    e.preventDefault();
-                    cartList();
-                });
+                $(".addto")
+                    .find("input:submit")
+                    .click(function (e) {
+                        e.preventDefault();
+                        cartList();
+                    });
                 $("#selection_ops").show();
-                $(".merge-items").on("click",function(e){
+                $(".merge-items").on("click", function (e) {
                     e.preventDefault();
                     MergeItems();
                 });
-                $("#listform").on("submit",function(e){
-
-                });
-                $(".list-remove").on("click",function(e){
-                    if($(".selection").filter(":checked").length > 0){
+                $("#listform").on("submit", function (e) {});
+                $(".list-remove").on("click", function (e) {
+                    if ($(".selection").filter(":checked").length > 0) {
                         return confirm(MSG_REMOVE_FROM_LIST);
                     } else {
                         alert(MSG_NO_ITEM_SELECTED);
                         e.preventDefault();
                     }
                 });
-                $("#addToList").on("shown.bs.modal", function(e){
+                $("#addToList").on("shown.bs.modal", function (e) {
                     $("#barcodes").focus();
                 });
             });
@@ -837,12 +822,11 @@
 
     [% IF shelf AND op == 'edit_form' %]
         <script>
-            $(document).ready(function(){
+            $(document).ready(function () {
                 AdjustRemark();
             });
         </script>
     [% END %]
-
     <script>
         /**
          * This function checks if the adequate number of records are checked for merging
@@ -969,19 +953,18 @@
             }
         }
     </script>
-
     [% IF op == 'view' %]
         <script>
             function sendList(){
-                openWindow( CGIBIN + 'virtualshelves/sendshelf.pl?shelfid=[% shelf.shelfnumber | html %]' );
-             }
+               openWindow( CGIBIN + 'virtualshelves/sendshelf.pl?shelfid=[% shelf.shelfnumber | html %]' );
+            }
 
-             $(document).ready(function() {
-                $("#sendlist").click(function(){
-                    sendList();
-                    return false;
-                });
-             });
+            $(document).ready(function() {
+               $("#sendlist").click(function(){
+                   sendList();
+                   return false;
+               });
+            });
         </script>
     [% END %]
 
