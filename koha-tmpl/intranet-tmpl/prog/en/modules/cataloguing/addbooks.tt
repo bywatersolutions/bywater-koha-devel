@@ -333,48 +333,47 @@
         const biblionumber = "[% biblionumber | html %]";
         var logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
     </script>
-
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             //Set focus to cataloging search
             $("input[name=q]:eq(0)").focus();
 
-            $("#newRecord").click(function(){
+            $("#newRecord").click(function () {
                 var url = $("a#newRecordDefault").prop("href");
                 window.location.href = url;
                 return false;
             });
 
-            $("#z3950search").click(function(){
+            $("#z3950search").click(function () {
                 PopupZ3950("Default");
                 return false;
             });
 
-            $(".z3950searchFw").click(function(){
-                PopupZ3950($(this).prop('id'));
+            $(".z3950searchFw").click(function () {
+                PopupZ3950($(this).prop("id"));
                 return false;
             });
-            $(".merge-items").on("click",function(e){
+            $(".merge-items").on("click", function (e) {
                 e.preventDefault();
                 MergeItems();
             });
 
-            $("#useadvanced").click(function(){
-                Cookies.set( `catalogue_editor_${logged_in_user_borrowernumber}`, "advanced", { expires: 365, path: '/', sameSite: 'Lax' } );
+            $("#useadvanced").click(function () {
+                Cookies.set(`catalogue_editor_${logged_in_user_borrowernumber}`, "advanced", { expires: 365, path: "/", sameSite: "Lax" });
                 return true;
             });
 
-            $(".previewData").on("click", function(e){
+            $(".previewData").on("click", function (e) {
                 e.preventDefault();
                 var ltitle = $(this).text();
                 var page = $(this).attr("href");
                 $("#dataPreviewLabel").text(ltitle);
                 $("#dataPreview .modal-body").load(page + " div");
-                $('#dataPreview').modal("show");
+                $("#dataPreview").modal("show");
             });
-            $("#dataPreview").on("hidden.bs.modal", function(){
+            $("#dataPreview").on("hidden.bs.modal", function () {
                 $("#dataPreviewLabel").html("");
-                $("#dataPreview .modal-body").html("<div id=\"loading\"><img src=\"" + interface + "/" + theme + "/img/spinner-small.gif\" alt=\"\" /> "+_("Loading")+"</div>");
+                $("#dataPreview .modal-body").html('<div id="loading"><img src="' + interface + "/" + theme + '/img/spinner-small.gif" alt="" /> ' + _("Loading") + "</div>");
             });
 
             var reservoirt = $("#reservoir-table").kohaTable(
@@ -388,8 +387,8 @@
         /* this function open a popup to search on z3950 server.  */
         function PopupZ3950(fw) {
             var strQuery = GetZ3950Terms(fw);
-            if(strQuery){
-                window.open("/cgi-bin/koha/cataloguing/z3950_search.pl?biblionumber=" + biblionumber + strQuery,"z3950search",'width=800,height=500,location=yes,toolbar=no,scrollbars=yes,resize=yes');
+            if (strQuery) {
+                window.open("/cgi-bin/koha/cataloguing/z3950_search.pl?biblionumber=" + biblionumber + strQuery, "z3950search", "width=800,height=500,location=yes,toolbar=no,scrollbars=yes,resize=yes");
             }
         }
 
@@ -402,16 +401,15 @@
                 alert(_("At least two records must be selected for merging."));
             } else {
                 var params = [];
-                $(checkboxes).each(function() {
-                    params.push('biblionumber=' + $(this).val());
+                $(checkboxes).each(function () {
+                    params.push("biblionumber=" + $(this).val());
                 });
-                var url = '/cgi-bin/koha/cataloguing/merge.pl?' + params.join('&');
+                var url = "/cgi-bin/koha/cataloguing/merge.pl?" + params.join("&");
                 location.href = url;
             }
             return false;
         }
     </script>
-
     <script>
         /* provide Z3950 search points */
         function GetZ3950Terms(fw){

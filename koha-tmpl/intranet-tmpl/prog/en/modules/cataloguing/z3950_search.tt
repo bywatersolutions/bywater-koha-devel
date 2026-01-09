@@ -279,9 +279,8 @@
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'cataloguing', 'z3950_search', 'resultst', 'json' ) | $raw %];
     </script>
-
     <script>
-        $(document).ready(function(){
+        $(document).ready(function () {
             var thetable = $("#resultst").kohaTable(
                 {
                     columnDefs: [{ targets: [1], type: "nsb-nse" }],
@@ -294,8 +293,8 @@
             InitLastAction();
         });
 
-        function columnsInit(){
-            $(".dataTables_info").text( $("#result_pagenumbers").text() );
+        function columnsInit() {
+            $(".dataTables_info").text($("#result_pagenumbers").text());
             $("#result_pagenumbers").hide();
         }
     </script>
