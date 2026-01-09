@@ -1636,7 +1636,6 @@
         const apply_patron_autocomplete = [% !( patron || patron.borrowernumber || borrowers || noitems || nobiblio ) && PatronAutoComplete ? 1 : 0 | html %];
         const url_biblio_params = '[% url_biblio_params | url %]';
     </script>
-
     <script>
         $(document).ready(function () {
             $("#patron_holds_table").kohaTable(
@@ -1659,42 +1658,41 @@
             cannotReserveFromOtherBranches: _("Patron is from different library"),
             itemAlreadyOnHold: _("Patron already has hold for this item"),
             cannotBeTransferred: _("Cannot be transferred to pickup library"),
-            pickupNotInHoldGroup: _("Only pickup locations within the same hold group are allowed")
-        }
+            pickupNotInHoldGroup: _("Only pickup locations within the same hold group are allowed"),
+        };
 
-        $.fn.select2.defaults.set("width", "100%" );
-        $.fn.select2.defaults.set("dropdownAutoWidth", true );
+        $.fn.select2.defaults.set("width", "100%");
+        $.fn.select2.defaults.set("dropdownAutoWidth", true);
 
-        $(document).ready(function() {
-            $('#cancellation-reason-div').hide();
-            $('.rank-request').on('change', function() {
-                if ( $(".rank-request option:selected[value='del']").length ) {
-                    $('#cancellation-reason-div').show();
+        $(document).ready(function () {
+            $("#cancellation-reason-div").hide();
+            $(".rank-request").on("change", function () {
+                if ($(".rank-request option:selected[value='del']").length) {
+                    $("#cancellation-reason-div").show();
                 } else {
-                    $('#cancellation-reason-div').hide();
+                    $("#cancellation-reason-div").hide();
                 }
             });
 
-            if( $("#circ_holds_select").length > 0 ){
+            if ($("#circ_holds_select").length > 0) {
                 /* Set active tab based on whether a club search was submitted */
                 var tabs = $("#circ_holds_select li:eq(" + active_tab + ") a").tab("show");
-                $( tabs[0].hash ).find("input.focus").focus();
+                $(tabs[0].hash).find("input.focus").focus();
 
                 /* Change active focus when tabs change */
                 $("#circ_holds_select a[data-bs-toggle='tab']").on("shown.bs.tab", function (e) {
                     active_tab = e.target.hash;
-                    $( active_tab ).find("input.focus").focus();
+                    $(active_tab).find("input.focus").focus();
                 });
             }
 
-
             ToggleHoldsToPlace();
-            $("#requestany,.requestspecific[name='request'],.requestgrp").on('change', function(){
+            $("#requestany,.requestspecific[name='request'],.requestgrp").on("change", function () {
                 ToggleHoldsToPlace();
             });
 
-            if (prefs.UseBranchTransferLimits){
-                $("#pickup,#pickup-next-avail,#pickup-item-group").on('change', function(){
+            if (prefs.UseBranchTransferLimits) {
+                $("#pickup,#pickup-next-avail,#pickup-item-group").on("change", function () {
                     var pickup = $(this).val();
                     var url = "?pickup=" + pickup;
                     url += "&borrowernumber=" + borrowernumber;
@@ -1708,90 +1706,86 @@
                 dom: '<"top pager"ilf>t',
             });
 
-            $("#club-request-form").on("submit", function() {
+            $("#club-request-form").on("submit", function () {
                 let $t = $(this);
-                $('.clubalert, .holdalert').addClass('hide');
+                $(".clubalert, .holdalert").addClass("hide");
                 const data = {
-                    pickup_library_id: $('select[name="pickup"]').val()
+                    pickup_library_id: $('select[name="pickup"]').val(),
                 };
-                if($('input[name="checkitem"]:checked').length)
-                    data.item_id = $('input[name="checkitem"]:checked').val();
-                if($('input[name="item_group_id"]:checked').length)
-                    data.item_group_id = $('input[name="item_group_id"]:checked').val();
-                if($('input[name="borrowernumber"]').length)
-                    data.patron_id = $('input[name="borrowernumber"]').val();
-                if($('textarea[name="notes"]').length)
-                    data.notes = $('textarea[name="notes"]').val()||null;
-                if($('input[name="itemtype"]').length) {
-                    data.item_type = $('input[name="itemtype"]').val()||null;
+                if ($('input[name="checkitem"]:checked').length) data.item_id = $('input[name="checkitem"]:checked').val();
+                if ($('input[name="item_group_id"]:checked').length) data.item_group_id = $('input[name="item_group_id"]:checked').val();
+                if ($('input[name="borrowernumber"]').length) data.patron_id = $('input[name="borrowernumber"]').val();
+                if ($('textarea[name="notes"]').length) data.notes = $('textarea[name="notes"]').val() || null;
+                if ($('input[name="itemtype"]').length) {
+                    data.item_type = $('input[name="itemtype"]').val() || null;
                 }
-                if($('input[name="default_patron_home"]:checked').length) {
+                if ($('input[name="default_patron_home"]:checked').length) {
                     data.default_patron_home = 1;
                 }
 
-                const count = $('input[name="holds_to_place_count"]').length?$('input[name="holds_to_place_count"]').val():1;
-                var newloc = 'request.pl?';
+                const count = $('input[name="holds_to_place_count"]').length ? $('input[name="holds_to_place_count"]').val() : 1;
+                var newloc = "request.pl?";
                 biblionumbers.forEach(function (biblionumber) {
-                    newloc += '&biblionumber=' + biblionumber;
+                    newloc += "&biblionumber=" + biblionumber;
                 });
 
-                biblionumbers.forEach(function(biblionumber) {
+                biblionumbers.forEach(function (biblionumber) {
                     data.biblio_id = biblionumber;
                     let options = {
-                        url: $t.attr('action'),
-                        method: $t.attr('method').toUpperCase(),
-                        contentType: 'application/json',
-                        data: JSON.stringify(data)
+                        url: $t.attr("action"),
+                        method: $t.attr("method").toUpperCase(),
+                        contentType: "application/json",
+                        data: JSON.stringify(data),
                     };
-                    for(let i = 0; i < count; i++) {
+                    for (let i = 0; i < count; i++) {
                         $.ajax(options)
-                        .then(function(result) {
-                            document.location = newloc;
-                        })
-                        .fail(function(err) {
-                            var message = err.responseJSON.error;
-                            var match = err.responseJSON.error.match(/Reason: (\w+)\s*$/);
-                            if(match && ERROR_MAP[match[1]]) {
-                                message = '<div><strong>'+_("Cannot place hold")+'</strong></div><div>'+ERROR_MAP[match[1]]+'</div>'
-                            }
-                            $('.clubalert, .holdalert').removeClass('hide').html(message);
-                        });
+                            .then(function (result) {
+                                document.location = newloc;
+                            })
+                            .fail(function (err) {
+                                var message = err.responseJSON.error;
+                                var match = err.responseJSON.error.match(/Reason: (\w+)\s*$/);
+                                if (match && ERROR_MAP[match[1]]) {
+                                    message = "<div><strong>" + _("Cannot place hold") + "</strong></div><div>" + ERROR_MAP[match[1]] + "</div>";
+                                }
+                                $(".clubalert, .holdalert").removeClass("hide").html(message);
+                            });
                     }
                 });
 
                 return false;
             });
 
-            if (!multi_hold){
-                $("#hold-request-form").on("submit", function(e){
+            if (!multi_hold) {
+                $("#hold-request-form").on("submit", function (e) {
                     return check(e, $(this));
                 });
             } else {
-                $("#hold-request-form").on("submit", function(){
+                $("#hold-request-form").on("submit", function () {
                     return checkMultiHold();
                 });
             }
 
-            $(".pickup_location_dropdown").each( function () {
+            $(".pickup_location_dropdown").each(function () {
                 $(this).pickup_locations_dropdown();
             });
 
             $("#pickup_multi").select2({
-                width: '30%',
-                allowClear: true
+                width: "30%",
+                allowClear: true,
             });
 
-            $('.multi_pickup_select').select2({
-                width: '100%',
-                allowClear: true
+            $(".multi_pickup_select").select2({
+                width: "100%",
+                allowClear: true,
             });
 
-            $("#pickup_multi").on("change", function() {
+            $("#pickup_multi").on("change", function () {
                 var selection = $(this).val();
-                if ( selection != '' ) {
-                    $(".multi_pickup_select").each(function() {
-                        var valid_pickup_locations = $(this).data('pickup-locations');
-                        if ( valid_pickup_locations.includes(selection) ) {
+                if (selection != "") {
+                    $(".multi_pickup_select").each(function () {
+                        var valid_pickup_locations = $(this).data("pickup-locations");
+                        if (valid_pickup_locations.includes(selection)) {
                             $(this).val(selection);
                             $(this).trigger("change");
                         }
@@ -1799,7 +1793,7 @@
                 }
             });
 
-            $("#pickup,#pickup-item-group,#pickup-next-avail").each( function () {
+            $("#pickup,#pickup-item-group,#pickup-next-avail").each(function () {
                 $(this).pickup_locations_dropdown();
             });
 
@@ -1809,280 +1803,288 @@
         });
 
         function ToggleHoldsToPlace() {
-            if ( $("#requestany").prop('checked') ) {
-                $(".disable_request_any").prop('disabled',true).addClass('disabled').removeClass('enabled');
-                $(".enable_request_any").prop('disabled',false).removeClass('disabled').addClass('enabled');
-                $(".requestspecific,.requestgrp").prop('checked', false);
-            } else if( $(".requestspecific").prop('checked') ) {
-                $(".disable_request_specific").prop('disabled',true).addClass('disabled').removeClass('enabled');
-                $(".enable_request_specific").prop('disabled',false).removeClass('disabled').addClass('enabled');
-                $("#requestany,.requestgrp").prop('checked', false);
+            if ($("#requestany").prop("checked")) {
+                $(".disable_request_any").prop("disabled", true).addClass("disabled").removeClass("enabled");
+                $(".enable_request_any").prop("disabled", false).removeClass("disabled").addClass("enabled");
+                $(".requestspecific,.requestgrp").prop("checked", false);
+            } else if ($(".requestspecific").prop("checked")) {
+                $(".disable_request_specific").prop("disabled", true).addClass("disabled").removeClass("enabled");
+                $(".enable_request_specific").prop("disabled", false).removeClass("disabled").addClass("enabled");
+                $("#requestany,.requestgrp").prop("checked", false);
             } else {
-                $(".disable_request_group").prop('disabled',true).addClass('disabled').removeClass('enabled');
-                $(".enable_request_group").prop('disabled',false).removeClass('disabled').addClass('enabled');
-                $("#requestany,.requestspecific").prop('checked', false);
+                $(".disable_request_group").prop("disabled", true).addClass("disabled").removeClass("enabled");
+                $(".enable_request_group").prop("disabled", false).removeClass("disabled").addClass("enabled");
+                $("#requestany,.requestspecific").prop("checked", false);
             }
         }
 
-        $('.any_specific').click(function() {
-            const fieldset = $(this).find('fieldset:first');
+        $(".any_specific").click(function () {
+            const fieldset = $(this).find("fieldset:first");
 
-            if ( fieldset.hasClass('disabled') ) {
-                $('.enable_request_specific, .enable_request_any, .enable_request_group').removeClass('enabled');
-                const specific_cb = $(this).find('#requestspecificitem');
-                const any_cb = $(this).find('#requestany');
-                const itemgroup_cb = $(this).find('#requestgrp');
+            if (fieldset.hasClass("disabled")) {
+                $(".enable_request_specific, .enable_request_any, .enable_request_group").removeClass("enabled");
+                const specific_cb = $(this).find("#requestspecificitem");
+                const any_cb = $(this).find("#requestany");
+                const itemgroup_cb = $(this).find("#requestgrp");
 
-                if ( specific_cb.length ) {
-                    specific_cb.prop('checked', true);
-                } else if ( any_cb.length ) {
-                    any_cb.prop('checked', true);
+                if (specific_cb.length) {
+                    specific_cb.prop("checked", true);
+                } else if (any_cb.length) {
+                    any_cb.prop("checked", true);
                 } else {
-                    itemgroup_cb.prop('checked', true);
+                    itemgroup_cb.prop("checked", true);
                 }
 
-                fieldset.removeClass('disabled').addClass('enabled');
+                fieldset.removeClass("disabled").addClass("enabled");
                 ToggleHoldsToPlace();
             }
         });
 
-        function check( e, table ) {
-
+        function check(e, table) {
             var msg = "";
 
-            if ( $(".requestspecific").is(":checked") ) {
+            if ($(".requestspecific").is(":checked")) {
                 // requestany not selected, go through the item-specific cases
                 var selected_items = $('#requestspecific input[name="checkitem"]:checked');
-                if ( selected_items.length > 0 ) {
+                if (selected_items.length > 0) {
                     // got item-specific hold requests in the form!
                     // verify they have a pickup location selected
 
-                    if ( selected_items.closest('tr').find(".pickup_locations").val() == '' ) {
-
-                        msg = _("- Please select a pickup location for the item") + "\n"
+                    if (selected_items.closest("tr").find(".pickup_locations").val() == "") {
+                        msg = _("- Please select a pickup location for the item") + "\n";
                     }
-                }
-                else {
+                } else {
                     msg = _("- Please select an item to place a hold") + "\n";
                 }
-            } else if ( $("#requestgrp").is(":checked") ) {
+            } else if ($("#requestgrp").is(":checked")) {
                 var selected_group = $('#requestgroup input[type="radio"]:checked');
-                if( selected_group.length > 0 ){
-                    if( $("#pickup-item-group").length < 1 || $("#pickup-item-grp").val() == "" ){
+                if (selected_group.length > 0) {
+                    if ($("#pickup-item-group").length < 1 || $("#pickup-item-grp").val() == "") {
                         msg = _("- Please select a pickup location for this hold" + "\n");
                     }
                 } else {
-                    msg = (_("- Please select an item group to place a hold") + "\n");
+                    msg = _("- Please select an item group to place a hold") + "\n";
                 }
             } else {
                 // Requesting next available
-                if( $("#pickup-next-avail").length < 1 || $("#pickup-next-avail").val() == "" || $('#pickup-next-avail').val() === null ){
+                if ($("#pickup-next-avail").length < 1 || $("#pickup-next-avail").val() == "" || $("#pickup-next-avail").val() === null) {
                     msg = _("- Please select a pickup location for this hold") + "\n";
                 }
             }
 
-
             if (msg == "") {
-                $('#hold-request-form').preventDoubleFormSubmit();
-                return(true);
+                $("#hold-request-form").preventDoubleFormSubmit();
+                return true;
             } else {
                 e.preventDefault();
                 alert(msg);
-                return(false);
+                return false;
             }
         }
 
         function checkMultiHold() {
-
             var selected_bibs = $(".multi_hold_item_checkbox:checked");
-            if ( selected_bibs.length > 0 ) {
+            if (selected_bibs.length > 0) {
                 // there are biblios selected in the form!
                 // verify they have a pickup location selected
 
                 var pickup_not_set = 0;
-                selected_bibs.each(function() {
-                    if ( $(this).closest('tr').find(".multi_pickup_select").val() === "" ) {
+                selected_bibs.each(function () {
+                    if ($(this).closest("tr").find(".multi_pickup_select").val() === "") {
                         pickup_not_set++;
-                    }
-                    else {
+                    } else {
                         var bibnum = $(this).attr("title");
                     }
                 });
-                if ( pickup_not_set > 0 ) {
-                    alert( _("Please make sure all selected titles have a pickup location set") + "\n" );
+                if (pickup_not_set > 0) {
+                    alert(_("Please make sure all selected titles have a pickup location set") + "\n");
                     return false;
                 }
-            }
-            else {
-                alert( _("Please select at least one title") + "\n" );
+            } else {
+                alert(_("Please select at least one title") + "\n");
                 return false;
             }
 
-            $('#hold-request-form').preventDoubleFormSubmit();
+            $("#hold-request-form").preventDoubleFormSubmit();
 
             return true;
         }
 
-         $(document).ready(function() {
-
-            $("#always_show_holds").change(function(){
-                if( $(this).prop('checked') ){
+        $(document).ready(function () {
+            $("#always_show_holds").change(function () {
+                if ($(this).prop("checked")) {
                     document.cookie = "always_show_holds=DO";
                 } else {
                     document.cookie = "always_show_holds=DONT";
                 }
             });
-            $("input.needsoverride").click(function() { // This must be before the radio button/checkbox switch logic
+            $("input.needsoverride").click(function () {
+                // This must be before the radio button/checkbox switch logic
                 var itemnumber = this.value;
-                var msg = '';
+                var msg = "";
 
                 switch (override_items[itemnumber].holdallowed) {
-                    case "not_allowed": msg = _("This item normally cannot be put on hold."); break;
-                    case "from_home_library": msg = _("This item normally cannot be put on hold except for patrons from %s.").format(override_items[itemnumber].homebranch); break;
+                    case "not_allowed":
+                        msg = _("This item normally cannot be put on hold.");
+                        break;
+                    case "from_home_library":
+                        msg = _("This item normally cannot be put on hold except for patrons from %s.").format(override_items[itemnumber].homebranch);
+                        break;
                 }
 
                 msg += "\n\n" + _("Place hold on this item?");
 
                 return confirm(msg);
             });
-            $("button.warning").click(function() {
-                return confirm( _("None of these items can normally be put on hold for this patron.") + "\n\n" + _("Place hold?") );
+            $("button.warning").click(function () {
+                return confirm(_("None of these items can normally be put on hold for this patron.") + "\n\n" + _("Place hold?"));
             });
             var prev_rank_request;
-            $("select[name=rank-request]").on("focus", function() {
-                prev_rank_request = parseInt($(this).val());
-            }).change(function() {
-                var this_rank = $(this);
-                var new_rank = parseInt(this_rank.val());
-                var old_rank = prev_rank_request;
+            $("select[name=rank-request]")
+                .on("focus", function () {
+                    prev_rank_request = parseInt($(this).val());
+                })
+                .change(function () {
+                    var this_rank = $(this);
+                    var new_rank = parseInt(this_rank.val());
+                    var old_rank = prev_rank_request;
 
-                if ( isNaN( old_rank ) ) {
-                    $("select[name=rank-request]").not('[disabled]').not(this_rank).each(function() {
-                        var current_rank = parseInt($(this).val());
-                        if ( !isNaN(current_rank) && current_rank >= new_rank ) {
-                            $(this).val(current_rank + 1);
+                    if (isNaN(old_rank)) {
+                        $("select[name=rank-request]")
+                            .not("[disabled]")
+                            .not(this_rank)
+                            .each(function () {
+                                var current_rank = parseInt($(this).val());
+                                if (!isNaN(current_rank) && current_rank >= new_rank) {
+                                    $(this).val(current_rank + 1);
+                                }
+                            });
+                        prev_rank_request = new_rank;
+                        return;
+                    }
+
+                    if (isNaN(new_rank)) {
+                        if (!isNaN(old_rank)) {
+                            $("select[name=rank-request]")
+                                .not("[disabled]")
+                                .not(this)
+                                .each(function () {
+                                    var current_rank = parseInt($(this).val());
+                                    if (!isNaN(current_rank) && current_rank > old_rank) {
+                                        $(this).val(current_rank - 1);
+                                    }
+                                });
                         }
-                    });
-                    prev_rank_request = new_rank;
-                    return;
-                }
+                        prev_rank_request = NaN;
+                        return;
+                    }
 
-                if ( isNaN( new_rank ) ) {
-                    if ( !isNaN( old_rank ) ) {
-                        $("select[name=rank-request]").not('[disabled]').not(this).each(function() {
+                    //if new rank is old rank, don't continue
+                    if (new_rank === old_rank) return;
+
+                    // Adjust ranks
+                    $("select[name=rank-request]")
+                        .not("[disabled]")
+                        .not(this)
+                        .each(function () {
                             var current_rank = parseInt($(this).val());
-                            if ( !isNaN(current_rank) && current_rank > old_rank ) {
-                                $(this).val(current_rank - 1);
+                            //if current_rank is NaN, bail
+                            if (isNaN(current_rank)) return;
+
+                            if (old_rank > new_rank) {
+                                if (current_rank >= new_rank && current_rank < old_rank) {
+                                    $(this).val(current_rank + 1);
+                                }
+                            } else {
+                                if (current_rank > old_rank && current_rank <= new_rank) {
+                                    $(this).val(current_rank - 1);
+                                }
                             }
                         });
-                    }
-                    prev_rank_request = NaN;
-                    return;
-                }
 
-                //if new rank is old rank, don't continue
-                if ( new_rank === old_rank ) return;
-
-                // Adjust ranks
-                $("select[name=rank-request]").not('[disabled]').not(this).each(function() {
-                    var current_rank = parseInt($(this).val());
-                    //if current_rank is NaN, bail
-                    if ( isNaN( current_rank ) ) return;
-
-                    if ( old_rank > new_rank ) {
-                        if ( current_rank >= new_rank && current_rank < old_rank ) {
-                            $(this).val(current_rank + 1);
-                        }
-                    } else {
-                        if ( current_rank > old_rank && current_rank <= new_rank ) {
-                            $(this).val(current_rank - 1);
-                        }
-                    }
+                    prev_rank_request = new_rank;
                 });
 
-                prev_rank_request = new_rank;
-            });
-
-            $(".clear-date").on("click",function(e){
+            $(".clear-date").on("click", function (e) {
                 e.preventDefault();
-                var fieldID = this.id.replace("clear-date-","");
+                var fieldID = this.id.replace("clear-date-", "");
                 $("#" + fieldID).val("");
             });
 
-            if (apply_patron_autocomplete){
-                patron_autocomplete($(".search_patron_filter"), { 'link-to': 'reserve', 'url-params': url_biblio_params });
+            if (apply_patron_autocomplete) {
+                patron_autocomplete($(".search_patron_filter"), { "link-to": "reserve", "url-params": url_biblio_params });
             }
 
-            if (prefs.EnableItemGroupHolds){
-                $(':radio[name="item_group_id"]').change(function(){
-                    $('input[name="checkitem"]').prop('checked', false);
+            if (prefs.EnableItemGroupHolds) {
+                $(':radio[name="item_group_id"]').change(function () {
+                    $('input[name="checkitem"]').prop("checked", false);
                 });
 
-                $('input[name="checkitem"]').change(function(){
-                    $(':radio[name="item_group_id"]').prop('checked', false);
+                $('input[name="checkitem"]').change(function () {
+                    $(':radio[name="item_group_id"]').prop("checked", false);
                 });
             }
 
-            $(".hold-arrow").click(function(e) {
+            $(".hold-arrow").click(function (e) {
                 e.preventDefault();
                 let arrowForm = $("#hold-actions-form").attr({
-                    action: 'request.pl',
-                    method: 'post'
+                    action: "request.pl",
+                    method: "post",
                 });
                 let arrow_op = $("<input />").attr({
-                    name: 'op',
-                    type: 'hidden',
-                    value: $(this).data('op')
+                    name: "op",
+                    type: "hidden",
+                    value: $(this).data("op"),
                 });
                 let arrow_where = $("<input />").attr({
-                    name: 'where',
-                    type: 'hidden',
-                    value: $(this).data('where')
+                    name: "where",
+                    type: "hidden",
+                    value: $(this).data("where"),
                 });
                 let arrow_fp = $("<input />").attr({
-                    name: 'first_priority',
-                    type: 'hidden',
-                    value: $(this).data('first_priority')
+                    name: "first_priority",
+                    type: "hidden",
+                    value: $(this).data("first_priority"),
                 });
                 let arrow_lp = $("<input />").attr({
-                    name: 'last_priority',
-                    type: 'hidden',
-                    value: $(this).data('last_priority')
+                    name: "last_priority",
+                    type: "hidden",
+                    value: $(this).data("last_priority"),
                 });
                 let arrow_pp = $("<input />").attr({
-                    name: 'prev_priority',
-                    type: 'hidden',
-                    value: $(this).data('prev_priority')
+                    name: "prev_priority",
+                    type: "hidden",
+                    value: $(this).data("prev_priority"),
                 });
                 let arrow_np = $("<input />").attr({
-                    name: 'next_priority',
-                    type: 'hidden',
-                    value: $(this).data('next_priority')
+                    name: "next_priority",
+                    type: "hidden",
+                    value: $(this).data("next_priority"),
                 });
                 let arrow_bn = $("<input />").attr({
-                    name: 'borrowernumber',
-                    type: 'hidden',
-                    value: $(this).data('borrowernumber')
+                    name: "borrowernumber",
+                    type: "hidden",
+                    value: $(this).data("borrowernumber"),
                 });
                 let arrow_bb = $("<input />").attr({
-                    name: 'biblionumber',
-                    type: 'hidden',
-                    value: $(this).data('biblionumber')
+                    name: "biblionumber",
+                    type: "hidden",
+                    value: $(this).data("biblionumber"),
                 });
                 let arrow_ri = $("<input />").attr({
-                    name: 'reserve_id',
-                    type: 'hidden',
-                    value: $(this).data('reserve_id')
+                    name: "reserve_id",
+                    type: "hidden",
+                    value: $(this).data("reserve_id"),
                 });
                 let arrow_date = $("<input />").attr({
-                    name: 'date',
-                    type: 'hidden',
-                    value: $(this).data('date')
+                    name: "date",
+                    type: "hidden",
+                    value: $(this).data("date"),
                 });
-                arrowForm.append(arrow_op,arrow_where,arrow_fp,arrow_lp,arrow_pp,arrow_np,arrow_bn,arrow_bb,arrow_ri,arrow_date);
+                arrowForm.append(arrow_op, arrow_where, arrow_fp, arrow_lp, arrow_pp, arrow_np, arrow_bn, arrow_bb, arrow_ri, arrow_date);
                 $("#hold-actions-form").submit();
                 return true;
-            })
+            });
         });
     </script>
     <script>
