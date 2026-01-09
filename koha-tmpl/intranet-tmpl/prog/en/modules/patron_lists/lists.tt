@@ -166,9 +166,8 @@
         const interface = "[% interface | html %]";
         const theme = "[% theme | html %]";
     </script>
-
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             var patronExportModal = $("#patronExportModal");
             var patronExportModalBody = $("#patronExportModal .modal-body");
 
@@ -177,62 +176,61 @@
             $("#patron-lists-table").kohaTable({
                 autoWidth: false,
                 pagingType: "full",
-                order: [[ 1, "asc" ]]
+                order: [[1, "asc"]],
             });
 
-            $(".delete_patron").on("click", function(){
+            $(".delete_patron").on("click", function () {
                 $(".dropdown").removeClass("open");
                 var list = $(this).data("list-name");
-                return confirmDelete( _("Are you sure you want to delete the list %s?").format(list));
+                return confirmDelete(_("Are you sure you want to delete the list %s?").format(list));
             });
 
-            $("#patrons_lists_form").submit(function(){
+            $("#patrons_lists_form").submit(function () {
                 var checkedItems = $("input[name=patron_lists_ids]:checked");
-                if ( checkedItems.size() == 0) {
+                if (checkedItems.size() == 0) {
                     alert(_("You must select one or more lists to delete"));
                     return false;
                 }
-                if( confirm(_("Are you sure you want to delete the selected lists?")) ) {
+                if (confirm(_("Are you sure you want to delete the selected lists?"))) {
                     return true;
                 } else {
                     return false;
                 }
             });
 
-            $(document).on("click", ".select_list", function() {
+            $(document).on("click", ".select_list", function () {
                 var checkedItems = $("input[name=patron_lists_ids]:checked");
-                if ( checkedItems.size() == 0 ) {
+                if (checkedItems.size() == 0) {
                     $("#delete_selected_lists").addClass("disabled").prop("disabled", true);
                 } else {
                     $("#delete_selected_lists").removeClass("disabled").prop("disabled", false);
                 }
             });
 
-            $(".print_cards").on("click", function(e){
+            $(".print_cards").on("click", function (e) {
                 e.preventDefault();
                 var page = $(this).attr("href");
                 patronExportModalBody.load(page + " #exportingf");
                 patronExportModal.modal("show");
             });
 
-            patronExportModal.on("hidden.bs.modal", function(){
-                patronExportModalBody.html("<div id=\"loading\"><img src=\"" + interface + "/" + theme + "/img/spinner-small.gif\" alt=\"\" /> "+_("Loading")+"</div>");
+            patronExportModal.on("hidden.bs.modal", function () {
+                patronExportModalBody.html('<div id="loading"><img src="' + interface + "/" + theme + '/img/spinner-small.gif" alt="" /> ' + _("Loading") + "</div>");
             });
 
-            patronExportModal.on("submit", "#exportingf", function(e){
+            patronExportModal.on("submit", "#exportingf", function (e) {
                 e.preventDefault();
                 modal_body = patronExportModalBody;
-                modal_body.html("<div id=\"loading\"><img src=\"" + interface + "/" + theme + "/img/spinner-small.gif\" alt=\"\" /> "+_("Loading")+"</div>");
+                modal_body.html('<div id="loading"><img src="' + interface + "/" + theme + '/img/spinner-small.gif" alt="" /> ' + _("Loading") + "</div>");
                 target_url = $(this).attr("action");
-                params =  $( this ).serialize();
-                $("#patronExportModal .modal-body").load( target_url + "?" + params + " #export_patron_list");
+                params = $(this).serialize();
+                $("#patronExportModal .modal-body").load(target_url + "?" + params + " #export_patron_list");
             });
 
-            patronExportModal.on("click",".btn-close",function(e){
+            patronExportModal.on("click", ".btn-close", function (e) {
                 e.preventDefault();
                 patronExportModal.modal("hide");
             });
-
         });
     </script>
 [% END %]

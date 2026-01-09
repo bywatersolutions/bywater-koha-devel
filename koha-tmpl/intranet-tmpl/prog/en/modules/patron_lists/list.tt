@@ -237,92 +237,94 @@
     <script>
         var table_settings = [% TablesSettings.GetTableSettings('members', 'patron-lists', 'patron-list-table', 'json') | $raw %]
     </script>
-
     <script>
-        $(document).ready(function() {
-            $('#patrons_to_add_fieldset').hide();
+        $(document).ready(function () {
+            $("#patrons_to_add_fieldset").hide();
 
-                $("#patron-list-table").kohaTable(
-                    {
-                        pagingType: "full",
-                    },
-                    table_settings
-                );
+            $("#patron-list-table").kohaTable(
+                {
+                    pagingType: "full",
+                },
+                table_settings
+            );
 
-            function RemovePatron( cardnumber, container ) {
-                $( '#borrower_' + cardnumber ).remove();
+            function RemovePatron(cardnumber, container) {
+                $("#borrower_" + cardnumber).remove();
 
-                if ( ! $(container).html() ) {
-                    $(container).parent("fieldset").hide( 800 );
+                if (!$(container).html()) {
+                    $(container).parent("fieldset").hide(800);
                 }
             }
             patron_autocomplete($("#find_patron"), {
                 "on-select-add-to": {
                     container: $("#patrons_to_add"),
-                    input_name: 'patrons_to_add',
+                    input_name: "patrons_to_add",
                 },
-                "on-select-callback": function( event, ui ) {
-                    $("#find_patron").val('').focus();
+                "on-select-callback": function (event, ui) {
+                    $("#find_patron").val("").focus();
                     return false;
-                }
+                },
             });
 
-            $("body").on("click", "#CheckAll", function(e){
+            $("body").on("click", "#CheckAll", function (e) {
                 e.preventDefault();
-                $("input[type='checkbox']","#patron-list-table").each(function(){
-                    $(this).prop("checked",1);
+                $("input[type='checkbox']", "#patron-list-table").each(function () {
+                    $(this).prop("checked", 1);
                 });
             });
-            $("body").on("click", "#CheckNone", function(e){
+            $("body").on("click", "#CheckNone", function (e) {
                 e.preventDefault();
-                $("input[type='checkbox']","#patron-list-table").each(function(){
-                    $(this).prop("checked",0);
+                $("input[type='checkbox']", "#patron-list-table").each(function () {
+                    $(this).prop("checked", 0);
                 });
             });
 
-            $("#remove_patrons").submit(function(){
+            $("#remove_patrons").submit(function () {
                 var checkedItems = $("input:checked");
                 if ($(checkedItems).size() == 0) {
                     alert(_("You must select one or more patrons to remove"));
                     return false;
                 }
-                $(checkedItems).parents('tr').addClass("warn");
-                if( confirm(_("Are you sure you want to remove the selected patrons?")) ) {
+                $(checkedItems).parents("tr").addClass("warn");
+                if (confirm(_("Are you sure you want to remove the selected patrons?"))) {
                     return true;
                 } else {
-                    $(checkedItems).parents('tr').removeClass("warn");
+                    $(checkedItems).parents("tr").removeClass("warn");
                     return false;
                 }
             });
 
-            $("#add_patrons_by_id a").on("click", function(){
+            $("#add_patrons_by_id a").on("click", function () {
                 $("#add_patrons_by_id, #patron_search_line").hide();
                 $("#add_patrons_by_search, #patron_ids_line, #patron_ids_submit").show();
             });
 
-            $("#add_patrons_by_search a").on("click", function(){
+            $("#add_patrons_by_search a").on("click", function () {
                 $("#add_patrons_by_id, #patron_search_line").show();
                 $("#add_patrons_by_search, #patron_ids_line, #patron_ids_submit").hide();
             });
 
-            $('.merge-patrons').on('click', function() {
+            $(".merge-patrons").on("click", function () {
                 var checkedItems = $("input:checked");
                 if ($(checkedItems).length < 2) {
                     alert(_("You must select two or more patrons to merge"));
                     return false;
                 }
-                $(checkedItems).parents('tr').addClass("warn");
+                $(checkedItems).parents("tr").addClass("warn");
                 if (confirm(_("Are you sure you want to merge the selected patrons?"))) {
-                    var merge_patrons_url = '/cgi-bin/koha/members/merge-patrons.pl?' +
-                        $('.selection:checked')
-                        .map(function() {
-                            return "id=" + $( '#borrowernumber_' + $(this).val() ).val()
-                        }).get().join('&');
+                    var merge_patrons_url =
+                        "/cgi-bin/koha/members/merge-patrons.pl?" +
+                        $(".selection:checked")
+                            .map(function () {
+                                return "id=" + $("#borrowernumber_" + $(this).val()).val();
+                            })
+                            .get()
+                            .join("&");
 
                     window.location.href = merge_patrons_url;
                     return false;
                 } else {
-                    $(checkedItems).parents('tr').removeClass("warn");
+                    $(checkedItems).parents("tr").removeClass("warn");
                     return false;
                 }
             });
