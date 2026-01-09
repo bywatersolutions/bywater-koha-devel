@@ -577,7 +577,11 @@
     [% END %]
     [% INCLUDE 'datatables.inc' %]
     <script>
-        [% IF ( loggedinusername ) %]
+        const loggedinusername = [% ( loggedinusername ) ? 1 : 0 | html %];
+    </script>
+
+    [% IF ( loggedinusername ) %]
+        <script>
             function enableCheckboxActions(){
                 // Enable/disable controls if checkboxes are checked
                 var checkedBoxes = $(".cb:checked");
@@ -589,9 +593,11 @@
                   $(".selections-toolbar .links a").addClass("disabled");
                 }
             }
-        [% END %]
+        </script>
+    [% END %]
 
-        [% IF Koha.Preference( 'OPACSuggestionAutoFill' ) %]
+    [% IF Koha.Preference( 'OPACSuggestionAutoFill' ) %]
+        <script>
         $(function() {
             $('#isbn').autofill({
                 'volumeInfo.title': {target: 'title', effect: 'flash'},
@@ -603,13 +609,18 @@
                 'kind': {target: 'itemtype', handle: function(t,v) { t.val('BK'); },},
             });
         });
-        [% END %]
+        </script>
+    [% END %]
 
+    <script>
         $(function() {
             $("#suggestt").kohaTable({
                 order: [[ 1, "asc" ]],
                 columnDefs: [
-                  [% IF ( loggedinusername ) %]{ targets: [ 0 ], orderable: false, searchable: false }[% END %],
+                    ...( loggedinusername
+                        ? [{ targets: [ 0 ], orderable: false, searchable: false }]
+                        : []
+                    ),
                     { className: 'dtr-control', orderable: false, targets: -1 },
                     { responsivePriority: 1, targets: 1 }
                 ],
@@ -620,7 +631,8 @@
                     }
                 },
             });
-            [% IF ( loggedinusername ) %]$("span.clearall").html("<a id=\"CheckNone\" class=\"btn btn-link btn-sm\" href=\"#\">"+_("Clear all")+"<\/a>");
+            if (loggedinusername){
+            $("span.clearall").html("<a id=\"CheckNone\" class=\"btn btn-link btn-sm\" href=\"#\">"+_("Clear all")+"<\/a>");
             $("span.checkall").html("<a id=\"CheckAll\" class=\"btn btn-link btn-sm\" href=\"#\">"+_("Select all")+"<\/a>");
             $("#CheckAll").on("click",function(e){
                 e.preventDefault();
@@ -672,7 +684,7 @@
                     });
                 }
             });
-            [% END %]
+            }
         });
     </script>
 [% END %]
