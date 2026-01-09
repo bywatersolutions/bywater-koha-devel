@@ -414,128 +414,140 @@
     [% BLOCK jsinclude %]
         [% INCLUDE 'datatables.inc' %]
         <script>
-            function mungeHistory() {
-                    // prevent back button from allowing form resubmission
-                    if (history && history.pushState) {
-                        history.replaceState(null, document.title, window.location.href);
-                    }
-                }
-                var mainTimeout;
-                function sco_init() {
-                    mainTimeout = setTimeout(function() {
-                        location.href = '/cgi-bin/koha/sco/sco-main.pl?op=logout';
-                    }, [% SelfCheckTimeout | html %]);
-                }
-                function dofocus() {    // named function req'd for body onload event by some FF and IE7 security models
-                    // alert("dofocus called");
-                    $(".focus:last").select();
-                }
-                var slip_re = /slip/;
-                function printx_window(print_type) {
-                  var handler = print_type.match(slip_re) ? "printslip" : "moremember";
-
-                  return false;
-                }
-                function checkout_confirm(patronid) {
-                    var   barcode = $("#barcode").val();
-                    // alert("checkout_confirm('" + patronid + "') called for barcode '" + barcode + "'");
-                    if (! barcode) { dofocus(); return false; }    // no barcode
-                    if (barcode == "__KOHA_NEW_CIRC__") {   // magic barcode
-                        window.location.href='/cgi-bin/koha/sco/sco-main.pl?op=logout';
-                        return false;
-                    }
-                    return true;
-                }
-                [% IF Koha.Preference('AudioAlerts') %]
-                    var AUDIO_ALERTS = JSON.parse( "[% To.json(AudioAlerts.AudioAlerts) | $raw %]" );
-                    $( document ).ready(function() {
-                        if ( AUDIO_ALERTS ) {
-                            for ( var k in AUDIO_ALERTS ) {
-                                var alert = AUDIO_ALERTS[k];
-                                if ( $( alert.selector ).length ) {
-                                    playSound( alert.sound );
-                                    break;
-                                }
+            addPrefs({
+                OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
+                SelfCheckTimeout: "[% Koha.Preference('SelfCheckTimeout') | html %]",
+                SelfCheckReceiptPrompt: [% Koha.Preference('SelfCheckReceiptPrompt') ? 1 : 0 | html %],
+            });
+            const logged_in_user_cardnumber = "[% patronid | html %]";
+        </script>
+        [% IF Koha.Preference('AudioAlerts') %]
+            <script>
+                var AUDIO_ALERTS = JSON.parse( "[% To.json(AudioAlerts.AudioAlerts) | $raw %]" );
+                $( document ).ready(function() {
+                    if ( AUDIO_ALERTS ) {
+                        for ( var k in AUDIO_ALERTS ) {
+                            var alert = AUDIO_ALERTS[k];
+                            if ( $( alert.selector ).length ) {
+                                playSound( alert.sound );
+                                break;
                             }
                         }
-                    });
-                    function playSound( sound ) {
-                        if (!(sound.indexOf("http://") === 0 || sound.indexOf("https://") === 0)) {
-                            sound = '[% interface | html %]' + '/bootstrap/sound/' + sound;
-                        }
-                        document.getElementById("audio-alert").innerHTML = '<audio src="' + sound + '" autoplay="autoplay" autobuffer="autobuffer"></audio>';
                     }
-                [% END %]
+                });
+                function playSound( sound ) {
+                    if (!(sound.indexOf("http://") === 0 || sound.indexOf("https://") === 0)) {
+                        sound = '[% interface | html %]' + '/bootstrap/sound/' + sound;
+                    }
+                    document.getElementById("audio-alert").innerHTML = '<audio src="' + sound + '" autoplay="autoplay" autobuffer="autobuffer"></audio>';
+                }
+            </script>
+        [% END %]
+        <script>
+            function mungeHistory() {
+                // prevent back button from allowing form resubmission
+                if (history && history.pushState) {
+                    history.replaceState(null, document.title, window.location.href);
+                }
+            }
+            var mainTimeout;
+            function sco_init() {
+                mainTimeout = setTimeout(function () {
+                    location.href = "/cgi-bin/koha/sco/sco-main.pl?op=logout";
+                }, prefs.SelfCheckTimeout);
+            }
+            function dofocus() {
+                // named function req'd for body onload event by some FF and IE7 security models
+                // alert("dofocus called");
+                $(".focus:last").select();
+            }
+            var slip_re = /slip/;
+            function printx_window(print_type) {
+                var handler = print_type.match(slip_re) ? "printslip" : "moremember";
 
-                $( window ).on( "load", function() {
+                return false;
+            }
+            function checkout_confirm(patronid) {
+                var barcode = $("#barcode").val();
+                // alert("checkout_confirm('" + patronid + "') called for barcode '" + barcode + "'");
+                if (!barcode) {
                     dofocus();
+                    return false;
+                } // no barcode
+                if (barcode == "__KOHA_NEW_CIRC__") {
+                    // magic barcode
+                    window.location.href = "/cgi-bin/koha/sco/sco-main.pl?op=logout";
+                    return false;
+                }
+                return true;
+            }
+
+            $(window).on("load", function () {
+                dofocus();
+            });
+
+            $(window).on("unload", function () {
+                mungeHistory();
+            });
+
+            $(document).ready(function () {
+                dofocus();
+                if (logged_in_user_cardnumber) {
+                    sco_init();
+                }
+
+                var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+                var dTables = $("#loanTable, #holdst, #finestable");
+                dTables.each(function () {
+                    var thIndex = $(this).find("th.psort").index();
+                    $(this).kohaTable({
+                        order: [[thIndex, "asc"]],
+                        dom: '<"top"<"table_entries"><"table_controls"f>>t<"clear">',
+                        columnDefs: [
+                            { targets: ["noshow"], visible: false, searchable: false },
+                            { visible: false, targets: ["hidden"] },
+                            { className: "dtr-control", orderable: false, targets: -1 },
+                        ],
+                        language: {
+                            search: "_INPUT_",
+                            searchPlaceholder: _("Search"),
+                        },
+                        responsive: {
+                            details: {
+                                display: responsive_display,
+                                type: "column",
+                                target: -1,
+                            },
+                        },
+                    });
                 });
 
-                $( window ).on( "unload", function() {
-                    mungeHistory();
+                $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function (event) {
+                    dTables.DataTable().responsive.recalc();
                 });
 
-                $(document).ready(function() {
-                    dofocus();
-                    [% IF ( patronid ) %]sco_init();[% END %]
-
-                    [% IF ( Koha.Preference('OPACTableColExpandedByDefault') ) %]
-                        var responsive_display = DataTable.Responsive.display.childRowImmediate;
-                    [% ELSE %]
-                        var responsive_display = DataTable.Responsive.display.childRow;
-                    [% END %]
-
-                    var dTables = $("#loanTable, #holdst, #finestable");
-                    dTables.each(function(){
-                        var thIndex = $(this).find("th.psort").index();
-                        $(this).kohaTable({
-                            order: [[thIndex, "asc"]],
-                            dom: '<"top"<"table_entries"><"table_controls"f>>t<"clear">',
-                            columnDefs: [
-                                { targets: ["noshow"], visible: false, searchable: false },
-                                { visible: false, targets: ["hidden"] },
-                                { className: "dtr-control", orderable: false, targets: -1 },
-                            ],
-                            language: {
-                                search: "_INPUT_",
-                                searchPlaceholder: _("Search"),
-                            },
-                            responsive: {
-                                details: {
-                                    display: responsive_display,
-                                    type: "column",
-                                    target: -1,
-                                },
-                            },
+                $("#logout_form").on("click", function (e) {
+                    e.preventDefault(e);
+                    clearTimeout(mainTimeout);
+                    if (prefs.SelfCheckReceiptPrompt) {
+                        confirmModal("", _("Would you like to print a receipt?"), _("Print receipt and end session"), _("End session"), function (result) {
+                            if (result) {
+                                var win = window.open("/cgi-bin/koha/sco/printslip.pl?print=qslip");
+                                location.href = "/cgi-bin/koha/sco/sco-main.pl?op=logout";
+                            } else {
+                                location.href = "/cgi-bin/koha/sco/sco-main.pl?op=logout";
+                            }
                         });
-                    });
+                    } else {
+                        location.href = "/cgi-bin/koha/sco/sco-main.pl?op=logout";
+                    }
 
-                    $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (event) {
-                        dTables.DataTable().responsive.recalc();
-                    } );
+                    return true;
+                });
 
-                    $("#logout_form").on("click", function(e){
-                        e.preventDefault(e);
-                        clearTimeout(mainTimeout);
-                        [% IF Koha.Preference('SelfCheckReceiptPrompt') %]
-                            confirmModal("", _("Would you like to print a receipt?"), _("Print receipt and end session"), _("End session"), function(result) {
-                                if ( result ){
-                                    var win = window.open("/cgi-bin/koha/sco/printslip.pl?print=qslip");
-                                    location.href = '/cgi-bin/koha/sco/sco-main.pl?op=logout';
-                                } else {
-                                    location.href = '/cgi-bin/koha/sco/sco-main.pl?op=logout';
-                                }
-                            });
-                        [% ELSE %]
-                            location.href = '/cgi-bin/koha/sco/sco-main.pl?op=logout';
-                        [% END %]
-
-                        return true;
-                    });
-
-                    $("#scan_form").on("submit", function(){
-                        return checkout_confirm('[% patronid | html %]');
-                    });
+                $("#scan_form").on("submit", function () {
+                    return checkout_confirm(logged_in_user_cardnumber);
+                });
             });
         </script>
         [% Asset.js("js/holds.js") | $raw %]
