@@ -208,10 +208,13 @@
     [% Asset.js("js/acquisitions-menu.js") | $raw %]
     [% IF loop_budget %]
         <script>
+            var table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'acq_acqui-home', 'accounts', 'json' ) | $raw %];
+        </script>
+
+        <script>
             dt_overwrite_html_sorting_localeCompare();
 
             $(document).ready(function() {
-                var table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'acq_acqui-home', 'accounts', 'json' ) | $raw %];
                 var oTable = $("#accounts").kohaTable({
                     drawCallback: function ( oSettings ) {
                         if ( oSettings.aiDisplay.length == 0 )
