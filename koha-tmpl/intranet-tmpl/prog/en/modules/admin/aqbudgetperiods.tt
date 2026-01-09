@@ -566,68 +566,64 @@
         <script>
             const budget_period_description = "[% budget_period_description | html %]";
         </script>
-
         <script>
-            $(document).ready(function() {
+            $(document).ready(function () {
                 $("#budgeth").kohaTable({
                     dom: "t",
                 });
-              $("#move_form").submit(function(){
-                var budget_from = budget_period_description;
-                var budget_to = $("#to_budget_period_id").find("option:selected").html();
-                var alert_message = _("You have chosen to move all unreceived orders from '%s' to '%s'.").format(budget_from, budget_to);
-                alert_message += "\n" + _("This action cannot be reversed. Do you wish to continue?");
-                return confirm ( alert_message );
-              });
+                $("#move_form").submit(function () {
+                    var budget_from = budget_period_description;
+                    var budget_to = $("#to_budget_period_id").find("option:selected").html();
+                    var alert_message = _("You have chosen to move all unreceived orders from '%s' to '%s'.").format(budget_from, budget_to);
+                    alert_message += "\n" + _("This action cannot be reversed. Do you wish to continue?");
+                    return confirm(alert_message);
+                });
             });
         </script>
     [% END %]
 
     [% IF closed %]
         <script>
-            $(document).ready(function() {
-              var oTable = $("#closed_report").kohaTable({
-                // The following is a c/p from aqbudgets.tt and is a candidate for refactoring.
-                drawCallback: function ( oSettings ) {
-                    if ( oSettings.aiDisplay.length == 0 )
-                    {
-                        return;
-                    }
-
-                    var nTrs = $('#closed_report tbody tr');
-                    var iColspan = nTrs[1].getElementsByTagName('td').length;
-                    var sLastGroup = "";
-                    for ( var i=0 ; i<nTrs.length ; i++ )
-                    {
-                        var iDisplayIndex = oSettings._iDisplayStart + i;
-                        var sGroup = oSettings.aoData[ oSettings.aiDisplay[iDisplayIndex] ]._aData[0];
-                        if ( sGroup != sLastGroup )
-                        {
-                            var nGroup = document.createElement( 'tr' );
-                            var nCell = document.createElement( 'td' );
-                            nCell.colSpan = iColspan;
-                            nCell.className = "group";
-                            nCell.innerHTML = sGroup;
-                            nGroup.appendChild( nCell );
-                            nTrs[i].parentNode.insertBefore( nGroup, nTrs[i] );
-                            sLastGroup = sGroup;
+            $(document).ready(function () {
+                var oTable = $("#closed_report").kohaTable({
+                    // The following is a c/p from aqbudgets.tt and is a candidate for refactoring.
+                    drawCallback: function (oSettings) {
+                        if (oSettings.aiDisplay.length == 0) {
+                            return;
                         }
-                    }
-                },
-                columnDefs: [
-                    { visible: false, targets: [ 0, 1 ] },
-                    { orderable: false, targets: ["_all"] }
-                ],
-                ordering: true,
-                orderFixed: [[ 1, 'asc' ]],
-                autoWidth: false,
-                pagingType: "full_numbers"
-              });
+
+                        var nTrs = $("#closed_report tbody tr");
+                        var iColspan = nTrs[1].getElementsByTagName("td").length;
+                        var sLastGroup = "";
+                        for (var i = 0; i < nTrs.length; i++) {
+                            var iDisplayIndex = oSettings._iDisplayStart + i;
+                            var sGroup = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[0];
+                            if (sGroup != sLastGroup) {
+                                var nGroup = document.createElement("tr");
+                                var nCell = document.createElement("td");
+                                nCell.colSpan = iColspan;
+                                nCell.className = "group";
+                                nCell.innerHTML = sGroup;
+                                nGroup.appendChild(nCell);
+                                nTrs[i].parentNode.insertBefore(nGroup, nTrs[i]);
+                                sLastGroup = sGroup;
+                            }
+                        }
+                    },
+                    columnDefs: [
+                        { visible: false, targets: [0, 1] },
+                        { orderable: false, targets: ["_all"] },
+                    ],
+                    ordering: true,
+                    orderFixed: [[1, "asc"]],
+                    autoWidth: false,
+                    pagingType: "full_numbers",
+                });
             });
         </script>
     [% END %]
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             let dt_params = {
                 pagingType: "full",
                 autoWidth: false,
@@ -641,18 +637,18 @@
                     budget_period_startdate: "required",
                     budget_period_enddate: {
                         required: true,
-                        date_on_or_after: "#from"
+                        date_on_or_after: "#from",
                     },
                     budget_period_description: "required",
                     budget_period_total: {
-                        number: true
-                    }
+                        number: true,
+                    },
                 },
                 messages: {
                     budget_period_enddate: {
-                        date_on_or_after: _("Budget end date must be on or after budget start date")
-                    }
-                }
+                        date_on_or_after: _("Budget end date must be on or after budget start date"),
+                    },
+                },
             });
         });
     </script>

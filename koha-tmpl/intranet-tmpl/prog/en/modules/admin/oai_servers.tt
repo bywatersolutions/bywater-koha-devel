@@ -194,43 +194,43 @@
     [% END %]
     [% IF op == 'edit_form' || op == 'add_form' %]
         <script>
-            $(document).ready(function(){
+            $(document).ready(function () {
                 // Update selects for dataformat and recordtype
                 // FIXME Do not do this in JS!
-                if (typeof server !== "undefined"){
+                if (typeof server !== "undefined") {
                     $("#dataformat").val(server.dataformat);
                     $("#recordtype").val(server.recordtype);
                 }
-                $( "#serverentry" ).validate({
+                $("#serverentry").validate({
                     rules: {
                         servername: { required: true },
                         host: { required: true },
                         port: {
-                            number: true
+                            number: true,
                         },
                         rank: { number: true },
-                    }
+                    },
                 });
-                $("#serverentry").submit(function( event ) {
+                $("#serverentry").submit(function (event) {
                     // enable recordtype to include field in post
-                    $('#recordtype').prop('disabled',false);
+                    $("#recordtype").prop("disabled", false);
                 });
-                $("#servername").on("blur",function(){
+                $("#servername").on("blur", function () {
                     toUC(this);
                 });
             });
         </script>
     [% ELSE %]
         <script>
-            $(document).ready(function() {
+            $(document).ready(function () {
                 $("#serverst").kohaTable({
                     pagingType: "full",
                 });
-                $(".delete").on("click",function(e){
+                $(".delete").on("click", function (e) {
                     var servername = $(this).data("servername");
                     let formid = $(this).data("formid");
-                    if( confirm( _("Are you sure you want to delete repository %s?").format(servername) ) ) {
-                        $('#'+formid).submit();
+                    if (confirm(_("Are you sure you want to delete repository %s?").format(servername))) {
+                        $("#" + formid).submit();
                         return true;
                     } else {
                         e.preventDefault();

@@ -142,33 +142,33 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     <script>
-        function show_message( params ) {
+        function show_message(params) {
             var type = params.type;
             var data = params.data;
             var messages = $("#messages");
             var message;
-            if ( type == 'success_on_update' ) {
+            if (type == "success_on_update") {
                 message = $('<div class="alert alert-info"></div>');
                 message.text(_("Entity %s (code %s) for lang %s has been updated with '%s'").format(data.entity, data.code, data.lang, data.translation));
-            } else if ( type == 'error_on_update' ) {
+            } else if (type == "error_on_update") {
                 message = $('<div class="alert alert-warning"></div>');
-                if ( data.error_code == 'already_exists' ) {
+                if (data.error_code == "already_exists") {
                     message.text(_("A translation already exists for this language."));
                 } else {
                     message.text(_("An error occurred when updating this translation."));
                 }
-            } else if ( type == 'success_on_delete' ) {
+            } else if (type == "success_on_delete") {
                 message = $('<div class="alert alert-info"></div>');
                 message.text(_("The translation (id %s) has been removed successfully").format(data.id));
-            } else if ( type == 'error_on_delete' ) {
+            } else if (type == "error_on_delete") {
                 message = $('<div class="alert alert-warning"></div>');
                 message.text(_("An error occurred when deleting this translation"));
-            } else if ( type == 'success_on_insert' ) {
+            } else if (type == "success_on_insert") {
                 message = $('<div class="alert alert-info"></div>');
                 message.text(_("Translation (id %s) has been added successfully").format(data.id));
-            } else if ( type == 'error_on_insert' ) {
+            } else if (type == "error_on_insert") {
                 message = $('<div class="alert alert-warning"></div>');
-                if ( data.error_code == 'already_exists' ) {
+                if (data.error_code == "already_exists") {
                     message.text(_("A translation already exists for this language."));
                 } else {
                     message.text(_("An error occurred when adding this translation"));
@@ -177,58 +177,62 @@
 
             $(messages).append(message);
 
-            setTimeout(function(){
-                message.hide()
+            setTimeout(function () {
+                message.hide();
             }, 3000);
         }
 
-        function send_update_request( data, cell ) {
+        function send_update_request(data, cell) {
             const client = APIClient.localization;
             client.localizations.update(data).then(
                 success => {
-                    if ( success.error ) {
-                        $(cell).css('background-color', '#FF0000');
-                        show_message({ type: 'error_on_update', data: success });
-                    } else if ( success.is_changed == 1 ) {
-                        $(cell).css('background-color', '#00FF00');
-                        show_message({ type: 'success_on_update', data: success });
+                    if (success.error) {
+                        $(cell).css("background-color", "#FF0000");
+                        show_message({ type: "error_on_update", data: success });
+                    } else if (success.is_changed == 1) {
+                        $(cell).css("background-color", "#00FF00");
+                        show_message({ type: "success_on_update", data: success });
                     }
 
-                    if ( $(cell).hasClass('lang') ) {
-                        $(cell).text(success.lang)
-                    } else if ( $(cell).hasClass('translation') ) {
-                        $(cell).text(success.translation)
+                    if ($(cell).hasClass("lang")) {
+                        $(cell).text(success.lang);
+                    } else if ($(cell).hasClass("translation")) {
+                        $(cell).text(success.translation);
                     }
                 },
                 error => {
-                    $(cell).css('background-color', '#FF9090');
-                    if ( $(cell).hasClass('lang') ) {
-                        $(cell).text(error.lang)
-                    } else if ( $(cell).hasClass('translation') ) {
-                        $(cell).text(error.translation)
+                    $(cell).css("background-color", "#FF9090");
+                    if ($(cell).hasClass("lang")) {
+                        $(cell).text(error.lang);
+                    } else if ($(cell).hasClass("translation")) {
+                        $(cell).text(error.translation);
                     }
-                    show_message({ type: 'error_on_update', data: error });
+                    show_message({ type: "error_on_update", data: error });
                     console.warn("Something wrong happened: %s".format(error));
                 }
             );
         }
 
-        function send_delete_request( id, cell ) {
+        function send_delete_request(id, cell) {
             const client = APIClient.localization;
             client.localizations.delete(id).then(
                 success => {
-                    $("#localization").DataTable().row( '#row_id_' + id ).remove().draw();
-                    show_message({ type: 'success_on_delete', data: {id} });
+                    $("#localization")
+                        .DataTable()
+                        .row("#row_id_" + id)
+                        .remove()
+                        .draw();
+                    show_message({ type: "success_on_delete", data: { id } });
                 },
                 error => {
-                    $(cell).css('background-color', '#FF9090');
-                    show_message({ type: 'error_on_delete', data: error });
+                    $(cell).css("background-color", "#FF9090");
+                    show_message({ type: "error_on_delete", data: error });
                     console.warn("Something wrong happened: %s".format(error));
                 }
             );
         }
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             $(".dialog").hide();
 
             let table = $("#localization").kohaTable({
@@ -238,54 +242,54 @@
             });
             let table_dt = table.DataTable();
 
-            $("body").on('focus', "td.translation", function(){
-                $(this).css('background-color', '');
+            $("body").on("focus", "td.translation", function () {
+                $(this).css("background-color", "");
             });
-            $("body").on('click', "td.lang", function(){
+            $("body").on("click", "td.lang", function () {
                 var td = $(this);
                 var tr = td.parent();
-                var id = tr.data('id');
+                var id = tr.data("id");
                 var lang = td.text();
-                td.css('background-color', '');
+                td.css("background-color", "");
                 var my_select = languages_select.clone();
-                my_select.find('option[value="' + lang + '"]').attr('selected', 'selected');
-                my_select.on('click', function(e){
+                my_select.find('option[value="' + lang + '"]').attr("selected", "selected");
+                my_select.on("click", function (e) {
                     e.stopPropagation();
                 });
                 var lang;
-                my_select.on('change', function(){
-                    lang = td.find('option:selected').val();
+                my_select.on("change", function () {
+                    lang = td.find("option:selected").val();
                     var translation = tr.find("td.translation").text();
-                    send_update_request( {id, lang, translation}, td[0] );
+                    send_update_request({ id, lang, translation }, td[0]);
                 });
-                my_select.on('blur', function(){
+                my_select.on("blur", function () {
                     td.html(lang);
                 });
                 td.html(my_select);
             });
 
-            $("body").on('blur', "td.translation", function(){
+            $("body").on("blur", "td.translation", function () {
                 var tr = $(this).parent();
-                var id = $(tr).data('id');
-                var lang = $(tr).find('td.lang').text();
+                var id = $(tr).data("id");
+                var lang = $(tr).find("td.lang").text();
                 var translation = $(this).text();
-                send_update_request( {id, lang, translation}, this );
+                send_update_request({ id, lang, translation }, this);
             });
 
-            $("body").on("click", "a.delete", function(e){
+            $("body").on("click", "a.delete", function (e) {
                 e.preventDefault();
-                if ( confirm(_("Are you sure you want to delete this translation?")) ) {
+                if (confirm(_("Are you sure you want to delete this translation?"))) {
                     var td = $(this).parent();
                     var tr = $(td).parent();
-                    var id = $(tr).data('id');
-                    send_delete_request( id, td );
+                    var id = $(tr).data("id");
+                    send_delete_request(id, td);
                 }
             });
 
-            const th_lang_index = document.querySelector('th.lang').cellIndex;
-            const th_translation_index = document.querySelector('th.translation').cellIndex;
+            const th_lang_index = document.querySelector("th.lang").cellIndex;
+            const th_translation_index = document.querySelector("th.translation").cellIndex;
 
-            $("#add_translation").on('submit', function(e){
+            $("#add_translation").on("submit", function (e) {
                 e.preventDefault();
                 let localization = {
                     entity: $(this).find('input[name="entity"]').val(),
@@ -296,39 +300,43 @@
                 const client = APIClient.localization;
                 client.localizations.create(localization).then(
                     success => {
-                        if ( success.error ) {
-                            show_message({ type: 'error_on_insert', data: success });
+                        if (success.error) {
+                            show_message({ type: "error_on_insert", data: success });
                         } else {
-                            var new_row = table_dt.row.add( [ success.id, success.entity, success.code, success.lang, success.translation, "<a href=\"#\" class=\"btn btn-default btn-xs delete\"><i class=\"fa fa-trash-can\"></i> Delete</a>" ] ).draw().node();
-                            $( new_row ).attr("id", "row_id_" + success.id ).data("id", success.id );
-                            $( new_row.children[th_lang_index] ).prop("contenteditable", true).addClass("lang")
-                            $( new_row.children[th_translation_index] ).prop("contenteditable", true).addClass("translation")
-                            show_message({ type: 'success_on_insert', data: success });
+                            var new_row = table_dt.row
+                                .add([success.id, success.entity, success.code, success.lang, success.translation, '<a href="#" class="btn btn-default btn-xs delete"><i class="fa fa-trash-can"></i> Delete</a>'])
+                                .draw()
+                                .node();
+                            $(new_row)
+                                .attr("id", "row_id_" + success.id)
+                                .data("id", success.id);
+                            $(new_row.children[th_lang_index]).prop("contenteditable", true).addClass("lang");
+                            $(new_row.children[th_translation_index]).prop("contenteditable", true).addClass("translation");
+                            show_message({ type: "success_on_insert", data: success });
                         }
                     },
                     error => {
-                        show_message({ type: 'error_on_insert', data: error });
+                        show_message({ type: "error_on_insert", data: error });
                         console.warn("Something wrong happened: %s".format(error));
                     }
                 );
             });
-         });
+        });
     </script>
-
     <script>
-            var languages_select = $('<select name="lang" id="lang"></select>');
-            [% FOR language IN languages %]
-                [% FOR sublanguage IN language.sublanguages_loop %]
-                    var option;
-                    [% IF language.plural %]
-                        option = $('<option value="[% sublanguage.rfc4646_subtag | html %]">[% sublanguage.native_description | html %] [% sublanguage.region_description | html %] ([% sublanguage.rfc4646_subtag | html %])</option>');
-                        $(languages_select).append(option);
-                    [% ELSE %]
-                        option = $('<option value="[% sublanguage.rfc4646_subtag | html %]">[% sublanguage.native_description | html %] ([% sublanguage.rfc4646_subtag | html %])</option>');
-                    [% END %]
+        var languages_select = $('<select name="lang" id="lang"></select>');
+        [% FOR language IN languages %]
+            [% FOR sublanguage IN language.sublanguages_loop %]
+                var option;
+                [% IF language.plural %]
+                    option = $('<option value="[% sublanguage.rfc4646_subtag | html %]">[% sublanguage.native_description | html %] [% sublanguage.region_description | html %] ([% sublanguage.rfc4646_subtag | html %])</option>');
                     $(languages_select).append(option);
+                [% ELSE %]
+                    option = $('<option value="[% sublanguage.rfc4646_subtag | html %]">[% sublanguage.native_description | html %] ([% sublanguage.rfc4646_subtag | html %])</option>');
                 [% END %]
+                $(languages_select).append(option);
             [% END %]
+        [% END %]
     </script>
 [% END %]
 [% INCLUDE 'intranet-bottom.inc' %]

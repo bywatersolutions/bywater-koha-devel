@@ -324,158 +324,166 @@
             on: "[% tp("Active", "On") | html %]";
         };
     </script>
-
     <script>
-        $(document).ready(function() {
-
-            var smtp_servers_url = '/api/v1/config/smtp_servers';
+        $(document).ready(function () {
+            var smtp_servers_url = "/api/v1/config/smtp_servers";
             window.smtp_servers = $("#smtp_servers").kohaTable({
                 ajax: {
-                    "url": smtp_servers_url
+                    url: smtp_servers_url,
                 },
-                'language': {
-                    emptyTable: '<div class="alert alert-info">'+_("There are no SMTP servers defined.")+'</div>'
+                language: {
+                    emptyTable: '<div class="alert alert-info">' + _("There are no SMTP servers defined.") + "</div>",
                 },
-                columnDefs: [ {
-                    targets: [0,1],
-                    render: function (data, type, row, meta) {
-                        if ( type == 'display' ) {
-                            if ( data != null ) {
-                                return data.escapeHtml();
+                columnDefs: [
+                    {
+                        targets: [0, 1],
+                        render: function (data, type, row, meta) {
+                            if (type == "display") {
+                                if (data != null) {
+                                    return data.escapeHtml();
+                                } else {
+                                    return "Default";
+                                }
                             }
-                            else {
-                                return "Default";
-                            }
-                        }
-                        return data;
-                    }
-                } ],
+                            return data;
+                        },
+                    },
+                ],
                 columns: [
                     {
                         data: "name",
                         searchable: true,
-                        orderable: true
+                        orderable: true,
                     },
                     {
                         data: "host",
                         searchable: true,
-                        orderable: true
+                        orderable: true,
                     },
                     {
                         data: "port",
                         searchable: true,
-                        orderable: false
+                        orderable: false,
                     },
                     {
                         data: "timeout",
                         searchable: true,
-                        orderable: false
+                        orderable: false,
                     },
                     {
                         data: "ssl_mode",
                         render: function (data, type, row, meta) {
-                            if (data == 'disabled') {
+                            if (data == "disabled") {
                                 return _("Disabled");
-                            }
-                            else if (data == 'ssl') {
+                            } else if (data == "ssl") {
                                 return _("SSL");
-                            }
-                            else {
+                            } else {
                                 return _("STARTTLS");
                             }
                         },
                         searchable: false,
-                        orderable: false
+                        orderable: false,
                     },
                     {
-                        data: function( row, type, val, meta ) {
-                            if ( row.user_name != null ) {
+                        data: function (row, type, val, meta) {
+                            if (row.user_name != null) {
                                 return _("Yes");
-                            }
-                            else {
+                            } else {
                                 return _("No");
                             }
                         },
                         searchable: false,
-                        orderable: false
+                        orderable: false,
                     },
                     {
-                        data: function( row, type, val, meta ) {
-                            if ( row.debug ) {
-                                let result = '<span class="badge text-bg-warning">' + i18n.on + '</span>';
+                        data: function (row, type, val, meta) {
+                            if (row.debug) {
+                                let result = '<span class="badge text-bg-warning">' + i18n.on + "</span>";
                                 return result;
-                            }
-                            else {
+                            } else {
                                 return _("");
                             }
                         },
                         searchable: false,
-                        orderable: false
+                        orderable: false,
                     },
                     {
-                        data: function( row, type, val, meta ) {
-                            if ( row.is_default ) {
-                                let result = '<span class="badge text-bg-success">' + _("Default") + '</span>';
+                        data: function (row, type, val, meta) {
+                            if (row.is_default) {
+                                let result = '<span class="badge text-bg-success">' + _("Default") + "</span>";
                                 return result;
                             } else {
                                 return "";
                             }
                         },
                         searchable: false,
-                        orderable: false
+                        orderable: false,
                     },
                     {
-                        data: function( row, type, val, meta ) {
-                            var result = '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/admin/smtp_servers.pl?op=edit_form&amp;smtp_server_id='+ encodeURIComponent(row.smtp_server_id) +'"><i class="fa-solid fa-pencil" aria-hidden="true"></i> '+_("Edit")+'</a>'+"\n";
-                            result += '<a class="btn btn-default btn-xs delete_server" role="button" href="#" data-bs-toggle="modal" data-bs-target="#delete_confirm_modal" data-smtp-server-id="'+ encodeURIComponent(row.smtp_server_id) +'" data-smtp-server-name="'+ encodeURIComponent(row.name.escapeHtml()) +'"><i class="fa fa-trash-can" aria-hidden="true"></i> '+_("Delete")+'</a>';
+                        data: function (row, type, val, meta) {
+                            var result =
+                                '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/admin/smtp_servers.pl?op=edit_form&amp;smtp_server_id=' +
+                                encodeURIComponent(row.smtp_server_id) +
+                                '"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' +
+                                _("Edit") +
+                                "</a>" +
+                                "\n";
+                            result +=
+                                '<a class="btn btn-default btn-xs delete_server" role="button" href="#" data-bs-toggle="modal" data-bs-target="#delete_confirm_modal" data-smtp-server-id="' +
+                                encodeURIComponent(row.smtp_server_id) +
+                                '" data-smtp-server-name="' +
+                                encodeURIComponent(row.name.escapeHtml()) +
+                                '"><i class="fa fa-trash-can" aria-hidden="true"></i> ' +
+                                _("Delete") +
+                                "</a>";
                             return result;
                         },
                         searchable: false,
-                        orderable: false
-                    }
+                        orderable: false,
+                    },
                 ],
             });
 
-            $('#smtp_servers').on( "click", '.delete_server', function () {
-                var smtp_server_id   = $(this).data('smtp-server-id');
-                var smtp_server_name = decodeURIComponent($(this).data('smtp-server-name'));
+            $("#smtp_servers").on("click", ".delete_server", function () {
+                var smtp_server_id = $(this).data("smtp-server-id");
+                var smtp_server_name = decodeURIComponent($(this).data("smtp-server-name"));
 
-                $("#delete_confirm_dialog").html(
-                    _("You are about to delete the '%s' SMTP server.").format(smtp_server_name)
-                );
-                $("#delete_confirm_modal_button").data('smtp-server-id', smtp_server_id);
-                $("#delete_confirm_modal_button").data('smtp-server-name', smtp_server_name);
+                $("#delete_confirm_dialog").html(_("You are about to delete the '%s' SMTP server.").format(smtp_server_name));
+                $("#delete_confirm_modal_button").data("smtp-server-id", smtp_server_id);
+                $("#delete_confirm_modal_button").data("smtp-server-name", smtp_server_name);
             });
 
-            $('#smtp_default').on( "click", function () {
-                $("#default_confirm_modal").modal('show');
+            $("#smtp_default").on("click", function () {
+                $("#default_confirm_modal").modal("show");
             });
-            $('.default_confirm_modal_yes').on( "click", function () {
-                $("#default_confirm_modal").modal('hide');
+            $(".default_confirm_modal_yes").on("click", function () {
+                $("#default_confirm_modal").modal("hide");
             });
-            $('.default_confirm_modal_no').on( "click", function () {
-                $("#smtp_default").prop('checked', !$("#smtp_default").prop('checked') );
-                $("#default_confirm_modal").modal('hide');
+            $(".default_confirm_modal_no").on("click", function () {
+                $("#smtp_default").prop("checked", !$("#smtp_default").prop("checked"));
+                $("#default_confirm_modal").modal("hide");
             });
 
-            $("#delete_confirm_modal_button").on( "click", function () {
-
-                var smtp_server_id   = $(this).data('smtp-server-id');
-                var smtp_server_name = $(this).data('smtp-server-name');
+            $("#delete_confirm_modal_button").on("click", function () {
+                var smtp_server_id = $(this).data("smtp-server-id");
+                var smtp_server_name = $(this).data("smtp-server-name");
 
                 $.ajax({
                     method: "DELETE",
-                    url: "/api/v1/config/smtp_servers/"+smtp_server_id
-                }).success(function() {
-                    window.smtp_servers.api().ajax.reload(function (data) {
-                        $("#smtp_action_result_dialog").hide();
-                        $("#smtp_delete_success").html(_("Server '%s' deleted successfully.").format(smtp_server_name)).show();
+                    url: "/api/v1/config/smtp_servers/" + smtp_server_id,
+                })
+                    .success(function () {
+                        window.smtp_servers.api().ajax.reload(function (data) {
+                            $("#smtp_action_result_dialog").hide();
+                            $("#smtp_delete_success").html(_("Server '%s' deleted successfully.").format(smtp_server_name)).show();
+                        });
+                    })
+                    .fail(function () {
+                        $("#smtp_delete_error").html(_("Error deleting server '%s'. Check the logs for details.").format(smtp_server_name)).show();
+                    })
+                    .done(function () {
+                        $("#delete_confirm_modal").modal("hide");
                     });
-                }).fail(function () {
-                    $("#smtp_delete_error").html(_("Error deleting server '%s'. Check the logs for details.").format(smtp_server_name)).show();
-                }).done(function () {
-                    $("#delete_confirm_modal").modal('hide');
-                });
             });
         });
     </script>

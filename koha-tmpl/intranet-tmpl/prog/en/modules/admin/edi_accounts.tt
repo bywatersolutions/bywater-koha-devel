@@ -412,9 +412,8 @@
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'admin', 'edi_accounts', 'edi_accounts_table', 'json' ) | $raw %];
     </script>
-
     <script>
-        $(document).ready(function(){
+        $(document).ready(function () {
             $("#edi_accounts_table").kohaTable(
                 {
                     pagingType: "full",

@@ -285,60 +285,60 @@
 
     [% IF op == 'edit_form' || op == 'add_form' %]
         <script>
-            $(document).ready(function(){
+            $(document).ready(function () {
                 // Update selects for syntax, encoding and recordtype
-                if (typeof server !== 'undefined'){
+                if (typeof server !== "undefined") {
                     $("#syntax").val(server.syntax);
                     $("#encoding").val(server.encoding);
                     $("#recordtype").val(server.recordtype);
                 }
-                $( "#serverentry" ).validate({
+                $("#serverentry").validate({
                     rules: {
                         servername: { required: true },
                         host: { required: true },
                         port: {
                             required: true,
-                            number: true
+                            number: true,
                         },
                         db: { required: true },
                         rank: { number: true },
-                        timeout: { number: true }
-                    }
+                        timeout: { number: true },
+                    },
                 });
-                $("#serverentry").submit(function( event ) {
+                $("#serverentry").submit(function (event) {
                     // first test if show_sru_fields exists
-                    if( $('#show_sru_fields').length && $('#show_sru_fields').val()=='' && !confirm( _("No SRU search field mappings have been defined. This means that all field searches will go through the whole record. Continue?"))) {
+                    if ($("#show_sru_fields").length && $("#show_sru_fields").val() == "" && !confirm(_("No SRU search field mappings have been defined. This means that all field searches will go through the whole record. Continue?"))) {
                         return false;
                     }
                     // copy show_sru_fields to hidden counterpart
-                    $('#sru_fields').val( $('#show_sru_fields').val() );
+                    $("#sru_fields").val($("#show_sru_fields").val());
                     // enable recordtype to include field in post
-                    $('#recordtype').prop('disabled',false);
+                    $("#recordtype").prop("disabled", false);
                 });
-                $("#servername").on("blur",function(){
+                $("#servername").on("blur", function () {
                     toUC(this);
                 });
-                $("#modify_sru_fields").on("click",function(){
+                $("#modify_sru_fields").on("click", function () {
                     ModMapping();
                 });
             });
-            function ModMapping () {
-                var map= $('#show_sru_fields').val();
-                var type= $('#recordtype').val();
-                window.open('/cgi-bin/koha/admin/sru_modmapping.pl?mapping='+map + '&type=' + type,'popup','width=800,height=400,resizable=yes,toolbar=false,scrollbars=yes,top');
+            function ModMapping() {
+                var map = $("#show_sru_fields").val();
+                var type = $("#recordtype").val();
+                window.open("/cgi-bin/koha/admin/sru_modmapping.pl?mapping=" + map + "&type=" + type, "popup", "width=800,height=400,resizable=yes,toolbar=false,scrollbars=yes,top");
             }
         </script>
     [% ELSE %]
         <script>
-            $(document).ready(function() {
+            $(document).ready(function () {
                 $("#serverst").kohaTable({
                     pagingType: "full",
                 });
-                $("#serverst").on("click", ".delete", function(e) {
+                $("#serverst").on("click", ".delete", function (e) {
                     var servername = $(this).data("servername");
                     let formid = $(this).data("formid");
-                    if( confirm( _("Are you sure you want to delete server %s?").format(servername) ) ) {
-                        $('#'+formid).submit();
+                    if (confirm(_("Are you sure you want to delete server %s?").format(servername))) {
+                        $("#" + formid).submit();
                         return false;
                     } else {
                         e.preventDefault();

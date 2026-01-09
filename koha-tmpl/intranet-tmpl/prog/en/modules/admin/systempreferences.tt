@@ -494,71 +494,74 @@
     [% IF else && loop %]
         [% INCLUDE 'datatables.inc' %]
         <script>
-            $(document).ready(function() {
-               $("#sysprefst").kohaTable({
-                   dom: '<"top pager"ilf>t',
-                   paging: false,
-               });
+            $(document).ready(function () {
+                $("#sysprefst").kohaTable({
+                    dom: '<"top pager"ilf>t',
+                    paging: false,
+                });
             });
         </script>
     [% END %]
 
     [% IF ( add_form ) %]
         <script>
-            $(document).ready(function() {
-                $('.variabletype').css({ color: "#0000CC", cursor: "pointer" });
-                $('.variabletype').click(function() {
-                    $('#preftype').attr("value",$(this).attr("id"));
+            $(document).ready(function () {
+                $(".variabletype").css({ color: "#0000CC", cursor: "pointer" });
+                $(".variabletype").click(function () {
+                    $("#preftype").attr("value", $(this).attr("id"));
                 });
             });
         </script>
     [% END %]
-
     <script>
-            // FIXME: many of these js functions appear unused
-        function isNotNull(f,noalert) {
-                if (f.value.length ==0) {
-        return false;
-                }
-                return true;
+        // FIXME: many of these js functions appear unused
+        function isNotNull(f, noalert) {
+            if (f.value.length == 0) {
+                return false;
+            }
+            return true;
         }
 
-        function isNum(v,maybenull) {
+        function isNum(v, maybenull) {
             var n = new Number(v.value);
             if (isNaN(n)) {
                 return false;
-                }
-            if (maybenull==0 && v.value=='') {
+            }
+            if (maybenull == 0 && v.value == "") {
                 return false;
             }
             return true;
         }
 
         function Check(f) {
-            var ok=1;
-            var _alertString="";
+            var ok = 1;
+            var _alertString = "";
             var alertString2;
-            if (f.variable.value.length==0) {
+            if (f.variable.value.length == 0) {
                 _alertString += "\n- " + _("variable missing");
             }
-            if (f.value.value.length==0) {
+            if (f.value.value.length == 0) {
                 _alertString += "\n- " + _("value missing");
             }
-            if (_alertString.length==0) {
+            if (_alertString.length == 0) {
                 document.Aform.submit();
             } else {
-                alertString2  = _("Form not submitted because of the following problem(s)");
+                alertString2 = _("Form not submitted because of the following problem(s)");
                 alertString2 += "\n------------------------------------------------------------------------------------\n";
                 alertString2 += _alertString;
                 alert(alertString2);
             }
         }
-        $( function() {
-            $( '#sysprefst .expand-textarea' ).show().click( function () {
-                $( this ).hide().nextAll( 'textarea, input[type=submit]' ).show( 'slow' );
+        $(function () {
+            $("#sysprefst .expand-textarea")
+                .show()
+                .click(function () {
+                    $(this).hide().nextAll("textarea, input[type=submit]").show("slow");
 
-                return false;
-            } ).nextAll( 'textarea, input[type=submit]' ).hide();
+                    return false;
+                })
+                .nextAll("textarea, input[type=submit]")
+                .hide();
         });
     </script>
 [% END %]

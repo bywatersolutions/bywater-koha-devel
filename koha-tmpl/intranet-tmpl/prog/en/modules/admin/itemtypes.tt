@@ -555,37 +555,36 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'select2.inc' %]
     <script>
-       var table_settings = [% TablesSettings.GetTableSettings( 'admin', 'itemtypes', 'table_item_type', 'json' ) | $raw %];
-       [% IF ( Koha.Preference('noItemTypeImages') && Koha.Preference('OpacNoItemTypeImages') ) %]
-           table_settings['columns'].shift(); // Remove item type image column from configuration
-       [% END %]
+        var table_settings = [% TablesSettings.GetTableSettings( 'admin', 'itemtypes', 'table_item_type', 'json' ) | $raw %];
+        [% IF ( Koha.Preference('noItemTypeImages') && Koha.Preference('OpacNoItemTypeImages') ) %]
+            table_settings['columns'].shift(); // Remove item type image column from configuration
+        [% END %]
     </script>
-
     <script>
-           $(document).ready(function() {
-               $("#table_item_type").kohaTable(
-                   {
-                       pagingType: "full",
-                   },
-                   table_settings
-               );
+        $(document).ready(function () {
+            $("#table_item_type").kohaTable(
+                {
+                    pagingType: "full",
+                },
+                table_settings
+            );
 
-           $( "#itemtypeentry" ).validate({
-               rules: {
-                   itemtype: { required: true },
-                   description: { required: true },
-                   rentalcharge: { number: true },
-                   rentalcharge_hourly: { number: true },
-                   defaultreplacecost: { number: true },
-                   processfee: { number: true }
-               }
-           });
-           $("#itemtype").on("blur",function(){
-               toUC(this);
-           });
-           if( $("#icons .tab-pane.active").length < 1 ){
-               $("#icons a:first").tab("show");
-           }
+            $("#itemtypeentry").validate({
+                rules: {
+                    itemtype: { required: true },
+                    description: { required: true },
+                    rentalcharge: { number: true },
+                    rentalcharge_hourly: { number: true },
+                    defaultreplacecost: { number: true },
+                    processfee: { number: true },
+                },
+            });
+            $("#itemtype").on("blur", function () {
+                toUC(this);
+            });
+            if ($("#icons .tab-pane.active").length < 1) {
+                $("#icons a:first").tab("show");
+            }
 
             if ($("#library_limitation").length > 0) {
                 $("#library_limitation")[0].style.minWidth = "450px";

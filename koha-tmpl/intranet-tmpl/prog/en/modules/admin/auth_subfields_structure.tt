@@ -438,18 +438,17 @@
     <script>
         const tagsubfield = [% IF tabsubfield %]"[% tabsubfield | html %]"[% ELSE %]null[% END %];
     </script>
-
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             $("#table_authsubfieldstructure").kohaTable({
                 order: [],
                 paging: false,
             });
 
             if ($("#subfieldtabs").length > 0) {
-                if (tagsubfield && tagsubfield == "@"){
+                if (tagsubfield && tagsubfield == "@") {
                     $("#subfieldtabs a[href='#AT_panel']").tab("show");
-                } else if ( tagsubfield && tagsubfield != "@") {
+                } else if (tagsubfield && tagsubfield != "@") {
                     $(`#subfieldtabs a[href='#${tagsubfield}_panel']`).tab("show");
                 } else {
                     $("#subfieldtabs a:first").tab("show");
@@ -472,7 +471,6 @@
                     },
                 });
             }
-
         });
     </script>
 [% END %]

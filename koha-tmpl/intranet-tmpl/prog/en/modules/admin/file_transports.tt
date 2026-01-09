@@ -464,46 +464,46 @@
             on: "[% tp("Active", "On") | html %]";
         };
     </script>
-
     <script>
-        $(document).ready(function() {
-
-            var file_transports_url = '/api/v1/config/file_transports';
+        $(document).ready(function () {
+            var file_transports_url = "/api/v1/config/file_transports";
             window.file_transports = $("#file_transports").kohaTable({
-                "ajax": {
-                    "url": file_transports_url
+                ajax: {
+                    url: file_transports_url,
                 },
-                "language": {
-                    "emptyTable": "<div class=\"alert alert-info\">"+_("There are no file transports defined.")+"</div>"
+                language: {
+                    emptyTable: '<div class="alert alert-info">' + _("There are no file transports defined.") + "</div>",
                 },
-                "columnDefs": [ {
-                    "targets": [0,1],
-                    "render": function(data, type, row, meta) {
-                        if (type == "display") {
-                            if(data != null) {
-                                return data.escapeHtml();
-                            } else {
-                                return "Default";
+                columnDefs: [
+                    {
+                        targets: [0, 1],
+                        render: function (data, type, row, meta) {
+                            if (type == "display") {
+                                if (data != null) {
+                                    return data.escapeHtml();
+                                } else {
+                                    return "Default";
+                                }
                             }
-                        }
-                        return data;
-                    }
-                } ],
-                "columns": [
+                            return data;
+                        },
+                    },
+                ],
+                columns: [
                     {
-                        "data": "name",
-                        "searchable": true,
-                        "orderable": true
+                        data: "name",
+                        searchable: true,
+                        orderable: true,
                     },
                     {
-                        "data": "host",
-                        "searchable": true,
-                        "orderable": true
+                        data: "host",
+                        searchable: true,
+                        orderable: true,
                     },
                     {
-                        "data": "port",
-                        "searchable": true,
-                        "orderable": false
+                        data: "port",
+                        searchable: true,
+                        orderable: false,
                     },
                     {
                         "data": "transport",
@@ -514,77 +514,77 @@
                             }
                             return transport;
                         },
-                        "searchable": true,
-                        "orderable": false
+                        searchable: true,
+                        orderable: false,
                     },
                     {
-                        "data": "auth_mode",
-                        "render": function(data, type, row, meta) {
-                            if(data == "password") {
+                        data: "auth_mode",
+                        render: function (data, type, row, meta) {
+                            if (data == "password") {
                                 return _("Password-based");
-                            } else if(data == "key_file") {
+                            } else if (data == "key_file") {
                                 return _("Key file-based");
                             } else {
                                 return _("No authentication");
                             }
                         },
-                        "searchable": false,
-                        "orderable": false
+                        searchable: false,
+                        orderable: false,
                     },
                     {
-                        "data": "user_name",
-                        "searchable": false,
-                        "orderable": false
+                        data: "user_name",
+                        searchable: false,
+                        orderable: false,
                     },
                     {
-                        "data": "download_directory",
-                        "render": function(data, type, row, meta) {
-                            if(data) {
+                        data: "download_directory",
+                        render: function (data, type, row, meta) {
+                            if (data) {
                                 return data;
                             } else {
                                 return "<em>" + _("Not specified") + "</em>";
                             }
                         },
-                        "searchable": false,
-                        "orderable": false
+                        searchable: false,
+                        orderable: false,
                     },
                     {
-                        "data": "upload_directory",
-                        "render": function(data, type, row, meta) {
-                            if(data) {
+                        data: "upload_directory",
+                        render: function (data, type, row, meta) {
+                            if (data) {
                                 return data;
                             } else {
                                 return "<em>" + _("Not specified") + "</em>";
                             }
                         },
-                        "searchable": false,
-                        "orderable": false
+                        searchable: false,
+                        orderable: false,
                     },
                     {
-                        "data": "status",
-                        "render": function(data, type, row, meta) {
-                            let render = '';
+                        data: "status",
+                        render: function (data, type, row, meta) {
+                            let render = "";
                             if (data) {
                                 if (data.status == "ok") {
                                     render += '<i class="text-success fa-solid fa-circle-check"></i> ';
                                     render += '<span class="text-success">';
                                     render += _("Tests passing");
-                                    render += '</span>'
+                                    render += "</span>";
                                 } else if (data.status == "errors") {
                                     data.operations.forEach(operation => {
                                         render += "<div>";
-                                        if ( operation.status == "error" ) {
+                                        if (operation.status == "error") {
                                             render += '<i class="text-danger fa-solid fa-circle-xmark"></i> ';
                                             render += '<span class="text-danger">';
                                             render += operationLabels[operation.code] || operation.code;
-                                            render += ' ' + _("failed");
-                                            render += '</span>';
+                                            render += " " + _("failed");
+                                            render += "</span>";
                                         } else {
                                             render += '<i class="text-success fa-solid fa-circle-check"></i> ';
                                             render += '<span class="text-success">';
                                             render += operationLabels[operation.code] || operation.code;
-                                            render += ' ' + _("ok");
-                                            render += '</span>';
+                                            render += " " + _("ok");
+                                            render += "</span>";
                                         }
                                         render += "</div>";
                                     });
@@ -596,124 +596,134 @@
                             }
                             return render;
                         },
-                        "searchable": false,
-                        "orderable": false
+                        searchable: false,
+                        orderable: false,
                     },
                     {
-                        "data": "debug",
-                        "render": function(data, type, row, meta) {
-                            if(data == true) {
+                        data: "debug",
+                        render: function (data, type, row, meta) {
+                            if (data == true) {
                                 return i18n.on;
-                            }
-                            else {
+                            } else {
                                 return _("Off");
                             }
                         },
-                        "searchable": false,
-                        "orderable": false
+                        searchable: false,
+                        orderable: false,
                     },
                     {
-                        "data": function(row, type, val, meta) {
-                            let result = '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/admin/file_transports.pl?op=edit_form&amp;file_transport_id='+ encodeURIComponent(row.file_transport_id) +'"><i class="fa-solid fa-pencil" aria-hidden="true"></i> '+_("Edit")+'</a>'+"\n";
-                            result += '<a class="btn btn-default btn-xs delete_server" role="button" href="#" data-bs-toggle="modal" data-bs-target="#delete_confirm_modal" data-file-transport-id="'+ encodeURIComponent(row.file_transport_id) +'" data-file-transport-name="'+ encodeURIComponent(row.name.escapeHtml()) +'"><i class="fa fa-trash-can" aria-hidden="true"></i> '+_("Delete")+'</a>';
+                        data: function (row, type, val, meta) {
+                            let result =
+                                '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/admin/file_transports.pl?op=edit_form&amp;file_transport_id=' +
+                                encodeURIComponent(row.file_transport_id) +
+                                '"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' +
+                                _("Edit") +
+                                "</a>" +
+                                "\n";
+                            result +=
+                                '<a class="btn btn-default btn-xs delete_server" role="button" href="#" data-bs-toggle="modal" data-bs-target="#delete_confirm_modal" data-file-transport-id="' +
+                                encodeURIComponent(row.file_transport_id) +
+                                '" data-file-transport-name="' +
+                                encodeURIComponent(row.name.escapeHtml()) +
+                                '"><i class="fa fa-trash-can" aria-hidden="true"></i> ' +
+                                _("Delete") +
+                                "</a>";
                             return result;
                         },
-                        "searchable": false,
-                        "orderable": false
-                    }
+                        searchable: false,
+                        orderable: false,
+                    },
                 ],
-                createdRow: function(row, data, dataIndex) {
-                    if(data.is_default) {
-                        $(row).addClass('default warn');
+                createdRow: function (row, data, dataIndex) {
+                    if (data.is_default) {
+                        $(row).addClass("default warn");
                     }
-                    if(data.debug) {
-                        $(row).addClass('debug');
+                    if (data.debug) {
+                        $(row).addClass("debug");
                     }
                 },
             });
 
-            $('#file_transports').on("click", '.delete_server', function() {
-                var file_transport_id   = $(this).data('file-transport-id');
-                var file_transport_name = decodeURIComponent($(this).data('file-transport-name'));
+            $("#file_transports").on("click", ".delete_server", function () {
+                var file_transport_id = $(this).data("file-transport-id");
+                var file_transport_name = decodeURIComponent($(this).data("file-transport-name"));
 
-                $("#delete_confirm_dialog").html(
-                    _("You are about to delete the '%s' file transport.").format(file_transport_name)
-                );
-                $("#delete_confirm_modal_button").data('file-transport-id', file_transport_id);
-                $("#delete_confirm_modal_button").data('file-transport-name', file_transport_name);
+                $("#delete_confirm_dialog").html(_("You are about to delete the '%s' file transport.").format(file_transport_name));
+                $("#delete_confirm_modal_button").data("file-transport-id", file_transport_id);
+                $("#delete_confirm_modal_button").data("file-transport-name", file_transport_name);
             });
 
-            $("#delete_confirm_modal_button").on("click", function() {
-
-                var file_transport_id   = $(this).data('file-transport-id');
-                var file_transport_name = $(this).data('file-transport-name');
+            $("#delete_confirm_modal_button").on("click", function () {
+                var file_transport_id = $(this).data("file-transport-id");
+                var file_transport_name = $(this).data("file-transport-name");
 
                 $.ajax({
                     method: "DELETE",
-                    url: "/api/v1/config/file_transports/"+file_transport_id
-                }).success(function() {
-                    window.file_transports.api().ajax.reload(function(data) {
-                        $("#action_result_dialog").hide();
-                        $("#delete_success").html(_("Server '%s' deleted successfully.").format(file_transport_name)).show();
+                    url: "/api/v1/config/file_transports/" + file_transport_id,
+                })
+                    .success(function () {
+                        window.file_transports.api().ajax.reload(function (data) {
+                            $("#action_result_dialog").hide();
+                            $("#delete_success").html(_("Server '%s' deleted successfully.").format(file_transport_name)).show();
+                        });
+                    })
+                    .fail(function () {
+                        $("#delete_error").html(_("Error deleting server '%s'. Please ensure all linked EDI accounts are unlinked or deleted. Check the logs for details.").format(file_transport_name)).show();
+                    })
+                    .done(function () {
+                        $("#delete_confirm_modal").modal("hide");
                     });
-                }).fail(function() {
-                    $("#delete_error").html(_("Error deleting server '%s'. Please ensure all linked EDI accounts are unlinked or deleted. Check the logs for details.").format(file_transport_name)).show();
-                }).done(function() {
-                    $("#delete_confirm_modal").modal('hide');
-                });
             });
 
             transportChange();
-            $("#transport").on("change", function(event) {
+            $("#transport").on("change", function (event) {
                 transportChange();
             });
 
             authModeChange();
-            $("#auth_mode").on("change", function(event) {
+            $("#auth_mode").on("change", function (event) {
                 authModeChange();
             });
 
-            $('#confirm_key_accept_submit').on('click', function(event) {
+            $("#confirm_key_accept_submit").on("click", function (event) {
                 event.preventDefault();
 
-                if ( $('#add').length > 0 ) {
-                    if( $('#add').valid() == true ) {
+                if ($("#add").length > 0) {
+                    if ($("#add").valid() == true) {
                         modalChange();
-                        $('#confirm_key_accept').modal('show');
+                        $("#confirm_key_accept").modal("show");
                     } else {
-                        $('#confirm_key_accept').modal('hide');
+                        $("#confirm_key_accept").modal("hide");
                     }
                 }
 
-                if ( $('#edit_save').length > 0 ) {
-                    if( $('#edit_save').valid() == true ) {
+                if ($("#edit_save").length > 0) {
+                    if ($("#edit_save").valid() == true) {
                         modalChange();
-                        $('#confirm_key_accept').modal('show');
+                        $("#confirm_key_accept").modal("show");
                     } else {
-                        $('#confirm_key_accept').modal('hide');
+                        $("#confirm_key_accept").modal("hide");
                     }
                 }
-
             });
 
-            $('#confirm_key_accept .approve').on('click', function() {
-                $('#confirm_key_accept .deny').click();
+            $("#confirm_key_accept .approve").on("click", function () {
+                $("#confirm_key_accept .deny").click();
 
-                if ( $('#add').length > 0 ) {
-                    $('#add').submit();
+                if ($("#add").length > 0) {
+                    $("#add").submit();
                 }
 
-                if ( $('#edit_save').length > 0 ) {
-                    $('#edit_save').submit();
+                if ($("#edit_save").length > 0) {
+                    $("#edit_save").submit();
                 }
             });
-
         });
 
         function transportChange() {
             let transport = $("#transport");
 
-            if(transport.val() == "ftp") {
+            if (transport.val() == "ftp") {
                 $("#host").removeAttr("disabled");
                 $("#port").removeAttr("disabled");
                 $("#passive").removeAttr("disabled");
@@ -725,15 +735,15 @@
                 $("#auth_mode option[value='password']").removeAttr("disabled");
                 $("#auth_mode option[value='key_file']").attr("disabled", "disabled");
                 $("#auth_mode option[value='noauth']").removeAttr("disabled");
-                if($("#auth_mode option:selected").val() == "key_file") {
+                if ($("#auth_mode option:selected").val() == "key_file") {
                     $("#auth_mode option[value='password']").prop("selected", true);
                 }
 
                 let port = $("#port").val();
-                if(port == 22) $("#port").val("21");
+                if (port == 22) $("#port").val("21");
 
                 authModeChange();
-            } else if(transport.val() == "sftp") {
+            } else if (transport.val() == "sftp") {
                 $("#host").removeAttr("disabled");
                 $("#port").removeAttr("disabled");
                 $("#passive").attr("disabled", "disabled");
@@ -748,7 +758,7 @@
                 $("#passive option[value='1']").prop("selected", true);
 
                 let port = $("#port").val();
-                if(port == 21) $("#port").val("22");
+                if (port == 21) $("#port").val("22");
 
                 return authModeChange();
             }
@@ -757,10 +767,10 @@
         function authModeChange() {
             let auth_mode = $("#auth_mode").val();
 
-            if(auth_mode == "password") {
+            if (auth_mode == "password") {
                 $("#password").removeAttr("disabled");
                 $("#key_file").attr("disabled", "disabled");
-            } else if(auth_mode == "key_file") {
+            } else if (auth_mode == "key_file") {
                 $("#password").attr("disabled", "disabled");
                 $("#key_file").removeAttr("disabled");
             } else {
@@ -770,14 +780,14 @@
         }
 
         function modalChange() {
-            $('#modal_message').hide();
-            if ( $('#transport').val() == 'sftp' ) $('#modal_message').show();
+            $("#modal_message").hide();
+            if ($("#transport").val() == "sftp") $("#modal_message").show();
 
-            $('#modal_host').text( $('#host').val() );
-            $('#modal_port').text( $('#port').val() );
-            $('#modal_transport').text( $('#transport option:selected').text() );
-            $('#modal_user_name').text( $('#user_name').val() );
-            $('#modal_auth_mode').text( $('#auth_mode option:selected').text() );
+            $("#modal_host").text($("#host").val());
+            $("#modal_port").text($("#port").val());
+            $("#modal_transport").text($("#transport option:selected").text());
+            $("#modal_user_name").text($("#user_name").val());
+            $("#modal_auth_mode").text($("#auth_mode option:selected").text());
         }
     </script>
 [% END %]
