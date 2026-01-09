@@ -2076,22 +2076,6 @@
                 KOHA.OpenLibrary.GetCoverFromIsbn();
             }
 
-            [% IF ( NovelistSelectProfile && ( normalized_isbn || normalized_upc ) ) %]
-                novSelect.loadContentForQuery(
-                    {
-                        ClientIdentifier : '[% IF normalized_isbn %][% normalized_isbn | html %][% ELSE %][% normalized_upc | html %][% END %]',
-                        ISBN : '[% IF normalized_isbn %][% normalized_isbn | html %][% ELSE %][% normalized_upc | html %][% END %]',
-                        version : '2.1'
-                    },
-                    '[% NovelistSelectProfile | html %]',
-                    '[% NovelistSelectPassword | html %]',
-                    function(d){
-                        if ( d.length > 0 ){ //If no content
-                            $(".NovelistSelect").show();
-                        }
-                    });
-            [% END %]
-
             if (prefs.OPACShelfBrowser){
                 // Focus on shelf browser if present
                 var shelfbrowser = $("#shelfbrowser");
@@ -2277,4 +2261,26 @@
 
         }
     </script>
+
+    [% IF ( NovelistSelectProfile && ( normalized_isbn || normalized_upc ) ) %]
+        <script>
+            $(document).ready(function() {
+                novSelect.loadContentForQuery(
+                    {
+                        ClientIdentifier : '[% IF normalized_isbn %][% normalized_isbn | html %][% ELSE %][% normalized_upc | html %][% END %]',
+                        ISBN : '[% IF normalized_isbn %][% normalized_isbn | html %][% ELSE %][% normalized_upc | html %][% END %]',
+                        version : '2.1'
+                    },
+                    '[% NovelistSelectProfile | html %]',
+                    '[% NovelistSelectPassword | html %]',
+                    function(d){
+                        if ( d.length > 0 ){ //If no content
+                            $(".NovelistSelect").show();
+                        }
+                    }
+                );
+            });
+        </script>
+    [% END %]
+
 [% END %]
