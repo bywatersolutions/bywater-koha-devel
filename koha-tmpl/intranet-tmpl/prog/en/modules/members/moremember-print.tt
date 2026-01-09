@@ -177,9 +177,8 @@
         var holds_columns = [% TablesSettings.GetTableSettings( 'circ', 'print_summary', 'print-summary-holds', 'json' ) | $raw %];
         var fines_columns = [% TablesSettings.GetTableSettings( 'circ', 'print_summary', 'print-summary-fines', 'json' ) | $raw %];
     </script>
-
     <script>
-        function initTables(){
+        function initTables() {
             $("#print-summary-checkouts").kohaTable(
                 {
                     dom: '<"dt-info"><"top pager"<"table_controls"B>>t',
@@ -208,10 +207,10 @@
             );
         }
 
-        if( autoprint ){
+        if (autoprint) {
             window.onbeforeprint = initTables();
         } else {
-            $(document).ready(function(){
+            $(document).ready(function () {
                 initTables();
             });
         }

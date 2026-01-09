@@ -243,7 +243,6 @@
             FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
         });
     </script>
-
     <script>
         function enableCheckboxActions(){
             // Enable/disable controls if checkboxes are checked

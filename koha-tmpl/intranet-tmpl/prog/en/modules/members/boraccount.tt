@@ -585,11 +585,10 @@
         const change_given = "[% change_given | html %]";
         const payment_id = "[% payment_id | html %]";
     </script>
-
     <script>
-        $(document).ready(function() {
-            if (payment_id && prefs.FinePaymentAutoPopup){
-                window.open(`/cgi-bin/koha/members/printfeercpt.pl?action=print&change_given=${change_given}&accountlines_id=${payment_id}`, '_blank');
+        $(document).ready(function () {
+            if (payment_id && prefs.FinePaymentAutoPopup) {
+                window.open(`/cgi-bin/koha/members/printfeercpt.pl?action=print&change_given=${change_given}&accountlines_id=${payment_id}`, "_blank");
             }
 
             var txtActivefilter = _("Filter paid transactions");
@@ -602,85 +601,86 @@
                 },
                 table_settings
             );
-            $("#filter_c").html('<p><a href="#" id="filter_transacs"><i class="fa fa-filter"></i> '+txtActivefilter+'</a>');
-            $('#filter_transacs').click(function(e) {
+            $("#filter_c").html('<p><a href="#" id="filter_transacs"><i class="fa fa-filter"></i> ' + txtActivefilter + "</a>");
+            $("#filter_transacs").click(function (e) {
                 e.preventDefault();
-                if ($(this).hasClass('filtered')) {
-                    var filteredValue = '';
-                    $(this).html('<i class="fa fa-filter"></i> '+txtActivefilter);
-                } else { //Not filtered. Let's do it!
-                    var filteredValue = '^((?!0.00).*)$'; //Filter not matching 0.00 http://stackoverflow.com/a/406408
-                    $(this).html('<i class="fa fa-filter"></i> '+txtInactivefilter);
+                if ($(this).hasClass("filtered")) {
+                    var filteredValue = "";
+                    $(this).html('<i class="fa fa-filter"></i> ' + txtActivefilter);
+                } else {
+                    //Not filtered. Let's do it!
+                    var filteredValue = "^((?!0.00).*)$"; //Filter not matching 0.00 http://stackoverflow.com/a/406408
+                    $(this).html('<i class="fa fa-filter"></i> ' + txtInactivefilter);
                 }
-                table_account_fines.DataTable().columns( 14 ).search( filteredValue, true, false ).draw();
-                $(this).toggleClass('filtered');
+                table_account_fines.DataTable().columns(14).search(filteredValue, true, false).draw();
+                $(this).toggleClass("filtered");
             });
 
-            $("#issuePayoutModal").on("shown.bs.modal", function(e){
+            $("#issuePayoutModal").on("shown.bs.modal", function (e) {
                 var button = $(e.relatedTarget);
-                var accountline = button.data('accountline');
-                $('#payoutline').val(accountline);
-                var amount = button.data('amount') * -1;
+                var accountline = button.data("accountline");
+                $("#payoutline").val(accountline);
+                var amount = button.data("amount") * -1;
                 $("#paid + span").text(amount.format_price());
-                $("#amount").attr({ "value": amount.format_price(), "max": amount, "min": 0 });
+                $("#amount").attr({ value: amount.format_price(), max: amount, min: 0 });
                 $("#amount, #payout_transaction_type").focus();
             });
 
-            $("#issueRefundModal").on("shown.bs.modal", function(e){
+            $("#issueRefundModal").on("shown.bs.modal", function (e) {
                 var button = $(e.relatedTarget);
-                var item = button.data('item');
+                var item = button.data("item");
                 $("#item + span").replaceWith(item);
-                var accountline = button.data('accountline');
-                $('#refundline').val(accountline);
-                var amount = button.data('amount');
-                var amountoutstanding = button.data('amountoutstanding') || 0;
+                var accountline = button.data("accountline");
+                $("#refundline").val(accountline);
+                var amount = button.data("amount");
+                var amountoutstanding = button.data("amountoutstanding") || 0;
                 var paid = amount - amountoutstanding;
                 $("#paid + span").text(paid.format_price());
-                $("#returned").attr({ "value": paid.format_price(), "max": paid.format_price(), "min": 0 });
-                var member = button.data('member');
-                if ( member === '' ) {
+                $("#returned").attr({ value: paid.format_price(), max: paid.format_price(), min: 0 });
+                var member = button.data("member");
+                if (member === "") {
                     $("#refund_type option[value='AC']").remove();
-                } else if ( $("#refund_type option[value='AC']").length == 0 ) {
+                } else if ($("#refund_type option[value='AC']").length == 0) {
                     $("#refund_type").prepend('<option value="AC" selected="selected">Account credit</option>');
                 }
                 $("#returned, #refund_type").focus();
             });
 
-            $("#applyDiscountModal").on("shown.bs.modal", function(e){
+            $("#applyDiscountModal").on("shown.bs.modal", function (e) {
                 var button = $(e.relatedTarget);
-                var item = button.data('item');
+                var item = button.data("item");
                 $("#apply_discount_item + span").replaceWith(item);
-                var accountline = button.data('accountline');
-                $('#discountline').val(accountline);
-                var amountoutstanding = button.data('amountoutstanding');
+                var accountline = button.data("accountline");
+                $("#discountline").val(accountline);
+                var amountoutstanding = button.data("amountoutstanding");
                 $("#charged + span").text(amountoutstanding);
-                $("#discount").attr({ "value": (0).format_price(), "max": amountoutstanding, "min": 0 });
+                $("#discount").attr({ value: (0).format_price(), max: amountoutstanding, min: 0 });
                 $("#discount").focus();
             });
 
-            $("#voidPaymentModal").on("shown.bs.modal", function(e){
+            $("#voidPaymentModal").on("shown.bs.modal", function (e) {
                 var button = $(e.relatedTarget);
-                var item = button.data('accountline');
-                $('#voidline').val(item);
+                var item = button.data("accountline");
+                $("#voidline").val(item);
             });
 
-            $("#cancelChargeModal").on("shown.bs.modal", function(e){
+            $("#cancelChargeModal").on("shown.bs.modal", function (e) {
                 var button = $(e.relatedTarget);
-                var item = button.data('accountlines_id');
-                $('#accountlines_id').val(item);
+                var item = button.data("accountlines_id");
+                $("#accountlines_id").val(item);
             });
 
-            $("#editNoteModal").on("shown.bs.modal", function(e) {
+            $("#editNoteModal").on("shown.bs.modal", function (e) {
                 var button = $(e.relatedTarget);
-                var accountline = button.data('accountline');
-                $('#noteline').val(accountline);
-                var note = button.data('note');
-                $('#edited_note').val(note);
+                var accountline = button.data("accountline");
+                $("#noteline").val(accountline);
+                var note = button.data("note");
+                $("#edited_note").val(note);
             });
 
-            $(".receipt-email-action").on("click", function(e){
+            $(".receipt-email-action").on("click", function (e) {
                 e.preventDefault();
-                return $(this).siblings('form').submit();
+                return $(this).siblings("form").submit();
             });
         });
     </script>
