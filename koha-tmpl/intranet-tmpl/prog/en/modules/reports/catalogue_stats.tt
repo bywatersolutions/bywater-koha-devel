@@ -410,26 +410,24 @@
             ];
         [% END %]
     </script>
-
     <script>
         function changeRemovedDateTrStatus() {
             var Cellvalue = $("input[name='Cellvalue']:checked").val();
-            if(Cellvalue == "deleteditems") {
+            if (Cellvalue == "deleteditems") {
                 $("#removeddatetr").show();
-                $("input[value='deleteditems.timestamp']").prop('disabled', false);
-                $("#deldateFrom").prop('disabled', false);
-                $("#deldateTo").prop('disabled', false);
+                $("input[value='deleteditems.timestamp']").prop("disabled", false);
+                $("#deldateFrom").prop("disabled", false);
+                $("#deldateTo").prop("disabled", false);
             } else {
                 $("#removeddatetr").hide();
-                $("input[value='deleteditems.timestamp']").prop('disabled', true).prop('checked', false);
-                $("#deldateFrom").prop('disabled', true).val('');
-                $("#deldateTo").prop('disabled', true).val('');
+                $("input[value='deleteditems.timestamp']").prop("disabled", true).prop("checked", false);
+                $("#deldateFrom").prop("disabled", true).val("");
+                $("#deldateTo").prop("disabled", true).val("");
             }
         }
 
-        $(document).ready(function() {
-
-            $("input[name='Cellvalue']").change(function() {
+        $(document).ready(function () {
+            $("input[name='Cellvalue']").change(function () {
                 changeRemovedDateTrStatus();
             });
             changeRemovedDateTrStatus();

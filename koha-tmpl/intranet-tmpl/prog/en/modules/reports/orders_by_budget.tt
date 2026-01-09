@@ -171,9 +171,8 @@
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'reports', 'orders_by_fund', 'funds-table', 'json' ) | $raw %];
     </script>
-
     <script>
-        $(document).ready( function () {
+        $(document).ready(function () {
             var funds_table = $("#funds").kohaTable(
                 {
                     autoWidth: false,
@@ -181,17 +180,17 @@
                 table_settings
             );
 
-            showallbudgets = $('#budgetfilter').html();
-            $('#budgetfilter .b_inactive').remove();
+            showallbudgets = $("#budgetfilter").html();
+            $("#budgetfilter .b_inactive").remove();
 
-            $('#showbudgets').click(function(){
+            $("#showbudgets").click(function () {
                 if ($(this).is(":checked")) {
-                    $('#budgetfilter').html(showallbudgets);
+                    $("#budgetfilter").html(showallbudgets);
                 } else {
-                    $('#budgetfilter .b_inactive').remove();
+                    $("#budgetfilter .b_inactive").remove();
                 }
             });
-        } );
+        });
     </script>
 [% END %]
 

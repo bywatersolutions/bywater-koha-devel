@@ -201,9 +201,8 @@
             table_settings['columns'].unshift({cannot_be_modified: 1, cannot_be_toggled: 1, columnname: 'itemnumber', is_hidden: 0});
         [% END %]
     </script>
-
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             var lostitems_table = $("#lostitems-table").kohaTable(
                 {
                     order: [],
@@ -216,14 +215,14 @@
 
             function itemSelectionBuildExportLink() {
                 var itemnumbers = new Array();
-                $("input[name='itemnumber'][type='checkbox']:checked").each(function() {
+                $("input[name='itemnumber'][type='checkbox']:checked").each(function () {
                     itemnumbers.push($(this).val());
                 });
                 if (itemnumbers.length > 0) {
                     var csv_profile_id = $("#csv_profile_id  option:selected").val();
-                    var url = '/cgi-bin/koha/reports/itemslost.pl?op=export&csv_profile_id='+csv_profile_id;
-                    url += '&itemnumber=' + itemnumbers.join('&itemnumber=');
-                    $('a.itemselection_action_export').attr('href', url);
+                    var url = "/cgi-bin/koha/reports/itemslost.pl?op=export&csv_profile_id=" + csv_profile_id;
+                    url += "&itemnumber=" + itemnumbers.join("&itemnumber=");
+                    $("a.itemselection_action_export").attr("href", url);
                 } else {
                     return false;
                 }
@@ -233,32 +232,32 @@
             function itemSelectionBuildActionLinks() {
                 var export_link_ok = itemSelectionBuildExportLink();
                 if (export_link_ok) {
-                    $('.itemselection_actions').show();
+                    $(".itemselection_actions").show();
                 } else {
-                    $('.itemselection_actions').hide();
+                    $(".itemselection_actions").hide();
                 }
             }
 
             itemSelectionBuildActionLinks();
 
-            $("input[name='itemnumber'][type='checkbox']").change(function() {
+            $("input[name='itemnumber'][type='checkbox']").change(function () {
                 itemSelectionBuildActionLinks();
             });
-            $("#csv_profile_id").change(function() {
+            $("#csv_profile_id").change(function () {
                 itemSelectionBuildActionLinks();
             });
 
-            $(".SelectAll").on("click",function(e){
+            $(".SelectAll").on("click", function (e) {
                 e.preventDefault();
-                $("#lostitems-table input:checkbox").each(function(){
+                $("#lostitems-table input:checkbox").each(function () {
                     $(this).prop("checked", true);
                 });
                 itemSelectionBuildActionLinks();
             });
 
-            $(".ClearAll").on("click",function(e){
+            $(".ClearAll").on("click", function (e) {
                 e.preventDefault();
-                $("#lostitems-table input:checkbox").each(function(){
+                $("#lostitems-table input:checkbox").each(function () {
                     $(this).prop("checked", false);
                 });
                 itemSelectionBuildActionLinks();
