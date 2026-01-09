@@ -1059,7 +1059,18 @@
     [% INCLUDE 'datatables.inc' %]
     <script>
         const tab = "[% tab | html %]";
+        const logged_in_user_borrowernumber = "[% borrowernumber | html %]";
+        addPrefs({
+            OpacRenewalAllowed: [% Koha.Preference('OpacRenewalAllowed') ? 1 : 0 | html %],
+            GoogleJackets: [% Koha.Preference('GoogleJackets') ? 1 : 0 | html %],
+            AllowCheckoutNotes: [% Koha.Preference('AllowCheckoutNotes') ? 1 : 0 | html %],
+            OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
+        });
+        const can_renew = [% canrenew ? 1 : 0 | html %];
+        const is_debarred = [% userdebarred ? 1 : 0 | html %];
+        const current_article_requests_size = [% current_article_requests.size || 0 | html %];
     </script>
+
     <script>
         var AR_CAPTION_COUNT = _("(%s total)");
 
@@ -1067,9 +1078,9 @@
         function tableInit( tableId ){
             if( tableId == "checkoutst" ){
                 $(".dt-buttons").append("<button type=\"button\" class=\"dt-button buttons-ical\" id=\"buttons-ics\">iCal</button> ");
-                [% IF ( OpacRenewalAllowed && canrenew && !userdebarred ) %]
+                if (prefs.OpacRenewalAllowed && can_renew && !is_debarred){
                     $(".dt-buttons").append("<button id=\"renewselected_link\" class=\"dt-button buttons-renew\"><i class=\"fa fa-check\" aria-hidden=\"true\"></i> "+_("Renew selected")+"</button> <button id=\"renewall_link\" class=\"dt-button buttons-renewall\"><span class=\"fa-stack\"><i class=\"fa fa-check fa-stack-1x\" aria-hidden=\"true\"></i><i class=\"fa fa-check fa-stack-1x\" aria-hidden=\"true\"></i></span> "+_("Renew all")+"</button>");
-                [% END %]
+                }
             }
         }
         $(document).ready(function(){
@@ -1080,7 +1091,7 @@
                 $("#opac-user-views a:first").tab("show");
             }
 
-            $('#article-requests-table caption .count').html(AR_CAPTION_COUNT.format('[% current_article_requests.size | html %]'));
+            $('#article-requests-table caption .count').html(AR_CAPTION_COUNT.format(current_article_requests_size));
 
             $(".modal-nojs").addClass("modal").addClass("hide").removeClass("modal-nojs");
 
@@ -1117,7 +1128,7 @@
                         if( result ){
                             $.ajax({
                                 type: "DELETE",
-                                url: '/api/v1/public/patrons/'+borrowernumber+'/article_requests/'+article_request_id+'?cancellation_reason=OPAC',
+                                url: `/api/v1/public/patrons/${logged_in_user_borrowernumber}/article_requests/${article_request_id}?cancellation_reason=OPAC`,
                                 success: function( data ) {
                                     $("#article_" + article_request_id ).hide({
                                         duration: 'slow',
@@ -1229,12 +1240,7 @@
                 });
             });
 
-            [% IF ( Koha.Preference('OPACTableColExpandedByDefault') ) %]
-                var responsive_display = DataTable.Responsive.display.childRowImmediate;
-            [% ELSE %]
-                var responsive_display = DataTable.Responsive.display.childRow;
-            [% END %]
-
+            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
             var dataTables = $("#recalls-table,#article-requests-table");
             dataTables.each(function(){
                 $(this).kohaTable({
@@ -1260,8 +1266,10 @@
                 location.href="/cgi-bin/koha/opac-ics.pl";
             });
 
-            [% IF ( GoogleJackets ) %]KOHA.Google.GetCoverFromIsbn();[% END %]
-            [% IF ( OpacRenewalAllowed && canrenew && !userdebarred ) %]
+            if (prefs.GoogleJackets){
+                KOHA.Google.GetCoverFromIsbn();
+            }
+            if (prefs.OpacRenewalAllowed && can_renew && !is_debarred){
                 $("#renewselected").submit(function(){
                     valid = false;
                     $("input[type=checkbox]").each(function(){
@@ -1282,9 +1290,9 @@
                     e.preventDefault();
                     $("#renewall").submit();
                 });
-            [% END # /IF ( OpacRenewalAllowed && canrenew && !userdebarred ) %]
+            }
 
-            [% IF ( Koha.Preference('AllowCheckoutNotes') ) %]
+            if (prefs.AllowCheckoutNotes){
 
                 /* If JS enabled, show button, otherwise show link to redirect to a page where note can be submitted */
                 $(".nonjs_submitnote").hide();
@@ -1311,8 +1319,7 @@
                         $btn_save.hide();
                     }
                 });
-
-            [% END %]
+            }
 
             $(".change_pickup").on("click", function(){
                 var hold_id = $(this).data("hold-id");
@@ -1323,7 +1330,7 @@
             if ( $('#opac-user-clubs_panel').length ) {
                 $('#opac-user-clubs-tab').on('click', function() {
                     $('#opac-user-clubs_panel').text(_("Loading..."));
-                    $('#opac-user-clubs_panel').load('/cgi-bin/koha/clubs/clubs-tab.pl?borrowernumber=[% borrowernumber | html %]');
+                    $('#opac-user-clubs_panel').load(`/cgi-bin/koha/clubs/clubs-tab.pl?borrowernumber=${logged_in_user_borrowernumber}`);
                 });
             }
 
@@ -1428,7 +1435,6 @@
             return "<em>" + title + "</em>";
         }
 
-        var borrowernumber = "[% borrowernumber | html %]";
     </script>
     [% IF ( Koha.Preference('OpacStarRatings') == 'all' ) %]
         [% Asset.js("lib/jquery/plugins/jquery.barrating.min.js") | $raw %]
