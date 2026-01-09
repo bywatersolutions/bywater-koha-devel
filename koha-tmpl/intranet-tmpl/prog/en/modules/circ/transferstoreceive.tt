@@ -123,7 +123,6 @@
             library_ids.push("[% library.branchcode | html %]");
         [% END %]
     </script>
-
     <script>
         $(document).ready(function() {
             library_ids.forEach(library_id => {

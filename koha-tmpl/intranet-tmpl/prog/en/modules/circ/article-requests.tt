@@ -531,57 +531,57 @@
         const interface = "[% interface | html %]";
         const theme = "[% theme | html %]";
     </script>
-
     <script>
         var active_tab = "#article-requests-requested_panel";
         var last_cancel_reason, requested_datatable, pending_datatable, processing_datatable, active_datatable, requested_dt, pending_dt, processing_dt;
-        $(document).ready(function() {
-
+        $(document).ready(function () {
             $("#article-request-tabs a[data-bs-toggle='tab']").on("shown.bs.tab", function (e) {
                 active_tab = e.target.hash;
-                if( active_tab == "#article-requests-requested_panel" ){
+                if (active_tab == "#article-requests-requested_panel") {
                     active_datatable = requested_datatable;
-                } else if( active_tab == "#article-requests-pending_panel" ){
+                } else if (active_tab == "#article-requests-pending_panel") {
                     active_datatable = pending_datatable;
                 } else {
                     active_datatable = processing_datatable;
                 }
-                activateBatchActions( active_tab );
+                activateBatchActions(active_tab);
             });
 
-            $( "input:checkbox, #article-request-tabs" ).on("change", function(){
-                activateBatchActions( active_tab );
+            $("input:checkbox, #article-request-tabs").on("change", function () {
+                activateBatchActions(active_tab);
             });
 
-            $(".SelectAll").on("click", function(e) {
+            $(".SelectAll").on("click", function (e) {
                 e.preventDefault();
-                $( active_tab + " input[type='checkbox']").prop('checked', true);
-                activateBatchActions( active_tab );
+                $(active_tab + " input[type='checkbox']").prop("checked", true);
+                activateBatchActions(active_tab);
             });
-            $(".ClearAll").on("click", function(e) {
+            $(".ClearAll").on("click", function (e) {
                 e.preventDefault();
-                $( active_tab + " input[type='checkbox']").prop('checked', false);
-                activateBatchActions( active_tab );
+                $(active_tab + " input[type='checkbox']").prop("checked", false);
+                activateBatchActions(active_tab);
             });
-            $("a.ar-actions").on('click', function(e) {
+            $("a.ar-actions").on("click", function (e) {
                 // Hide menu option ?
-                if( $('#article-requests-requested-table:visible,#article-requests-pending-table:visible').length )
-                    $('a.ar-process-request').show();
-                else $('a.ar-process-request').hide();
+                if ($("#article-requests-requested-table:visible,#article-requests-pending-table:visible").length) $("a.ar-process-request").show();
+                else $("a.ar-process-request").hide();
 
-                if( $('#article-requests-requested-table').is(":visible") )
-                    $('a.ar-set-pending-request').show();
-                else $('a.ar-set-pending-request').hide();
+                if ($("#article-requests-requested-table").is(":visible")) $("a.ar-set-pending-request").show();
+                else $("a.ar-set-pending-request").hide();
             });
 
-            $('#myModal').on("shown.bs.modal", function () {
-                $('#myModal textarea').focus();
+            $("#myModal").on("shown.bs.modal", function () {
+                $("#myModal textarea").focus();
             });
-            $('#myModal').on("hidden.bs.modal", function () {
+            $("#myModal").on("hidden.bs.modal", function () {
                 // Set focus back to dropdown
-                var id = $('#myModal textarea').attr('ar_id');
-                var link = $('span#url_'+ id).parent().parent().find('td.ar-actions').find('div.dropdown a');
-                if( link.length > 0 ) link[0].focus();
+                var id = $("#myModal textarea").attr("ar_id");
+                var link = $("span#url_" + id)
+                    .parent()
+                    .parent()
+                    .find("td.ar-actions")
+                    .find("div.dropdown a");
+                if (link.length > 0) link[0].focus();
             });
 
             requested_datatable = $("#article-requests-requested-table").kohaTable({}, requested_table_settings);
@@ -594,212 +594,227 @@
             processing_dt = processing_datatable.DataTable();
 
             active_datatable = requested_datatable;
-            activateBatchActions( active_tab );
+            activateBatchActions(active_tab);
         });
 
-        function activateBatchActions( active_tab ){
+        function activateBatchActions(active_tab) {
             // Check to see whether batch menu should be shown based on state of checkboxes
-            if ( $( "input:checkbox", active_tab ).length > 0 ) {
+            if ($("input:checkbox", active_tab).length > 0) {
                 // There are rows with checkboxes
-                $( "[class$='_table_controls']", active_tab ).show();
-                if ( $( "input:checkbox:checked", active_tab ).length > 0 ) {
-                    $( "[id^='article-menu-']", active_tab ).css("display","inline-block");
+                $("[class$='_table_controls']", active_tab).show();
+                if ($("input:checkbox:checked", active_tab).length > 0) {
+                    $("[id^='article-menu-']", active_tab).css("display", "inline-block");
                 } else {
-                    $( "[id^='article-menu-']", active_tab ).hide();
+                    $("[id^='article-menu-']", active_tab).hide();
                 }
             } else {
                 // All rows have been removed
-                $("[class$='_table_controls']", active_tab ).hide();
+                $("[class$='_table_controls']", active_tab).hide();
             }
         }
 
-        function HandleMulti( fnHandler, id, a ) {
+        function HandleMulti(fnHandler, id, a) {
             last_cancel_reason = undefined;
-            if( id !== 0 ) { fnHandler( id, a ); return; }
-            $( active_tab + " input[type='checkbox']:checked").each(function() {
-                fnHandler( $(this).attr('reqid'), $(this).closest('tr').find('td.ar-actions div a') );
+            if (id !== 0) {
+                fnHandler(id, a);
+                return;
+            }
+            $(active_tab + " input[type='checkbox']:checked").each(function () {
+                fnHandler($(this).attr("reqid"), $(this).closest("tr").find("td.ar-actions div a"));
             });
         }
 
         function PrintSlip(id, a) {
-            var link = 'article-request-slip.pl?id='+id;
-            window.open(link, 'popup', 'width=600,height=400,resizable=1,toolbar=0,scrollbars=1,top');
+            var link = "article-request-slip.pl?id=" + id;
+            window.open(link, "popup", "width=600,height=400,resizable=1,toolbar=0,scrollbars=1,top");
         }
-        $(".ar-print-request").on("click", function (e){
+        $(".ar-print-request").on("click", function (e) {
             e.preventDefault();
-            HandleMulti(PrintSlip, $(this).data('ar-id'));
+            HandleMulti(PrintSlip, $(this).data("ar-id"));
         });
 
-        $('#modal-cancellation-reason').on('change', function(e) {
+        $("#modal-cancellation-reason").on("change", function (e) {
             let reason = $(this).val();
-            $('#modal-notes').attr('disabled', !!reason);
-        })
+            $("#modal-notes").attr("disabled", !!reason);
+        });
 
         // Confirm cancellation of article requests
         let cancel_id;
         let cancel_a;
-        $("#cancelModalConfirmBtn").on("click",function(e) {
+        $("#cancelModalConfirmBtn").on("click", function (e) {
             let reason = $("#modal-cancellation-reason").val();
             let notes = $("#modal-notes").val();
-            let query = '?'+(reason?'cancellation_reason='+reason:'notes='+notes)
+            let query = "?" + (reason ? "cancellation_reason=" + reason : "notes=" + notes);
 
-            HandleMulti(function(id, a) {
-                var table_row = a.closest('tr');
-                table_row.find('.ar-process-request').remove();
-                table_row.find('input[type="checkbox"]').prop('checked', false);
+            HandleMulti(
+                function (id, a) {
+                    var table_row = a.closest("tr");
+                    table_row.find(".ar-process-request").remove();
+                    table_row.find('input[type="checkbox"]').prop("checked", false);
 
-
-                a.closest('td').prepend('<img src="' + interface + '/' + theme + '/img/spinner-small.gif"/>').find('div.dropdown').hide();
-                $.ajax({
-                    type: "DELETE",
-                    url: '/api/v1/article_requests/'+id+query,
-                    success: function( data ) {
-                        active_datatable.DataTable().row( table_row ).remove().draw();
-                        UpdateTabCounts();
-                        activateBatchActions( active_tab );
-                    }
-                });
-            }, cancel_id, cancel_a)
+                    a.closest("td")
+                        .prepend('<img src="' + interface + "/" + theme + '/img/spinner-small.gif"/>')
+                        .find("div.dropdown")
+                        .hide();
+                    $.ajax({
+                        type: "DELETE",
+                        url: "/api/v1/article_requests/" + id + query,
+                        success: function (data) {
+                            active_datatable.DataTable().row(table_row).remove().draw();
+                            UpdateTabCounts();
+                            activateBatchActions(active_tab);
+                        },
+                    });
+                },
+                cancel_id,
+                cancel_a
+            );
         });
 
         function PrintMultipleSlip() {
             var ids = [];
-            $( active_tab + " input[type='checkbox']:checked").each(function() {
-                ids.push($(this).attr('reqid'));
+            $(active_tab + " input[type='checkbox']:checked").each(function () {
+                ids.push($(this).attr("reqid"));
             });
-            var link = 'article-request-slip.pl?multi=1&id='+ids.join(',');
-            window.open(link, 'popup', 'width=600,height=400,resizable=1,toolbar=0,scrollbars=1,top');
+            var link = "article-request-slip.pl?multi=1&id=" + ids.join(",");
+            window.open(link, "popup", "width=600,height=400,resizable=1,toolbar=0,scrollbars=1,top");
         }
-        $(".ar-print-multiple-requests").on("click", function (e){
+        $(".ar-print-multiple-requests").on("click", function (e) {
             e.preventDefault();
             PrintMultipleSlip();
         });
 
-        function Cancel( id, a ) {
+        function Cancel(id, a) {
             cancel_id = id;
             cancel_a = a;
 
-            $('#cancelModal').modal('show');
+            $("#cancelModal").modal("show");
         }
-        $(".ar-cancel-request").on("click", function (e){
+        $(".ar-cancel-request").on("click", function (e) {
             e.preventDefault();
-            HandleMulti(Cancel, $(this).data('ar-id'), $(this));
+            HandleMulti(Cancel, $(this).data("ar-id"), $(this));
         });
 
-        async function Process( id, a ) {
-            var table_row = a.closest('tr');
-            var table = a.closest('table');
-            var orig_dt = table.attr('id')==='article-requests-pending-table'?pending_dt:requested_dt;
+        async function Process(id, a) {
+            var table_row = a.closest("tr");
+            var table = a.closest("table");
+            var orig_dt = table.attr("id") === "article-requests-pending-table" ? pending_dt : requested_dt;
 
-            a.closest('td').prepend('<img src="' + interface + '/' + theme + '/img/spinner-small.gif" class="spinner"/>').find('div.dropdown').hide();
+            a.closest("td")
+                .prepend('<img src="' + interface + "/" + theme + '/img/spinner-small.gif" class="spinner"/>')
+                .find("div.dropdown")
+                .hide();
 
             const client = APIClient.article_request;
             await client.articleRequests.process(id).then(
                 success => {
                     $("img.spinner").remove();
-                    table_row.find('.ar-process-request').remove();
-                    table_row.find('input[type="checkbox"]').prop('checked', false);
-                    orig_dt.row( table_row ).remove().draw();
-                    processing_dt.row.add( table_row ).draw();
+                    table_row.find(".ar-process-request").remove();
+                    table_row.find('input[type="checkbox"]').prop("checked", false);
+                    orig_dt.row(table_row).remove().draw();
+                    processing_dt.row.add(table_row).draw();
                     UpdateTabCounts();
-                    activateBatchActions( active_tab );
+                    activateBatchActions(active_tab);
                 },
                 error => {
                     console.warn("Something wrong happened: %s".format(error));
                 }
             );
         }
-        $(".ar-process-request").on("click", function (e){
+        $(".ar-process-request").on("click", function (e) {
             e.preventDefault();
-            HandleMulti(Process, $(this).data('ar-id'), $(this));
+            HandleMulti(Process, $(this).data("ar-id"), $(this));
         });
 
-        async function Complete( id, a ) {
+        async function Complete(id, a) {
             // if it is a scan, check if urls field is filled
-            var urlspan = $('span#url_'+id);
-            if( urlspan.length>0 && urlspan.text() === '' ) {
-                alert( _("Please fill URL before completing request.") );
+            var urlspan = $("span#url_" + id);
+            if (urlspan.length > 0 && urlspan.text() === "") {
+                alert(_("Please fill URL before completing request."));
                 return;
             }
-            a.closest('td').prepend('<img src="' + interface + '/' + theme + '/img/spinner-small.gif"/>').find('div.dropdown').hide();
+            a.closest("td")
+                .prepend('<img src="' + interface + "/" + theme + '/img/spinner-small.gif"/>')
+                .find("div.dropdown")
+                .hide();
             const client = APIClient.article_request;
             await client.articleRequests.complete(id).then(
                 success => {
                     $("img.spinner").remove();
-                    active_datatable.DataTable().row( a.closest('tr') ).remove().draw();
+                    active_datatable.DataTable().row(a.closest("tr")).remove().draw();
                     UpdateTabCounts();
-                    activateBatchActions( active_tab );
+                    activateBatchActions(active_tab);
                 },
                 error => {
                     console.warn("Something wrong happened: %s".format(error));
                 }
             );
         }
-        $(".ar-complete-request").on("click", function (e){
+        $(".ar-complete-request").on("click", function (e) {
             e.preventDefault();
-            HandleMulti(Complete, $(this).data('ar-id'), $(this));
+            HandleMulti(Complete, $(this).data("ar-id"), $(this));
         });
 
-        async function SetPending( id, a ) {
-            var table_row = a.closest('tr');
-            table_row.find('.ar-set-pending-request').remove();
-            table_row.find('input[type="checkbox"]').prop('checked', false);
-            a.closest('td').prepend('<img src="' + interface + '/' + theme + '/img/spinner-small.gif" class="spinner"/>').find('div.dropdown').hide();
+        async function SetPending(id, a) {
+            var table_row = a.closest("tr");
+            table_row.find(".ar-set-pending-request").remove();
+            table_row.find('input[type="checkbox"]').prop("checked", false);
+            a.closest("td")
+                .prepend('<img src="' + interface + "/" + theme + '/img/spinner-small.gif" class="spinner"/>')
+                .find("div.dropdown")
+                .hide();
             const client = APIClient.article_request;
             await client.articleRequests.pending(id).then(
                 success => {
                     $("img.spinner").remove();
-                    requested_dt.row( table_row ).remove().draw();
-                    pending_dt.row.add( table_row ).draw();
+                    requested_dt.row(table_row).remove().draw();
+                    pending_dt.row.add(table_row).draw();
                     UpdateTabCounts();
-                    activateBatchActions( active_tab );
+                    activateBatchActions(active_tab);
                 },
                 error => {
                     console.warn("Something wrong happened: %s".format(error));
                 }
             );
         }
-        $(".ar-set-pending-request").on("click", function (e){
+        $(".ar-set-pending-request").on("click", function (e) {
             e.preventDefault();
-            HandleMulti(SetPending, $(this).data('ar-id'), $(this));
+            HandleMulti(SetPending, $(this).data("ar-id"), $(this));
         });
 
         function UpdateTabCounts() {
-            $("#ar_requested_count").html( requested_dt.rows().count() );
-            $("#ar_pending_count").html( pending_dt.rows().count() );
-            $("#ar_processing_count").html( processing_dt.rows().count() );
+            $("#ar_requested_count").html(requested_dt.rows().count());
+            $("#ar_pending_count").html(pending_dt.rows().count());
+            $("#ar_processing_count").html(processing_dt.rows().count());
         }
 
         function EditURLs(id) {
-            var urls = $('span#url_'+ id).text();
-            $('#myModal textarea').val(urls);
-            $('#myModal textarea').attr('ar_id', id);
-            $('#myModal').modal('show');
+            var urls = $("span#url_" + id).text();
+            $("#myModal textarea").val(urls);
+            $("#myModal textarea").attr("ar_id", id);
+            $("#myModal").modal("show");
         }
-        $(".ar-edit-urls").on("click", function (e){
+        $(".ar-edit-urls").on("click", function (e) {
             e.preventDefault();
-            HandleMulti(EditURLs, $(this).data('ar-id'));
+            HandleMulti(EditURLs, $(this).data("ar-id"));
         });
 
         async function SaveURLs(newurl) {
-            var id = $('#myModal textarea').attr('ar_id');
-            $('span#url_'+ id).text(newurl);
-            if(newurl)
-                $('span#url_yesno_'+id).text(_("Yes"));
-            else
-                $('span#url_yesno_'+id).text(_("No"));
+            var id = $("#myModal textarea").attr("ar_id");
+            $("span#url_" + id).text(newurl);
+            if (newurl) $("span#url_yesno_" + id).text(_("Yes"));
+            else $("span#url_yesno_" + id).text(_("No"));
 
             const client = APIClient.article_request;
             await client.articleRequests.update_urls(id, newurl).then(
-                success => {
-                },
+                success => {},
                 error => {
                     console.warn("Something wrong happened: %s".format(error));
                 }
             );
         }
-        $( '#myModal button' ).on("click", function () {
-            SaveURLs( $('#myModal textarea').val() );
+        $("#myModal button").on("click", function () {
+            SaveURLs($("#myModal textarea").val());
         });
     </script>
 [% END %]

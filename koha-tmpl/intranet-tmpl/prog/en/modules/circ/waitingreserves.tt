@@ -209,10 +209,9 @@
         var holdso_table_settings  = [% TablesSettings.GetTableSettings( 'circ', 'holds_awaiting_pickup', 'holdso',  'json' ) | $raw %];
         var holdscr_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holds_awaiting_pickup', 'holdscr', 'json' ) | $raw %];
     </script>
-
     <script>
         var MSG_CANCEL_SELECTED = _("Cancel selected (%s)");
-        $(document).ready(function() {
+        $(document).ready(function () {
             $("#holdst").kohaTable(
                 {
                     pagingType: "full",
@@ -239,102 +238,101 @@
 
             let cancel_link;
 
-            $("#cancelModalConfirmBtn").on("click",function(e) {
-                var ids = cancel_link.data('ids');
+            $("#cancelModalConfirmBtn").on("click", function (e) {
+                var ids = cancel_link.data("ids");
                 localStorage.selectedWaitingHolds = JSON.stringify(JSON.parse(localStorage.selectedWaitingHolds).filter(id => !ids.includes(id)));
-                let link = `waitingreserves.pl?cancelBulk=1&amp;ids=${ids.join(',')}`;
+                let link = `waitingreserves.pl?cancelBulk=1&amp;ids=${ids.join(",")}`;
                 let reason = $("#modal-cancellation-reason").val();
-                if ( reason ) {
-                    link += "&amp;cancellation-reason=" + reason
+                if (reason) {
+                    link += "&amp;cancellation-reason=" + reason;
                 }
                 window.location.href = link;
                 return false;
             });
 
-            if(!localStorage.selectedWaitingHolds || document.referrer.replace(/\?.*/, '') !== document.location.origin+document.location.pathname) {
-                localStorage.selectedWaitingHolds = '[]';
+            if (!localStorage.selectedWaitingHolds || document.referrer.replace(/\?.*/, "") !== document.location.origin + document.location.pathname) {
+                localStorage.selectedWaitingHolds = "[]";
             }
 
             try {
                 JSON.parse(localStorage.selectedWaitingHolds);
-            } catch(e) {
-                localStorage.selectedWaitingHolds = '[]';
+            } catch (e) {
+                localStorage.selectedWaitingHolds = "[]";
             }
 
-            $('.holds_table .select_hold').each(function() {
-                if(JSON.parse(localStorage.selectedWaitingHolds).includes($(this).data('id'))) {
-                    $(this).prop('checked', true);
+            $(".holds_table .select_hold").each(function () {
+                if (JSON.parse(localStorage.selectedWaitingHolds).includes($(this).data("id"))) {
+                    $(this).prop("checked", true);
                 }
             });
 
-            function get_selected_ids(dt){
+            function get_selected_ids(dt) {
                 let selected_ids = [];
-                dt.cells(null, 0).every(function(){
+                dt.cells(null, 0).every(function () {
                     let checkbox = $(this.node()).find('input[type="checkbox"]');
-                    if ( checkbox.is(':checked') ) {
-                        selected_ids.push(checkbox.data('id'));
+                    if (checkbox.is(":checked")) {
+                        selected_ids.push(checkbox.data("id"));
                     }
-                })
+                });
                 return selected_ids;
             }
 
-            $('.holds_table').each(function() {
-                var parent = $(this).parents('.tab-pane');
+            $(".holds_table").each(function () {
+                var parent = $(this).parents(".tab-pane");
                 var this_dt = $(this).DataTable();
                 let selected_ids = get_selected_ids(this_dt);
-                parent.find('.cancel_selected_holds').html(MSG_CANCEL_SELECTED.format(selected_ids.length));
-                parent.find('.cancel_selected_holds').click(function(e) {
-                  e.preventDefault();
-                  if(get_selected_ids(this_dt).length) {
-                      cancel_link = $(this);
-                      $('#cancelModal').modal('show');
-                  }
-                  return false;
+                parent.find(".cancel_selected_holds").html(MSG_CANCEL_SELECTED.format(selected_ids.length));
+                parent.find(".cancel_selected_holds").click(function (e) {
+                    e.preventDefault();
+                    if (get_selected_ids(this_dt).length) {
+                        cancel_link = $(this);
+                        $("#cancelModal").modal("show");
+                    }
+                    return false;
                 });
             });
 
-            $('.holds_table').on('click', '.select_hold_all', function() {
-                var parent = $(this).parents('.tab-pane');
-                var this_dt = $(this).closest('.holds_table').DataTable();
+            $(".holds_table").on("click", ".select_hold_all", function () {
+                var parent = $(this).parents(".tab-pane");
+                var this_dt = $(this).closest(".holds_table").DataTable();
 
-                var all_checked = $(this).closest('.select_hold_all').prop('checked');
+                var all_checked = $(this).closest(".select_hold_all").prop("checked");
 
-                this_dt.cells(null, 0).every(function(){
-                    $(this.node()).find('input[type="checkbox"]').prop('checked', all_checked)
+                this_dt.cells(null, 0).every(function () {
+                    $(this.node()).find('input[type="checkbox"]').prop("checked", all_checked);
                 });
 
                 let selected_ids = get_selected_ids(this_dt);
                 var count = selected_ids.length;
-                parent.find('.cancel_selected_holds').data('ids', selected_ids).html(MSG_CANCEL_SELECTED.format(count));
+                parent.find(".cancel_selected_holds").data("ids", selected_ids).html(MSG_CANCEL_SELECTED.format(count));
                 localStorage.selectedWaitingHolds = JSON.stringify(selected_ids);
             });
 
-            $('.holds_table').on('click', '.select_hold', function() {
-                var parent = $(this).parents('.tab-pane');
-                var this_dt = $(this).closest('.holds_table').DataTable();
+            $(".holds_table").on("click", ".select_hold", function () {
+                var parent = $(this).parents(".tab-pane");
+                var this_dt = $(this).closest(".holds_table").DataTable();
                 let selected_ids = get_selected_ids(this_dt);
                 var count = selected_ids.length;
-                parent.find('.cancel_selected_holds').data('ids', selected_ids).html(MSG_CANCEL_SELECTED.format(count));
+                parent.find(".cancel_selected_holds").data("ids", selected_ids).html(MSG_CANCEL_SELECTED.format(count));
                 localStorage.selectedWaitingHolds = JSON.stringify(selected_ids);
             });
 
             var hash = document.location.hash;
-            if( hash !== "" ){
+            if (hash !== "") {
                 /* The existence of location.hash means someone clicked a link which targets a specific tab */
-                $( hash ).tab("show");
+                $(hash).tab("show");
             } else {
                 /* If no specific tab was linked to, use the last active tab */
                 var activeTab = localStorage.getItem("waitingreserves_activetab");
-                if( activeTab ){
+                if (activeTab) {
                     $("div#resultlist li:eq(" + activeTab + ") a").tab("show");
                 }
             }
             $("div#resultlist a[data-bs-toggle='tab']").on("shown.bs.tab", function (e) {
                 var thisTab = $(e.target).parent();
                 var activeTab = thisTab.index();
-                localStorage.setItem("waitingreserves_activetab", activeTab );
+                localStorage.setItem("waitingreserves_activetab", activeTab);
             });
-
         });
     </script>
 [% END %]

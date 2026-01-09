@@ -1536,54 +1536,55 @@
             AutomaticConfirmTransfer: [% Koha.Preference('AutomaticConfirmTransfer') ? 1 : 0 | html %],
         });
     </script>
-
     [% IF ( ReturnClaims ) %]
         [% Asset.js("js/resolve_claim_modal.js") | $raw %]
     [% END %]
     [% IF ( Koha.Preference('CatalogConcerns') ) %]
         [% Asset.js("js/modals/add_catalog_concern.js") | $raw %]
     [% END %]
-
     <script>
         function Dopop(link) {
-            var newin = window.open(link, 'popup', 'width=600,height=400,resizable=1,toolbar=0,scrollbars=1,top');
+            var newin = window.open(link, "popup", "width=600,height=400,resizable=1,toolbar=0,scrollbars=1,top");
             $("#barcode").focus();
         }
         $(document).ready(function () {
             $("#checkin-form").preventDoubleFormSubmit();
 
             $(".modal.block")
-            .on('shown.bs.modal', function() {
-                $("#barcode").prop("disabled", true);
-                $(".show_checkin_dialog").show();
-            }).on('hidden.bs.modal', function() {
-                $("#barcode").prop("disabled", false).focus();
-            })
-            .modal("show");
+                .on("shown.bs.modal", function () {
+                    $("#barcode").prop("disabled", true);
+                    $(".show_checkin_dialog").show();
+                })
+                .on("hidden.bs.modal", function () {
+                    $("#barcode").prop("disabled", false).focus();
+                })
+                .modal("show");
 
-            $(".modal.noblock").modal('show')
-            .on('shown.bs.modal', function() {
-                $("#barcode").prop("disabled", false).focus();
-            }).on('hidden.bs.modal', function() {
-                $("#barcode").prop("disabled", false).focus();
-            });
+            $(".modal.noblock")
+                .modal("show")
+                .on("shown.bs.modal", function () {
+                    $("#barcode").prop("disabled", false).focus();
+                })
+                .on("hidden.bs.modal", function () {
+                    $("#barcode").prop("disabled", false).focus();
+                });
 
-            $("body").on("click", ".show_checkin_dialog button", function(e){
+            $("body").on("click", ".show_checkin_dialog button", function (e) {
                 e.preventDefault();
                 $(".modal.audio-alert-action").modal("show");
             });
-            if (reserve_id){
-                $(".print-slip").on('click', function(e) {
+            if (reserve_id) {
+                $(".print-slip").on("click", function (e) {
                     e.preventDefault();
-                    Dopop("hold-transfer-slip.pl?reserve_id=" + reserve_id );
+                    Dopop("hold-transfer-slip.pl?reserve_id=" + reserve_id);
                 });
-                if (print_slip){
-                    Dopop("hold-transfer-slip.pl?reserve_id=" + reserve_id );
+                if (print_slip) {
+                    Dopop("hold-transfer-slip.pl?reserve_id=" + reserve_id);
                 }
             }
 
-            if (recall_slip){
-                Dopop('/cgi-bin/koha/recalls/recall_pickup_slip.pl?recall_id=' + recall_id);
+            if (recall_slip) {
+                Dopop("/cgi-bin/koha/recalls/recall_pickup_slip.pl?recall_id=" + recall_id);
             }
 
             var returns_table = $("#checkedintable").kohaTable(
@@ -1613,12 +1614,12 @@
                     $("#barcode").addClass("input-warning");
                     $("#dropboxmode").show();
 
-                    $("#return_date_override_fields :input").prop('disabled', true);
+                    $("#return_date_override_fields :input").prop("disabled", true);
                 } else {
                     $("#barcode").removeClass("input-warning");
                     $("#dropboxmode").hide();
 
-                    $("#return_date_override_fields :input").prop('disabled', false);
+                    $("#return_date_override_fields :input").prop("disabled", false);
                 }
                 $("#barcode").focus();
             });
@@ -1634,9 +1635,9 @@
                 $("#barcode").focus();
             });
 
-            if (overduecharges){
+            if (overduecharges) {
                 $("#barcode").focus(function () {
-                    if (($("#exemptcheck").prop("checked") == true) || ($("#dropboxcheck").prop("checked") == true)) {
+                    if ($("#exemptcheck").prop("checked") == true || $("#dropboxcheck").prop("checked") == true) {
                         $("#barcode").addClass("input-warning");
                     } else {
                         $("#barcode").removeClass("input-warning");
@@ -1647,44 +1648,44 @@
                 });
             }
 
-            $('.openWin').on("click",function(e){
-                Dopop( $(this).data("url") );
+            $(".openWin").on("click", function (e) {
+                Dopop($(this).data("url"));
             });
 
-            $('.submit').on("click",function(e){
+            $(".submit").on("click", function (e) {
                 this.form.submit();
             });
 
-            $('.cancel').on("click",function(e){
+            $(".cancel").on("click", function (e) {
                 var docancel = $("<input>").attr("type", "hidden").attr("name", "canceltransfer").val(1);
-                $('#wrongtransferform').append(docancel);
+                $("#wrongtransferform").append(docancel);
                 this.form.submit();
             });
 
-            $(".print").on("click",function(e){
+            $(".print").on("click", function (e) {
                 this.form.print_slip.value = 1;
-                let barcode = document.getElementById('confirm-hold-barcode');
-                if ( barcode ) barcode.remove();
+                let barcode = document.getElementById("confirm-hold-barcode");
+                if (barcode) barcode.remove();
                 this.form.submit();
             });
 
-            $('.print-recall').on("click",function(e){
+            $(".print-recall").on("click", function (e) {
                 this.form.recall_slip.value = 1;
                 this.form.submit();
             });
 
-            $(".approve").on("click",function(e){
-                let barcode = document.getElementById('confirm-hold-barcode');
-                if ( barcode ) barcode.remove();
+            $(".approve").on("click", function (e) {
+                let barcode = document.getElementById("confirm-hold-barcode");
+                if (barcode) barcode.remove();
                 this.form.submit();
             });
-            $(".ignore").on("click",function(e){
+            $(".ignore").on("click", function (e) {
                 e.preventDefault();
             });
-            $('.cancel-hold').on("click",function(e){
-                let cancel_form = document.getElementById('cancellation-reason');
-                let cancel_reason = '';
-                if ( cancel_form ) {
+            $(".cancel-hold").on("click", function (e) {
+                let cancel_form = document.getElementById("cancellation-reason");
+                let cancel_reason = "";
+                if (cancel_form) {
                     cancel_reason = cancel_form.value;
                 }
                 this.form.cancel_reserve.value = 1;
@@ -1692,21 +1693,21 @@
                 this.form.submit();
             });
 
-            $('.action').on("click",function(e){
+            $(".action").on("click", function (e) {
                 this.checked = false;
-                this.form.return_date_override.value = '';
+                this.form.return_date_override.value = "";
                 this.form.return_date_override_remember.checked = false;
                 this.form.barcode.focus();
                 $("#return_date_remember").hide();
                 return false;
             });
 
-            $("#return_date_override_remember").on("change", function(){
-                if( $(this).prop("checked" ) ){
-                    if( $("#return_date_override").val() == "" ){
-                        $("#saved_return_date").text( _("No date selected") );
+            $("#return_date_override_remember").on("change", function () {
+                if ($(this).prop("checked")) {
+                    if ($("#return_date_override").val() == "") {
+                        $("#saved_return_date").text(_("No date selected"));
                     } else {
-                        $("#saved_return_date").text( $("#return_date_override").val() );
+                        $("#saved_return_date").text($("#return_date_override").val());
                     }
                     $("#return_date_remember").show();
                 } else {
@@ -1714,60 +1715,62 @@
                 }
             });
 
-            $(".printcheckinslip").on("click", function(e){
+            $(".printcheckinslip").on("click", function (e) {
                 e.preventDefault();
-                var borrowernumber = $(this).data('borrowernumber');
+                var borrowernumber = $(this).data("borrowernumber");
                 window.open("/cgi-bin/koha/members/printslip.pl?borrowernumber=" + borrowernumber + "&amp;print=checkinslip", "printwindow");
             });
 
             // item bundles
-            $('#verify-items-bundle-contents-barcodes').on('input', function (ev) {
+            $("#verify-items-bundle-contents-barcodes").on("input", function (ev) {
                 let char = ev.target.value.slice(-1);
-                if ( char.match(/\n/) ) {
-                    const barcodes = ev.target.value.split('\n').map(function(s) { return s.trim().toUpperCase() });
+                if (char.match(/\n/)) {
+                    const barcodes = ev.target.value.split("\n").map(function (s) {
+                        return s.trim().toUpperCase();
+                    });
                     const expected = [];
                     let found = 0;
-                    $('#items-bundle-contents-table tbody > tr').each(function () {
-                        const barcode = this.getAttribute('data-barcode').toUpperCase();
+                    $("#items-bundle-contents-table tbody > tr").each(function () {
+                        const barcode = this.getAttribute("data-barcode").toUpperCase();
                         expected.push(barcode);
                         if (barcodes.includes(barcode)) {
-                            this.classList.add('ok');
+                            this.classList.add("ok");
                             found++;
                         } else {
-                            this.classList.remove('ok');
+                            this.classList.remove("ok");
                         }
                     });
-                    const last = barcodes[barcodes.length -2];
-                    const feedback = $('#bundle-feedback');
+                    const last = barcodes[barcodes.length - 2];
+                    const feedback = $("#bundle-feedback");
                     let string;
-                    if ( !expected.includes(last) ) {
-                        feedback.fadeOut(100, function(){
-                            string = _("Unexpected: ") +last;
-                            feedback.addClass('alert-danger').removeClass('alert-success').html(string).fadeIn(100);
+                    if (!expected.includes(last)) {
+                        feedback.fadeOut(100, function () {
+                            string = _("Unexpected: ") + last;
+                            feedback.addClass("alert-danger").removeClass("alert-success").html(string).fadeIn(100);
                         });
                     } else {
-                        feedback.fadeOut(100, function(){
-                            string = _("Verified: ")+last;
-                            feedback.addClass('alert-success').removeClass('alert-danger').html(string).fadeIn(100);
+                        feedback.fadeOut(100, function () {
+                            string = _("Verified: ") + last;
+                            feedback.addClass("alert-success").removeClass("alert-danger").html(string).fadeIn(100);
                         });
                     }
-                    $('#verify-progress').show();
-                    $('#verified').text(found);
-                    $('#expected').text(expected.length);
+                    $("#verify-progress").show();
+                    $("#verified").text(found);
+                    $("#expected").text(expected.length);
                 }
             });
 
-            $('.bundle_remove').on('click', function() {
-                var component_itemnumber = $(this).data('itemnumber');
-                var host_itemnumber = $(this).data('hostnumber');
-                var alert = $(this).closest('div');
+            $(".bundle_remove").on("click", function () {
+                var component_itemnumber = $(this).data("itemnumber");
+                var host_itemnumber = $(this).data("hostnumber");
+                var alert = $(this).closest("div");
                 var unlink_item_url = "/api/v1/items/" + host_itemnumber + "/bundled_items/" + component_itemnumber;
                 $.ajax({
                     type: "DELETE",
                     url: unlink_item_url,
-                    success: function(){
+                    success: function () {
                         alert.remove();
-                    }
+                    },
                 });
             });
 
@@ -1781,12 +1784,12 @@
                 ],
             });
 
-            if( !prefs.TransfersBlockCirc && prefs.AutomaticConfirmTransfer ){
-                $("#wrong-transfer-modal").on('hidden.bs.modal',function(){
+            if (!prefs.TransfersBlockCirc && prefs.AutomaticConfirmTransfer) {
+                $("#wrong-transfer-modal").on("hidden.bs.modal", function () {
                     $("#wrongtransferform").submit();
                 });
-                if (was_transferred){
-                    $("#item-transfer-modal").on('hidden.bs.modal',function(){
+                if (was_transferred) {
+                    $("#item-transfer-modal").on("hidden.bs.modal", function () {
                         $("#mainform").submit();
                     });
                 }

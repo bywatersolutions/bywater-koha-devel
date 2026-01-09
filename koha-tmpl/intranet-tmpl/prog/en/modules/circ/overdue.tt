@@ -352,31 +352,30 @@
             table_settings['columns'].splice(13, 1);
         [% END %]
     </script>
-
     <script>
-        function clone_input( node, original_id ) {
+        function clone_input(node, original_id) {
             var original = node;
             var clone = original.clone();
-            var appendid = original_id + "-" + Math.floor(Math.random()*1000+1);
+            var appendid = original_id + "-" + Math.floor(Math.random() * 1000 + 1);
             clone.find(".delete_clone").show();
-            if( clone.find("select").length ){
+            if (clone.find("select").length) {
                 /* <select> element is present */
-                clone.find("select").removeClass("select2-hidden-accessible").removeAttr("data-select2-id").attr("id", appendid );
+                clone.find("select").removeClass("select2-hidden-accessible").removeAttr("data-select2-id").attr("id", appendid);
                 clone.find(".select2").remove();
-                original.after( clone );
-                $("#" + appendid ).select2();
-            } else if( clone.find(".flatpickr").length ){
-                clone.attr("id", appendid );
-                original.after( clone );
+                original.after(clone);
+                $("#" + appendid).select2();
+            } else if (clone.find(".flatpickr").length) {
+                clone.attr("id", appendid);
+                original.after(clone);
                 apply_flatpickr(clone.find(".flatpickr"));
             } else {
-                clone.attr("id", appendid );
-                original.after( clone );
+                clone.attr("id", appendid);
+                original.after(clone);
             }
         }
 
-        function update_date_due_filters_visibility(){
-            if( $("#showall").is(":checked")) {
+        function update_date_due_filters_visibility() {
+            if ($("#showall").is(":checked")) {
                 $(".date_due_filter").hide();
                 $("#from").prop("disabled", true);
                 $("#to").prop("disabled", true);
@@ -387,8 +386,8 @@
             }
         }
 
-        $(document).ready(function(){
-           $("#overduest").kohaTable(
+        $(document).ready(function () {
+            $("#overduest").kohaTable(
                 {
                     pagingType: "full",
                     autoWidth: false,
@@ -396,24 +395,24 @@
                 table_settings
             );
 
-            $("#showall").on("change", function(){
+            $("#showall").on("change", function () {
                 update_date_due_filters_visibility();
             });
             update_date_due_filters_visibility();
 
-            $(".pattrodue-input").each(function(){
+            $(".pattrodue-input").each(function () {
                 $(this).select2();
             });
 
-            $("body").on("click", ".delete_clone", function(e){
+            $("body").on("click", ".delete_clone", function (e) {
                 e.preventDefault();
                 $(this).parent().remove();
             });
 
-            $("body").on("click", ".clone-attribute", function(e){
+            $("body").on("click", ".clone-attribute", function (e) {
                 e.preventDefault();
-                clone_input( $(this).parent(), $(this).data("original-id") );
-            })
+                clone_input($(this).parent(), $(this).data("original-id"));
+            });
         });
     </script>
 [% END %]

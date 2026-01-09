@@ -481,12 +481,10 @@
         dt_settings.push( [% TablesSettings.GetTableSettings('circ', 'curbside_pickups', 'delivered_todayt', 'json') | $raw %] );
 
         const tab = "[% tab | html %]";
-
     </script>
-
     <script>
         let existingPickupMoments = [];
-        pickups.forEach(function(pickup){
+        pickups.forEach(function (pickup) {
             let scheduled_pickup_datetime = pickup.scheduled_pickup_datetime;
             let pickupMoment = dayjs(scheduled_pickup_datetime);
 
@@ -494,34 +492,34 @@
         });
 
         let slots_per_day = {};
-        opening_slots.forEach(function(slot){
+        opening_slots.forEach(function (slot) {
             let day = slot.day;
-            if(!slots_per_day[day]) slots_per_day[day] = [];
+            if (!slots_per_day[day]) slots_per_day[day] = [];
             slots_per_day[day].push(slot);
         });
 
-        $(document).ready(function() {
-
-            $('#schedule-pickup-tab').on('click', function() {
-                $('#find-patron').focus();
+        $(document).ready(function () {
+            $("#schedule-pickup-tab").on("click", function () {
+                $("#find-patron").focus();
             });
 
-            if (tab == 'schedule-pickup_panel'){
-                $('#find-patron').focus();
+            if (tab == "schedule-pickup_panel") {
+                $("#find-patron").focus();
             }
 
             const pickup_date = document.querySelector("#pickup_date");
-            if ( pickup_date ) {
+            if (pickup_date) {
                 const fp = pickup_date._flatpickr;
-                fp.set('disable', [function(date) {
-                    return !slots_per_day.hasOwnProperty(date.getDay());
-                }]);
+                fp.set("disable", [
+                    function (date) {
+                        return !slots_per_day.hasOwnProperty(date.getDay());
+                    },
+                ]);
             }
 
-            $("#pickup_date").on('change', function() {
-
-                $('#pickup-times').empty();
-                $('#schedule-pickup-button').prop( 'disabled', 1 );
+            $("#pickup_date").on("change", function () {
+                $("#pickup-times").empty();
+                $("#schedule-pickup-button").prop("disabled", 1);
 
                 var currentDate = $(this).val();
 
@@ -530,77 +528,77 @@
                 let pickupSlots = [];
                 let available_count = 0;
                 let dow = selectedDate.day(); // Sunday is 0 (at least for now)
-                if (!slots_per_day[dow]){
-                    $('#pickup-times').html("<div>"+_("No pickup time defined for this day.")+"</div>");
+                if (!slots_per_day[dow]) {
+                    $("#pickup-times").html("<div>" + _("No pickup time defined for this day.") + "</div>");
                     return;
                 }
 
-                slots_per_day[dow].sort((a, b) => a.start_hour - b.start_hour).forEach(function(slot){
-                    let pickup_interval = policy.pickup_interval;
-                    if (!pickup_interval) {
-                        $('#pickup-times').html("<div>"+_("No pickup time defined for this day.")+"</div>");
-                        return;
-                    }
-
-                    let listStartMoment = selectedDate.hour(slot.start_hour).minute(slot.start_minute);
-                    let listEndMoment = selectedDate.hour(slot.end_hour).minute(slot.end_minute);
-
-                    let keep_going = true;
-                    let now = dayjs();
-
-                    // Initialize pickup slots starting at opening time
-                    let pickupIntervalStartMoment = listStartMoment;
-                    let pickupIntervalEndMoment   = listStartMoment.add(pickup_interval, 'minutes');
-                    while (keep_going) {
-                        let available = true;
-                        let display_slot = true
-
-                        if (pickupIntervalStartMoment.isBefore(now)) {
-                            // Slots in the past are unavailable
-                            available = false;
-                            display_slot = false;
+                slots_per_day[dow]
+                    .sort((a, b) => a.start_hour - b.start_hour)
+                    .forEach(function (slot) {
+                        let pickup_interval = policy.pickup_interval;
+                        if (!pickup_interval) {
+                            $("#pickup-times").html("<div>" + _("No pickup time defined for this day.") + "</div>");
+                            return;
                         }
 
-                        if (pickupIntervalEndMoment.isAfter(listEndMoment)) {
-                            // Slots after the end of pickup times for the day are unavailable
-                            available = false;
-                        }
+                        let listStartMoment = selectedDate.hour(slot.start_hour).minute(slot.start_minute);
+                        let listEndMoment = selectedDate.hour(slot.end_hour).minute(slot.end_minute);
 
-                        let pickups_scheduled = 0;
-                        existingPickupMoments.forEach(function(pickupMoment){
-                            // An existing pickup time
-                            if (pickupMoment.isSameOrAfter(pickupIntervalStartMoment) && pickupMoment.isBefore(pickupIntervalEndMoment)) {
-                                // This calculated pickup is in use by another scheduled pickup
-                                pickups_scheduled++;
+                        let keep_going = true;
+                        let now = dayjs();
+
+                        // Initialize pickup slots starting at opening time
+                        let pickupIntervalStartMoment = listStartMoment;
+                        let pickupIntervalEndMoment = listStartMoment.add(pickup_interval, "minutes");
+                        while (keep_going) {
+                            let available = true;
+                            let display_slot = true;
+
+                            if (pickupIntervalStartMoment.isBefore(now)) {
+                                // Slots in the past are unavailable
+                                available = false;
+                                display_slot = false;
                             }
-                        });
 
-                        if (pickups_scheduled >= policy.patrons_per_interval) {
-                            available = false;
-                        }
+                            if (pickupIntervalEndMoment.isAfter(listEndMoment)) {
+                                // Slots after the end of pickup times for the day are unavailable
+                                available = false;
+                            }
 
-                        if ( display_slot ) {
-                            pickupSlots.push(
-                                {
-                                    "available": available,
-                                    "moment": pickupIntervalStartMoment,
-                                    "pickups_scheduled": pickups_scheduled
+                            let pickups_scheduled = 0;
+                            existingPickupMoments.forEach(function (pickupMoment) {
+                                // An existing pickup time
+                                if (pickupMoment.isSameOrAfter(pickupIntervalStartMoment) && pickupMoment.isBefore(pickupIntervalEndMoment)) {
+                                    // This calculated pickup is in use by another scheduled pickup
+                                    pickups_scheduled++;
                                 }
-                            );
-                        }
+                            });
 
-                        if ( available ) {
-                            available_count++;
-                        }
+                            if (pickups_scheduled >= policy.patrons_per_interval) {
+                                available = false;
+                            }
 
-                        pickupIntervalStartMoment = pickupIntervalEndMoment;
-                        pickupIntervalEndMoment = pickupIntervalStartMoment.add(pickup_interval, 'minutes');
-                        if (pickupIntervalEndMoment.isAfter(listEndMoment)) {
-                            // This latest slot is after the end of pickup times for the day, so we can stop
-                            keep_going = false;
+                            if (display_slot) {
+                                pickupSlots.push({
+                                    available: available,
+                                    moment: pickupIntervalStartMoment,
+                                    pickups_scheduled: pickups_scheduled,
+                                });
+                            }
+
+                            if (available) {
+                                available_count++;
+                            }
+
+                            pickupIntervalStartMoment = pickupIntervalEndMoment;
+                            pickupIntervalEndMoment = pickupIntervalStartMoment.add(pickup_interval, "minutes");
+                            if (pickupIntervalEndMoment.isAfter(listEndMoment)) {
+                                // This latest slot is after the end of pickup times for the day, so we can stop
+                                keep_going = false;
+                            }
                         }
-                    }
-                });
+                    });
 
                 for (let i = 0; i < pickupSlots.length; i++) {
                     let pickupSlot = pickupSlots[i];
@@ -611,67 +609,69 @@
                     $("#pickup-times").append(`<span class="pickup_time"><input type="radio" id="slot_${i}" name="pickup_time" value="${optValue}" ${disabled} /> <label for="slot_${i}">${optText} (${pickups_scheduled})</label></span>`);
                 }
 
-                $('#pickup-times').show();
-                $('#schedule-pickup-button').prop( 'disabled', available_count <= 0 );
+                $("#pickup-times").show();
+                $("#schedule-pickup-button").prop("disabled", available_count <= 0);
             });
 
-            $("#create-pickup").on('submit', function(){
-                if ( ! $("input[type='radio']:checked").length ) {
-                    alert(_("Please select a date and a pickup time"))
+            $("#create-pickup").on("submit", function () {
+                if (!$("input[type='radio']:checked").length) {
+                    alert(_("Please select a date and a pickup time"));
                     return false;
                 }
                 return true;
             });
 
-            if ( $("#find-patron").length ) {
-                patron_autocomplete($("#find-patron"), { 'on-select-callback': function( event, ui ) {
+            if ($("#find-patron").length) {
+                patron_autocomplete($("#find-patron"), {
+                    "on-select-callback": function (event, ui) {
                         window.location.href = "/cgi-bin/koha/circ/curbside_pickups.pl?op=find-patron&borrowernumber=" + ui.item.patron_id;
                         return false;
-                    }
+                    },
                 });
             }
 
             $("#pickup-tabs a[data-bs-toggle='tab']").on("shown.bs.tab", function (e) {
-                $("#current-tab").val($(this).attr('href').substring(1)); // Remove #
+                $("#current-tab").val($(this).attr("href").substring(1)); // Remove #
             });
-            $("#auto_refresh,#refresh_delay").on("change", function(){
+            $("#auto_refresh,#refresh_delay").on("change", function () {
                 set_interval_if_needed();
             });
 
             set_interval_if_needed();
 
             let dt_tables = new Array("to_be_stagedt", "staged_and_readyt", "patron_is_outsidet", "delivered_todayt");
-            dt_tables.forEach(function( id, index ){
-                $("#" + id).kohaTable({
-                    autoWidth: false
-                }, dt_settings[ index ] );
+            dt_tables.forEach(function (id, index) {
+                $("#" + id).kohaTable(
+                    {
+                        autoWidth: false,
+                    },
+                    dt_settings[index]
+                );
             });
-
-
         });
 
         let refresh_interval_id = 0;
         let countdown_interval_id = 0;
-        function set_interval(refresh_delay_ms){
+        function set_interval(refresh_delay_ms) {
             clear_intervals();
             let next_refresh = new Date();
             next_refresh.setSeconds(next_refresh.getSeconds() + refresh_delay_ms / 1000);
 
-            countdown_interval_id = setInterval(function() {
+            countdown_interval_id = setInterval(function () {
                 const now = new Date().getTime();
-                const seconds = Math.floor(( next_refresh - now + 1 ) / 1000);
-                if ( seconds > 0 ) {
+                const seconds = Math.floor((next_refresh - now + 1) / 1000);
+                if (seconds > 0) {
                     $("#refresh_info").text(_("Refresh in %s seconds").format(seconds));
                 } else {
                     $("#refresh_info").text(""); // In case something is going wrong
                 }
             }, 1000);
 
-            setInterval(function() {
+            setInterval(function () {
                 $(".refresh-form:visible").submit();
             }, refresh_delay_ms);
         }
-        function clear_intervals(){
+        function clear_intervals() {
             if (refresh_interval_id) {
                 clearInterval(refresh_interval_id);
                 refresh_interval_id = 0;
@@ -682,11 +682,11 @@
             }
         }
 
-        function set_interval_if_needed(){
+        function set_interval_if_needed() {
             const refresh_delay = $("#refresh_delay").val();
             const auto_refresh = $("#auto_refresh").is(":checked");
 
-            if (auto_refresh && refresh_delay){
+            if (auto_refresh && refresh_delay) {
                 set_interval(refresh_delay * 1000);
             } else {
                 clear_intervals();

@@ -301,52 +301,61 @@
     <script>
         var table_settings = [% TablesSettings.GetTableSettings('circ', 'holds', 'holds-to-pull', 'json') | $raw %];
     </script>
-
     <script>
-        function get_options(column){
-            let regex = /(<([^>]+)>)/ig; // Remove html tags
-            let options = [... new Set(column
-                .data()
-                .toArray()
-                .map(d => d.replace(regex, '').trim().split(/\n/gi).map(s => s.trim()).flat())
-                .flat()
-                .sort())];
+        function get_options(column) {
+            let regex = /(<([^>]+)>)/gi; // Remove html tags
+            let options = [
+                ...new Set(
+                    column
+                        .data()
+                        .toArray()
+                        .map(d =>
+                            d
+                                .replace(regex, "")
+                                .trim()
+                                .split(/\n/gi)
+                                .map(s => s.trim())
+                                .flat()
+                        )
+                        .flat()
+                        .sort()
+                ),
+            ];
 
-            return options
-                .map(e => {
-                    return {_id: e, _str: e}
-                });
+            return options.map(e => {
+                return { _id: e, _str: e };
+            });
         }
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             let filters_options = {
-                libraries: (table_dt) => get_options(table_dt.column(5)),
-                item_types: (table_dt) => get_options(table_dt.column(10)),
-                locations: (table_dt) => get_options(table_dt.column(11)),
-                pickup_locations : (table_dt) => get_options(table_dt.column(15)),
+                libraries: table_dt => get_options(table_dt.column(5)),
+                item_types: table_dt => get_options(table_dt.column(10)),
+                locations: table_dt => get_options(table_dt.column(11)),
+                pickup_locations: table_dt => get_options(table_dt.column(15)),
             };
 
             var holdst = $("#holdst").kohaTable(
                 {
                     pagingType: "full_numbers",
                     columns: [
-                        {name: "pull_items" },
-                        {name: "available_items" },
-                        {name: "patrons" },
-                        {name: "patron" },
-                        {name: "title" },
-                        {name: "libraries", dataFilter: "libraries" },
-                        {name: "barcodes" },
-                        {name: "call_numbers" },
-                        {name: "copy_numbers" },
-                        {name: "enumeration" },
-                        {name: "itemtypes", dataFilter: "item_types" },
-                        {name: "locations", dataFilter: "locations" },
-                        {name: "collection" },
-                        {name: "hold_date" },
-                        {name: "reserve_nodes" },
-                        {name: "pickup_location", dataFilter: "pickup_locations" },
-                        {name: "action" },
+                        { name: "pull_items" },
+                        { name: "available_items" },
+                        { name: "patrons" },
+                        { name: "patron" },
+                        { name: "title" },
+                        { name: "libraries", dataFilter: "libraries" },
+                        { name: "barcodes" },
+                        { name: "call_numbers" },
+                        { name: "copy_numbers" },
+                        { name: "enumeration" },
+                        { name: "itemtypes", dataFilter: "item_types" },
+                        { name: "locations", dataFilter: "locations" },
+                        { name: "collection" },
+                        { name: "hold_date" },
+                        { name: "reserve_nodes" },
+                        { name: "pickup_location", dataFilter: "pickup_locations" },
+                        { name: "action" },
                     ],
                 },
                 table_settings,

@@ -383,12 +383,11 @@
     <script>
         var table_settings = [% TablesSettings.GetTableSettings('circ', 'view_holdsqueue', 'holds-table', 'json') | $raw %];
     </script>
-
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Apply select2 to all select fields having a "multiple" attribute
-            let selectFields = document.querySelectorAll('select[multiple]');
-            selectFields.forEach((selectField) => {
+            let selectFields = document.querySelectorAll("select[multiple]");
+            selectFields.forEach(selectField => {
                 $(selectField).select2({
                     width: "100%",
                     allowClear: true,
@@ -399,15 +398,19 @@
             // Setup filters before DataTables initialisation, in case some columns are
             // hidden by default
             var filterColumnTimeoutId;
-            var filterColumn = function(e) {
+            var filterColumn = function (e) {
                 clearTimeout(filterColumnTimeoutId);
-                filterColumnTimeoutId = setTimeout(function() {
+                filterColumnTimeoutId = setTimeout(function () {
                     var input = $(e.target);
-                    var idx = input.parents('td').index();
-                    holdst.api().column(idx + ':visible').search(input.val()).draw();
+                    var idx = input.parents("td").index();
+                    holdst
+                        .api()
+                        .column(idx + ":visible")
+                        .search(input.val())
+                        .draw();
                 }, 200);
             };
-            $('#holdst thead input').on('change keyup keydown', filterColumn);
+            $("#holdst thead input").on("change keyup keydown", filterColumn);
 
             var holdst = $("#holdst").kohaTable(
                 {
@@ -417,7 +420,6 @@
                 },
                 table_settings
             );
-
         });
     </script>
 [% END %]

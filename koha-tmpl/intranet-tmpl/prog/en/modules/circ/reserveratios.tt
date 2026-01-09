@@ -217,23 +217,20 @@
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holdsratios', 'holds-ratios', 'json' ) | $raw %];
     </script>
-
     <script>
-         $(document).ready(function() {
-             $("#holds-ratios").kohaTable(
-                 {
-                     order: [
-                         [2, "desc"],
-                         [3, "asc"],
-                     ],
-                     columnDefs: [
-                         { type: "natural", targets: ["natural"] },
-                     ],
-                     pagingType: "full",
-                     autoWidth: false,
-                 },
-                 table_settings
-             );
+        $(document).ready(function () {
+            $("#holds-ratios").kohaTable(
+                {
+                    order: [
+                        [2, "desc"],
+                        [3, "asc"],
+                    ],
+                    columnDefs: [{ type: "natural", targets: ["natural"] }],
+                    pagingType: "full",
+                    autoWidth: false,
+                },
+                table_settings
+            );
         });
     </script>
 [% END %]
