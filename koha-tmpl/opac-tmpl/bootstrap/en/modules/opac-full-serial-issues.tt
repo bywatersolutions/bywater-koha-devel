@@ -191,8 +191,12 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        const min_year = "[% yearmin | html %]";
+    </script>
+
+    <script>
         $(document).ready(function(){
-            showlayer([% yearmin | html %]);
+            showlayer(min_year);
             $("a.tabsubs:first").addClass("currentsubtab");
             $("#filterform").submit(function(){
                 filterByLibrary();
