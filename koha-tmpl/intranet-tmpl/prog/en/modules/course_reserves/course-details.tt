@@ -368,17 +368,15 @@
             are_you_sure_no_item: [% I18N.t("Are you sure you want to delete this course?") | html %],
         };
     </script>
-
     <script>
-        $(document).ready(function(){
-
-            $("#delete_course_button").on( 'click', function(e){
+        $(document).ready(function () {
+            $("#delete_course_button").on("click", function (e) {
                 e.preventDefault();
-                $('#delete_course').submit();
+                $("#delete_course").submit();
             });
-            $("#rm_items_button").on( 'click', function(e){
+            $("#rm_items_button").on("click", function (e) {
                 e.preventDefault();
-                $('#rm_items').submit();
+                $("#rm_items").submit();
             });
 
             var rtable = $("#course_reserves_table").kohaTable(
@@ -389,19 +387,19 @@
                 table_settings
             );
 
-            $("#course_reserves_table").on( 'click', " .delete_item", function(e){
+            $("#course_reserves_table").on("click", " .delete_item", function (e) {
                 e.preventDefault();
-                if (confirmDelete(_("Are you sure you want to remove this item from the course?") )) {
-                    cr_id = $(this).data('cr-id');
-                    $("#del_reserve_" + cr_id ).submit();
+                if (confirmDelete(_("Are you sure you want to remove this item from the course?"))) {
+                    cr_id = $(this).data("cr-id");
+                    $("#del_reserve_" + cr_id).submit();
                 }
             });
 
-            $("#rm_items").click(function(){
+            $("#rm_items").click(function () {
                 return confirmDelete(_("Are you sure you want to remove all items from the course?"));
             });
 
-            $("#delete_course").click(function(){
+            $("#delete_course").click(function () {
                 return confirmDelete(course_reserves_size > 0 ? i18n.are_you_sure_items : i18n.are_you_sure_no_item);
             });
         });
