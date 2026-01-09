@@ -323,35 +323,33 @@
         const interface = "[% interface | html %]";
         const theme = "[% theme | html %]";
     </script>
-
     <script>
-        function update_tab_display(){
+        function update_tab_display() {
             let selected_type = $('input[name="recordtype"]:checked').val();
-            if (selected_type == 'authority') {
+            if (selected_type == "authority") {
                 $("a[href='#shelves_tab_panel']").parent().hide();
                 $("a[href='#uploadfile_tab_panel']").tab("show");
-            } else if (selected_type == 'biblio') {
+            } else if (selected_type == "biblio") {
                 $("a[href='#shelves_tab_panel']").parent().show();
                 $("a[href='#uploadfile_tab_panel']").tab("show");
             }
         }
-        $(document).ready(function() {
-
+        $(document).ready(function () {
             update_tab_display();
-            $("input[type='radio']").click(function() {
+            $("input[type='radio']").click(function () {
                 update_tab_display();
             });
 
-            $("#selectall").click(function(e){
+            $("#selectall").click(function (e) {
                 e.preventDefault();
-                $(".records input[type='checkbox']").each(function(){
+                $(".records input[type='checkbox']").each(function () {
                     $(this).prop("checked", true);
                 });
             });
 
-            $("#clearall").click(function(e){
+            $("#clearall").click(function (e) {
                 e.preventDefault();
-                $(".records input[type='checkbox']").each(function(){
+                $(".records input[type='checkbox']").each(function () {
                     $(this).prop("checked", false);
                 });
             });
@@ -359,24 +357,20 @@
             $("#selectall").click();
 
             $("#biblios").kohaTable({
-                columnDefs: [
-                    { targets: [1], type: "num-html" },
-                ],
+                columnDefs: [{ targets: [1], type: "num-html" }],
                 dom: "t",
                 order: [],
                 paging: false,
             });
 
             $("#authorities").kohaTable({
-                columnDefs: [
-                    { targets: [1], type: "num-html" },
-                ],
+                columnDefs: [{ targets: [1], type: "num-html" }],
                 dom: "t",
                 order: [],
                 paging: false,
             });
 
-            $("#mainformsubmit").click(function() {
+            $("#mainformsubmit").click(function () {
                 if ($("input[type=checkbox][name='record_id']:checked").length == 0) {
                     alert(_("Please select at least one record to process"));
                     return false;
@@ -388,36 +382,37 @@
                 return true;
             });
 
-            $("#record_ids_selection").on("submit", function(e) {
-                var tab = $(this).find('#batch_mod_form li a.active:first').attr('href');
-                if (tab == '#uploadfile_tab_panel') {
-                    $("#recordnumber_list, #shelf_number").val('');
-                } else if (tab == '#shelves_tab_panel') {
-                    $("#recordnumber_list, #uploadfile").val('');
-                } else { // enterlist
-                    $("#uploadfile, #shelf_number").val('')
+            $("#record_ids_selection").on("submit", function (e) {
+                var tab = $(this).find("#batch_mod_form li a.active:first").attr("href");
+                if (tab == "#uploadfile_tab_panel") {
+                    $("#recordnumber_list, #shelf_number").val("");
+                } else if (tab == "#shelves_tab_panel") {
+                    $("#recordnumber_list, #uploadfile").val("");
+                } else {
+                    // enterlist
+                    $("#uploadfile, #shelf_number").val("");
                 }
             });
 
-            $("#marc_modification_template_id").change(function() {
-                var url = "/cgi-bin/koha/svc/records/preview?"
+            $("#marc_modification_template_id").change(function () {
+                var url = "/cgi-bin/koha/svc/records/preview?";
                 var mmtid = $(this).val();
-                $("a.previewMARC").each(function() {
+                $("a.previewMARC").each(function () {
                     $(this).attr("href", url + "record_type=" + $(this).attr("data-record_type") + "&record_id=" + $(this).attr("data-record_id") + "&mmtid=" + mmtid + "&overlay_context=batchmod");
                 });
             });
 
-            $("body").on("click", ".previewMARC", function(e) {
+            $("body").on("click", ".previewMARC", function (e) {
                 e.preventDefault();
                 var ltitle = $(this).text();
                 var page = $(this).attr("href");
                 $("#marcPreviewLabel").text(ltitle);
                 $("#marcPreview .modal-body").load(page + " div");
-                $('#marcPreview').modal("show");
+                $("#marcPreview").modal("show");
             });
-            $("#marcPreview").on("hidden.bs.modal", function() {
+            $("#marcPreview").on("hidden.bs.modal", function () {
                 $("#marcPreviewLabel").html("");
-                $("#marcPreview .modal-body").html("<div id=\"loading\"><img src=\"" + interface + "/" + theme + "/img/spinner-small.gif\" alt=\"\" /> " + _("Loading") + "</div>");
+                $("#marcPreview .modal-body").html('<div id="loading"><img src="' + interface + "/" + theme + '/img/spinner-small.gif" alt="" /> ' + _("Loading") + "</div>");
             });
         });
     </script>

@@ -266,138 +266,132 @@
     <script>
         const record_type = "[% recordtype | html %]";
     </script>
-
     <script>
         var MSG_CANNOT_BE_DELETED = _("This record cannot be deleted, at least one item is currently checked out.");
-        $(document).ready(function() {
-
-            $("input[type='radio']").click(function() {
-                if ($(this).attr('id') == 'authority_type') {
+        $(document).ready(function () {
+            $("input[type='radio']").click(function () {
+                if ($(this).attr("id") == "authority_type") {
                     $("a[href='#shelves_tab_panel']").parent().hide();
                     $("li.skip_open_orders").hide();
-                } else if ($(this).attr('id') == 'biblio_type') {
+                } else if ($(this).attr("id") == "biblio_type") {
                     $("a[href='#shelves_tab_panel']").parent().show();
                     $("li.skip_open_orders").show();
                 }
             });
 
-            $("#selectall").click(function(e){
+            $("#selectall").click(function (e) {
                 e.preventDefault();
-                $(".records input[type='checkbox']:not(:disabled)").each(function(){
+                $(".records input[type='checkbox']:not(:disabled)").each(function () {
                     $(this).prop("checked", true);
                 });
             });
 
-            $("#clearall").click(function(e){
+            $("#clearall").click(function (e) {
                 e.preventDefault();
-                $(".records input[type='checkbox']:not(:disabled)").each(function(){
+                $(".records input[type='checkbox']:not(:disabled)").each(function () {
                     $(this).prop("checked", false);
                 });
             });
 
-            $("#selectwithoutitems").click(function(e){
+            $("#selectwithoutitems").click(function (e) {
                 e.preventDefault();
-                $(".records input[type='checkbox']:not(:disabled)").each(function(){
-                    if( $(this).data("items") == 0 ){
-                        $(this).prop("checked", true );
+                $(".records input[type='checkbox']:not(:disabled)").each(function () {
+                    if ($(this).data("items") == 0) {
+                        $(this).prop("checked", true);
                     } else {
-                        $(this).prop("checked", false );
+                        $(this).prop("checked", false);
                     }
                 });
             });
 
-            $("#selectnotreserved").click(function(e){
+            $("#selectnotreserved").click(function (e) {
                 e.preventDefault();
-                $(".records input[type='checkbox']:not(:disabled)").each(function(){
-                    if( $(this).data("reserves") == 0 ){
-                        $(this).prop("checked", true );
+                $(".records input[type='checkbox']:not(:disabled)").each(function () {
+                    if ($(this).data("reserves") == 0) {
+                        $(this).prop("checked", true);
                     } else {
-                        $(this).prop("checked", false );
+                        $(this).prop("checked", false);
                     }
                 });
             });
 
-            $("#selectwithoutsubscriptions").click(function(e){
+            $("#selectwithoutsubscriptions").click(function (e) {
                 e.preventDefault();
-                $(".records input[type='checkbox']:not(:disabled)").each(function(){
-                    if( $(this).data("subscriptions") == 0 ){
-                        $(this).prop("checked", true );
+                $(".records input[type='checkbox']:not(:disabled)").each(function () {
+                    if ($(this).data("subscriptions") == 0) {
+                        $(this).prop("checked", true);
                     } else {
-                        $(this).prop("checked", false );
+                        $(this).prop("checked", false);
                     }
                 });
             });
 
-            $("#clearlinkedtobiblio").click(function(e){
+            $("#clearlinkedtobiblio").click(function (e) {
                 e.preventDefault();
-                $(".records input[type='checkbox']:not(:disabled)").each(function(){
-                    if( $(this).data("usage") == 0 ){
-                        $(this).prop("checked", true );
+                $(".records input[type='checkbox']:not(:disabled)").each(function () {
+                    if ($(this).data("usage") == 0) {
+                        $(this).prop("checked", true);
                     } else {
-                        $(this).prop("checked", false );
+                        $(this).prop("checked", false);
                     }
                 });
             });
 
-          $("#selectall").click();
+            $("#selectall").click();
 
-          // Show a red cross if a biblio cannot be deleted
-          if (recordtype == 'biblio'){
-            $(".records input:checkbox[data-issues!='0']").each(function(){
-              $(this).parents('tr').find('td').css('background-color', '#ffff99')
-              $(this).replaceWith("<span class='error'><i class='fa fa-times fa-lg'></i></span>")
-              $(".records i").attr('title', MSG_CANNOT_BE_DELETED)
-            });
-          }
-
-          $("#biblios").kohaTable({
-              columnDefs: [
-                  { targets: [3, 4], type: "num-html" },
-              ],
-              dom: "t",
-              order: [],
-              paging: false,
-          });
-
-          $("#authorities").kohaTable({
-              columnDefs: [
-                  { targets: [3], type: "num-html" },
-              ],
-              dom: "t",
-              order: [],
-              paging: false,
-          });
-
-          $("#selectrecords").on("submit",function(){
-            var nb_checked = $("#selectrecords").find("input[type='checkbox'][name='record_id']:checked").size();
-            if (nb_checked == 0){
-              alert(_("No records have been selected."));
-              return false;
+            // Show a red cross if a biblio cannot be deleted
+            if (recordtype == "biblio") {
+                $(".records input:checkbox[data-issues!='0']").each(function () {
+                    $(this).parents("tr").find("td").css("background-color", "#ffff99");
+                    $(this).replaceWith("<span class='error'><i class='fa fa-times fa-lg'></i></span>");
+                    $(".records i").attr("title", MSG_CANNOT_BE_DELETED);
+                });
             }
-          });
 
-          $("#selectauths").on("submit",function(){
-            var checked = $("#selectauths").find("input[type='checkbox'][name='record_id']:checked").size();
-            if (checked == 0) {
-              alert(_("No authorities have been selected."));
-              return false;
-            }
-          });
+            $("#biblios").kohaTable({
+                columnDefs: [{ targets: [3, 4], type: "num-html" }],
+                dom: "t",
+                order: [],
+                paging: false,
+            });
 
-          $("#record_ids_selection").on("submit", function(e){
-            var tab = $(this).find('#batch_del_form li a.active:first').attr('href');
-            if ( tab == '#uploadfile_tab_panel' ) {
-                $("#shelf_number").empty('');
-                $("#recordnumber_list").val('');
-            } else if ( tab == '#shelves_tab_panel' ) {
-                $("#uploadfile").val('')
-                $("#recordnumber_list").val('');
-            } else { // enterlist
-                $("#uploadfile").val('')
-                $("#shelf_number").empty('');
-            }
-          });
+            $("#authorities").kohaTable({
+                columnDefs: [{ targets: [3], type: "num-html" }],
+                dom: "t",
+                order: [],
+                paging: false,
+            });
 
+            $("#selectrecords").on("submit", function () {
+                var nb_checked = $("#selectrecords").find("input[type='checkbox'][name='record_id']:checked").size();
+                if (nb_checked == 0) {
+                    alert(_("No records have been selected."));
+                    return false;
+                }
+            });
+
+            $("#selectauths").on("submit", function () {
+                var checked = $("#selectauths").find("input[type='checkbox'][name='record_id']:checked").size();
+                if (checked == 0) {
+                    alert(_("No authorities have been selected."));
+                    return false;
+                }
+            });
+
+            $("#record_ids_selection").on("submit", function (e) {
+                var tab = $(this).find("#batch_del_form li a.active:first").attr("href");
+                if (tab == "#uploadfile_tab_panel") {
+                    $("#shelf_number").empty("");
+                    $("#recordnumber_list").val("");
+                } else if (tab == "#shelves_tab_panel") {
+                    $("#uploadfile").val("");
+                    $("#recordnumber_list").val("");
+                } else {
+                    // enterlist
+                    $("#uploadfile").val("");
+                    $("#shelf_number").empty("");
+                }
+            });
         });
     </script>
 [% END %]

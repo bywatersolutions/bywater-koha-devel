@@ -452,7 +452,6 @@
         const calendardate = "[% calendardate | html %]";
         const keydate = "[% keydate | html %]";
     </script>
-
     <script>
         function holidayOperation(formObject, opType) {
             var op = document.getElementsByName('operation');

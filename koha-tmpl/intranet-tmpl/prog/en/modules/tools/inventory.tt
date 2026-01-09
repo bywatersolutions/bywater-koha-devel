@@ -420,22 +420,18 @@
     </script>
     <script>
         function checkForm() {
-            if ( $('#uploadbarcodes').val() && $('#barcodelist').val() ) {
+            if ($("#uploadbarcodes").val() && $("#barcodelist").val()) {
                 alert(_("You have uploaded a barcode file and scanned barcodes at the same time. Please choose one of the two options."));
                 return false;
             }
-            if ( $('#uploadbarcodes').val() || $('#barcodelist').val() ) {
-                if ( !(
-                    $('#branchloop').val()   ||
-                    $('#locationloop').val() ||
-                    $('#minlocation').val()  ||
-                    $('#maxlocation').val()  ||
-                    $('#statuses input:checked').length
-                ) ) {
+            if ($("#uploadbarcodes").val() || $("#barcodelist").val()) {
+                if (!($("#branchloop").val() || $("#locationloop").val() || $("#minlocation").val() || $("#maxlocation").val() || $("#statuses input:checked").length)) {
                     return confirm(
-                        _("You have not selected any catalog filters and are about to compare a file of barcodes to your entire catalog.") + "\n\n" +
-                        _("For large catalogs this can result in unexpected behavior") + "\n\n" +
-                        _("Are you sure you want to do this?")
+                        _("You have not selected any catalog filters and are about to compare a file of barcodes to your entire catalog.") +
+                            "\n\n" +
+                            _("For large catalogs this can result in unexpected behavior") +
+                            "\n\n" +
+                            _("Are you sure you want to do this?")
                     );
                 }
             }
@@ -444,105 +440,105 @@
         }
 
         function barcodesProvided() {
-            if( $("#uploadbarcodes").val() || $("#barcodelist").val() ) {
-                $("#setdate").prop('disabled',false);
-                $("#compareinv2barcd").prop('disabled',false);
-                $("#compareinv2barcd").attr('checked',true); // default
-                $("#dont_checkin").prop('disabled',false);
-                $("#out_of_order").prop('disabled',false);
-                if( $("#compareinv2barcd").attr('checked') ) {
+            if ($("#uploadbarcodes").val() || $("#barcodelist").val()) {
+                $("#setdate").prop("disabled", false);
+                $("#compareinv2barcd").prop("disabled", false);
+                $("#compareinv2barcd").attr("checked", true); // default
+                $("#dont_checkin").prop("disabled", false);
+                $("#out_of_order").prop("disabled", false);
+                if ($("#compareinv2barcd").attr("checked")) {
                     $("fieldset#optionalfilters").show();
-                    $("#ignoreissued").attr('checked',true); // default
+                    $("#ignoreissued").attr("checked", true); // default
                 } else {
                     $("fieldset#optionalfilters").hide();
-                    $("#ignoreissued").attr('checked',false);
+                    $("#ignoreissued").attr("checked", false);
                 }
             } else {
-                $("#setdate").prop('disabled',true);
-                $("#compareinv2barcd").prop('disabled',true);
-                $("#compareinv2barcd").attr('checked',false);
-                $("#dont_checkin").prop('disabled',true);
-                $("#dont_checkin").attr('checked',false);
-                $("#out_of_order").prop('disabled',true);
-                $("#out_of_order").attr('checked',false);
+                $("#setdate").prop("disabled", true);
+                $("#compareinv2barcd").prop("disabled", true);
+                $("#compareinv2barcd").attr("checked", false);
+                $("#dont_checkin").prop("disabled", true);
+                $("#dont_checkin").attr("checked", false);
+                $("#out_of_order").prop("disabled", true);
+                $("#out_of_order").attr("checked", false);
                 $("fieldset#optionalfilters").show();
             }
         }
 
-        $(document).ready(function(){
-            inventorydt = $("#inventoryt").kohaTable({
-                pagingType: 'full_numbers',
-                bKohaColumnsUseNames: true,
-                ...(uploadedbarcodesflag
-                ? {
-                    // sort on callnumber
-                    order: [[ 2, "asc" ]]
-                }
-                : {
-                    // first column contains checkboxes
-                    columnDefs: [
-                        { orderable: false, searchable:  false, targets: [ 0 ] }
-                    ],
-                    // 3rd column is callnumber
-                    order: [[ 2, "asc" ]],
-                }),
-                drawCallback: function() {
-                    //bind the click handler script to the newly created elements held in the table
-                    $('.openWin').bind('click',function(e){
-                        e.preventDefault();
-                        openWindow(this.href,'marcview',800,600);
-                    });
-                }
-            }, table_settings );
+        $(document).ready(function () {
+            inventorydt = $("#inventoryt").kohaTable(
+                {
+                    pagingType: "full_numbers",
+                    bKohaColumnsUseNames: true,
+                    ...(uploadedbarcodesflag
+                        ? {
+                              // sort on callnumber
+                              order: [[2, "asc"]],
+                          }
+                        : {
+                              // first column contains checkboxes
+                              columnDefs: [{ orderable: false, searchable: false, targets: [0] }],
+                              // 3rd column is callnumber
+                              order: [[2, "asc"]],
+                          }),
+                    drawCallback: function () {
+                        //bind the click handler script to the newly created elements held in the table
+                        $(".openWin").bind("click", function (e) {
+                            e.preventDefault();
+                            openWindow(this.href, "marcview", 800, 600);
+                        });
+                    },
+                },
+                table_settings
+            );
 
-
-            $("#continuewithoutmarkingbutton").click(function(){
-                inventorydt.DataTable().page('next').draw('page');
+            $("#continuewithoutmarkingbutton").click(function () {
+                inventorydt.DataTable().page("next").draw("page");
                 return false;
             });
 
-            $("#markseenandcontinuebutton").click(function(){
-                var param = '';
-                $("input:checked").each(function() {
-                    param += "|" + $(this).attr('name');
+            $("#markseenandcontinuebutton").click(function () {
+                var param = "";
+                $("input:checked").each(function () {
+                    param += "|" + $(this).attr("name");
                 });
-                $.post('/cgi-bin/koha/tools/ajax-inventory.pl', { seen: param, op: 'cud-seen', csrf_token: $('meta[name="csrf-token"]').attr("content") });
-                inventorydt.DataTable().page('next').draw('page');
+                $.post("/cgi-bin/koha/tools/ajax-inventory.pl", { seen: param, op: "cud-seen", csrf_token: $('meta[name="csrf-token"]').attr("content") });
+                inventorydt.DataTable().page("next").draw("page");
                 return false;
             });
 
-            $("#markseenandquit").click(function(){
-                var param = '';
-                $("input:checked").each(function() {
-                    param += "|" + $(this).attr('name');
+            $("#markseenandquit").click(function () {
+                var param = "";
+                $("input:checked").each(function () {
+                    param += "|" + $(this).attr("name");
                 });
                 $.ajax({
-                  type: 'POST',
-                  url: '/cgi-bin/koha/tools/ajax-inventory.pl',
-                  data: { seen: param, op: 'cud-seen', csrf_token: $('meta[name="csrf-token"]').attr("content") },
-                  async: false
+                    type: "POST",
+                    url: "/cgi-bin/koha/tools/ajax-inventory.pl",
+                    data: { seen: param, op: "cud-seen", csrf_token: $('meta[name="csrf-token"]').attr("content") },
+                    async: false,
                 });
-                document.location.href = '/cgi-bin/koha/tools/inventory.pl';
+                document.location.href = "/cgi-bin/koha/tools/inventory.pl";
                 return false;
             });
 
-            $(".checkall").click(function(e){
+            $(".checkall").click(function (e) {
                 e.preventDefault();
-                $("#inventoryt input:checkbox").each(function(){
+                $("#inventoryt input:checkbox").each(function () {
                     $(this).prop("checked", true);
                 });
             });
-            $(".clearall").click(function(e){
+            $(".clearall").click(function (e) {
                 e.preventDefault();
-                $("#inventoryt input:checkbox").each(function(){
+                $("#inventoryt input:checkbox").each(function () {
                     $(this).prop("checked", false);
                 });
             });
-            $("#inventory_form").on("submit",function(){
+            $("#inventory_form").on("submit", function () {
                 return checkForm();
             });
 
-            $("#resetuploadbarcodes").click(function() {
+            $("#resetuploadbarcodes").click(function () {
                 $("#uploadbarcodes").val("");
                 barcodesProvided();
             });
@@ -552,23 +548,23 @@
             $("#uploadbarcodes").change(barcodesProvided);
             $("#barcodelist").on("change keyup paste", barcodesProvided);
 
-            $("#compareinv2barcd").click(function() {
-                if( $("#compareinv2barcd").attr('checked') ) {
+            $("#compareinv2barcd").click(function () {
+                if ($("#compareinv2barcd").attr("checked")) {
                     $("fieldset#optionalfilters").show();
-                    $("#ignoreissued").attr('checked',true); // default
+                    $("#ignoreissued").attr("checked", true); // default
                 } else {
-                    $("#ignoreissued").attr('checked',false);
+                    $("#ignoreissued").attr("checked", false);
                     $("fieldset#optionalfilters").hide();
                 }
             });
 
-            $("#checkallitemtypes").on("click",function(e){
+            $("#checkallitemtypes").on("click", function (e) {
                 e.preventDefault();
-                $(".branch_select").prop("checked",1);
+                $(".branch_select").prop("checked", 1);
             });
-            $("#checknoneitemtypes").on("click",function(e){
+            $("#checknoneitemtypes").on("click", function (e) {
                 e.preventDefault();
-                $(".branch_select").prop("checked",0);
+                $(".branch_select").prop("checked", 0);
             });
         });
     </script>

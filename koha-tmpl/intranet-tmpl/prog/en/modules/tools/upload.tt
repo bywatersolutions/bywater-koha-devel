@@ -375,92 +375,87 @@
         });
         const msg_alert = "[% msg | html %]";
     </script>
-
     <script>
         function StartUpload() {
-            if( $('#fileToUpload').prop('files').length == 0 ) return;
-            $('#fileToUpload').prop('disabled',true);
-            $('#fileuploadbutton').hide();
+            if ($("#fileToUpload").prop("files").length == 0) return;
+            $("#fileToUpload").prop("disabled", true);
+            $("#fileuploadbutton").hide();
             $("#fileuploadcancel").show();
-            $("#fileuploadfailed").html('');
-            $("#myalerts").hide('');
-            $("#myalerts").html('');
+            $("#fileuploadfailed").html("");
+            $("#myalerts").hide("");
+            $("#myalerts").html("");
             $("#fileuploadstatus").show();
-            $("#uploadedfileid").val('');
+            $("#uploadedfileid").val("");
             $("#searchfile").hide();
-            $("#lastbreadcrumb").text( _("Add a new upload") );
+            $("#lastbreadcrumb").text(_("Add a new upload"));
 
-            var cat, xtra='';
-            if( $("#uploadcategory").val() )
-                cat = encodeURIComponent( $("#uploadcategory").val() );
-            if( cat ) xtra= 'category=' + cat + '&';
-            if (plugin){
-                xtra = xtra + 'public=1&temp=0';
+            var cat,
+                xtra = "";
+            if ($("#uploadcategory").val()) cat = encodeURIComponent($("#uploadcategory").val());
+            if (cat) xtra = "category=" + cat + "&";
+            if (plugin) {
+                xtra = xtra + "public=1&temp=0";
             } else {
-                if( !cat ) xtra = 'temp=1&';
-                if( $('#public').prop('checked') ) xtra = xtra + 'public=1';
+                if (!cat) xtra = "temp=1&";
+                if ($("#public").prop("checked")) xtra = xtra + "public=1";
             }
-            xhr= AjaxUpload( $('#fileToUpload'), $('#fileuploadprogress'), xtra, cbUpload );
+            xhr = AjaxUpload($("#fileToUpload"), $("#fileuploadprogress"), xtra, cbUpload);
         }
         function CancelUpload() {
-            if( xhr ) xhr.abort();
+            if (xhr) xhr.abort();
             $("#fileuploadstatus").hide();
-            $('#fileToUpload').prop('disabled', false);
-            $('#fileuploadbutton').show();
+            $("#fileToUpload").prop("disabled", false);
+            $("#fileuploadbutton").show();
             $("#fileuploadcancel").hide();
             $("#fileuploadfailed").show();
-            $("#fileuploadfailed").text( _("Upload status: Cancelled ") );
+            $("#fileuploadfailed").text(_("Upload status: Cancelled "));
         }
-        function cbUpload( status, fileid, err ) {
-            $('#fileToUpload').prop('disabled', false);
-            if( status=='done' ) {
-                var e = err? JSON.stringify(err): '';
-                SubmitMe( 'search', fileid, e );
+        function cbUpload(status, fileid, err) {
+            $("#fileToUpload").prop("disabled", false);
+            if (status == "done") {
+                var e = err ? JSON.stringify(err) : "";
+                SubmitMe("search", fileid, e);
             } else {
-                $('#fileuploadbutton').show();
+                $("#fileuploadbutton").show();
                 $("#fileuploadcancel").hide();
                 $("#fileuploadstatus").hide();
                 $("#fileuploadfailed").show();
-                $("#fileuploadfailed").html( _("Upload status: ") +
-                    ( status=='failed'? _("Failed"):
-                    ( status=='denied'? _("Denied"): status ))
-                );
-                ShowAlerts( err );
+                $("#fileuploadfailed").html(_("Upload status: ") + (status == "failed" ? _("Failed") : status == "denied" ? _("Denied") : status));
+                ShowAlerts(err);
             }
         }
         function ShowAlerts(err) {
-            var str = '';
-            for( var file in err ) {
-                str= str + '<p>' + file + ': ' +
-                    errMESSAGES( err[file].code ) + '</p>';
+            var str = "";
+            for (var file in err) {
+                str = str + "<p>" + file + ": " + errMESSAGES(err[file].code) + "</p>";
             }
-            if( str ) {
-                $('#myalerts').html(str);
-                $('#myalerts').show();
+            if (str) {
+                $("#myalerts").html(str);
+                $("#myalerts").show();
             }
         }
         function errMESSAGES(code) {
             var rv;
-            switch(code) {
-                case 'UPLERR_ALREADY_EXISTS':
+            switch (code) {
+                case "UPLERR_ALREADY_EXISTS":
                     rv = _("This file already exists (in this category).");
                     break;
-                case 'UPLERR_CANNOT_WRITE':
+                case "UPLERR_CANNOT_WRITE":
                     rv = _("File could not be created. Check permissions.");
                     break;
-                case 'UPLERR_NO_ROOT_DIR':
+                case "UPLERR_NO_ROOT_DIR":
                     rv = _("Your koha-conf.xml does not contain a valid upload_path.");
                     break;
-                case 'UPLERR_NO_TEMP_DIR':
+                case "UPLERR_NO_TEMP_DIR":
                     rv = _("No temporary directory found.");
                     break;
-                case 'UPLERR_FILE_NOT_READ':
+                case "UPLERR_FILE_NOT_READ":
                     rv = _("File could not be read.");
                     break;
-                case 'UPL_FILE_DELETED': // An alert, no error
+                case "UPL_FILE_DELETED": // An alert, no error
                     rv = _("File has been deleted.");
                     break;
-                case 'UPLERR_FILE_NOT_DELETED':
+                case "UPLERR_FILE_NOT_DELETED":
                     rv = _("File or upload record could not be deleted.");
                     break;
                 default:
@@ -469,92 +464,98 @@
             return rv;
         }
         function CheckSearch() {
-            if( $("#term").val()=="" ) {
-                alert( _("Please enter a search term.") );
+            if ($("#term").val() == "") {
+                alert(_("Please enter a search term."));
                 return false;
             }
             return true;
         }
-        function SubmitMe(op, id, msg ) {
-            $("#submitter #op").val( op );
-            $("#submitter #id").val( id );
-            $("#submitter #msg").val( msg );
+        function SubmitMe(op, id, msg) {
+            $("#submitter #op").val(op);
+            $("#submitter #id").val(id);
+            $("#submitter #msg").val(msg);
             $("#submitter").submit();
         }
         function DeleteEntry(id) {
-            if( !confirm( _("Do you really want to delete this upload?") ))
-                return false;
+            if (!confirm(_("Do you really want to delete this upload?"))) return false;
             ClearField();
-            $("#form_delete #id").val( id );
+            $("#form_delete #id").val(id);
             $("#form_delete").submit();
         }
         function ClearField() {
-            if (plugin){
-                $(window.opener.document).find('#' + plugin_index).val( '' );
+            if (plugin) {
+                $(window.opener.document)
+                    .find("#" + plugin_index)
+                    .val("");
             }
         }
         function Choose(hashval) {
             var res = prefs.OPACBaseURL;
-            res = res.replace( /\/$/, '');
-            res = res + '/cgi-bin/koha/opac-retrieve-file.pl?id=' + hashval;
+            res = res.replace(/\/$/, "");
+            res = res + "/cgi-bin/koha/opac-retrieve-file.pl?id=" + hashval;
             var index = plugin_index;
-            index = index.replace( /^buttonDot_/, '' );
-            if(index) $(window.opener.document).find('#'+index).val( res );
+            index = index.replace(/^buttonDot_/, "");
+            if (index)
+                $(window.opener.document)
+                    .find("#" + index)
+                    .val(res);
             window.close();
         }
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             $("#uploadresults").kohaTable({}, table_settings);
 
-            if (msg_alert){
+            if (msg_alert) {
                 ShowAlerts(msg_alert);
             }
             $("#fileuploadcancel").hide();
-            $("#public_cb").click(function() {
+            $("#public_cb").click(function () {
                 $("#public").click();
             });
-            $("#fileuploadbutton").on("click",function(e){
+            $("#fileuploadbutton").on("click", function (e) {
                 e.preventDefault();
                 StartUpload();
             });
-            $("#fileuploadcancel").on("click",function(e){
+            $("#fileuploadcancel").on("click", function (e) {
                 e.preventDefault();
                 CancelUpload();
             });
-            $("#searchbutton").on("click",function(){
+            $("#searchbutton").on("click", function () {
                 return CheckSearch();
             });
-            $("#uploadresults tbody").on("click",".choose_entry",function(e){
+            $("#uploadresults tbody").on("click", ".choose_entry", function (e) {
                 e.preventDefault();
                 var record_hashvalue = $(this).data("record-hashvalue");
-                Choose( record_hashvalue );
+                Choose(record_hashvalue);
             });
-            $("#uploadresults tbody").on("click",".download_entry",function(e){
+            $("#uploadresults tbody").on("click", ".download_entry", function (e) {
                 e.preventDefault();
                 var record_id = $(this).data("record-id");
-                SubmitMe( 'download', record_id );
+                SubmitMe("download", record_id);
             });
-            $("#uploadresults tbody").on("click",".delete_entry",function(e){
+            $("#uploadresults tbody").on("click", ".delete_entry", function (e) {
                 e.preventDefault();
                 var record_id = $(this).data("record-id");
-                DeleteEntry( record_id );
+                DeleteEntry(record_id);
             });
-            $("#new_search").on("click",function(e){
+            $("#new_search").on("click", function (e) {
                 e.preventDefault();
-                SubmitMe('new');
+                SubmitMe("new");
             });
 
-            if ( window.isSecureContext ) {
-                $(".get-file").on("click", function(e){
+            if (window.isSecureContext) {
+                $(".get-file").on("click", function (e) {
                     e.preventDefault();
-                    if( navigator.clipboard && navigator.clipboard.writeText){
-                        navigator.clipboard.writeText( $(this).attr("href") );
-                        $(this).tooltip("dispose").attr('data-bs-title', _( "Link copied to the clipboard" )).tooltip("show");
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText($(this).attr("href"));
+                        $(this).tooltip("dispose").attr("data-bs-title", _("Link copied to the clipboard")).tooltip("show");
                     }
                 });
-                $(".get-file").tooltip().on("hidden.bs.tooltip", function(){
-                    $(this).tooltip("dispose").attr("data-bs-title", _( "Copy link to this file" ) ).tooltip();
-                });
+                $(".get-file")
+                    .tooltip()
+                    .on("hidden.bs.tooltip", function () {
+                        $(this).tooltip("dispose").attr("data-bs-title", _("Copy link to this file")).tooltip();
+                    });
             }
         });
     </script>

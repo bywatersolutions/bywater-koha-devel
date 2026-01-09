@@ -466,7 +466,6 @@
             CAN_user_editcatalogue_edit_catalogue: [% CAN_user_editcatalogue_edit_catalogue ? 1 : 0 | html %],
         });
     </script>
-
     <script>
         $(document).ready(function() {
             $("#staged-record-matching-rules select").change(function() {
@@ -646,13 +645,14 @@
             });
         });
     </script>
-
     [% IF job_enqueued %]
         <script>
-            $(document).ready(function() {
+            $(document).ready(function () {
                 setTimeout(
-                    function() { window.location.href=$('a.job_details').attr('href'); },
-                    5000, // 5 secs to read
+                    function () {
+                        window.location.href = $("a.job_details").attr("href");
+                    },
+                    5000 // 5 secs to read
                 );
             });
         </script>
