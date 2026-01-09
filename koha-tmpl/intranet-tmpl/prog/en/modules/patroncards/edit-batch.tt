@@ -182,7 +182,6 @@
         });
         const has_entries = [% table_loop ? 1 : 0 | html %];
     </script>
-
     <script>
         function DeleteConfirm() {
             var msg = _("Are you sure you want to delete batch %s?").format(batch_id);
