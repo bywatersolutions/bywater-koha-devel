@@ -454,13 +454,11 @@
     [% Asset.js("js/mana.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("lib/jquery/plugins/treetable/jquery.treetable.js") | $raw %]
-
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'serials', 'subscription-detail', 'orders', 'json' ) | $raw %];
         const has_orders = [% orders_grouped.size ? 1 : 0 | html %];
         const print_routing_list_issue = "[% print_routing_list_issue | uri %]";
     </script>
-
     <script>
         // the english words used in display purposes
         var text = new Array(_("Number"),_("Volume"),_("Issue"),_("Month"),_("Week"),_("Starting with:"),_("Rollover at:"),_("Choose hemisphere:"),_("Northern"),_("Southern",

@@ -287,75 +287,82 @@
     </script>
     [% Asset.js("js/serials-toolbar.js") | $raw %]
     <script>
-        function itemSelectionBuildEditLink( tab ) {
+        function itemSelectionBuildEditLink(tab) {
             var subscription_ids = new Array();
-            $( "input:checkbox." + tab + ":checked" ).each(function() {
-                subscription_ids.push( $(this).val() );
+            $("input:checkbox." + tab + ":checked").each(function () {
+                subscription_ids.push($(this).val());
             });
 
             if (subscription_ids.length > 0) {
                 var url = edit_action_link;
-                url += '&subscriptionid=' + subscription_ids.join('&subscriptionid=');
+                url += "&subscriptionid=" + subscription_ids.join("&subscriptionid=");
                 location.href = url;
             } else {
                 return false;
             }
         }
 
-        function enableCheckboxActions( tab ){
+        function enableCheckboxActions(tab) {
             // Enable/disable controls if checkboxes are checked
             var checked_count = $("input:checkbox." + tab + ":checked").length;
-            if( checked_count > 0 ){
-                $(".itemselection_actions." + tab ).show();
+            if (checked_count > 0) {
+                $(".itemselection_actions." + tab).show();
             } else {
-                $(".itemselection_actions." + tab ).hide();
+                $(".itemselection_actions." + tab).hide();
             }
         }
 
-        $(document).ready(function() {
-            var osrlt = $("#opened_panel table").kohaTable({
-                pagingType: "full",
-                order: [[2, "asc"]],
-            }, null, true);
+        $(document).ready(function () {
+            var osrlt = $("#opened_panel table").kohaTable(
+                {
+                    pagingType: "full",
+                    order: [[2, "asc"]],
+                },
+                null,
+                true
+            );
 
-            var csrlt = $("#closed_panel table").kohaTable({
-                // FIXME sort function of additional_fields!
-                order: [[2, "asc"]],
-                pagingType: "full",
-            }, null, true);
+            var csrlt = $("#closed_panel table").kohaTable(
+                {
+                    // FIXME sort function of additional_fields!
+                    order: [[2, "asc"]],
+                    pagingType: "full",
+                },
+                null,
+                true
+            );
 
             var manarlt = $("#mana_results_datatable").kohaTable({
                 pagingType: "full",
             });
 
-            $("#reopensub").click(function(){
+            $("#reopensub").click(function () {
                 return confirm(_("Are you sure you want to reopen this subscription?"));
             });
 
-            $('.select-all, .clear-all').on('click', function(e) {
+            $(".select-all, .clear-all").on("click", function (e) {
                 e.preventDefault();
                 var tab = $(this).data("tab");
-                var checkboxes = $("input:checkbox." + tab );
-                checkboxes.prop('checked', $(this).hasClass('select-all')).change();
+                var checkboxes = $("input:checkbox." + tab);
+                checkboxes.prop("checked", $(this).hasClass("select-all")).change();
                 enableCheckboxActions(tab);
             });
 
             enableCheckboxActions("opened");
             enableCheckboxActions("closed");
 
-            $("input[name='subscriptionid'][type='checkbox']").change(function() {
+            $("input[name='subscriptionid'][type='checkbox']").change(function () {
                 var tab = $(this).attr("class");
-                enableCheckboxActions( tab );
+                enableCheckboxActions(tab);
             });
 
-            $(".itemselection_action_modify").on("click", function(e){
+            $(".itemselection_action_modify").on("click", function (e) {
                 e.preventDefault();
                 var tab = $(this).data("tab");
-                itemSelectionBuildEditLink( tab );
+                itemSelectionBuildEditLink(tab);
             });
         });
     </script>
-
     [% IF ( mana ) %]
         <script>
             $(document).ready(function() {

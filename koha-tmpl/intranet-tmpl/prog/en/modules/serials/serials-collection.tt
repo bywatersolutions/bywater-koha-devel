@@ -349,9 +349,9 @@
         function deleteIssues(subscriptionid) {
             var serialschecked = $("form[name='edition'] input[name='serialid']:checked");
             if (serialschecked.length > 0) {
-                var location = 'serials-collection.pl?subscriptionid='+subscriptionid+'&op=delete_confirm';
-                for (i=0; i < serialschecked.length; i++) {
-                    location += '&serialid=' + serialschecked[i].value;
+                var location = "serials-collection.pl?subscriptionid=" + subscriptionid + "&op=delete_confirm";
+                for (i = 0; i < serialschecked.length; i++) {
+                    location += "&serialid=" + serialschecked[i].value;
                 }
                 document.location = location;
             } else {
@@ -359,8 +359,8 @@
             }
         }
 
-        $(document).ready(function() {
-            if( $("#subscription_years .tab-pane.active").length < 1 ){
+        $(document).ready(function () {
+            if ($("#subscription_years .tab-pane.active").length < 1) {
                 $("#subscription_years a:first").tab("show");
             }
             $(".subscription-year-table").kohaTable({
@@ -372,42 +372,42 @@
                 searching: false,
             });
 
-            $(".CheckAll").on("click", function(e){
+            $(".CheckAll").on("click", function (e) {
                 e.preventDefault();
                 var years = $(this).data("year");
-                $("#subscription-year-" + years + "_panel" + " input:checkbox").prop("checked", true );
+                $("#subscription-year-" + years + "_panel" + " input:checkbox").prop("checked", true);
             });
 
-            $(".CheckNone").on("click", function(e){
+            $(".CheckNone").on("click", function (e) {
                 e.preventDefault();
                 var years = $(this).data("year");
-                $("#subscription-year-" + years + "_panel" + " input:checkbox").prop("checked", false );
+                $("#subscription-year-" + years + "_panel" + " input:checkbox").prop("checked", false);
             });
 
-            $(".generatenext").on("click", function(e){
+            $(".generatenext").on("click", function (e) {
                 e.preventDefault();
                 var subscriptionid = $(this).data("subscriptionid");
-                generateNext( subscriptionid );
+                generateNext(subscriptionid);
             });
 
-            $(".subscription_renew").on("click", function(e){
+            $(".subscription_renew").on("click", function (e) {
                 e.preventDefault();
                 var subscriptionid = $(this).data("subscriptionid");
-                popup( subscriptionid );
+                popup(subscriptionid);
             });
 
-            $(".print_list").on("click", function(e){
+            $(".print_list").on("click", function (e) {
                 e.preventDefault();
                 var url = $(this).attr("href");
-                window.open( url,'PrintSlip','width=500,height=500,toolbar=no,scrollbars=yes');
+                window.open(url, "PrintSlip", "width=500,height=500,toolbar=no,scrollbars=yes");
             });
 
-            $('#multi_receiving').on('show', function () {
-               $(this).find(".modal-body").html($(".serials_multi_receiving")[0].outerHTML);
+            $("#multi_receiving").on("show", function () {
+                $(this).find(".modal-body").html($(".serials_multi_receiving")[0].outerHTML);
             });
 
-            $("form[name='edition']").on('submit', function(e){
-                if ( $(this).find("input[name='serialid']:checked").size() == 0 ) {
+            $("form[name='edition']").on("submit", function (e) {
+                if ($(this).find("input[name='serialid']:checked").size() == 0) {
                     e.preventDefault();
                     alert(_("You must select at least one serial to edit"));
                     return 0;
@@ -416,7 +416,6 @@
             });
         });
     </script>
-
     <script>
         $(document).ready(function() {
             $(".delete-issues").on("click", function(e){

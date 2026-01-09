@@ -221,7 +221,6 @@
         var table_settings = [% TablesSettings.GetTableSettings( "serials", "claims", "claimst", "json" ) | $raw %];
         const vendor_id = "[% supplierid | html %]";
     </script>
-
     <script>
         var sTable;
         $(document).ready(function () {
@@ -231,8 +230,11 @@
                     autowidth: false,
                     order: [[7, "asc"]],
                     paging: false,
-                    orderCellsTop: true
-                }, table_settings, 1);
+                    orderCellsTop: true,
+                },
+                table_settings,
+                1
+            );
 
             // Checkboxes : Select All / None
             $("span.checkall").html('<input type="checkbox" name="CheckAll"> ' + _("Check all") + "</input>");
