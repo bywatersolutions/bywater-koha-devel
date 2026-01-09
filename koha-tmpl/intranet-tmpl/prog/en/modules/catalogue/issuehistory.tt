@@ -134,9 +134,8 @@
             table_settings['columns'].splice(0,1);
         [% END %]
     </script>
-
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             var table = $("#table_issues").kohaTable(
                 {
                     dom: 'C<"top pager"ilpfB><"#filter_c">tr<"bottom pager"ip>',
