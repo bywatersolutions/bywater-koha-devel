@@ -47,6 +47,7 @@
 [% END %]
 [% Asset.js('js/Gettext.js') | $raw %]
 [% Asset.js('js/i18n.js') | $raw %]
+[% Asset.js('js/stores.js') | $raw %]
 
 [% IF ( login ) %]
     [% Asset.css("css/login.css") | $raw %]
