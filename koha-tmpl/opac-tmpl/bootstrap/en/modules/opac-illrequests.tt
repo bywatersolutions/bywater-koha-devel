@@ -407,6 +407,23 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        const logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
+        [% IF services_json.length > 0 %]
+            var services = [% services_json | $raw %];
+        [% ELSE %]
+            var services = [];
+        [% END %]
+        [% IF auto_backends_json.length > 0 %]
+            var auto_backends = [% auto_backends_json | $raw %];
+        [% ELSE %]
+            var auto_backends = [];
+        [% END %]
+        [% IF metadata.length > 0 %]
+            var metadata = "[% metadata | $raw %]";
+        [% END %]
+    </script>
+
+    <script>
         function display_extended_attribute(row, type) {
             var arr = $.grep(row.extended_attributes, ( x => x.type === type ));
             if (arr.length > 0) {
@@ -433,7 +450,7 @@
             dom: '<"dt-info"i><"top pager"<"table_entries"lp>t<"bottom pager"pi>',
             paging: true,
             embed: ['+strings','extended_attributes'],
-            ajax: { url: '/api/v1/public/patrons/[% logged_in_user.borrowernumber | uri %]/ill/requests' },
+            ajax: { url: `/api/v1/public/patrons/${logged_in_user_borrowernumber}/ill/requests` },
             columnDefs: [ {
                 render: function (data, type, row, meta) {
                     if ( data && type == 'display' ) {
@@ -503,19 +520,6 @@
             ]
         });
         $("#backend-dropdown-options").removeClass("nojs");
-        [% IF services_json.length > 0 %]
-            var services = [% services_json | $raw %];
-        [% ELSE %]
-            var services = [];
-        [% END %]
-        [% IF auto_backends_json.length > 0 %]
-        var auto_backends = [% auto_backends_json | $raw %];
-        [% ELSE %]
-        var auto_backends = [];
-        [% END %]
-        [% IF metadata.length > 0 %]
-            var metadata = "[% metadata | $raw %]";
-        [% END %]
     </script>
     [% IF op == 'availability' %]
         [% Asset.js("js/ill-availability.js") | $raw %]
