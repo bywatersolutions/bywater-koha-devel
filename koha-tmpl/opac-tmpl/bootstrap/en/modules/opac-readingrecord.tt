@@ -229,18 +229,22 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        addPrefs({
+            GoogleJackets: [% Koha.Preference('GoogleJackets') ? 1 : 0 | html %],
+            OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
+        });
+    </script>
+
+    <script>
         $(document).ready(function(){
-            [% IF ( GoogleJackets ) %]KOHA.Google.GetCoverFromIsbn();[% END %]
+            if ( prefs.GoogleJackets ){
+                KOHA.Google.GetCoverFromIsbn();
+            }
             $('#order').change(function() {
                 $('#sortform').submit();
             });
 
-            [% IF ( Koha.Preference('OPACTableColExpandedByDefault') ) %]
-                var responsive_display = DataTable.Responsive.display.childRowImmediate;
-            [% ELSE %]
-                var responsive_display = DataTable.Responsive.display.childRow;
-            [% END %]
-
+            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
             var table = $("#readingrec").kohaTable(
                 {
                     dom: '<"top"<"table_entries"i><"table_controls"fB>>t',
