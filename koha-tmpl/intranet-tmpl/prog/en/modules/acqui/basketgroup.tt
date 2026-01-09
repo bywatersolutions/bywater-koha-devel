@@ -397,6 +397,11 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        let listclosed = [% listclosed ? 1 : 0 | html %];
+        let grouping = [% grouping ? 1 : 0 | html %];
+    </script>
+
+    <script>
         function submitForm(form) {
             if (form.closedbg.checked == true) {
                 var input = document.createElement("input");
@@ -419,12 +424,13 @@
         }
 
         $(document).ready(function() {
-            [% IF ( listclosed) %]
+            if (listclosed){
                 $("#basket_groups a[href='#closed']").tab("show");
-            [% ELSE %]
+            } else {
                 $("#basket_groups a[href='#opened']").tab("show");
-            [% END %]
-            [% UNLESS ( grouping ) %]
+            }
+
+            if (!grouping){
                 let dt_params = {
                     autoWidth: false,
                     pagingType: "full",
@@ -433,7 +439,7 @@
                 $("#grouped").kohaTable(dt_params);
                 $("#basket_group_opened").kohaTable(dt_params);
                 $("#basket_group_closed").kohaTable(dt_params);
-            [% ELSE %]
+            } else {
                 grouped = $("#grouped").kohaTable({
                     dom: "t",
                     autoWidth: false,
@@ -448,7 +454,7 @@
                         emptyTable: _("There are no ungrouped baskets"),
                     },
                 });
-            [% END %]
+            }
 
             $("#basketgroupcolumns").on("click", ".addtogroup", function(){
                 const row = $("#" + $(this).data("basketid") );
