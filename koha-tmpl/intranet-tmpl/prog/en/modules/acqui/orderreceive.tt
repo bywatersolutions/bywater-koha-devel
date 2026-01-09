@@ -468,74 +468,87 @@
             CAN_user_acquisition: [% CAN_user_acquisition ? 1 : 0 | html %],
         });
     </script>
-
     <script>
         function display_string(key, strings, fallback) {
-            if ( strings.hasOwnProperty(key) ) {
-                return strings[key].str && escape_str(strings[key].str) || '';
+            if (strings.hasOwnProperty(key)) {
+                return (strings[key].str && escape_str(strings[key].str)) || "";
             }
-            return fallback != null ? fallback : '';
+            return fallback != null ? fallback : "";
         }
 
-        var _build_item = function(item, tr) {
-            var chb = $('<input type="checkbox" name="items_to_receive" value="'+item.item_id+'" />')
-                .prop('checked', item._checked)
-                .change(function() {
-                    item._checked = $(this).prop('checked');
+        var _build_item = function (item, tr) {
+            var chb = $('<input type="checkbox" name="items_to_receive" value="' + item.item_id + '" />')
+                .prop("checked", item._checked)
+                .change(function () {
+                    item._checked = $(this).prop("checked");
                 });
             tr.append($('<td style="text-align:center"></td>').append(chb));
-            tr.append('<td><a style="cursor:pointer" href="#" onclick="PopupEditPage('+item.biblio_id+', '+item.item_id+');">'+EDIT[0].toUpperCase()+EDIT.substr(1).toLowerCase()+'</a></td>');
-            tr.append('<td>'+(item.external_id||'')+'</td>');
-            tr.append('<td>'+display_string( 'home_library_id', item._strings, item.home_library_id ) || ''+'</td>');
-            tr.append('<td>'+display_string( 'holding_library_id', item._strings, item.holding_library_id )+'</td>');
-            tr.append('<td>'+display_string( 'not_for_loan_status', item._strings, item.not_for_loan_status )+'</td>');
-            tr.append('<td>'+display_string( 'restricted_status', item._strings, item.restricted_status )+'</td>');
-            tr.append('<td><span class="shelvingloc">'+display_string( 'location', item._strings, item.location )+'</span></td>');
-            tr.append('<td>'+(item.callnumber||'')+'</td>');
-            tr.append('<td>'+(item.copy_number||'')+'</td>');
-            tr.append('<td>'+(item.inventory_number||'')+'</td>');
-            tr.append('<td>'+display_string( 'collection', item._strings, item.collection )+'</td>');
-            tr.append('<td>'+display_string( 'item_type_id', item._strings, item.item_type_id )+'</td>');
-            tr.append('<td>'+display_string( 'materials_notes', item._strings, item.materials_notes )+'</td>');
-            tr.append('<td>'+(item.public_notes||'')+'</td>');
+            tr.append('<td><a style="cursor:pointer" href="#" onclick="PopupEditPage(' + item.biblio_id + ", " + item.item_id + ');">' + EDIT[0].toUpperCase() + EDIT.substr(1).toLowerCase() + "</a></td>");
+            tr.append("<td>" + (item.external_id || "") + "</td>");
+            tr.append("<td>" + display_string("home_library_id", item._strings, item.home_library_id) || "" + "</td>");
+            tr.append("<td>" + display_string("holding_library_id", item._strings, item.holding_library_id) + "</td>");
+            tr.append("<td>" + display_string("not_for_loan_status", item._strings, item.not_for_loan_status) + "</td>");
+            tr.append("<td>" + display_string("restricted_status", item._strings, item.restricted_status) + "</td>");
+            tr.append('<td><span class="shelvingloc">' + display_string("location", item._strings, item.location) + "</span></td>");
+            tr.append("<td>" + (item.callnumber || "") + "</td>");
+            tr.append("<td>" + (item.copy_number || "") + "</td>");
+            tr.append("<td>" + (item.inventory_number || "") + "</td>");
+            tr.append("<td>" + display_string("collection", item._strings, item.collection) + "</td>");
+            tr.append("<td>" + display_string("item_type_id", item._strings, item.item_type_id) + "</td>");
+            tr.append("<td>" + display_string("materials_notes", item._strings, item.materials_notes) + "</td>");
+            tr.append("<td>" + (item.public_notes || "") + "</td>");
         };
 
-        var items_columns = [null, null, 'external_id', 'home_library_id',
-                'holding_library_id', 'not_for_loan_status', 'restricted_status', 'location',
-                'callnumber', 'copy_number', 'inventory_number', 'collection_code',
-                'item_type', 'materials_notes', 'public_notes'];
+        var items_columns = [
+            null,
+            null,
+            "external_id",
+            "home_library_id",
+            "holding_library_id",
+            "not_for_loan_status",
+            "restricted_status",
+            "location",
+            "callnumber",
+            "copy_number",
+            "inventory_number",
+            "collection_code",
+            "item_type",
+            "materials_notes",
+            "public_notes",
+        ];
 
         function PopupEditPage(biblionumber, itemnumber) {
-            var url = "/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber="
-                + biblionumber + "&itemnumber=" + itemnumber + "&popup=1#edititem";
+            var url = "/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=" + biblionumber + "&itemnumber=" + itemnumber + "&popup=1#edititem";
             var w = window.open(url);
-            var watchClose = setInterval(function() {
+            var watchClose = setInterval(function () {
                 if (w.closed) {
                     clearTimeout(watchClose);
                     $.ajax({
                         dataType: "json",
                         headers: {
-                            "x-koha-embed": "+strings"
+                            "x-koha-embed": "+strings",
                         },
-                        url: '/api/v1/items/'+itemnumber,
-                        success: function(item) {
-                            var tr = $("#item_"+itemnumber);
-                            item._checked = $(tr).find('input[type="checkbox"]').prop('checked');
-                            tr.html('');
+                        url: "/api/v1/items/" + itemnumber,
+                        success: function (item) {
+                            var tr = $("#item_" + itemnumber);
+                            item._checked = $(tr).find('input[type="checkbox"]').prop("checked");
+                            tr.html("");
                             _build_item(item, tr);
 
-                            var row = $("#order_edit").data('row');
-                            row.items.forEach((it, i) => { if (it.item_id == itemnumber) {
-                                row.items[i] = item;
-                            }});
-                        }
+                            var row = $("#order_edit").data("row");
+                            row.items.forEach((it, i) => {
+                                if (it.item_id == itemnumber) {
+                                    row.items[i] = item;
+                                }
+                            });
+                        },
                     });
                 }
             }, 500);
         }
 
-        var periods={};
-        var funds={};
+        var periods = {};
+        var funds = {};
         var funds_tree = [];
 
         var QTY_TOTAL = _("Receiving %0$s out of %1$s");
@@ -554,121 +567,115 @@
         var SAVE_WARNING_TITLE = _("Warning");
         var SAVE_ERROR_TITLE = _("Error");
 
-        $(document).ready(function(){
+        $(document).ready(function () {
             // keep a copy for re-rendering
-            var $funds_tree = $('#bookfund').html();
-            var base_query = { "order_id": {"-in": multiple_orders.split(',')}};
+            var $funds_tree = $("#bookfund").html();
+            var base_query = { order_id: { "-in": multiple_orders.split(",") } };
             var pending_orders_url = "/api/v1/acquisitions/orders?only_active=1";
             var options = {
                 ajax: {
-                    "url": pending_orders_url + "&q=" + encodeURI(JSON.stringify(base_query))
+                    url: pending_orders_url + "&q=" + encodeURI(JSON.stringify(base_query)),
                 },
-                embed: [
-                    "basket",
-                    "biblio.suggestions.suggester",
-                    "fund.budget",
-                    "items+strings",
-                    "creator"
-                ],
+                embed: ["basket", "biblio.suggestions.suggester", "fund.budget", "items+strings", "creator"],
                 dom: 'C<"top pager"ilpfB><"#filter_c">tr<"bottom pager"ip>',
                 columns: [
                     {
                         data: "order_id",
                         searchable: true,
-                        orderable: true
+                        orderable: true,
                     },
                     {
                         data: "biblio.title",
                         searchable: true,
                         orderable: true,
-                        render: function(data, type, row, meta) {
-                            if ( data == null ) {
+                        render: function (data, type, row, meta) {
+                            if (data == null) {
                                 return "";
-                            }
-                            else {
+                            } else {
                                 return data;
                             }
-                        }
+                        },
                     },
                     {
                         data: "biblio.author",
                         searchable: true,
                         orderable: true,
-                        render: function(data, type, row, meta) {
-                            if ( data == null ) {
+                        render: function (data, type, row, meta) {
+                            if (data == null) {
                                 return "";
-                            }
-                            else {
+                            } else {
                                 return data;
                             }
-                        }
+                        },
                     },
                     {
                         data: "biblio.isbn",
                         searchable: true,
                         orderable: true,
-                        render: function(data, type, row, meta) {
-                            if ( data == null ) {
+                        render: function (data, type, row, meta) {
+                            if (data == null) {
                                 return "";
-                            }
-                            else {
+                            } else {
                                 return data;
                             }
-                        }
+                        },
                     },
                     {
                         searchable: false,
                         orderable: false,
-                        data: function(row, type, val, meta) {
-                            return $date(row.date_received||new Date().toISOString());
-                        }
+                        data: function (row, type, val, meta) {
+                            return $date(row.date_received || new Date().toISOString());
+                        },
                     },
                     {
                         data: "fund.name",
                         searchable: true,
                         orderable: false,
-                        render: function(data, type, row, meta) {
-                            return row.fund.budget.budget_period_description+" - "+row.fund.name;
-                        }
+                        render: function (data, type, row, meta) {
+                            return row.fund.budget.budget_period_description + " - " + row.fund.name;
+                        },
                     },
                     {
                         searchable: false,
                         orderable: true,
                         data: "quantity_received",
-                        render: function(data, type, row, meta) {
+                        render: function (data, type, row, meta) {
                             var data = $("#order_edit").data();
-                            return QTY_TOTAL.format(row.subscription_id&&(!data.saved||!data.saved.hasOwnProperty(row.order_id))?row.quantity:row.quantity_received, row.quantity);
-                        }
+                            return QTY_TOTAL.format(row.subscription_id && (!data.saved || !data.saved.hasOwnProperty(row.order_id)) ? row.quantity : row.quantity_received, row.quantity);
+                        },
                     },
                     {
                         searchable: false,
                         orderable: false,
-                        render: function(data, type, row, meta) {
-                            return '<a class="btn btn-default btn-xs order_edit_toggle" data-bs-toggle="modal" href="#order_edit" data-row="'+meta.row+'" role="button"><i class="fa fa-pencil" aria-hidden="true"></i> '+EDIT+'</a>';
-                        }
-                    }
-                ],
-                ...(only_one_order?
-                    {
-                    drawCallback: function( settings ) {
-                        $("#order_edit").modal("show");
+                        render: function (data, type, row, meta) {
+                            return '<a class="btn btn-default btn-xs order_edit_toggle" data-bs-toggle="modal" href="#order_edit" data-row="' + meta.row + '" role="button"><i class="fa fa-pencil" aria-hidden="true"></i> ' + EDIT + "</a>";
+                        },
                     },
-                    } : {}),
+                ],
+                ...(only_one_order
+                    ? {
+                          drawCallback: function (settings) {
+                              $("#order_edit").modal("show");
+                          },
+                      }
+                    : {}),
             };
             var orders_table = $("#multiple_orders").kohaTable(options);
             var api = orders_table.api();
 
-            api.on('preDraw', function() {
-                var saved = $("#order_edit").data('saved');
-                if(saved) {
+            api.on("preDraw", function () {
+                var saved = $("#order_edit").data("saved");
+                if (saved) {
                     var data = api.data();
-                    for(var i = 0; i<data.length; i++) {
+                    for (var i = 0; i < data.length; i++) {
                         var row = data[i];
                         var srow = saved[row.order_id];
-                        if(srow) {
-                            if(row.fund_id != srow.fund_id) {
-                                row.fund.budget.budget_period_description = $("#bookfund option[value="+srow.fund_id+"]").parent().attr('label');
-                                row.fund.name = $("#bookfund option[value="+srow.fund_id+"]").html();
+                        if (srow) {
+                            if (row.fund_id != srow.fund_id) {
+                                row.fund.budget.budget_period_description = $("#bookfund option[value=" + srow.fund_id + "]")
+                                    .parent()
+                                    .attr("label");
+                                row.fund.name = $("#bookfund option[value=" + srow.fund_id + "]").html();
                             }
                             row.date_received = srow.date_received;
                             row.quantity = srow.quantity;
@@ -678,169 +685,173 @@
                 }
             });
 
-            if (only_one_order){
-                $("#quantity").on('change', function() {
-                    $('.modal-save').prop('disabled', $(this).val() < 1 );
+            if (only_one_order) {
+                $("#quantity").on("change", function () {
+                    $(".modal-save").prop("disabled", $(this).val() < 1);
                 });
             }
 
-            var _doSave = function(params) {
-                params.data.csrf_token = $('meta[name="csrf-token"]').attr('content');
-                $.ajax($.extend({
-                    method: 'POST',
-                    url: '/cgi-bin/koha/acqui/finishreceive.pl'
-                }, params));
+            var _doSave = function (params) {
+                params.data.csrf_token = $('meta[name="csrf-token"]').attr("content");
+                $.ajax(
+                    $.extend(
+                        {
+                            method: "POST",
+                            url: "/cgi-bin/koha/acqui/finishreceive.pl",
+                        },
+                        params
+                    )
+                );
             };
 
-            var _transform_row = function(row, origrec) {
+            var _transform_row = function (row, origrec) {
                 var params = {};
-                params['biblionumber'] = row.biblio_id;
-                params['invoiceid'] = invoice_id;
-                params['ordernumber'] = row.order_id;
-                params['booksellerid'] = row.basket.vendor_id;
+                params["biblionumber"] = row.biblio_id;
+                params["invoiceid"] = invoice_id;
+                params["ordernumber"] = row.order_id;
+                params["booksellerid"] = row.basket.vendor_id;
 
-                if(row.biblio.suggestions.length && row.biblio.suggestions[0].reason) {
+                if (row.biblio.suggestions.length && row.biblio.suggestions[0].reason) {
                     params["suggestionid"] = row.biblio.suggestions[0].suggestion_id;
-                    const options = Array.from(document.querySelectorAll('#reason option'));
+                    const options = Array.from(document.querySelectorAll("#reason option"));
                     if (options.some(option => option.value === row.biblio.suggestions[0].reason)) {
-                        params['reason'] =  row.biblio.suggestions[0].reason;
+                        params["reason"] = row.biblio.suggestions[0].reason;
                     } else {
-                        params['reason'] = 'other';
-                        params['other_reason'] = row.biblio.suggestions[0].reason;
+                        params["reason"] = "other";
+                        params["other_reason"] = row.biblio.suggestions[0].reason;
                     }
                 }
-                params['datereceived'] = row.date_received;
-                params['bookfund'] = row.fund_id;
-                params['quantity'] = row.quantity;
-                params['quantityrec'] = row.quantity_received;
-                params['origquantityrec'] = origrec;
+                params["datereceived"] = row.date_received;
+                params["bookfund"] = row.fund_id;
+                params["quantity"] = row.quantity;
+                params["quantityrec"] = row.quantity_received;
+                params["origquantityrec"] = origrec;
                 var effective_create_items = row.basket.create_items || prefs.AcqCreateItem;
-                params['tax_rate'] = (effective_create_items == 'receiving')?row.tax_rate_on_receiving:row.tax_rate_on_ordering;
-                params['replacementprice'] = row.replacement_price;
-                params['unitprice'] = ( invoiceincgst=="1" ) ? ( row.unit_price_tax_included || row.ecost_tax_included ) : ( row.unit_price_tax_excluded || row.ecost_tax_excluded );
-                params['order_internalnote'] = row.internal_note;
-                if (effective_create_items == 'receiving') {
-                    row.items.forEach(function(item){
-                        Object.keys(item).forEach(function(item_field){
-                            Object.keys(item[item_field]).forEach(function(key){
+                params["tax_rate"] = effective_create_items == "receiving" ? row.tax_rate_on_receiving : row.tax_rate_on_ordering;
+                params["replacementprice"] = row.replacement_price;
+                params["unitprice"] = invoiceincgst == "1" ? row.unit_price_tax_included || row.ecost_tax_included : row.unit_price_tax_excluded || row.ecost_tax_excluded;
+                params["order_internalnote"] = row.internal_note;
+                if (effective_create_items == "receiving") {
+                    row.items.forEach(function (item) {
+                        Object.keys(item).forEach(function (item_field) {
+                            Object.keys(item[item_field]).forEach(function (key) {
                                 if (!params[key]) params[key] = [];
                                 params[key].push(item[item_field][key]);
                             });
                         });
                     });
-                } else if(effective_create_items == 'ordering') {
-                    params['items_to_receive[]'] = (row.items||[])
-                        .filter(function(item) {
-                            return item._checked
+                } else if (effective_create_items == "ordering") {
+                    params["items_to_receive[]"] = (row.items || [])
+                        .filter(function (item) {
+                            return item._checked;
                         })
-                        .map(function(item) {
+                        .map(function (item) {
                             return item.item_id;
-                        })
+                        });
                 }
-                params['invoice_currency'] = row.invoice_currency;
-                params['invoice_unitprice'] = row.invoice_unit_price;
+                params["invoice_currency"] = row.invoice_currency;
+                params["invoice_unitprice"] = row.invoice_unit_price;
                 return params;
             };
 
-            var save_rows = function(rows, data) {
-                if(rows.length) {
-                    $('#jobpanel, #jobstatus').show();
-                    errors = []
-                    var loopRows = function(i) {
+            var save_rows = function (rows, data) {
+                if (rows.length) {
+                    $("#jobpanel, #jobstatus").show();
+                    errors = [];
+                    var loopRows = function (i) {
                         var row = rows[i];
-                        if(!row) {
-                            if(!errors.length) {
-                                location.href = "/cgi-bin/koha/acqui/parcel.pl?invoiceid="+invoice_id
+                        if (!row) {
+                            if (!errors.length) {
+                                location.href = "/cgi-bin/koha/acqui/parcel.pl?invoiceid=" + invoice_id;
                             } else {
-                                $('#modal_messages .modal-header h1').html(SAVE_ERROR_TITLE);
-                                $('#modal_messages .modal-body ul').html('');
-                                errors.forEach(function(error) {
-                                    $('#modal_messages .modal-body ul').append('<li>'+error+'</li>');
+                                $("#modal_messages .modal-header h1").html(SAVE_ERROR_TITLE);
+                                $("#modal_messages .modal-body ul").html("");
+                                errors.forEach(function (error) {
+                                    $("#modal_messages .modal-body ul").append("<li>" + error + "</li>");
                                 });
-                                $('#modal_messages .modal-footer .cancel').hide();
-                                $('#modal_messages .modal-footer .accept').html(_("Accept"));
-                                $('#modal_messages .modal-footer .accept').one('click', function() {
-                                    location.href = "/cgi-bin/koha/acqui/parcel.pl?invoiceid="+invoice_id
+                                $("#modal_messages .modal-footer .cancel").hide();
+                                $("#modal_messages .modal-footer .accept").html(_("Accept"));
+                                $("#modal_messages .modal-footer .accept").one("click", function () {
+                                    location.href = "/cgi-bin/koha/acqui/parcel.pl?invoiceid=" + invoice_id;
                                 });
-                                $('#modal_messages').modal('show');
+                                $("#modal_messages").modal("show");
                             }
                             return;
                         }
-                        if(data.saved && data.saved[row.order_id]) {
+                        if (data.saved && data.saved[row.order_id]) {
                             row = data.saved[row.order_id];
                             var origrec = data.origrec[row.order_id];
                         } else {
                             var origrec = row.quantity_received;
                         }
-                        var _set_percentage = function() {
-                            var percentage = Math.round(( (i+1) / rows.length) * 100);
-                            var bgproperty = (parseInt(percentage*2)-300)+"px 0px";
-                            $("#jobprogress").css("background-position",bgproperty);
+                        var _set_percentage = function () {
+                            var percentage = Math.round(((i + 1) / rows.length) * 100);
+                            var bgproperty = parseInt(percentage * 2) - 300 + "px 0px";
+                            $("#jobprogress").css("background-position", bgproperty);
                             $("#jobprogresspercent").text(percentage);
-                        }
+                        };
                         _doSave({
                             data: _transform_row(row, origrec),
-                            success: function() {
+                            success: function () {
                                 _set_percentage();
-                                loopRows(i+1);
+                                loopRows(i + 1);
                             },
-                            error: function() {
-                                _set_percentage()
+                            error: function () {
+                                _set_percentage();
                                 errors.push(SAVE_ERROR.format(row.order_id));
-                                loopRows(i+1);
-                            }
+                                loopRows(i + 1);
+                            },
                         });
                     };
-                    loopRows(0)
+                    loopRows(0);
                 }
             };
 
-            var get_warnings = function(rows) {
+            var get_warnings = function (rows) {
                 var warnings = [];
-                rows.forEach(function(row) {
-                    if(row.quantity_received > row.quantity) {
+                rows.forEach(function (row) {
+                    if (row.quantity_received > row.quantity) {
                         warnings.push(SAVE_WARNING.format(row.order_id));
                         row.quantity_received = row.quantity;
                     }
-                    if(row.quantity_received == '0') {
+                    if (row.quantity_received == "0") {
                         warnings.push(SAVE_WARNING_NO_ITEMS.format(row.order_id));
                     }
-                })
+                });
                 return warnings;
-            }
+            };
 
-            $('#modal_messages .modal-footer .cancel').on('click', function() {
-                $('#modal_messages .modal-footer .accept').off('click');
-                $('#modal_messages').modal('hide');
-            })
-            $('.save').click(function() {
+            $("#modal_messages .modal-footer .cancel").on("click", function () {
+                $("#modal_messages .modal-footer .accept").off("click");
+                $("#modal_messages").modal("hide");
+            });
+            $(".save").click(function () {
                 var data = $("#order_edit").data();
                 var rows = api.rows().data().toArray();
                 var redirect = true;
                 var warnings = get_warnings(rows);
-                if(warnings.length) {
-                    $('#modal_messages .modal-header h1').html(SAVE_WARNING_TITLE);
-                    $('#modal_messages .modal-body ul').html('');
-                    warnings.forEach(function(warning) {
-                        $('#modal_messages .modal-body ul').append('<li>'+warning+'</li>');
+                if (warnings.length) {
+                    $("#modal_messages .modal-header h1").html(SAVE_WARNING_TITLE);
+                    $("#modal_messages .modal-body ul").html("");
+                    warnings.forEach(function (warning) {
+                        $("#modal_messages .modal-body ul").append("<li>" + warning + "</li>");
                     });
-                    $('#modal_messages .modal-footer .cancel').show();
-                    $('#modal_messages .modal-footer .accept').html(_("Continue"));
-                    $('#modal_messages .modal-footer .accept').one('click', function() {
-                        $('#modal_messages').modal('hide');
+                    $("#modal_messages .modal-footer .cancel").show();
+                    $("#modal_messages .modal-footer .accept").html(_("Continue"));
+                    $("#modal_messages .modal-footer .accept").one("click", function () {
+                        $("#modal_messages").modal("hide");
                         save_rows(rows, data);
                     });
-                    $('#modal_messages').modal('show');
+                    $("#modal_messages").modal("show");
                 } else {
                     save_rows(rows, data);
                 }
             });
 
-
-            $("#order_edit").on("change", "#reason", function() {
+            $("#order_edit").on("change", "#reason", function () {
                 var val = $(this).val();
-                var row = $("#order_edit").data('row');
-                if(val == 'other') {
+                var row = $("#order_edit").data("row");
+                if (val == "other") {
                     $("#other_reason").show();
                     $(this).hide();
                 } else {
@@ -848,106 +859,104 @@
                 }
             });
 
-            $("#order_edit").on("change", "#select-other_reason", function() {
+            $("#order_edit").on("change", "#select-other_reason", function () {
                 var val = $(this).val();
-                var row = $("#order_edit").data('row');
+                var row = $("#order_edit").data("row");
                 row.biblio.suggestions[0].reason = val;
             });
 
-            $("#order_edit").on("click", "#other_reason a", function() {
+            $("#order_edit").on("click", "#other_reason a", function () {
                 $("#other_reason").hide();
                 $("#reason").val(null).show();
             });
 
-            $("#order_edit").on("change", "#datereceived", function() {
+            $("#order_edit").on("change", "#datereceived", function () {
                 var val = $(this).val();
-                var row = $("#order_edit").data('row');
+                var row = $("#order_edit").data("row");
                 row.date_received = val;
             });
 
-            $("#order_edit").on("change", "#bookfund", function() {
+            $("#order_edit").on("change", "#bookfund", function () {
                 var val = $(this).val();
-                var row = $("#order_edit").data('row');
+                var row = $("#order_edit").data("row");
                 row.fund_id = val;
             });
 
-            $("#order_edit").on("change", "#quantity_to_receive", function() {
+            $("#order_edit").on("change", "#quantity_to_receive", function () {
                 var val = $(this).val();
-                var row = $("#order_edit").data('row');
+                var row = $("#order_edit").data("row");
                 row.quantity = val;
-                if(row.subscription_id) {
+                if (row.subscription_id) {
                     $("#quantity").val(val).change();
                 }
             });
 
-            $("#order_edit").on("change", "#quantity", function() {
+            $("#order_edit").on("change", "#quantity", function () {
                 var val = $(this).val();
-                var row = $("#order_edit").data('row');
+                var row = $("#order_edit").data("row");
                 row.quantity_received = val;
                 var qtyto = parseInt($("#quantity_to_receive").val());
-                if(parseInt(val) > qtyto) {
+                if (parseInt(val) > qtyto) {
                     $("#qtyrecerror").show();
                 } else {
                     $("#qtyrecerror").hide();
                 }
-                $("input[name='items_to_receive']").each(function() {
-                    $(this).prop('checked', false).change();
+                $("input[name='items_to_receive']").each(function () {
+                    $(this).prop("checked", false).change();
                 });
-                $("input[name='items_to_receive']:lt("+val+")").each(function () {
-                    $(this).prop('checked', true).change();
+                $("input[name='items_to_receive']:lt(" + val + ")").each(function () {
+                    $(this).prop("checked", true).change();
                 });
             });
 
-            $("#order_edit").on("change", "input[name='items_to_receive']", function() {
+            $("#order_edit").on("change", "input[name='items_to_receive']", function () {
                 var qty = $("input[name='items_to_receive']:checked").length;
                 $("#quantity").val(qty);
-                var row = $("#order_edit").data('row');
+                var row = $("#order_edit").data("row");
                 row.quantity_received = qty;
-                if (only_one_order){
-                    $('.modal-save').prop('disabled', qty < 1 );
+                if (only_one_order) {
+                    $(".modal-save").prop("disabled", qty < 1);
                 }
-            })
+            });
 
-            $("#order_edit").on("change", "#tax_rate", function() {
+            $("#order_edit").on("change", "#tax_rate", function () {
                 var val = $(this).val();
-                if(val === null) $(this).val($('option:first-child', this).attr('value'));
+                if (val === null) $(this).val($("option:first-child", this).attr("value"));
                 val = $(this).val();
-                var row = $("#order_edit").data('row');
+                var row = $("#order_edit").data("row");
                 var effective_create_items = row.basket.create_items || prefs.AcqCreateItem;
-                if(effective_create_items == 'receiving') {
+                if (effective_create_items == "receiving") {
                     row.tax_rate_on_receiving = val;
                 } else {
                     row.tax_rate_on_ordering = val;
                 }
-
             });
 
-            $("#order_edit").on("change", "#unitprice", function() {
+            $("#order_edit").on("change", "#unitprice", function () {
                 var val = $(this).val();
-                var row = $("#order_edit").data('row');
-                if(invoiceincgst == "1") {
+                var row = $("#order_edit").data("row");
+                if (invoiceincgst == "1") {
                     row.unit_price_tax_included = val;
                 } else {
                     row.unit_price_tax_excluded = val;
                 }
-
             });
 
             function _update_unitprice() {
-                let row = $("#order_edit").data('row');
+                let row = $("#order_edit").data("row");
 
                 let unitprice = $("#unitprice").val();
                 let invoice_currency = $("#invoice_currency").val();
                 let invoice_unitprice = $("#invoice_unitprice").val();
                 let change_currency = $("#change_currency").is(":checked");
 
-                if ( change_currency ) {
+                if (change_currency) {
                     $("#select_currency").show();
-                    if(!$("#invoice_unitprice").val()){
+                    if (!$("#invoice_unitprice").val()) {
                         invoice_unitprice = unitprice;
                     }
-                    var rate = Number($("#invoice_currency option:selected").data('rate'));
-                    unitprice = Number( invoice_unitprice * rate ).toFixed(2);
+                    var rate = Number($("#invoice_currency option:selected").data("rate"));
+                    unitprice = Number(invoice_unitprice * rate).toFixed(2);
                     $("#unitprice").prop("readonly", "true");
                 } else {
                     $("#select_currency").hide();
@@ -963,208 +972,212 @@
                 row.invoice_currency = invoice_currency;
                 row.invoice_unit_price = invoice_unitprice;
             }
-            $("#order_edit").on("change", "#invoice_currency",  _update_unitprice );
-            $("#order_edit").on("change", "#invoice_unitprice", _update_unitprice );
-            $("#order_edit").on("change", "#change_currency",   _update_unitprice );
+            $("#order_edit").on("change", "#invoice_currency", _update_unitprice);
+            $("#order_edit").on("change", "#invoice_unitprice", _update_unitprice);
+            $("#order_edit").on("change", "#change_currency", _update_unitprice);
 
-            $("#order_edit").on("change", "#replacementprice", function() {
+            $("#order_edit").on("change", "#replacementprice", function () {
                 var val = $(this).val();
-                var row = $("#order_edit").data('row');
+                var row = $("#order_edit").data("row");
                 row.replacement_price = val;
             });
 
-            $("#order_edit").on("change", "#order_internalnote", function() {
+            $("#order_edit").on("change", "#order_internalnote", function () {
                 var val = $(this).val();
-                var row = $("#order_edit").data('row');
+                var row = $("#order_edit").data("row");
                 row.internal_note = val;
-
             });
 
-            var keep_row = function() {
-                var row = $("#order_edit").data('row');
-                var kept = $("#order_edit").data('kept')||{};
-                if($('#items_list tbody tr').length) {
+            var keep_row = function () {
+                var row = $("#order_edit").data("row");
+                var kept = $("#order_edit").data("kept") || {};
+                if ($("#items_list tbody tr").length) {
                     row.items = [];
-                    $('#items_list tbody tr').each(function() {
+                    $("#items_list tbody tr").each(function () {
                         var item = {};
-                        $('#'+$(this).attr('idblock')).find('*[name=kohafield]').each(function() {
-                            var kf = $(this).val();
-                            var obj = {};
-                            $(this).parent().find('*[name]').each(function() {
-                                obj[$(this).prop('name')] = $(this).val();
+                        $("#" + $(this).attr("idblock"))
+                            .find("*[name=kohafield]")
+                            .each(function () {
+                                var kf = $(this).val();
+                                var obj = {};
+                                $(this)
+                                    .parent()
+                                    .find("*[name]")
+                                    .each(function () {
+                                        obj[$(this).prop("name")] = $(this).val();
+                                    });
+                                item[kf] = obj;
                             });
-                            item[kf] = obj;
-                        });
                         row.items.push(item);
                     });
                 }
                 kept[row.order_id] = row;
-                $("#order_edit").data('kept', kept);
+                $("#order_edit").data("kept", kept);
             };
 
-            var save_row = function() {
+            var save_row = function () {
                 keep_row();
-                var saved = $("#order_edit").data('saved')||{};
-                var kept = $("#order_edit").data('kept');
+                var saved = $("#order_edit").data("saved") || {};
+                var kept = $("#order_edit").data("kept");
                 var saved_rows = $.extend(saved, kept);
-                $("#order_edit").data('saved', saved_rows);
+                $("#order_edit").data("saved", saved_rows);
                 api.draw();
                 return saved_rows;
-            }
-
-            var set_modal_buttons = function() {
-                var n = $("#order_edit").data('n');
-                var info = api.page.info();
-
-                $('.modal-prev').prop('disabled', info.page == 0 && n == 0);
-                $('.modal-next').prop('disabled', info.pages - 1 == info.page && info.end - info.start - 1 == n);
             };
 
-            var show_subs = function(row) {
+            var set_modal_buttons = function () {
+                var n = $("#order_edit").data("n");
+                var info = api.page.info();
+
+                $(".modal-prev").prop("disabled", info.page == 0 && n == 0);
+                $(".modal-next").prop("disabled", info.pages - 1 == info.page && info.end - info.start - 1 == n);
+            };
+
+            var show_subs = function (row) {
                 //$("#child_orders").show();
                 var had_rows = false;
-                var base_query = { "subscription_id": row.subscription_id, "parent_order_id": row.order_id, "order_id": {"!=": row.order_id}};
+                var base_query = { subscription_id: row.subscription_id, parent_order_id: row.order_id, order_id: { "!=": row.order_id } };
                 var pending_orders_url = "/api/v1/acquisitions/orders";
                 var options = {
                     ajax: {
-                        "url": pending_orders_url + "?q=" + encodeURI(JSON.stringify(base_query))
+                        url: pending_orders_url + "?q=" + encodeURI(JSON.stringify(base_query)),
                     },
-                    embed: [
-                        "invoice",
-                        "basket"
-                    ],
-                    order: [[1, 'asc']],
+                    embed: ["invoice", "basket"],
+                    order: [[1, "asc"]],
                     dom: 'C<"top pager"ilpfB>tr<"bottom pager"ip>',
                     columns: [
                         {
                             searchable: false,
                             orderable: false,
-                            data: function(row, type, val, meta) {
-                                if(row.invoice) {
-                                    if(permissions.CAN_user_acquisition) {
-                                        return '<a href="/cgi-bin/koha/acqui/invoice.pl?invoiceid='+row.invoice_id+'" title="Invoice detail page">'+row.invoice.invoice_number+"</a>";
+                            data: function (row, type, val, meta) {
+                                if (row.invoice) {
+                                    if (permissions.CAN_user_acquisition) {
+                                        return '<a href="/cgi-bin/koha/acqui/invoice.pl?invoiceid=' + row.invoice_id + '" title="Invoice detail page">' + row.invoice.invoice_number + "</a>";
                                     }
                                     return row.invoice.invoice_number;
                                 }
-                            }
+                            },
                         },
                         {
                             data: "order_id",
                             searchable: false,
-                            orderable: false
+                            orderable: false,
                         },
                         {
                             searchable: false,
                             orderable: false,
                             data: "basket.creation_date",
-                            render: function(data, type, row, meta) {
+                            render: function (data, type, row, meta) {
                                 return $date(row.basket.creation_date);
-                            }
+                            },
                         },
                         {
                             searchable: false,
                             orderable: false,
-                            data: function(row, type, val, meta) {
+                            data: function (row, type, val, meta) {
                                 return $date(row.date_received);
-                            }
+                            },
                         },
                         {
                             searchable: false,
                             orderable: false,
-                            data: function(row, type, val, meta) {
+                            data: function (row, type, val, meta) {
                                 return row.quantity_received;
-                            }
+                            },
                         },
                         {
                             searchable: false,
                             orderable: true,
-                            data: function(row, type, val, meta) {
-                                if(!row.status) return;
+                            data: function (row, type, val, meta) {
+                                if (!row.status) return;
                                 var first_letter = row.status[0].toUpperCase();
-                                return first_letter+row.status.substr(1).toLowerCase();
-                            }
+                                return first_letter + row.status.substr(1).toLowerCase();
+                            },
                         },
                         {
                             searchable: false,
                             orderable: false,
-                            data: function(row, type, val, meta) {
-                                if(!row.date_received) return;
-                                return Number(row.unit_price_tax_excluded * row.quantity_received).format_price()+' / '+Number(row.unit_price_tax_included * row.quantity_received).format_price()
-                            }
+                            data: function (row, type, val, meta) {
+                                if (!row.date_received) return;
+                                return Number(row.unit_price_tax_excluded * row.quantity_received).format_price() + " / " + Number(row.unit_price_tax_included * row.quantity_received).format_price();
+                            },
                         },
                         {
                             searchable: false,
                             orderable: false,
-                            data: function(row, type, val, meta) {
+                            data: function (row, type, val, meta) {
                                 return row.internal_note;
-                            }
-                        }
-                    ]
+                            },
+                        },
+                    ],
                 };
                 var child_orders_table = $("#child_orders_table").api(options);
                 var child_api = child_orders_table.api();
-                child_api.on('preDraw', function() {
-                    if(!child_api.data().length && !had_rows) return;
+                child_api.on("preDraw", function () {
+                    if (!child_api.data().length && !had_rows) return;
                     $("#history-panel").show();
                     had_rows = true;
                 });
             };
 
-            var set_editor = function() {
+            var set_editor = function () {
                 var modal = $("#order_edit");
-                var row = modal.data('row');
+                var row = modal.data("row");
                 var effective_create_items = row.basket.create_items || prefs.AcqCreateItem;
-                var origrec = $("#order_edit").data('origrec')||{};
-                if(!origrec.hasOwnProperty(row.order_id)) {
+                var origrec = $("#order_edit").data("origrec") || {};
+                if (!origrec.hasOwnProperty(row.order_id)) {
                     origrec[row.order_id] = row.quantity_received;
-                    $("#order_edit").data('origrec', origrec);
+                    $("#order_edit").data("origrec", origrec);
                 }
-                if(row.subscription_id || ( row.basket.standing === true && effective_create_items == 'cataloguing') ) {
+                if (row.subscription_id || (row.basket.standing === true && effective_create_items == "cataloguing")) {
                     row.quantity_received = row.quantity;
                 }
-                var keep = $("#order_edit").data('kept');
-                if(keep && keep[row.order_id]) {
+                var keep = $("#order_edit").data("kept");
+                if (keep && keep[row.order_id]) {
                     row = keep[row.order_id];
-                    modal.data('row', row);
+                    modal.data("row", row);
                 }
-                $('input, select, textarea', '.modal-body').val(null)
-                modal.find(".modal-title").text(MOD_TITLE.format(escape_str(row.order_id),escape_str(row.biblio.title)));
-                ["title", "author", "copyright_date", "isbn", "series_title"].forEach(function(key){
-                    var o = modal.find(".modal-body #biblio_"+key);
-                    if(row.biblio[key] !== null) {
+                $("input, select, textarea", ".modal-body").val(null);
+                modal.find(".modal-title").text(MOD_TITLE.format(escape_str(row.order_id), escape_str(row.biblio.title)));
+                ["title", "author", "copyright_date", "isbn", "series_title"].forEach(function (key) {
+                    var o = modal.find(".modal-body #biblio_" + key);
+                    if (row.biblio[key] !== null) {
                         o.parent().show();
                         o.html(row.biblio[key]);
                     } else {
                         o.parent().hide();
                     }
                 });
-                if(row.biblio.suggestions.length) {
+                if (row.biblio.suggestions.length) {
                     $("#suggestion_fieldset").show();
-                    if(row.biblio.suggestions[0].suggester) {
+                    if (row.biblio.suggestions[0].suggester) {
                         $("#biblio_suggestion_suggester").parent().show();
-                        $("#biblio_suggestion_suggester")
-                            .html(
-                                [row.biblio.suggestions[0].suggester.surname, row.biblio.suggestions[0].suggester.firstname]
-                                    .filter(function(name){
-                                        return name
-                                    })
-                                    .join(', ')+' (<a href="/cgi-bin/koha/suggestion/suggestion.pl?suggestionid='+row.biblio.suggestions[0].suggestion_id+'&op=show">'+SUGGESTION.format(row.biblio.suggestions[0].suggestion_id)+'</a>)'
-                            );
+                        $("#biblio_suggestion_suggester").html(
+                            [row.biblio.suggestions[0].suggester.surname, row.biblio.suggestions[0].suggester.firstname]
+                                .filter(function (name) {
+                                    return name;
+                                })
+                                .join(", ") +
+                                ' (<a href="/cgi-bin/koha/suggestion/suggestion.pl?suggestionid=' +
+                                row.biblio.suggestions[0].suggestion_id +
+                                '&op=show">' +
+                                SUGGESTION.format(row.biblio.suggestions[0].suggestion_id) +
+                                "</a>)"
+                        );
                     } else {
                         $("#biblio_suggestion_suggester").parent().hide();
                     }
-                    if(row.biblio.suggestions[0].reason) {
+                    if (row.biblio.suggestions[0].reason) {
                         $("#suggestion_reason").show();
-                        const options = Array.from(document.querySelectorAll('#reason option'));
+                        const options = Array.from(document.querySelectorAll("#reason option"));
                         if (options.some(option => option.value === row.biblio.suggestions[0].reason)) {
-                             $("#other_reason a").click();
+                            $("#other_reason a").click();
                             $("#reason").val(row.biblio.suggestions[0].reason);
                             $("#select-other_reason").val(null);
                         } else {
                             $("#reason").val("other").change();
                             $("#select-other_reason").val(row.biblio.suggestions[0].reason);
                         }
-
                     } else {
                         $("#suggestion_reason").hide();
                     }
@@ -1173,46 +1186,53 @@
                 }
 
                 // set today if no date_received in row
-                document.querySelector("#datereceived")._flatpickr.setDate(row.date_received||new Date());
+                document.querySelector("#datereceived")._flatpickr.setDate(row.date_received || new Date());
 
                 // restore the full tree
                 $("#bookfund").html($funds_tree);
-                $("#selected_bookfund")
-                    .html(FUND_KEEP.format(row.fund.budget.budget_period_description, row.fund.name))
-                    .attr( 'data-sort1-authcat', row.fund.sort1_authcat )
-                    .attr( 'data-sort2-authcat', row.fund.sort2_authcat );
+                $("#selected_bookfund").html(FUND_KEEP.format(row.fund.budget.budget_period_description, row.fund.name)).attr("data-sort1-authcat", row.fund.sort1_authcat).attr("data-sort2-authcat", row.fund.sort2_authcat);
                 if (row.fund_id != row.fund.fund_id) {
                     $("#bookfund").val(row.fund_id);
                 }
-                $("#bookfund").select2({ width: '50%', dropdownParent: $('#order_edit') });
+                $("#bookfund").select2({ width: "50%", dropdownParent: $("#order_edit") });
                 $("#current-fund").html(FUNC_CUR.format(row.fund.budget.budget_period_description, row.fund.name));
-                if( row.creator ) {
-                    $("#creator").html([row.creator.surname, row.creator.firstname].filter(function(name){return name}).join(', ')+" ("+row.creator.patron_id+')')
+                if (row.creator) {
+                    $("#creator").html(
+                        [row.creator.surname, row.creator.firstname]
+                            .filter(function (name) {
+                                return name;
+                            })
+                            .join(", ") +
+                            " (" +
+                            row.creator.patron_id +
+                            ")"
+                    );
                 } else {
                     $("#creator").html(_("Account has been deleted"));
                 }
-                $("#quantity_to_receive").val(row.quantity).prop('readonly', !row.subscription_id);
-                if (effective_create_items == 'cataloguing' && ! row.quantity_received) {
+                $("#quantity_to_receive").val(row.quantity).prop("readonly", !row.subscription_id);
+                if (effective_create_items == "cataloguing" && !row.quantity_received) {
                     row.quantity_received = 1;
                 }
-                $("#quantity").val( row.quantity_received )
-                              .prop('readonly', !row.subscription_id && effective_create_items == 'receiving');
-                if (only_one_order){
-                    $(".modal-save").prop('disabled', $("#quantity").val() == 0);
+                $("#quantity")
+                    .val(row.quantity_received)
+                    .prop("readonly", !row.subscription_id && effective_create_items == "receiving");
+                if (only_one_order) {
+                    $(".modal-save").prop("disabled", $("#quantity").val() == 0);
                 }
-                $('#qtyrecerror').hide();
+                $("#qtyrecerror").hide();
                 var tax_rate = row.tax_rate_on_receiving || row.tax_rate_on_ordering;
                 $("#tax_rate").val(tax_rate).change();
                 var rrp_txt;
                 var ecost_txt;
-                if(invoiceincgst == "1") {
-                    rrp_txt = Number(row.rrp_tax_included).format_price()+'<span class="hint"> '+ADJ_TAX_INC.format(active_currency)+"</span>";
-                    ecost_txt = Number(row.ecost_tax_included).format_price()+'<span class="hint"> '+TAX_INC+"</span>";
+                if (invoiceincgst == "1") {
+                    rrp_txt = Number(row.rrp_tax_included).format_price() + '<span class="hint"> ' + ADJ_TAX_INC.format(active_currency) + "</span>";
+                    ecost_txt = Number(row.ecost_tax_included).format_price() + '<span class="hint"> ' + TAX_INC + "</span>";
                     $("#unitprice").val(row.unit_price_tax_included > 0 ? Number(row.unit_price_tax_included).format_price() : Number(row.ecost_tax_included).format_price());
                     $("#unitprice_hint").html(TAX_INC);
                 } else {
-                    rrp_txt = Number(row.rrp_tax_excluded).format_price()+'<span class="hint"> '+ADJ_TAX_EXC.format(active_currency)+"</span>";
-                    ecost_txt = Number(row.ecost_tax_excluded).format_price()+'<span class="hint"> '+TAX_EXC+"</span>";
+                    rrp_txt = Number(row.rrp_tax_excluded).format_price() + '<span class="hint"> ' + ADJ_TAX_EXC.format(active_currency) + "</span>";
+                    ecost_txt = Number(row.ecost_tax_excluded).format_price() + '<span class="hint"> ' + TAX_EXC + "</span>";
                     $("#unitprice").val(row.unit_price_tax_excluded > 0 ? Number(row.unit_price_tax_excluded).format_price() : Number(row.ecost_tax_excluded).format_price());
                     $("#unitprice_hint").html(TAX_EXC);
                 }
@@ -1220,160 +1240,157 @@
                 $("#replacementprice").val(row.replacement_price);
                 $("#ecost").html(ecost_txt);
                 $("#order_internalnote").val(row.internal_note);
-                if(row.vendor_note) {
+                if (row.vendor_note) {
                     $("#order_vendornote").html(row.vendor_note);
                     $("#order_vendornote").parent().show();
                 } else {
                     $("#order_vendornote").parent().hide();
                 }
 
-
                 $("#history-panel").hide();
 
-                $('#items_list tbody tr, #outeritemblock > *, #acq-create-ordering tbody tr').remove();
-                $('#items_list').hide();
-                if(row.subscription_id) {
-                    $('#modal-order-main #items-panel').removeClass('show').addClass('hide');
-                    $('#modal-order-main #history-panel').removeClass('hide').addClass('show');
+                $("#items_list tbody tr, #outeritemblock > *, #acq-create-ordering tbody tr").remove();
+                $("#items_list").hide();
+                if (row.subscription_id) {
+                    $("#modal-order-main #items-panel").removeClass("show").addClass("hide");
+                    $("#modal-order-main #history-panel").removeClass("hide").addClass("show");
                 } else {
-                    $('#modal-order-main #history-panel').removeClass('show').addClass('hide');
-                    $('#modal-order-main #items-panel').removeClass('hide').addClass('show');
-                    if(effective_create_items == 'receiving') {
+                    $("#modal-order-main #history-panel").removeClass("show").addClass("hide");
+                    $("#modal-order-main #items-panel").removeClass("hide").addClass("show");
+                    if (effective_create_items == "receiving") {
                         $("#acq-create-receiving").show();
                         $("#acq-create-ordering").hide();
-                        if(row.items && row.items.length) {
-                            row.items.forEach(function(item, index) {
-                                cloneItemBlock(index, prefs.UniqueItemFields, function(block_id) {
-                                    var block = $('#'+block_id).hide();
-                                    Object.keys(item).forEach(function(key) {
+                        if (row.items && row.items.length) {
+                            row.items.forEach(function (item, index) {
+                                cloneItemBlock(index, prefs.UniqueItemFields, function (block_id) {
+                                    var block = $("#" + block_id).hide();
+                                    Object.keys(item).forEach(function (key) {
                                         block
-                                            .find('*[name=kohafield][value="'+key+'"]')
+                                            .find('*[name=kohafield][value="' + key + '"]')
                                             .parent()
-                                            .find('*[name=field_value]')
+                                            .find("*[name=field_value]")
                                             .val(item[key].field_value);
                                     });
                                     addItemInList(block_id, prefs.UniqueItemFields);
-                                    block.find("input[name='buttonPlus']").val( (window.MSG_ADDITEM_JS_UPDATEITEM ) );
+                                    block.find("input[name='buttonPlus']").val(window.MSG_ADDITEM_JS_UPDATEITEM);
                                     block.find("input[name='buttonPlusMulti']").remove();
                                     block.find("input[name='multiValue']").remove();
                                 });
                             });
                         }
                         cloneItemBlock((row.items && row.items.length) || 0, prefs.UniqueItemFields);
-                    } else if (effective_create_items == 'ordering') {
+                    } else if (effective_create_items == "ordering") {
                         $("#acq-create-receiving").hide();
                         $("#acq-create-ordering").show();
-                        if(row.items.length) {
+                        if (row.items.length) {
                             $("#acq-create-ordering tbody").append(
-                                row.items.map(function(item) {
-                                    var tr = $('<tr id="item_'+item.item_id+'"/>');
+                                row.items.map(function (item) {
+                                    var tr = $('<tr id="item_' + item.item_id + '"/>');
                                     _build_item(item, tr);
                                     return tr;
                                 })
                             );
                         }
                     } else {
-                        $('#modal-order-main #items-panel').removeClass('show').addClass('hide');
+                        $("#modal-order-main #items-panel").removeClass("show").addClass("hide");
                     }
                 }
-                if(row.invoice_currency && row.invoice_currency != active_currency) {
+                if (row.invoice_currency && row.invoice_currency != active_currency) {
                     $("#select_currency").show();
                     $("#unitprice").prop("readonly", true);
-                    $("#change_currency").prop('checked', true);
+                    $("#change_currency").prop("checked", true);
                     $("#invoice_currency").val(row.invoice_currency);
                     $("#invoice_unitprice").val(row.invoice_unit_price);
                 } else {
                     $("#select_currency").hide();
                     $("#unitprice").prop("readonly", "");
-                    $("#change_currency").prop('checked', false);
+                    $("#change_currency").prop("checked", false);
                     $("#invoice_currency").val(active_currency);
-                    $("#invoice_unitprice").val('');
+                    $("#invoice_unitprice").val("");
                 }
 
-                disabledBudgetsCopy = $('#bookfund').html();
-                $('#bookfund .inactive_budget').remove();
+                disabledBudgetsCopy = $("#bookfund").html();
+                $("#bookfund .inactive_budget").remove();
 
-                $('#showallbudgets').click(function() {
+                $("#showallbudgets").click(function () {
                     if ($(this).is(":checked")) {
-                        $('#bookfund').html(disabledBudgetsCopy); //Puts back all the funds
-                    }
-                    else {
-                        $('#bookfund .inactive_budget').remove();
+                        $("#bookfund").html(disabledBudgetsCopy); //Puts back all the funds
+                    } else {
+                        $("#bookfund .inactive_budget").remove();
                     }
                 });
                 set_modal_buttons();
             };
 
-            $('.modal-prev').click(function() {
+            $(".modal-prev").click(function () {
                 var modal = $("#order_edit");
                 keep_row();
-                var n = modal.data('n');
-                if(n > 0) {
+                var n = modal.data("n");
+                if (n > 0) {
                     n--;
-                    modal.data('row', JSON.parse(JSON.stringify(api.row(n).data())));
-                    modal.data('n', n);
+                    modal.data("row", JSON.parse(JSON.stringify(api.row(n).data())));
+                    modal.data("n", n);
                     set_editor();
                 } else {
-                    $('.modal-next, .modal-prev').prop('disabled', true);
-                    orders_table.one('draw.dt', function() {
+                    $(".modal-next, .modal-prev").prop("disabled", true);
+                    orders_table.one("draw.dt", function () {
                         var info = api.page.info();
                         n = info.end - info.start - 1;
-                        modal.data('row', JSON.parse(JSON.stringify(api.row(n).data())));
-                        modal.data('n', n);
+                        modal.data("row", JSON.parse(JSON.stringify(api.row(n).data())));
+                        modal.data("n", n);
                         set_editor();
                     });
-                    api.page('previous').draw( 'page' );
+                    api.page("previous").draw("page");
                 }
             });
 
-            $('.modal-next').click(function() {
+            $(".modal-next").click(function () {
                 var modal = $("#order_edit");
                 keep_row();
-                var n = modal.data('n');
+                var n = modal.data("n");
                 var info = api.page.info();
-                if(n < info.end - info.start - 1) {
+                if (n < info.end - info.start - 1) {
                     n++;
-                    modal.data('row', JSON.parse(JSON.stringify(api.row(n).data())));
-                    modal.data('n', n);
+                    modal.data("row", JSON.parse(JSON.stringify(api.row(n).data())));
+                    modal.data("n", n);
                     set_editor();
                 } else {
-                    $('.modal-next, .modal-prev').prop('disabled', true);
-                    orders_table.one('draw.dt', function() {
+                    $(".modal-next, .modal-prev").prop("disabled", true);
+                    orders_table.one("draw.dt", function () {
                         var info = api.page.info();
                         n = 0;
-                        modal.data('row', JSON.parse(JSON.stringify(api.row(n).data())));
-                        modal.data('n', n);
+                        modal.data("row", JSON.parse(JSON.stringify(api.row(n).data())));
+                        modal.data("n", n);
                         set_editor();
                     });
-                    api.page('next').draw( 'page' );
+                    api.page("next").draw("page");
                 }
             });
 
-            $('.modal-save').click(function() {
-
+            $(".modal-save").click(function () {
                 //We need to validate the item forms here - if one is opened with missing subfields at
                 //confirm, it would be submitted without this
-                var _alertString= _("Form not submitted because of the following problem(s)")+"\n";
-                _alertString +="-------------------------------------------------------------------\n\n";
+                var _alertString = _("Form not submitted because of the following problem(s)") + "\n";
+                _alertString += "-------------------------------------------------------------------\n\n";
                 var empty_mandatory_fields = 0;
-                $('div[id^="itemblock"]').each(function(){
+                $('div[id^="itemblock"]').each(function () {
                     var item_form = $(this);
                     var empty_item_mandatory = CheckMandatorySubfields(item_form);
                     empty_mandatory_fields += empty_item_mandatory;
                 });
                 if (empty_mandatory_fields > 0) {
-                    _alertString +="\n- " + _("%s item mandatory fields empty").format(empty_mandatory_fields);
+                    _alertString += "\n- " + _("%s item mandatory fields empty").format(empty_mandatory_fields);
                     alert(_alertString);
                     return false;
                 }
 
                 var saved_rows = save_row();
-                if(Object.keys(saved_rows).length) $('.save').prop('disabled', false);
-                $("#order_edit").modal('hide');
-                if (only_one_order){
+                if (Object.keys(saved_rows).length) $(".save").prop("disabled", false);
+                $("#order_edit").modal("hide");
+                if (only_one_order) {
                     $(".save").click();
                 }
-            })
+            });
 
             $("#order_edit").on("show.bs.modal", function (event) {
                 var anchor = $(event.relatedTarget);
@@ -1381,15 +1398,15 @@
                 var row = api.row(n).data();
 
                 var modal = $(this);
-                modal.data('row', JSON.parse(JSON.stringify(row)));
-                modal.data('n', n);
-                modal.data('keep', modal.data('saved')||{});
+                modal.data("row", JSON.parse(JSON.stringify(row)));
+                modal.data("n", n);
+                modal.data("keep", modal.data("saved") || {});
                 //$('#modal-order-main').tabs("option", "active", 0);
                 set_editor();
             });
 
-            $("#order_edit").on("hide.bs.modal", function() {
-                $("#child_orders_table").DataTable().off('preDraw').destroy();
+            $("#order_edit").on("hide.bs.modal", function () {
+                $("#child_orders_table").DataTable().off("preDraw").destroy();
             });
         });
     </script>

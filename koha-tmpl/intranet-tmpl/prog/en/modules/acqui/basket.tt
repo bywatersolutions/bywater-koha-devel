@@ -1434,73 +1434,76 @@
 
         let skip_confirm_reopen = [% skip_confirm_reopen ? 1 : 0 | html %];
     </script>
-
     <script>
-        $(document).ready(function() {
-            $("#orders").kohaTable({
-                bKohaColumnsUseNames: true,
-                pagingType: "full",
-                autoWidth: false,
-            }, orders_table_settings);
+        $(document).ready(function () {
+            $("#orders").kohaTable(
+                {
+                    bKohaColumnsUseNames: true,
+                    pagingType: "full",
+                    autoWidth: false,
+                },
+                orders_table_settings
+            );
 
             $("#cancelledorderst").kohaTable({
-                pagingType: "full"
+                pagingType: "full",
             });
-            $("#reopenform").on("submit",function(e){
+            $("#reopenform").on("submit", function (e) {
                 var is_confirmed = skip_confirm_reopen || confirm(_("Are you sure you want to reopen this basket?"));
-                if( is_confirmed ){ return true; }
-                else{ return false }
+                if (is_confirmed) {
+                    return true;
+                } else {
+                    return false;
+                }
             });
             // Generates a dynamic link for exporting the selections data as CSV
-            $("#exportbutton, #export-csv-menu a").click(function() {
+            $("#exportbutton, #export-csv-menu a").click(function () {
                 // Building the url from currently checked boxes
-                var url = '/cgi-bin/koha/acqui/basket.pl';
-                url += $('#exportbutton').attr('href');
-                if($(this).attr("data-value")) {
-                    url += '&amp;csv_profile=' + $(this).attr("data-value");
+                var url = "/cgi-bin/koha/acqui/basket.pl";
+                url += $("#exportbutton").attr("href");
+                if ($(this).attr("data-value")) {
+                    url += "&amp;csv_profile=" + $(this).attr("data-value");
                 }
                 // And redirecting to the CSV page
                 location.href = url;
                 return false;
             });
-            $("#select_managing_library").on("change", function(){
+            $("#select_managing_library").on("change", function () {
                 $(this).parent().submit();
             });
 
-            $(".edit_delivery_date").on("click", function(e) {
+            $(".edit_delivery_date").on("click", function (e) {
                 e.preventDefault();
                 var ordernumber = $(this).data("ordernumber");
                 var order_number_text = _("(order number %s)").format(ordernumber);
                 var modalTitle = $(this).attr("title") + " " + order_number_text;
-                var delivery_date = $( "#delivery_date_" + ordernumber ).data("delivery_date");
+                var delivery_date = $("#delivery_date_" + ordernumber).data("delivery_date");
                 const estimated_delivery_date = document.querySelector("#estimated_delivery_date")._flatpickr;
-                estimated_delivery_date.setDate( delivery_date );
+                estimated_delivery_date.setDate(delivery_date);
                 $("#dateEditor .modal-title").text(modalTitle);
                 $("#date_ordernumber").val(ordernumber);
                 $("#dateEditor").modal("show");
             });
 
-             $("#dateEditor").on('hidden.bs.modal', function (e) {
+            $("#dateEditor").on("hidden.bs.modal", function (e) {
                 $("#dateEditorLabel").html("");
                 $("#dateEditor .modal-title").text("");
-                $("#estimated_delivery_date").html( "" );
+                $("#estimated_delivery_date").html("");
                 $("#date_ordernumber").val("");
             });
         });
 
         function add_user(borrowernumber, borrowername) {
             var ids = $("#users_ids").val();
-            if(ids.length > 0) {
-                ids = ids.split(':');
+            if (ids.length > 0) {
+                ids = ids.split(":");
             } else {
-                ids = new Array;
+                ids = new Array();
             }
             if (ids.indexOf(borrowernumber.toString()) < 0) {
                 ids.push(borrowernumber);
-                $("#users_ids").val(ids.join(':'));
-                var li = '<li id="user_'+borrowernumber+'">'+borrowername
-                + ' <a href="#" data-borrowernumber="'+borrowernumber+'" class="del_user"><i class="fa fa-trash-can"></i> '
-                    + _("Delete user") + '</a></li>';
+                $("#users_ids").val(ids.join(":"));
+                var li = '<li id="user_' + borrowernumber + '">' + borrowername + ' <a href="#" data-borrowernumber="' + borrowernumber + '" class="del_user"><i class="fa fa-trash-can"></i> ' + _("Delete user") + "</a></li>";
                 $("#users_names").prepend(li);
                 $("#add_user_submit").show();
                 return 0;
@@ -1509,10 +1512,10 @@
         }
 
         function del_user(borrowernumber) {
-            $("#user_"+borrowernumber).remove();
-            var ids = $("#users_ids").val().split(':');
+            $("#user_" + borrowernumber).remove();
+            var ids = $("#users_ids").val().split(":");
             ids.splice(ids.indexOf(borrowernumber.toString()), 1);
-            $("#users_ids").val(ids.join(':'));
+            $("#users_ids").val(ids.join(":"));
             $("#add_user_submit").show();
         }
     </script>

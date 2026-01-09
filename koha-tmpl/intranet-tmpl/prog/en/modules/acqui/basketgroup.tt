@@ -400,7 +400,6 @@
         let listclosed = [% listclosed ? 1 : 0 | html %];
         let grouping = [% grouping ? 1 : 0 | html %];
     </script>
-
     <script>
         function submitForm(form) {
             if (form.closedbg.checked == true) {
@@ -413,24 +412,24 @@
             form.submit();
         }
 
-        function closeandprint(bg){
-            if(document.location = '/cgi-bin/koha/acqui/basketgroup.pl?op=closeandprint&amp;basketgroupid=' + bg ){
+        function closeandprint(bg) {
+            if ((document.location = "/cgi-bin/koha/acqui/basketgroup.pl?op=closeandprint&amp;basketgroupid=" + bg)) {
                 setTimeout(() => {
                     window.location.reload();
                 }, 3000);
             } else {
-                alert( _("Error downloading the file") );
+                alert(_("Error downloading the file"));
             }
         }
 
-        $(document).ready(function() {
-            if (listclosed){
+        $(document).ready(function () {
+            if (listclosed) {
                 $("#basket_groups a[href='#closed']").tab("show");
             } else {
                 $("#basket_groups a[href='#opened']").tab("show");
             }
 
-            if (!grouping){
+            if (!grouping) {
                 let dt_params = {
                     autoWidth: false,
                     pagingType: "full",
@@ -456,39 +455,45 @@
                 });
             }
 
-            $("#basketgroupcolumns").on("click", ".addtogroup", function(){
-                const row = $("#" + $(this).data("basketid") );
-                if( row ){
-                    $(this).removeClass("addtogroup").addClass("removefromgroup").html("<i class=\"fa fa-trash-can\" aria-hidden=\"true\"></i> " + _("Remove") );
+            $("#basketgroupcolumns").on("click", ".addtogroup", function () {
+                const row = $("#" + $(this).data("basketid"));
+                if (row) {
+                    $(this)
+                        .removeClass("addtogroup")
+                        .addClass("removefromgroup")
+                        .html('<i class="fa fa-trash-can" aria-hidden="true"></i> ' + _("Remove"));
                     row.removeClass("ungrouped").addClass("grouped");
-                    ungrouped.row( row ).remove().draw();
-                    grouped.row.add( row ).draw();
+                    ungrouped.row(row).remove().draw();
+                    grouped.row.add(row).draw();
                 }
             });
 
-            $("#basketgroupcolumns").on("click", ".removefromgroup", function(){
-                const row = $("#" + $(this).data("basketid") );
-                if( row ){
-                    $(this).removeClass("removefromgroup").addClass("addtogroup").html("<i class=\"fa fa-plus\" aria-hidden=\"true\"></i> " + _("Add to group") );
+            $("#basketgroupcolumns").on("click", ".removefromgroup", function () {
+                const row = $("#" + $(this).data("basketid"));
+                if (row) {
+                    $(this)
+                        .removeClass("removefromgroup")
+                        .addClass("addtogroup")
+                        .html('<i class="fa fa-plus" aria-hidden="true"></i> ' + _("Add to group"));
                     $(this).removeClass("").addClass("");
                     row.removeClass("grouped").addClass("ungrouped");
-                    grouped.row( row ).remove().draw();
-                    ungrouped.row.add( row ).draw();
+                    grouped.row(row).remove().draw();
+                    ungrouped.row.add(row).draw();
                 }
             });
 
-            $("#close_and_print").on("click", function(e){
+            $("#close_and_print").on("click", function (e) {
                 e.preventDefault();
                 const basketgroupid = $(this).data("basketgroupid");
-                closeandprint( basketgroupid );
+                closeandprint(basketgroupid);
             });
 
-            $("#groupingform").on("submit", function(e){
+            $("#groupingform").on("submit", function (e) {
                 e.preventDefault();
                 submitForm(this);
             });
 
-            $("#delete_basketgroup").on("click", function(e){
+            $("#delete_basketgroup").on("click", function (e) {
                 return confirm(_("Are you sure you want to delete this basket group?"));
             });
         });

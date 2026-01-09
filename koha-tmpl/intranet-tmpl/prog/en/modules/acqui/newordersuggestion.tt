@@ -133,24 +133,23 @@
     <script>
         const logged_in_user = [% To.json(logged_in_user.unblessed) | $raw %];
     </script>
-
     <script>
-        $(document).ready(function() {
-           var suggestionst = $("#suggestionst").kohaTable({
-               columnDefs: [
-                   { targets: [0], visible: false, searchable: true }, // must be searchable for filtering
-               ],
-               pagingType: "full",
-           });
-           let table_dt = suggestionst.DataTable();
-           $("#show_only_mine").on('click', function(e){
-               e.preventDefault();
-               table_dt.columns(0).search(`^${logged_in_user.borrowernumber}$`, true).draw();
-           });
-           $("#show_all").on('click', function(e){
-               e.preventDefault();
-               table_dt.columns(0).search("").draw();
-           });
+        $(document).ready(function () {
+            var suggestionst = $("#suggestionst").kohaTable({
+                columnDefs: [
+                    { targets: [0], visible: false, searchable: true }, // must be searchable for filtering
+                ],
+                pagingType: "full",
+            });
+            let table_dt = suggestionst.DataTable();
+            $("#show_only_mine").on("click", function (e) {
+                e.preventDefault();
+                table_dt.columns(0).search(`^${logged_in_user.borrowernumber}$`, true).draw();
+            });
+            $("#show_all").on("click", function (e) {
+                e.preventDefault();
+                table_dt.columns(0).search("").draw();
+            });
         });
     </script>
 [% END %]

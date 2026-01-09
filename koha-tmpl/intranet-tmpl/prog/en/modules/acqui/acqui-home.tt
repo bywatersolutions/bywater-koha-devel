@@ -210,76 +210,74 @@
         <script>
             var table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'acq_acqui-home', 'accounts', 'json' ) | $raw %];
         </script>
-
         <script>
             dt_overwrite_html_sorting_localeCompare();
 
-            $(document).ready(function() {
-                var oTable = $("#accounts").kohaTable({
-                    drawCallback: function ( oSettings ) {
-                        if ( oSettings.aiDisplay.length == 0 )
-                        {
-                            return;
-                        }
-
-                        var nTrs = $('#accounts tbody tr');
-                        var iColspan = nTrs[0].getElementsByTagName('td').length;
-                        var sLastGroup = "";
-                        for ( var i=0 ; i<nTrs.length ; i++ )
-                        {
-                            var iDisplayIndex = oSettings._iDisplayStart + i;
-                            var sGroup = oSettings.aoData[ oSettings.aiDisplay[iDisplayIndex] ]._aData[1];
-                            if ( sGroup != sLastGroup )
-                            {
-                                var nGroup = document.createElement( 'tr' );
-                                var nCell = document.createElement( 'td' );
-                                nCell.colSpan = iColspan;
-                                nCell.className = "group";
-                                nCell.innerHTML = sGroup;
-                                nGroup.appendChild( nCell );
-                                nTrs[i].parentNode.insertBefore( nGroup, nTrs[i] );
-                                sLastGroup = sGroup;
+            $(document).ready(function () {
+                var oTable = $("#accounts").kohaTable(
+                    {
+                        drawCallback: function (oSettings) {
+                            if (oSettings.aiDisplay.length == 0) {
+                                return;
                             }
-                        }
+
+                            var nTrs = $("#accounts tbody tr");
+                            var iColspan = nTrs[0].getElementsByTagName("td").length;
+                            var sLastGroup = "";
+                            for (var i = 0; i < nTrs.length; i++) {
+                                var iDisplayIndex = oSettings._iDisplayStart + i;
+                                var sGroup = oSettings.aoData[oSettings.aiDisplay[iDisplayIndex]]._aData[1];
+                                if (sGroup != sLastGroup) {
+                                    var nGroup = document.createElement("tr");
+                                    var nCell = document.createElement("td");
+                                    nCell.colSpan = iColspan;
+                                    nCell.className = "group";
+                                    nCell.innerHTML = sGroup;
+                                    nGroup.appendChild(nCell);
+                                    nTrs[i].parentNode.insertBefore(nGroup, nTrs[i]);
+                                    sLastGroup = sGroup;
+                                }
+                            }
+                        },
+                        footerCallback: function (row, data, start, end, display) {
+                            var api = this.api(),
+                                data;
+                            footer_column_sum(api, [6, 7, 8, 9]);
+                        },
+                        columnDefs: [{ orderable: false, targets: ["_all"] }],
+                        ordering: true,
+                        orderFixed: [[1, "asc"]],
+                        paging: false,
+                        autoWidth: false,
                     },
-                    footerCallback: function ( row, data, start, end, display ) {
-                        var api = this.api(), data;
-                        footer_column_sum( api, [ 6, 7, 8, 9 ] );
-                    },
-                    columnDefs: [
-                        { "orderable": false, "targets": ["_all"] }
-                    ],
-                    ordering: true,
-                    orderFixed: [[ 1, 'asc' ]],
-                    paging: false,
-                    autoWidth: false
-                }, table_settings );
+                    table_settings
+                );
                 let table_dt = oTable.DataTable();
 
                 $(oTable).treetable({
-                    expandable: true
+                    expandable: true,
                 });
-                $(oTable).treetable('expandAll');
-                $("#expand_all").click(function(e){
+                $(oTable).treetable("expandAll");
+                $("#expand_all").click(function (e) {
                     e.preventDefault();
-                    $(oTable).treetable('expandAll');
+                    $(oTable).treetable("expandAll");
                 });
-                $("#collapse_all").click(function(e){
+                $("#collapse_all").click(function (e) {
                     e.preventDefault();
-                    $(oTable).treetable('collapseAll');
+                    $(oTable).treetable("collapseAll");
                 });
 
-                $("#hide_inactive").click(function(e){
+                $("#hide_inactive").click(function (e) {
                     e.preventDefault();
                     table_dt.columns(0).search(1).draw(); // Show only active=1
                 });
-                $("#show_inactive").click(function(e){
+                $("#show_inactive").click(function (e) {
                     e.preventDefault();
                     table_dt.columns(0).search("").draw();
                 });
                 $("#hide_inactive").click();
 
-                $("#library-filter").change(function(){
+                $("#library-filter").change(function () {
                     $("#accounts").DataTable().search(this.value);
                     $("#accounts").DataTable().draw();
                 });

@@ -213,63 +213,75 @@
     <script>
         const vendor_id = [% vendor.id | html %];
     </script>
-
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             var issues_table_url = `/api/v1/acquisitions/vendors/${vendor_id}/issues?`;
 
-            var issues_table = $("#vendor_issues").kohaTable({
-                ajax: {
-                    url: issues_table_url
+            var issues_table = $("#vendor_issues").kohaTable(
+                {
+                    ajax: {
+                        url: issues_table_url,
+                    },
+                    embed: ["+strings"],
+                    order: [[0, "desc"]],
+                    columns: [
+                        {
+                            data: "issue_id",
+                            searchable: true,
+                            orderable: true,
+                            render: function (data, type, row, meta) {
+                                return '<a href="/cgi-bin/koha/acqui/vendor_issues.pl?op=show&amp;issue_id=' + encodeURIComponent(row.issue_id) + '">' + escape_str(row.issue_id) + "</a>";
+                            },
+                        },
+                        {
+                            data: "type",
+                            searchable: true,
+                            orderable: true,
+                            render: function (data, type, row, meta) {
+                                return row._strings.type ? escape_str(row._strings.type.str) : "";
+                            },
+                        },
+                        {
+                            data: "started_on",
+                            searchable: true,
+                            orderable: true,
+                            render: function (data, type, row, meta) {
+                                return $date(row.started_on);
+                            },
+                        },
+                        {
+                            data: "ended_on",
+                            searchable: true,
+                            orderable: true,
+                            render: function (data, type, row, meta) {
+                                return $date(row.ended_on);
+                            },
+                        },
+                        {
+                            data: function (row, type, val, meta) {
+                                var result =
+                                    '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/acqui/vendor_issues.pl?op=add_form&amp;issue_id=' +
+                                    encodeURIComponent(row.issue_id) +
+                                    '"><i class="fa fa-pencil" aria-hidden="true"></i> ' +
+                                    _("Edit") +
+                                    "</a>" +
+                                    "\n";
+                                result +=
+                                    '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/acqui/vendor_issues.pl?op=delete_confirm&amp;issue_id=' +
+                                    encodeURIComponent(row.issue_id) +
+                                    '"><i class="fa fa-trash" aria-hidden="true"></i> ' +
+                                    _("Delete") +
+                                    "</a>";
+                                return result;
+                            },
+                            searchable: false,
+                            orderable: false,
+                        },
+                    ],
                 },
-                embed: ["+strings"],
-                order: [[ 0, "desc" ]],
-                columns: [
-                    {
-                        data: "issue_id",
-                        searchable: true,
-                        orderable: true,
-                        render: function(data, type, row, meta) {
-                            return '<a href="/cgi-bin/koha/acqui/vendor_issues.pl?op=show&amp;issue_id=' + encodeURIComponent(row.issue_id) +'">' + escape_str(row.issue_id) + '</a>';
-                        },
-                    },
-                    {
-                        data: "type",
-                        searchable: true,
-                        orderable: true,
-                        render: function(data, type, row, meta) {
-                            return row._strings.type ? escape_str(row._strings.type.str) : "";
-                        }
-                    },
-                    {
-                        data: "started_on",
-                        searchable: true,
-                        orderable: true,
-                        render: function(data, type, row, meta) {
-                            return $date(row.started_on);
-                        }
-                    },
-                    {
-                        data: "ended_on",
-                        searchable: true,
-                        orderable: true,
-                        render: function(data, type, row, meta) {
-                            return $date(row.ended_on);
-                        }
-                    },
-                    {
-                        data: function( row, type, val, meta ) {
-
-                            var result = '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/acqui/vendor_issues.pl?op=add_form&amp;issue_id='+ encodeURIComponent(row.issue_id) +'"><i class="fa fa-pencil" aria-hidden="true"></i> '+_("Edit")+'</a>'+"\n";
-                            result += '<a class="btn btn-default btn-xs" role="button" href="/cgi-bin/koha/acqui/vendor_issues.pl?op=delete_confirm&amp;issue_id='+ encodeURIComponent(row.issue_id) +'"><i class="fa fa-trash" aria-hidden="true"></i> '+_("Delete")+'</a>';
-                            return result;
-                        },
-                        searchable: false,
-                        orderable: false
-                    }
-                ]
-            }, null, 1);
-
+                null,
+                1
+            );
         });
     </script>
 [% END %]

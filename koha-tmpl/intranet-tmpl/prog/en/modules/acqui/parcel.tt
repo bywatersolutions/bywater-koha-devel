@@ -374,7 +374,6 @@
             order: "[%tp("noun", "Order") | html %]",
         };
     </script>
-
     <script>
         dt_overwrite_html_sorting_localeCompare();
         var PENDING_MULTI_SELECTION = _("Receive selected (%s)");

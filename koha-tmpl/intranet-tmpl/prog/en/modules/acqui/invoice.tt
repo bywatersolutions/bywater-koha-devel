@@ -583,13 +583,12 @@
         const invoiceincgst = [% invoiceincgst ? 1 : 0 | html %];
         const has_files = [% files ? 1 : 0 | html %];
     </script>
-
     <script>
         function updateColumnsVisibility(visible) {
-            if ( visible ) {
+            if (visible) {
                 $("table .tax_excluded, .tax_included").show();
             } else {
-                if (invoiceincgst){
+                if (invoiceincgst) {
                     $("table .tax_excluded").hide();
                 } else {
                     $("table .tax_included").hide();
@@ -597,14 +596,14 @@
             }
         }
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             $("#orderst").kohaTable({
                 info: false,
                 paging: false,
                 searching: false,
                 dom: "t",
             });
-            if (prefs.AcqEnableFiles && has_files){
+            if (prefs.AcqEnableFiles && has_files) {
                 $("#invoice_files_table").kohaTable({
                     info: false,
                     paging: false,
@@ -612,112 +611,115 @@
                     dom: "t",
                 });
             }
-            $("#show_all_details").click(function(){
-                updateColumnsVisibility( $(this).is(":checked") );
+            $("#show_all_details").click(function () {
+                updateColumnsVisibility($(this).is(":checked"));
             });
 
-            $("#show_all_details").prop('checked', false);
+            $("#show_all_details").prop("checked", false);
             updateColumnsVisibility(false);
-            $(".toggle_invoice_adjustment").on("click", function(e){
+            $(".toggle_invoice_adjustment").on("click", function (e) {
                 e.preventDefault();
                 $("#show_invoice_adjustment, #cancel_invoice_adjustment, #add_invoice_adjustment").toggle();
             });
 
             //keep a copy of all budgets before removing the inactives
             var disabledBudgetsCopy = $("#all_fund_dropdown").html();
-            $(".fund_dropdown").each(function(){
-                $(this).html( disabledBudgetsCopy);
-                var selected = $(this).data('selected');
-                $(this).find('option[value="'+selected+'"]').removeClass('b_inactive');
-                $(this).val( selected );
+            $(".fund_dropdown").each(function () {
+                $(this).html(disabledBudgetsCopy);
+                var selected = $(this).data("selected");
+                $(this)
+                    .find('option[value="' + selected + '"]')
+                    .removeClass("b_inactive");
+                $(this).val(selected);
             });
 
-            $('.b_inactive').remove();
+            $(".b_inactive").remove();
 
-            $('.showallfunds').on("change", function() {
-                var the_dropdown = $("#" + $(this).data("select-id") );
+            $(".showallfunds").on("change", function () {
+                var the_dropdown = $("#" + $(this).data("select-id"));
                 var selected = the_dropdown.val();
                 if ($(this).is(":checked")) {
-                    the_dropdown.html( disabledBudgetsCopy ).val(selected);
+                    the_dropdown.html(disabledBudgetsCopy).val(selected);
                 } else {
-                    the_dropdown.find( 'option[value="' + selected + '"]' ).removeClass('b_inactive');
-                    the_dropdown.find('.b_inactive').remove();
+                    the_dropdown.find('option[value="' + selected + '"]').removeClass("b_inactive");
+                    the_dropdown.find(".b_inactive").remove();
                 }
             });
 
-            $(".modify_fund").on('click',function(e){
+            $(".modify_fund").on("click", function (e) {
                 e.preventDefault();
-                var selected = $(this).data('budget_id');
-                var sort1 = $(this).data('sort1');
-                var sort2 = $(this).data('sort2');
-                $("#update_fund").data('order_id',$(this).data('order_id'));
+                var selected = $(this).data("budget_id");
+                var sort1 = $(this).data("sort1");
+                var sort2 = $(this).data("sort2");
+                $("#update_fund").data("order_id", $(this).data("order_id"));
                 $("#modify_budget_id").html(disabledBudgetsCopy);
-                $("#modify_budget_id").val(selected).find('option[value="'+selected+'"]').removeClass('b_inactive');
+                $("#modify_budget_id")
+                    .val(selected)
+                    .find('option[value="' + selected + '"]')
+                    .removeClass("b_inactive");
                 $("#updateFund").find('[name="sort1"]').val(sort1);
                 $("#updateFund").find('[name="sort2"]').val(sort2);
-                $("#modify_budget_id").find('.b_inactive').remove();
+                $("#modify_budget_id").find(".b_inactive").remove();
                 $("#modify_budget_id").change();
-                $("#updateFund").modal('show');
+                $("#updateFund").modal("show");
             });
-            $("#update_fund").on('click',function(){
+            $("#update_fund").on("click", function () {
                 var new_fund = $("#modify_budget_id").val();
                 var sort1 = $("#updateFund").find('[name="sort1"]').val();
                 var sort2 = $("#updateFund").find('[name="sort2"]').val();
-                var new_fund_name = $('#modify_budget_id option[value="'+new_fund+'"]').text();
-                var order_id = $(this).data('order_id');
+                var new_fund_name = $('#modify_budget_id option[value="' + new_fund + '"]').text();
+                var order_id = $(this).data("order_id");
                 let options = {
                     url: "/api/v1/acquisitions/orders/" + order_id,
-                    method: 'PUT',
-                    contentType: 'application/json',
+                    method: "PUT",
+                    contentType: "application/json",
                     data: JSON.stringify({
                         fund_id: new_fund,
                         statistics_1: sort1,
-                        statistics_2: sort2
-                    })
+                        statistics_2: sort2,
+                    }),
                 };
                 $.ajax(options)
-                    .then(function(thing,result){
-                        $("#updateFund").modal('hide');
-                        $('#updateFund .showallfunds').prop('checked',false);
-                        $('.modify_fund[data-order_id="'+order_id+'"]').data('budget_id',new_fund);
-                        $('.modify_fund[data-order_id="'+order_id+'"]').data('sort1',sort1);
-                        $('.modify_fund[data-order_id="'+order_id+'"]').data('sort2',sort2);
-                        $('.order_name[data-order_id="'+order_id+'"]').text(new_fund_name);
-                        humanMsg.displayAlert( _("Order updated"), { className: 'humanError' } );
+                    .then(function (thing, result) {
+                        $("#updateFund").modal("hide");
+                        $("#updateFund .showallfunds").prop("checked", false);
+                        $('.modify_fund[data-order_id="' + order_id + '"]').data("budget_id", new_fund);
+                        $('.modify_fund[data-order_id="' + order_id + '"]').data("sort1", sort1);
+                        $('.modify_fund[data-order_id="' + order_id + '"]').data("sort2", sort2);
+                        $('.order_name[data-order_id="' + order_id + '"]').text(new_fund_name);
+                        humanMsg.displayAlert(_("Order updated"), { className: "humanError" });
                     })
-                    .fail(function(err){
-                        humanMsg.displayAlert( _("Failed to update order:") + err.responseText, { className: 'humanError' } );
+                    .fail(function (err) {
+                        humanMsg.displayAlert(_("Failed to update order:") + err.responseText, { className: "humanError" });
                     });
             });
-            $("#modify_budget_id").change(function(){
-                var destination_sort1 = $(this).parents('.modal-body').find('input[name="sort1"]');
-                var sort1_authcat = $(this).find("option:selected").attr('data-sort1-authcat');
-                if ( destination_sort1.length < 1 ) {
-                    destination_sort1 = $(this).parents('.modal-body').find('select[name="sort1"]');
+            $("#modify_budget_id").change(function () {
+                var destination_sort1 = $(this).parents(".modal-body").find('input[name="sort1"]');
+                var sort1_authcat = $(this).find("option:selected").attr("data-sort1-authcat");
+                if (destination_sort1.length < 1) {
+                    destination_sort1 = $(this).parents(".modal-body").find('select[name="sort1"]');
                 }
                 var sort1 = $(destination_sort1).val() || "";
-                var destination_sort2 = $(this).parents('.modal-body').find('input[name="sort2"]');
-                var sort2_authcat = $(this).find("option:selected").attr('data-sort2-authcat');
-                if ( destination_sort2.length < 1 ) {
-                    destination_sort2 = $(this).parents('.modal-body').find('select[name="sort2"]');
+                var destination_sort2 = $(this).parents(".modal-body").find('input[name="sort2"]');
+                var sort2_authcat = $(this).find("option:selected").attr("data-sort2-authcat");
+                if (destination_sort2.length < 1) {
+                    destination_sort2 = $(this).parents(".modal-body").find('select[name="sort2"]');
                 }
                 var sort2 = $(destination_sort2).val() || "";
-                getAuthValueDropbox( 'sort1', sort1_authcat, destination_sort1, sort1 );
-                getAuthValueDropbox( 'sort2', sort2_authcat, destination_sort2, sort2 );
+                getAuthValueDropbox("sort1", sort1_authcat, destination_sort1, sort1);
+                getAuthValueDropbox("sort2", sort2_authcat, destination_sort2, sort2);
             });
             // same effort for the adjustments
             var adjBudgetId = $("#budget_id_new");
             var disabledAdjBudgetsCopy = adjBudgetId.html();
-            $('.ab_inactive').remove();
-            $('#showallfunds_adj').click(function() {
+            $(".ab_inactive").remove();
+            $("#showallfunds_adj").click(function () {
                 if ($(this).is(":checked")) {
                     adjBudgetId.html(disabledAdjBudgetsCopy); //Puts back all the funds
-                }
-                else {
-                    $('.ab_inactive').remove();
+                } else {
+                    $(".ab_inactive").remove();
                 }
             });
-
         });
     </script>
 [% END %]

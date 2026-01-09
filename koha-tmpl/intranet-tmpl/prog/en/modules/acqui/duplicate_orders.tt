@@ -318,43 +318,44 @@
         const op = "[% op | html %]";
         const has_results = [% result_order_loop ? 1 : 0 | html %];
     </script>
-
     <script>
-        function update_ordernumber_list(){
+        function update_ordernumber_list() {
             var ordernumbers = [];
-            $("input[name='ordernumber']").filter(":checked").each(function(){
-                ordernumbers.push($(this).val());
-            });
-            $("input[name='ordernumbers']").val(ordernumbers.join(','));
+            $("input[name='ordernumber']")
+                .filter(":checked")
+                .each(function () {
+                    ordernumbers.push($(this).val());
+                });
+            $("input[name='ordernumbers']").val(ordernumbers.join(","));
         }
 
         var MSG_NO_ITEM_SELECTED = _("Nothing is selected.");
         var MSG_NO_FUND_SELECTED = _("No fund selected.");
-        $(document).ready(function() {
-            $('span.hint').hide();
+        $(document).ready(function () {
+            $("span.hint").hide();
             $("#table_orders").kohaTable({
                 paging: false,
             });
 
-            if (op == 'search' || op == 'select'){
+            if (op == "search" || op == "select") {
                 patron_autocomplete($("#find_patron"), {
                     "on-select-add-to": {
                         container: $("#basket_creators"),
-                        input_name: 'created_by'
+                        input_name: "created_by",
                     },
-                    "on-select-callback": function( event, ui ) {
-                        $("#find_patron").val('').focus();
+                    "on-select-callback": function (event, ui) {
+                        $("#find_patron").val("").focus();
                         return false;
-                    }
+                    },
                 });
             }
 
-            $("#show_orders_filters, #hide_orders_filters").on('click', function(e) {
+            $("#show_orders_filters, #hide_orders_filters").on("click", function (e) {
                 e.preventDefault();
-                $('#orders_filters').toggle();
-                $('.toggle_orders_filters').toggle();
+                $("#orders_filters").toggle();
+                $(".toggle_orders_filters").toggle();
             });
-            if ( op == 'search' || op == 'select' && !has_result ){
+            if (op == "search" || (op == "select" && !has_result)) {
                 $("#show_orders_filters").hide();
                 $("#orders_filters").show();
             } else {
@@ -362,73 +363,81 @@
                 $("#orders_filters").hide();
             }
 
-            $("input[name='ordernumber']").on("change", function(){
-                if ( $(this).is(':checked') ) {
-                    $(this).parents("tr").addClass("picked_to_duplicate");
-                } else {
-                    $(this).parents("tr").removeClass("picked_to_duplicate");
-                }
-            }).on("click", function(e){
-                update_ordernumber_list();
-            });
+            $("input[name='ordernumber']")
+                .on("change", function () {
+                    if ($(this).is(":checked")) {
+                        $(this).parents("tr").addClass("picked_to_duplicate");
+                    } else {
+                        $(this).parents("tr").removeClass("picked_to_duplicate");
+                    }
+                })
+                .on("click", function (e) {
+                    update_ordernumber_list();
+                });
 
-            $("#select_all").on("click",function(e){
+            $("#select_all").on("click", function (e) {
                 e.preventDefault();
                 selectAll();
                 update_ordernumber_list();
             });
 
-            $("#clear_all").on("click",function(e){
+            $("#clear_all").on("click", function (e) {
                 e.preventDefault();
                 clearAll();
                 update_ordernumber_list();
             });
-            function selectAll () {
-                $("#table_orders").find("input[type='checkbox'][name='ordernumber']").each(function(){
-                    $(this).prop("checked", true).change();
-                });
+            function selectAll() {
+                $("#table_orders")
+                    .find("input[type='checkbox'][name='ordernumber']")
+                    .each(function () {
+                        $(this).prop("checked", true).change();
+                    });
                 return false;
             }
-            function clearAll () {
-                $("#table_orders").find("input[type='checkbox'][name='ordernumber']").each(function(){
-                    $(this).prop("checked", false).change();
-                });
+            function clearAll() {
+                $("#table_orders")
+                    .find("input[type='checkbox'][name='ordernumber']")
+                    .each(function () {
+                        $(this).prop("checked", false).change();
+                    });
                 return false;
             }
 
-            $(".go_to_batch_edit").on("click",function(e){
-                if ($("input[name='ordernumber']").filter(":checked").length == 0){
+            $(".go_to_batch_edit").on("click", function (e) {
+                if ($("input[name='ordernumber']").filter(":checked").length == 0) {
                     alert(MSG_NO_ITEM_SELECTED);
                     e.preventDefault();
                 }
             });
 
-            $("#batch_edit_form").on("submit", function(e){
-                var budget_value_will_be_reused = $("input[name='copy_existing_value'][value='budget_id']").is(':checked');
-                if ( ! budget_value_will_be_reused ) {
-                    if ($("#all_budget_id").find("option:selected").val() == "" ) {
+            $("#batch_edit_form").on("submit", function (e) {
+                var budget_value_will_be_reused = $("input[name='copy_existing_value'][value='budget_id']").is(":checked");
+                if (!budget_value_will_be_reused) {
+                    if ($("#all_budget_id").find("option:selected").val() == "") {
                         alert(MSG_NO_FUND_SELECTED);
                         e.preventDefault();
                     }
                 }
             });
-            $("input[name='copy_existing_value']").click(function(){
+            $("input[name='copy_existing_value']").click(function () {
                 render_disabled(this);
             });
 
-            $("input[name='copy_existing_value']").each(function(){
+            $("input[name='copy_existing_value']").each(function () {
                 render_disabled(this);
             });
         });
-        function render_disabled (elt) {
+        function render_disabled(elt) {
             var field = $(elt).val();
             var hint_node = $("#hint_" + field);
-            var input_element = $(elt).parent().find("[name='all_"+field+"']");
+            var input_element = $(elt)
+                .parent()
+                .find("[name='all_" + field + "']");
             if ($(elt).is(":checked")) {
-                $(input_element).prop('disabled', true);
+                $(input_element).prop("disabled", true);
                 $(hint_node).show();
             } else {
-                $(input_element).prop('disabled', false);
+                $(input_element).prop("disabled", false);
                 $(hint_node).hide();
             }
         }
