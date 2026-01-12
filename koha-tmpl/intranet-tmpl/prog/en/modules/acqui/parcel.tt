@@ -513,7 +513,7 @@
                                             + _("Internal note: ")
                                             + '</strong>' + escape_str(internal_note)
                                             + ' [<a href="/cgi-bin/koha/acqui/modordernotes.pl?ordernumber='
-                                            + encodeURIComponent(row.order_id) + '&amp;referrer=/cgi-bin/koha/acqui/parcel.pl%3Finvoiceid=' + invoice_id'
+                                            + encodeURIComponent(row.order_id) + '&amp;referrer=/cgi-bin/koha/acqui/parcel.pl%3Finvoiceid=' + invoice_id
                                             + '&type=internal">' + _("Change internal note") + '</a>]</p>';
                             }
                             else {

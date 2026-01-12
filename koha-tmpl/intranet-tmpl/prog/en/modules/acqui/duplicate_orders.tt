@@ -355,7 +355,7 @@
                 $("#orders_filters").toggle();
                 $(".toggle_orders_filters").toggle();
             });
-            if (op == "search" || (op == "select" && !has_result)) {
+            if (op == "search" || (op == "select" && !has_results)) {
                 $("#show_orders_filters").hide();
                 $("#orders_filters").show();
             } else {
