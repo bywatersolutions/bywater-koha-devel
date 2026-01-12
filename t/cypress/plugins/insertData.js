@@ -823,6 +823,40 @@ const insertObject = async ({ type, object, baseUrl, authHeader }) => {
                 });
             })
             .then(baskets => baskets[0]);
+    } else if (type == "invoice") {
+        const keysToKeep = [
+            "invoice_number",
+            "vendor_id",
+            "shipping_date",
+            "invoice_date",
+        ];
+        const invoice = Object.fromEntries(
+            Object.entries(object).filter(([key]) => keysToKeep.includes(key))
+        );
+        return query({
+            sql: "INSERT INTO aqinvoices(invoicenumber, booksellerid, shipmentdate, billingdate) VALUES (?, ?, ?, ?)",
+            values: [
+                invoice.invoice_number,
+                invoice.vendor_id,
+                invoice.shipping_date,
+                invoice.invoice_date,
+            ],
+        })
+            .then(result => {
+                const invoice_id = result.insertId;
+                // FIXME We need /acquisitions/invoices/:invoice_id
+                return apiGet({
+                    endpoint: `/api/v1/acquisitions/vendors/${invoice.vendor_id}`,
+                    headers: { "x-koha-embed": "invoices" },
+                    baseUrl,
+                    authHeader,
+                });
+            })
+            .then(vendor =>
+                vendor.invoices.find(
+                    i => i.invoice_number == invoice.invoice_number
+                )
+            );
     } else if (type === "erm_agreement") {
         const {
             agreement_id,
