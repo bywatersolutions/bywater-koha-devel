@@ -206,18 +206,16 @@
     [% INCLUDE 'datatables.inc' %]
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'admin', 'cities', 'table_cities', 'json' ) | $raw %];
-        $(document).ready(function() {
-            var cities_table_url = '/api/v1/cities?';
+        var cities_table_url = '/api/v1/cities?';
 
-            [% IF city_name_filter %]
-                var city_name_filter = {
-                    'name': {
-                        "like": '%[%- city_name_filter | html -%]%'
-                    }
-                };
-                cities_table_url += 'q='+ encodeURIComponent(JSON.stringify(city_name_filter));
-            [% END %]
-        });
+        [% IF city_name_filter %]
+            var city_name_filter = {
+                'name': {
+                    "like": '%[%- city_name_filter | html -%]%'
+                }
+            };
+            cities_table_url += 'q='+ encodeURIComponent(JSON.stringify(city_name_filter));
+        [% END %]
     </script>
     <script>
         $(document).ready(function () {

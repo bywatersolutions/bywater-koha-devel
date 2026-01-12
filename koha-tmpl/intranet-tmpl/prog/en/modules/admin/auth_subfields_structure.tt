@@ -436,7 +436,7 @@
     [% Asset.js( "lib/sortable/Sortable.min.js" ) | $raw %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     <script>
-        const tagsubfield = [% IF tabsubfield %]"[% tabsubfield | html %]"[% ELSE %]null[% END %];
+        const tagsubfield = [% IF tagsubfield %]"[% tagsubfield | html %]"[% ELSE %]null[% END %];
     </script>
     <script>
         $(document).ready(function () {

@@ -461,7 +461,7 @@
     [% INCLUDE 'datatables.inc' %]
     <script>
         const i18n = {
-            on: "[% tp("Active", "On") | html %]";
+            on: "[% tp("Active", "On") | html %]"
         };
     </script>
     <script>
