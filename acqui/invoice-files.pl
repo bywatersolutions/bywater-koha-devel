@@ -31,7 +31,7 @@ use Modern::Perl;
 
 use CGI;
 use C4::Auth        qw( get_template_and_user );
-use C4::Output      qw( output_html_with_http_headers );
+use C4::Output      qw( output_html_with_http_headers output_error );
 use C4::Acquisition qw( GetInvoice GetInvoiceDetails );
 use Koha::Misc::Files;
 
@@ -44,6 +44,10 @@ my ( $template, $loggedinuser, $cookie, $flags ) = get_template_and_user(
         flagsrequired => { 'acquisition' => '*' },
     }
 );
+
+if ( !C4::Context->preference('AcqEnableFiles') ) {
+    output_error( $input, '404' );
+}
 
 my $invoiceid = $input->param('invoiceid') // '';
 my $op        = $input->param('op')        // '';
