@@ -152,6 +152,7 @@
             - aliases
             - baskets+count
             - subscriptions+count
+            - invoices
             - invoices+count
             - interfaces
             - contacts
