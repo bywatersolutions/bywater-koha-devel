@@ -58,19 +58,11 @@ if ( $op eq 'download' ) {
 
     my $fname = $file->{'file_name'};
     my $ftype = $file->{'file_type'};
-    if ( $input->param('view') && ( $ftype =~ m|^image/|i || $fname =~ /\.pdf/i ) ) {
-        $fname =~ /\.pdf/i && do { $ftype = 'application/pdf'; };
-        print $input->header(
-            -type    => $ftype,
-            -charset => 'utf-8'
-        );
-    } else {
-        print $input->header(
-            -type       => $file->{'file_type'},
-            -charset    => 'utf-8',
-            -attachment => $file->{'file_name'}
-        );
-    }
+    print $input->header(
+        -type       => $file->{'file_type'},
+        -charset    => 'utf-8',
+        -attachment => $file->{'file_name'}
+    );
     print $file->{'file_content'};
 } else {
     my $details = GetInvoiceDetails($invoiceid);
