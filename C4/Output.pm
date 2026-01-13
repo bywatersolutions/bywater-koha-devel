@@ -405,7 +405,9 @@ sub output_error {
         admin => $admin,
         errno => $error,
     );
-    output_with_http_headers $query, $cookie, $template->output, 'html', '404 Not Found';
+
+    #NOTE: Technically, it is enough to just include the status code. You don't have to include the reason phrase.
+    output_with_http_headers $query, $cookie, $template->output, 'html', $error;
 }
 
 =item parametrized_url
