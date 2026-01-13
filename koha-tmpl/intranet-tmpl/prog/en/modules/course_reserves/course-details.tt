@@ -84,8 +84,8 @@
                     [% INCLUDE 'csrf-token.inc' %]
                     <input type="hidden" name="op" value="cud-del" />
                     <input type="hidden" name="course_id" value="[% course.course_id | html %]" />
+                    <button type="submit" class="btn btn-default" id="delete_course_button"> <i class="fa fa-trash-can"></i> Delete course </button>
                 </form>
-                <a href="#" id="delete_course_button" class="btn btn-default"><i class="fa fa-trash-can"></i> Delete course</a>
             [% END %] </div
         ><!-- /toolbar -->
     [% END %]
@@ -362,18 +362,14 @@
     [% INCLUDE 'datatables.inc' %]
     <script>
         var table_settings = [% TablesSettings.GetTableSettings( 'coursereserves', 'reserves', 'course_reserves_table', 'json' ) | $raw %];
-        const course_reserves_size = [% course_reserves.size || 0 | html %]
+        const course_reserves_size = [% course_reserves.size || 0 | html %];
         const i18n = {
-            are_you_sure_items: [% I18N.tnx("Are you sure you want to delete this course? There is one attached item.", "Are you sure you want to delete this course? There are {count} attached items.", course_reserves_size, { count: course_reserves_size}) | html %],
-            are_you_sure_no_item: [% I18N.t("Are you sure you want to delete this course?") | html %],
+            are_you_sure_items: "[% I18N.tnx('Are you sure you want to delete this course? There is one attached item.', 'Are you sure you want to delete this course? There are {count} attached items.', course_reserves.size, { count = course_reserves.size}) | html %]",
+            are_you_sure_no_item: "[% I18N.t('Are you sure you want to delete this course?') | html %]",
         };
     </script>
     <script>
         $(document).ready(function () {
-            $("#delete_course_button").on("click", function (e) {
-                e.preventDefault();
-                $("#delete_course").submit();
-            });
             $("#rm_items_button").on("click", function (e) {
                 e.preventDefault();
                 $("#rm_items").submit();
@@ -399,7 +395,7 @@
                 return confirmDelete(_("Are you sure you want to remove all items from the course?"));
             });
 
-            $("#delete_course").click(function () {
+            $("#delete_course").on("submit", function () {
                 return confirmDelete(course_reserves_size > 0 ? i18n.are_you_sure_items : i18n.are_you_sure_no_item);
             });
         });
