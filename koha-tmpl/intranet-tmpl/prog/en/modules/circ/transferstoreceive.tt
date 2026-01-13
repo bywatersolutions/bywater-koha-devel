@@ -124,13 +124,13 @@
         [% END %]
     </script>
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             library_ids.forEach(library_id => {
                 $(`#transferst${library_id}`).kohaTable({
                     dom: "t",
                     paging: false,
                 });
-            }
+            });
         });
     </script>
 [% END %]
