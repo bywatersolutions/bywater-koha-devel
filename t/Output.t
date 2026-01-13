@@ -20,6 +20,7 @@ use Modern::Perl;
 use Test::NoWarnings;
 use Test::More tests => 10;
 use Test::Warn;
+use Test::Exception;
 use Test::MockModule;
 
 use File::Temp qw/tempfile/;
@@ -139,7 +140,7 @@ subtest 'output_and_exit_if_error() tests' => sub {
 };
 
 subtest 'output_error' => sub {
-    plan tests => 2;
+    plan tests => 4;
 
     local *STDOUT;
     my $stdout;
@@ -158,4 +159,13 @@ subtest 'output_error' => sub {
     like( $stdout, qr{Error 403}, '403 returned' );
     close STDOUT;
 
+    throws_ok {
+        output_error($query);
+    }
+    'Koha::Exceptions::WrongParameter';
+
+    throws_ok {
+        output_error( $query, "Error" );
+    }
+    'Koha::Exceptions::WrongParameter';
 };

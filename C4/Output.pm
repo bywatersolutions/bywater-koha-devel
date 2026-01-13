@@ -45,6 +45,7 @@ use URI::Escape;
 use C4::Auth qw( get_template_and_user );
 use C4::Context;
 use C4::Templates;
+use Koha::Exceptions;
 
 =head1 NAME
 
@@ -392,6 +393,10 @@ Missing POD for output_error.
 
 sub output_error {
     my ( $query, $error ) = @_;
+
+    if ( !$error || $error =~ /\D/ ) {
+        Koha::Exceptions::WrongParameter->throw('output_error requires $error to be an integer');
+    }
     my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         {
             template_name   => 'errors/errorpage.tt',
