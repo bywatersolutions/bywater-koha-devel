@@ -107,11 +107,9 @@
     [% Asset.js("js/amazonimages.js") | $raw %]
 [% END %]
 <script>
-    [% IF (query_desc) %]
-        var query_desc = "[% query_desc | html %]";
-        var querystring = "[% querystring | html %]";
-        var query_cgi = "[% query_cgi | html %]";
-    [% END %]
+    var query_desc = "[% query_desc | html %]";
+    var querystring = "[% querystring | html %]";
+    var query_cgi = "[% query_cgi | html %]";
 
     [% IF ( OPACAmazonCoverImages || SyndeticsCoverImages ) %]
         $(window).load(function() {
