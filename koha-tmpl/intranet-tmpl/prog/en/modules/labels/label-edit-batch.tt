@@ -327,22 +327,6 @@
             }
         }
 
-        function selected_layout() {
-            if (document.items.action.length) {
-                for (i=0;i<document.items.action.length;i++){
-                    if (document.items.action[i].checked==true){
-                        return(document.items.action[i].value);
-                    }
-                }
-            } else {
-                if (document.items.action.checked){
-                    return(document.items.action.value);
-                }
-            }
-            alert(_("Please select at least one item."));
-            return (-1);
-        }
-
         $(document).ready(function() {
             $('.sidebar_menu a[href$="/cgi-bin/koha/labels/label-home.pl"]').addClass("current");
             if (has_entries){
