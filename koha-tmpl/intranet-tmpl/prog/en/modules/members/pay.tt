@@ -244,55 +244,58 @@
         });
     </script>
     <script>
-        function enableCheckboxActions(){
+        function enableCheckboxActions() {
             // Enable/disable controls if checkboxes are checked
             var checkedBoxes = $("input.cb:checked");
             if ($(checkedBoxes).size()) {
-              $("#payselected, #writeoff-selected").prop("disabled",false);
+                $("#payselected, #writeoff-selected").prop("disabled", false);
             } else {
-              $("#payselected, #writeoff-selected").prop("disabled",true);
+                $("#payselected, #writeoff-selected").prop("disabled", true);
             }
         }
-        $(document).ready(function(){
-            if (payment_id && prefs.FinePaymentAutoPopup){
-                window.open(`/cgi-bin/koha/members/printfeercpt.pl?action=print&accountlines_id=${payment_id}&change_given=${change_given}&borrowernumber=${patron_id}`, '_blank');
+        $(document).ready(function () {
+            if (payment_id && prefs.FinePaymentAutoPopup) {
+                window.open(`/cgi-bin/koha/members/printfeercpt.pl?action=print&accountlines_id=${payment_id}&change_given=${change_given}&borrowernumber=${patron_id}`, "_blank");
             }
 
-            $('#pay-fines-form').preventDoubleFormSubmit();
-            $("#woall").click(function(event){
+            $("#pay-fines-form").preventDoubleFormSubmit();
+            $("#woall").click(function (event) {
                 var msg = _("Are you sure you want to write off %s in outstanding charges? This cannot be undone!").format(total);
                 var answer = confirm(msg);
-                    if (!answer){
-                        event.preventDefault();
-                    }
+                if (!answer) {
+                    event.preventDefault();
+                }
             });
-            $('#CheckAll').click(function(e){
+            $("#CheckAll").click(function (e) {
                 e.preventDefault();
-                $(".cb").each(function(){
-                    $(this).prop("checked", true );
+                $(".cb").each(function () {
+                    $(this).prop("checked", true);
                 });
                 enableCheckboxActions();
             });
-            $('#CheckNone').click(function(e){
+            $("#CheckNone").click(function (e) {
                 e.preventDefault();
-                $(".cb").each(function(){
-                    $(this).prop("checked", false );
+                $(".cb").each(function () {
+                    $(this).prop("checked", false);
                 });
                 enableCheckboxActions();
             });
-            $(".cb").change(function(){
+            $(".cb").change(function () {
                 enableCheckboxActions();
             });
             enableCheckboxActions();
-            $(".add-note").on("click", function(e){
+            $(".add-note").on("click", function (e) {
                 e.preventDefault();
                 $(this).hide();
                 var accountlines_id = $(this).data("accountlines_id");
-                $("#payment_note_" + accountlines_id ).show().find("input").focus();
+                $("#payment_note_" + accountlines_id)
+                    .show()
+                    .find("input")
+                    .focus();
             });
-            $(".cancel-note").on("click", function(e){
+            $(".cancel-note").on("click", function (e) {
                 e.preventDefault();
-                this_td = $(this).closest('td.actions');
+                this_td = $(this).closest("td.actions");
                 this_td.find(".payment_note").hide().find("input").val("");
                 this_td.find(".add-note").show();
             });
