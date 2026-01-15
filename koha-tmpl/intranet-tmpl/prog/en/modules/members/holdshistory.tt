@@ -343,7 +343,7 @@
                                     return "";
                                 [% END %]
                             }
-                        ]:[]),
+                        }]:[]),
                         {
                             data: "status",
                             searchable: false,
