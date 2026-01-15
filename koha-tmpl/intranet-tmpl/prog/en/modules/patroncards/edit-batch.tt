@@ -273,7 +273,7 @@
                 }
                 location.href = `/cgi-bin/koha/patroncards/print.pl?batch_id=${batch_id}&${getstr}`;
             } else if (mode == 'batch') {
-                location.href = `/cgi-bin/koha/patroncards/print.pl?batch_id=${batch_id`;
+                location.href = `/cgi-bin/koha/patroncards/print.pl?batch_id=${batch_id}`;
             } else {
                 // some pass-through error trapping just in case...
             }
@@ -319,7 +319,7 @@
                 order: [[0, "asc"]],
                 pagingType: "full",
                 lengthMenu: [aLengthMenu, aLengthMenuLabel],
-                pageLength: patronsPerPage,
+                pageLength: prefs.PatronsPerPage,
                 autoWidth: false,
             });
             $("#additems").click(function(){
