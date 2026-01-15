@@ -16,9 +16,9 @@
                             [% FOREACH patron_attribute IN pa_loo.items %]
                                 <li data-category_code="[% patron_attribute.category_code | html %]" data-pa_code="[% patron_attribute.code | replace('[^a-zA-Z0-9_-]', '') %]">
                                     [% IF patron_attribute.mandatory %]
-                                        <label for="[% patron_attribute.form_id | html %]" class="required" required="required">[% patron_attribute.description | html %]: </label>
+                                        <label for="[% patron_attribute.form_id | html %]" class="required" required="required" id="[% patron_attribute.form_id | html %]_label">[% patron_attribute.description | html %]: </label>
                                     [% ELSE %]
-                                        <label for="[% patron_attribute.form_id | html %]">[% patron_attribute.description | html %]: </label>
+                                        <label for="[% patron_attribute.form_id | html %]" id="[% patron_attribute.form_id | html %]_label">[% patron_attribute.description | html %]: </label>
                                     [% END %]
                                     [% IF ( patron_attribute.use_dropdown ) %]
                                         <select id="[% patron_attribute.form_id | html %]" name="[% patron_attribute.form_id | html %]" [% IF patron_attribute.mandatory %]required="required"[% END %]>
