@@ -59,7 +59,7 @@
     </table>
 [% END %]
 <script>
-    const borrowernumber = "[% borrowernumber | html %]";
+    var clubs_borrowernumber = "[% borrowernumber | html %]";
 </script>
 <script>
     var clubs_dt_params = {
@@ -72,7 +72,7 @@
     <script>
         function loadEnrollmentForm(id, enrollent_id = 0) {
             $("body").css("cursor", "progress");
-            $("#clubs_panel").load('/cgi-bin/koha/clubs/patron-enroll.pl?borrowernumber=" + borrowernumber + " &id=' + id + "&enrollent_id=" + enrollent_id, function () {
+            $("#clubs_panel").load(`/cgi-bin/koha/clubs/patron-enroll.pl?borrowernumber=${clubs_borrowernumber}&id=${id}&enrollent_id=${enrollent_id}`, function () {
                 $("body").css("cursor", "default");
             });
 
@@ -85,7 +85,7 @@
             client.enrollments.cancel(id).then(
                 success => {
                     if (success.success) {
-                        $("#clubs_panel").load('/cgi-bin/koha/clubs/patron-clubs-tab.pl?borrowernumber=" + borrowernumber + "', function () {
+                        $("#clubs_panel").load(`/cgi-bin/koha/clubs/patron-clubs-tab.pl?borrowernumber=${clubs_borrowernumber}`, function () {
                             $("body").css("cursor", "default");
                         });
                     } else {
