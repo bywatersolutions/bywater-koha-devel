@@ -461,14 +461,29 @@
     </script>
     <script>
         // the english words used in display purposes
-        var text = new Array(_("Number"),_("Volume"),_("Issue"),_("Month"),_("Week"),_("Starting with:"),_("Rollover at:"),_("Choose hemisphere:"),_("Northern"),_("Southern",
-        "Autumn"),_("Winter"),_("Spring"),_("Summer"),_("Fall"),_("Season"),_("Year"));
-        $(document).ready(function() {
-
-            $("#renewsub").click(function(){
+        var text = new Array(
+            _("Number"),
+            _("Volume"),
+            _("Issue"),
+            _("Month"),
+            _("Week"),
+            _("Starting with:"),
+            _("Rollover at:"),
+            _("Choose hemisphere:"),
+            _("Northern"),
+            _("Southern", "Autumn"),
+            _("Winter"),
+            _("Spring"),
+            _("Summer"),
+            _("Fall"),
+            _("Season"),
+            _("Year")
+        );
+        $(document).ready(function () {
+            $("#renewsub").click(function () {
                 popup(subscriptionid);
                 return false;
-            })
+            });
 
             var table = $("#orders").kohaTable(
                 {
@@ -483,42 +498,41 @@
                 table_settings
             );
 
-            if (has_orders){
+            if (has_orders) {
                 $(table).treetable({
                     expandable: true,
-                    initialState: 'expanded',
+                    initialState: "expanded",
                 });
-                $(table).treetable('expandAll');
+                $(table).treetable("expandAll");
 
-                $("#expand_all").click(function(e){
+                $("#expand_all").click(function (e) {
                     e.preventDefault();
-                    $(table).treetable('expandAll');
+                    $(table).treetable("expandAll");
                 });
-                $("#collapse_all").click(function(e){
+                $("#collapse_all").click(function (e) {
                     e.preventDefault();
-                    $(table).treetable('collapseAll');
+                    $(table).treetable("collapseAll");
                 });
             }
 
             let table_dt = table.DataTable();
-            $("#hide_received_orders").click(function(e){
+            $("#hide_received_orders").click(function (e) {
                 e.preventDefault();
-                table_dt.columns(4).search('^$', {regex: true}).draw(); // Not empty "Receive date" columns
+                table_dt.columns(4).search("^$", { regex: true }).draw(); // Not empty "Receive date" columns
             });
-            $("#show_all_orders").click(function(e){
+            $("#show_all_orders").click(function (e) {
                 e.preventDefault();
-                table_dt.columns(4).search('').draw(); // Not filter, display all columns
+                table_dt.columns(4).search("").draw(); // Not filter, display all columns
             });
             $("#show_all_orders").click();
 
-            if (print_routing_list_issue){
+            if (print_routing_list_issue) {
                 var myurl = `/cgi-bin/koha/serials/routing-preview.pl?op=print&subscriptionid=${subscriptionid}&issue=${print_routing_list_issue}`;
-                window.open(myurl,'PrintSlip','width=500,height=500,toolbar=no,scrollbars=yes');
+                window.open(myurl, "PrintSlip", "width=500,height=500,toolbar=no,scrollbars=yes");
             }
-
         });
 
-        function mana_comment_close(){
+        function mana_comment_close() {
             $("#selected_id").val("");
             $("#mana-resource-id").val("");
             $("#mana-comment").val("");
