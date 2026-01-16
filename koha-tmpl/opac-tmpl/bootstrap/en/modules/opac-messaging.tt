@@ -362,7 +362,7 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
-        addPrefs({
+        Koha.addPrefs({
             PhoneNotification: [% Koha.Preference('PhoneNotification') ? 1 : 0 | html %],
             TalkingTechItivaPhoneNotification: [% Koha.Preference('TalkingTechItivaPhoneNotification') ? 1 : 0 | html %],
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
@@ -371,7 +371,7 @@
     <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             function toggle_digest(id) {
-                let phone_checked = prefs.TalkingTechItivaPhoneNotification ? false : prefs.PhoneNotification ? $("#phone" + id).prop("checked") : false;
+                let phone_checked = Koha.prefs.TalkingTechItivaPhoneNotification ? false : Koha.prefs.PhoneNotification ? $("#phone" + id).prop("checked") : false;
 
                 if ($("#email" + id).prop("checked") || $("#sms" + id).prop("checked") || phone_checked) {
                     $("#digest" + id)
@@ -424,7 +424,7 @@
             });
         }
 
-        var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+        var responsive_display = Koha.prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
         $(".table").kohaTable({
             searching: false,
             paging: false,

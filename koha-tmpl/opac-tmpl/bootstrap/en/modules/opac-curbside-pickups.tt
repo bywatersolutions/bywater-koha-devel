@@ -322,7 +322,7 @@
             [% END %]
         [% END %]
 
-        addPrefs({
+        Koha.addPrefs({
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
         });
     </script>
@@ -336,7 +336,7 @@
             existingPickupMoments[pickup.branchcode].push(pickupMoment);
         });
 
-        var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+        var responsive_display = Koha.prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
 
         $(document).ready(function () {
             $("#pickups-table").kohaTable({

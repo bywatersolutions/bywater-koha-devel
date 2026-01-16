@@ -132,7 +132,7 @@
         const analyze = [% analyze ? 1 : 0 | html %];
         const hidden_count = [% hidden_count ? 1 : 0 | html %];
         const bundlesEnabled = [% bundlesEnabled ? 1 : 0 | html %];
-        addPrefs({
+        Koha.addPrefs({
             LocalCoverImages: [% Koha.Preference('LocalCoverImages') ? 1 : 0 | html %],
             OPACLocalCoverImages: [% Koha.Preference('OPACLocalCoverImages') ? 1 : 0 | html %],
             EnableItemGroups: [% Koha.Preference('EnableItemGroups') ? 1 : 0 | html %],
@@ -148,7 +148,7 @@
             canreservefromotherbranches: [% Koha.Preference('canreservefromotherbranches') ? 1 : 0 | html %],
             SpineLabelShowPrintOnBibDetails: [% Koha.Preference('SpineLabelShowPrintOnBibDetails') ? 1 : 0 | html %],
         });
-        addPermissions({
+        Koha.addPermissions({
             CAN_user_editcatalogue_edit_items: [% CAN_user_editcatalogue_edit_items ? 1 : 0 | html %],
         });
         const logged_in_branchcode = '[% Branches.GetLoggedInBranchcode() | html %]';
@@ -306,27 +306,27 @@
         // Do we need separate/new endpoints or do we hack the somewhere client-side?
         let item_table_url = `/api/v1/biblios/${biblionumber}/items?`;
         let embed = ["+strings,_status,home_library,holding_library,checkout,checkout.patron,transfer,transfer+strings,first_hold,first_hold+strings,first_hold.patron,first_hold.desk"];
-        if (prefs.LocalCoverImages) {
+        if (Koha.prefs.LocalCoverImages) {
             embed.push("cover_image_ids");
         }
-        if (prefs.EnableItemGroups) {
+        if (Koha.prefs.EnableItemGroups) {
             embed.push("item_group_item.item_group.description");
         }
         if (is_serial) {
             embed.push("serial_item.serial");
         }
-        if (prefs.UseRecalls) {
+        if (Koha.prefs.UseRecalls) {
             embed.push("recall", "recall+strings", "recall.patron");
         }
         embed.push("in_bundle", "bundle_host", "bundle_host.biblio", "bundle_items_lost+count", "bundle_items_not_lost+count");
-        if (prefs.UseCourseReserves) {
+        if (Koha.prefs.UseCourseReserves) {
             embed.push("course_item.course_reserves.course");
         }
-        if (prefs.ClaimReturnedLostValue) {
+        if (Koha.prefs.ClaimReturnedLostValue) {
             embed.push("return_claims");
         }
 
-        if (prefs.EasyAnalyticalRecords) {
+        if (Koha.prefs.EasyAnalyticalRecords) {
             // For host records
             embed.push("biblio.title");
         }
@@ -350,8 +350,8 @@
                 user_colvis[tab_id] = user_colvis_bak;
             }
             let default_filters = {};
-            if (prefs.SeparateHoldings) {
-                let branch = prefs.SeparateHoldingsBranch == "homebranch" ? "me.home_library_id" : "me.holding_library_id";
+            if (Koha.prefs.SeparateHoldings) {
+                let branch = Koha.prefs.SeparateHoldingsBranch == "homebranch" ? "me.home_library_id" : "me.holding_library_id";
                 if (tab_id == "holdings") {
                     default_filters[branch] = logged_in_branchcode;
                 } else {
@@ -387,7 +387,7 @@
                         }
                     },
                 },
-                ...(prefs.LocalCoverImages
+                ...(Koha.prefs.LocalCoverImages
                     ? [
                           {
                               data: "",
@@ -419,7 +419,7 @@
                           },
                       ]
                     : []),
-                ...(prefs.item_level_itypes
+                ...(Koha.prefs.item_level_itypes
                     ? [
                           {
                               data: "me.item_type_id", // FIXME Cannot filter by biblioitem.itemtype
@@ -431,7 +431,7 @@
                               render: function (data, type, row, meta) {
                                   let node = "";
                                   let item_type_description = row._strings.item_type_id ? row._strings.item_type_id.str : row.item_type_id;
-                                  if (prefs.noItemTypeImages) {
+                                  if (Koha.prefs.noItemTypeImages) {
                                       let image_location = item_type_image_locations[row.item_type_id];
                                       node += image_location ? '<img class="itemtype-image" src="%s" alt="" /> '.format(escape_str(image_location), escape_str(item_type_description), escape_str(item_type_description)) : "";
                                   }
@@ -493,7 +493,7 @@
                         return escape_str(row._strings.collection_code ? row._strings.collection_code.str : row.collection_code);
                     },
                 },
-                ...(prefs.EnableItemGroups
+                ...(Koha.prefs.EnableItemGroups
                     ? [
                           {
                               data: "item_group_item.item_group.description",
@@ -539,7 +539,7 @@
                         } else if (serial && serial.serialseq) {
                             nodes += '<span class="serialseq">%s</span>'.format(escape_str(serial.serialseq));
                         }
-                        if (prefs.DisplayPublishedDate) {
+                        if (Koha.prefs.DisplayPublishedDate) {
                             if (serial && serial.publisheddate) {
                                 nodes += ' <span class="pubdate">(%s)</span>'.format($date(serial.publisheddate));
                             }
@@ -619,7 +619,7 @@
                                     } else {
                                         nodes += '<span class="waitingat">%s</span>'.format(_("Waiting at %s since %s.").format(row.first_hold._strings.pickup_library_id.str, $date(row.first_hold.waiting_date)));
                                     }
-                                    if (prefs.canreservefromotherbranches) {
+                                    if (Koha.prefs.canreservefromotherbranches) {
                                         if (row.first_hold.waiting_date || row.first_hold.priority == 1) {
                                             // Hacky for patron_to_html in case we simply want to display the patron's library name
                                             row.first_hold.patron.library = { name: libraries_names.get(row.first_hold.patron.library_id) };
@@ -633,7 +633,7 @@
                                 }
                             }
 
-                            if (prefs.UseRecalls) {
+                            if (Koha.prefs.UseRecalls) {
                                 if (row.recall && row.item_id === row.recall.item_id) {
                                     if (row.recall.waiting_date) {
                                         nodes += '<span class="holding_status recallwaiting">%s</span>'.format(
@@ -806,7 +806,7 @@
                         return escape_str(row.internal_notes);
                     },
                 },
-                ...(prefs.EasyAnalyticalRecords
+                ...(Koha.prefs.EasyAnalyticalRecords
                     ? [
                           {
                               data: "biblio.title",
@@ -840,7 +840,7 @@
                           },
                       ]
                     : []),
-                ...(prefs.UseCourseReserves
+                ...(Koha.prefs.UseCourseReserves
                     ? [
                           {
                               data: "course_item.course_reserves.course.course_name",
@@ -868,7 +868,7 @@
                           },
                       ]
                     : []),
-                ...(prefs.SpineLabelShowPrintOnBibDetails
+                ...(Koha.prefs.SpineLabelShowPrintOnBibDetails
                     ? [
                           {
                               data: "",
@@ -880,13 +880,13 @@
                           },
                       ]
                     : []),
-                ...(permissions.CAN_user_editcatalogue_edit_items
+                ...(Koha.permissions.CAN_user_editcatalogue_edit_items
                     ? [
                           {
                               data: function (row, type, val, meta) {
                                   let nodes = "";
                                   if (can_edit_items_from.includes(row.home_library_id) || !can_edit_items_from.length) {
-                                      if (prefs.LocalCoverImages || prefs.OPACLocalCoverImages) {
+                                      if (Koha.prefs.LocalCoverImages || Koha.prefs.OPACLocalCoverImages) {
                                           nodes += '<div class="btn-group dropup">';
                                           nodes +=
                                               ' <a class="btn btn-default btn-xs" href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=%s&itemnumber=%s#edititem"><i class="fa-solid fa-pencil"></i> %s</a><a class="btn btn-default btn-xs dropdown-toggle" data-bs-toggle="dropdown"><span class="caret"></span></a>'.format(
@@ -963,7 +963,7 @@
                             container.find(".bottom.pager").remove();
                         }
 
-                        if (prefs.SpineLabelShowPrintOnBibDetails) {
+                        if (Koha.prefs.SpineLabelShowPrintOnBibDetails) {
                             $(".print-label").on("click", function (e) {
                                 e.preventDefault();
                                 link = $(this).attr("href");

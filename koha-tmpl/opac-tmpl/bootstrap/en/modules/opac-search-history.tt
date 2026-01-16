@@ -306,7 +306,7 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
-        addPrefs({
+        Koha.addPrefs({
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
         });
     </script>
@@ -315,7 +315,7 @@
             // We show table ordered by descending dates by default
             // (so that the more recent query is shown first)
 
-            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+            var responsive_display = Koha.prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
             let history_tables = $(".historyt").kohaTable({
                 order: [[1, "desc"]],
                 dom: '<"top"<"table_entries"><"table_controls"fB>>t',

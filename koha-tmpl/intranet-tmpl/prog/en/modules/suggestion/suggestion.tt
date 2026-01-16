@@ -1257,7 +1257,7 @@
             const has_suggestions = [% suggestions.size ? 1 : 0 | html %];
             let suggestionData = [% To.json(suggestions || []) | $raw %];
             var suggestions_table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'suggestions', 'suggestions', 'json' ) | $raw %]
-            addPermissions({
+            Koha.addPermissions({
                 CAN_user_suggestions_suggestions_manage: [% CAN_user_suggestions_suggestions_manage ? 1 : 0 | html %],
                 CAN_user_suggestions_suggestions_delete: [% CAN_user_suggestions_suggestions_delete ? 1 : 0 | html %],
             });
@@ -1451,7 +1451,7 @@
                                         searchable: false,
                                         orderable: false,
                                         render: function (data, type, row, meta) {
-                                            if (permissions.CAN_user_suggestions_suggestions_manage) {
+                                            if (Koha.permissions.CAN_user_suggestions_suggestions_manage) {
                                                 let node = '<div class="btn-group dropup">';
                                                 node += '<a class="btn btn-default btn-xs" role="button" href="suggestion.pl?suggestionid=%s&amp;op=edit_form"><i class="fa-solid fa-pencil" aria-hidden="true"></i> %s</a>'.format(
                                                     row.suggestion_id,
@@ -1459,7 +1459,7 @@
                                                 );
                                                 node += '<a class="btn btn-default btn-xs dropdown-toggle" id="more_actions_%s" role="button" data-bs-toggle="dropdown" href="#"><b class="caret"></b></a>'.format(row.suggestion_id);
                                                 node += '<ul class="dropdown-menu" role="menu" aria-labelledby="more_actions_%s">'.format(row.suggestion_id);
-                                                if (permissions.CAN_user_suggestions_suggestions_delete) {
+                                                if (Koha.permissions.CAN_user_suggestions_suggestions_delete) {
                                                     node += '<li><a href="#" data-op="cud-delete" data-suggestionid="%s" class="dropdown-item trigger_action">%s</a></li>'.format(row.suggestion_id, _("Delete"));
                                                 }
                                                 if (!row.archived) {
@@ -1469,7 +1469,7 @@
                                                 }
                                                 node += "</ul></div>";
                                                 return node;
-                                            } else if (permissions.CAN_user_suggestions_suggestions_delete) {
+                                            } else if (Koha.permissions.CAN_user_suggestions_suggestions_delete) {
                                                 return '<button data-op="cud-delete" data-suggestionid="%s" class="btn btn-xs btn-default trigger_action"><i class="fa fa-trash-can"></i> %s</button>'.format(row.suggestion_id, _("Delete"));
                                             }
                                         },

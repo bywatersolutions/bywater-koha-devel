@@ -583,7 +583,7 @@
             expandByDefault: true,
             showElementDetails: false,
         });
-        addPrefs({
+        Koha.addPrefs({
             AcqEnableFiles: [% Koha.Preference('AcqEnableFiles') ? 1 : 0 | html %],
         });
         const invoiceincgst = [% invoiceincgst ? 1 : 0 | html %];
@@ -609,7 +609,7 @@
                 searching: false,
                 dom: "t",
             });
-            if (prefs.AcqEnableFiles && has_files) {
+            if (Koha.prefs.AcqEnableFiles && has_files) {
                 $("#invoice_files_table").kohaTable({
                     info: false,
                     paging: false,

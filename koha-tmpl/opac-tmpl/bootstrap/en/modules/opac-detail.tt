@@ -1624,7 +1624,7 @@
     [% END %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
         const interface = "[% interface | html %]";
-        addPrefs({
+        Koha.addPrefs({
             OpacHighlightedWords: "[% Koha.Preference('OpacHighlightedWords') | html %]",
             NotHighlightedWords: "[% Koha.Preference('NotHighlightedWords') | html %]",
             GoogleJackets: [% Koha.Preference('GoogleJackets') ? 1 : 0 | html %],
@@ -1685,7 +1685,7 @@
         });
         window.emojiPicker.discover();
 
-        if (prefs.OpacHighlightedWords) {
+        if (Koha.prefs.OpacHighlightedWords) {
             var q_array = new Array(); // holds search terms if available
 
             function highlightOff() {
@@ -1698,7 +1698,7 @@
                     if (q_array[x].length > 0) {
                         q_array[x] = q_array[x].replace(/\w*:([\w])/, "$1");
                         q_array[x] = q_array[x].toLowerCase();
-                        var myStopwords = prefs.NotHighlightedWords.toLowerCase().split("|");
+                        var myStopwords = Koha.prefs.NotHighlightedWords.toLowerCase().split("|");
                         if ($.inArray(q_array[x], myStopwords) == -1) {
                             $("#marcnotes").highlight(q_array[x]);
                             $(".title").highlight(q_array[x]);
@@ -1851,19 +1851,19 @@
             var loaded = 1;
             counter_wait++;
 
-            if (prefs.GoogleJackets) {
+            if (Koha.prefs.GoogleJackets) {
                 if (loaded) {
                     loaded = KOHA.Google.done;
                 }
             }
 
-            if (prefs.OpenLibraryCovers) {
+            if (Koha.prefs.OpenLibraryCovers) {
                 if (loaded) {
                     loaded = KOHA.OpenLibrary.done;
                 }
             }
 
-            if (prefs.OpacCoce && prefs.CoceProviders) {
+            if (Koha.prefs.OpacCoce && Koha.prefs.CoceProviders) {
                 if (loaded) {
                     loaded = KOHA.coce.done;
                 }
@@ -1887,7 +1887,7 @@
         });
 
         $(document).ready(function () {
-            if (prefs.OPACDetailQRCode) {
+            if (Koha.prefs.OPACDetailQRCode) {
                 var link_canonical = document.querySelector("link[rel=canonical]");
 
                 var qrcode = kjua({
@@ -1935,7 +1935,7 @@
                 }
             }
 
-            if (prefs.OpacBrowseResults && busc) {
+            if (Koha.prefs.OpacBrowseResults && busc) {
                 $(".l_Results").show();
                 $("#a_listResults").on("click", function (e) {
                     e.preventDefault();
@@ -1948,7 +1948,7 @@
                 });
             }
 
-            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+            var responsive_display = Koha.prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
 
             $("#holdingst").kohaTable(
                 {
@@ -2036,7 +2036,7 @@
             }
 
             if (query_desc !== "") {
-                if (prefs.OpacHighlightedWords) {
+                if (Koha.prefs.OpacHighlightedWords) {
                     var query_desc_replaced = query_desc.replace("'", "\'").replace("\n", "\\n").replace("\r", "\\r");
                     q_array = query_desc_replaced.split(" ");
                     q_array = q_array.filter(function (n) {
@@ -2058,19 +2058,19 @@
                 }
             }
 
-            if (prefs.GoogleJackets) {
-                KOHA.Google.GetCoverFromIsbn(prefs.OPACURLOpenInNewWindow);
+            if (Koha.prefs.GoogleJackets) {
+                KOHA.Google.GetCoverFromIsbn(Koha.prefs.OPACURLOpenInNewWindow);
             }
 
-            if (prefs.OpacCoce && prefs.CoceProviders) {
-                KOHA.coce.getURL(prefs.CoceHost, prefs.CoceProviders, $("#biblio-cover-slider"));
+            if (Koha.prefs.OpacCoce && Koha.prefs.CoceProviders) {
+                KOHA.coce.getURL(Koha.prefs.CoceHost, Koha.prefs.CoceProviders, $("#biblio-cover-slider"));
             }
 
-            if (prefs.OpenLibraryCovers) {
+            if (Koha.prefs.OpenLibraryCovers) {
                 KOHA.OpenLibrary.GetCoverFromIsbn();
             }
 
-            if (prefs.OPACShelfBrowser) {
+            if (Koha.prefs.OPACShelfBrowser) {
                 // Focus on shelf browser if present
                 var shelfbrowser = $("#shelfbrowser");
                 if (shelfbrowser.length > 0) {
@@ -2097,16 +2097,16 @@
                             },
                             success: function (data) {
                                 $("#shelfbrowser").replaceWith(data);
-                                if (prefs.GoogleJackets) {
-                                    KOHA.Google.GetCoverFromIsbn(prefs.OPACURLOpenInNewWindow);
+                                if (Koha.prefs.GoogleJackets) {
+                                    KOHA.Google.GetCoverFromIsbn(Koha.prefs.OPACURLOpenInNewWindow);
                                 }
-                                if (prefs.OpacCoce && prefs.CoceProviders) {
-                                    KOHA.coce.getURL(prefs.CoceHost, prefs.CoceProviders, $("#bibliodescriptions"));
+                                if (Koha.prefs.OpacCoce && Koha.prefs.CoceProviders) {
+                                    KOHA.coce.getURL(Koha.prefs.CoceHost, Koha.prefs.CoceProviders, $("#bibliodescriptions"));
                                 }
-                                if (prefs.OpenLibraryCovers) {
+                                if (Koha.prefs.OpenLibraryCovers) {
                                     KOHA.OpenLibrary.GetCoverFromIsbn();
                                 }
-                                if (prefs.OPACLocalCoverImages) {
+                                if (Koha.prefs.OPACLocalCoverImages) {
                                     KOHA.LocalCover.GetCoverFromBibnumber(true);
                                 }
                             },
@@ -2122,16 +2122,16 @@
                             },
                             success: function (data) {
                                 $("#shelfbrowser").replaceWith(data);
-                                if (prefs.GoogleJackets) {
-                                    KOHA.Google.GetCoverFromIsbn(prefs.OPACURLOpenInNewWindow);
+                                if (Koha.prefs.GoogleJackets) {
+                                    KOHA.Google.GetCoverFromIsbn(Koha.prefs.OPACURLOpenInNewWindow);
                                 }
-                                if (prefs.OpacCoce && prefs.CoceProviders) {
-                                    KOHA.coce.getURL(prefs.CoceHost, prefs.CoceProviders, $("#bibliodescriptions"));
+                                if (Koha.prefs.OpacCoce && Koha.prefs.CoceProviders) {
+                                    KOHA.coce.getURL(Koha.prefs.CoceHost, Koha.prefs.CoceProviders, $("#bibliodescriptions"));
                                 }
-                                if (prefs.OpenLibraryCovers) {
+                                if (Koha.prefs.OpenLibraryCovers) {
                                     KOHA.OpenLibrary.GetCoverFromIsbn();
                                 }
-                                if (prefs.OPACLocalCoverImages) {
+                                if (Koha.prefs.OPACLocalCoverImages) {
                                     KOHA.LocalCover.GetCoverFromBibnumber(true);
                                 }
                             },
@@ -2147,7 +2147,7 @@
         });
 
         $(document).ready(function () {
-            if (prefs.OPACPopupAuthorsSearch) {
+            if (Koha.prefs.OPACPopupAuthorsSearch) {
                 var terms = {
                     contributors: {
                         label: "author",

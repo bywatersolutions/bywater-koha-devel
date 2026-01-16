@@ -218,21 +218,21 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
-        addPrefs({
+        Koha.addPrefs({
             GoogleJackets: [% Koha.Preference('GoogleJackets') ? 1 : 0 | html %],
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
         });
     </script>
     <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
-            if (prefs.GoogleJackets) {
+            if (Koha.prefs.GoogleJackets) {
                 KOHA.Google.GetCoverFromIsbn();
             }
             $("#order").change(function () {
                 $("#sortform").submit();
             });
 
-            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+            var responsive_display = Koha.prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
             var table = $("#readingrec").kohaTable({
                 dom: '<"top"<"table_entries"i><"table_controls"fB>>t',
                 language: {

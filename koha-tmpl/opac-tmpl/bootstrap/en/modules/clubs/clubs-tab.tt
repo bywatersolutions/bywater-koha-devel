@@ -70,7 +70,7 @@
 [% END %]
 <script nonce="[% Koha.CSPNonce | $raw %]">
     const patron_id = "[% borrower.borrowernumber | html %]";
-    addPrefs({
+    Koha.addPrefs({
         OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
     });
 </script>
@@ -104,7 +104,7 @@
         return false;
     }
 
-    var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+    var responsive_display = Koha.prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
 
     var Tables = $("#clubs-table-enrolled,#clubs-table-unenrolled");
     Tables.each(function () {

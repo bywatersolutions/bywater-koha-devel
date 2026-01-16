@@ -400,7 +400,7 @@
     <script nonce="[% Koha.CSPNonce | $raw %]">
         var authorised_values = [% authorised_values_json | $raw %];
         var table_settings = [% TablesSettings.GetTableSettings( 'catalogue', 'itemsearch', 'results', 'json' ) | $raw %];
-        addPermissions({
+        Koha.addPermissions({
             CAN_user_tools_items_batchmod: [% CAN_user_tools_items_batchmod ? 1 : 0 | html %],
             CAN_user_tools_items_batchdel: [% CAN_user_tools_items_batchdel ? 1 : 0 | html %],
         });
@@ -652,14 +652,14 @@
                 "</a></li>" +
                 "            </ul>" +
                 "        </div>";
-            if (permissions.CAN_user_tools_items_batchmod || permissions.CAN_user_tools_items_batchdel) {
+            if (Koha.permissions.CAN_user_tools_items_batchmod || Koha.permissions.CAN_user_tools_items_batchdel) {
                 table +=
                     "" +
                     '        <div class="btn-group"><button class="btn btn-default btn-sm dropdown-toggle disabled" disabled="disabled" type="button" id="batch_mod_menu"data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true"> ' +
                     _("Batch operations") +
                     " </button>" +
                     '            <ul class="dropdown-menu" aria-labelledby="batch_mod_menu">';
-                if (permissions.CAN_user_tools_items_batchmod) {
+                if (Koha.permissions.CAN_user_tools_items_batchmod) {
                     table +=
                         "" +
                         '                <li> <a class="dropdown-item batch_op send_to_item_mod" href="#" data-submit="batch_item_modification" data-bs-toggle="tooltip" data-bs-placement="right" title="' +
@@ -668,7 +668,7 @@
                         _("Batch item modification") +
                         "</a> </li>";
                 }
-                if (permissions.CAN_user_tools_items_batchdel) {
+                if (Koha.permissions.CAN_user_tools_items_batchdel) {
                     table +=
                         "" +
                         '                <li> <a class="dropdown-item batch_op send_to_item_del"" href="#" data-submit="batch_item_deletion" data-bs-toggle="tooltip" data-bs-placement="right" title="' +

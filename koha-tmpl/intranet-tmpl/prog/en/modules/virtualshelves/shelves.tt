@@ -718,17 +718,17 @@
 
     [% IF shelf AND op == 'view' %]
         <script nonce="[% Koha.CSPNonce | $raw %]">
-            addPrefs({
+            Koha.addPrefs({
                 intranetbookbag: [% Koha.Preference("intranetbookbag") ? 1 : 0 | html %],
                 virtualshelves: [% Koha.Preference("virtualshelves") ? 1 : 0 | html %],
             });
 
             function build_dropdown(){
                 var param1 = "| <label for=\"addto\">"+_("Add to:")+"<\/label><select name=\"addto\" id=\"addto\"><option value=\"\"><\/option>";
-                if (prefs.intranetbookbag){
+                if (Koha.prefs.intranetbookbag){
                      param1 += "<option value=\"addtocart\">"+_("Cart")+"<\/option>";
                 }
-                if (prefs.virtualshelves){
+                if (Koha.prefs.virtualshelves){
                     [% IF add_to_some_private_shelves.count %]
                         param1 += "<optgroup label=\""+_("Your lists:")+"\">";
                         [% SET number_of_private_shelves = 0 %]

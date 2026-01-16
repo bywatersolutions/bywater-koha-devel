@@ -153,13 +153,13 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
-        addPrefs({
+        Koha.addPrefs({
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
         });
     </script>
     <script nonce="[% Koha.CSPNonce | $raw %]">
         $(function () {
-            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+            var responsive_display = Koha.prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
             $("#topissuest").kohaTable({
                 order: [[3, "desc"]],
                 columnDefs: [{ className: "dtr-control", orderable: false, targets: -1 }],

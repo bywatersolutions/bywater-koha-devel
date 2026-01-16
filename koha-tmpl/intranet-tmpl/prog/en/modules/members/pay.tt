@@ -239,7 +239,7 @@
         const change_given = "[% change_given | html %]";
         const total = "[% total | $Price %]";
         const patron_id = "[% patron.borrowernumber | html %]";
-        addPrefs({
+        Koha.addPrefs({
             FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
         });
     </script>
@@ -254,7 +254,7 @@
             }
         }
         $(document).ready(function () {
-            if (payment_id && prefs.FinePaymentAutoPopup) {
+            if (payment_id && Koha.prefs.FinePaymentAutoPopup) {
                 window.open(`/cgi-bin/koha/members/printfeercpt.pl?action=print&accountlines_id=${payment_id}&change_given=${change_given}&borrowernumber=${patron_id}`, "_blank");
             }
 

@@ -460,11 +460,11 @@
         var invoice_id = "[% invoiceid | html %]";
         const multiple_orders = "[% multiple_orders | html %]";
         const only_one_order = [% only_one_order ? 1 : 0 | html %];
-        addPrefs({
+        Koha.addPrefs({
             AcqCreateItem: [% Koha.Preference('AcqCreateItem') ? 1 : 0 | html %],
             UniqueItemFields: [% Koha.Preference('UniqueItemFields') ? 1 : 0 | html %],
         });
-        addPermissions({
+        Koha.addPermissions({
             CAN_user_acquisition: [% CAN_user_acquisition ? 1 : 0 | html %],
         });
     </script>
@@ -726,7 +726,7 @@
                 params["quantity"] = row.quantity;
                 params["quantityrec"] = row.quantity_received;
                 params["origquantityrec"] = origrec;
-                var effective_create_items = row.basket.create_items || prefs.AcqCreateItem;
+                var effective_create_items = row.basket.create_items || Koha.prefs.AcqCreateItem;
                 params["tax_rate"] = effective_create_items == "receiving" ? row.tax_rate_on_receiving : row.tax_rate_on_ordering;
                 params["replacementprice"] = row.replacement_price;
                 params["unitprice"] = invoiceincgst == "1" ? row.unit_price_tax_included || row.ecost_tax_included : row.unit_price_tax_excluded || row.ecost_tax_excluded;
@@ -924,7 +924,7 @@
                 if (val === null) $(this).val($("option:first-child", this).attr("value"));
                 val = $(this).val();
                 var row = $("#order_edit").data("row");
-                var effective_create_items = row.basket.create_items || prefs.AcqCreateItem;
+                var effective_create_items = row.basket.create_items || Koha.prefs.AcqCreateItem;
                 if (effective_create_items == "receiving") {
                     row.tax_rate_on_receiving = val;
                 } else {
@@ -1051,7 +1051,7 @@
                             orderable: false,
                             data: function (row, type, val, meta) {
                                 if (row.invoice) {
-                                    if (permissions.CAN_user_acquisition) {
+                                    if (Koha.permissions.CAN_user_acquisition) {
                                         return '<a href="/cgi-bin/koha/acqui/invoice.pl?invoiceid=' + row.invoice_id + '" title="Invoice detail page">' + row.invoice.invoice_number + "</a>";
                                     }
                                     return row.invoice.invoice_number;
@@ -1123,7 +1123,7 @@
             var set_editor = function () {
                 var modal = $("#order_edit");
                 var row = modal.data("row");
-                var effective_create_items = row.basket.create_items || prefs.AcqCreateItem;
+                var effective_create_items = row.basket.create_items || Koha.prefs.AcqCreateItem;
                 var origrec = $("#order_edit").data("origrec") || {};
                 if (!origrec.hasOwnProperty(row.order_id)) {
                     origrec[row.order_id] = row.quantity_received;
@@ -1262,7 +1262,7 @@
                         $("#acq-create-ordering").hide();
                         if (row.items && row.items.length) {
                             row.items.forEach(function (item, index) {
-                                cloneItemBlock(index, prefs.UniqueItemFields, function (block_id) {
+                                cloneItemBlock(index, Koha.prefs.UniqueItemFields, function (block_id) {
                                     var block = $("#" + block_id).hide();
                                     Object.keys(item).forEach(function (key) {
                                         block
@@ -1271,14 +1271,14 @@
                                             .find("*[name=field_value]")
                                             .val(item[key].field_value);
                                     });
-                                    addItemInList(block_id, prefs.UniqueItemFields);
+                                    addItemInList(block_id, Koha.prefs.UniqueItemFields);
                                     block.find("input[name='buttonPlus']").val(window.MSG_ADDITEM_JS_UPDATEITEM);
                                     block.find("input[name='buttonPlusMulti']").remove();
                                     block.find("input[name='multiValue']").remove();
                                 });
                             });
                         }
-                        cloneItemBlock((row.items && row.items.length) || 0, prefs.UniqueItemFields);
+                        cloneItemBlock((row.items && row.items.length) || 0, Koha.prefs.UniqueItemFields);
                     } else if (effective_create_items == "ordering") {
                         $("#acq-create-receiving").hide();
                         $("#acq-create-ordering").show();

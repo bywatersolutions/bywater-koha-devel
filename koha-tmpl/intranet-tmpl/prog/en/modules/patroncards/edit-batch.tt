@@ -177,7 +177,7 @@
     [% Asset.js("js/tools-menu.js") | $raw %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
         const batch_id = "[% batch_id | html %]";
-        addPrefs({
+        Koha.addPrefs({
             PatronsPerPage: "[% Koha.Preference('PatronsPerPage') | html %]",
         });
         const has_entries = [% table_loop ? 1 : 0 | html %];
@@ -299,12 +299,12 @@
             var aLengthMenu = [10, 20, 50, 100, -1];
             var aLengthMenuLabel = [10, 20, 50, 100, _("All")];
             for (var i = 0; i < aLengthMenu.length; i++) {
-                if (aLengthMenu[i] == prefs.PatronsPerPage) {
+                if (aLengthMenu[i] == Koha.prefs.PatronsPerPage) {
                     break;
                 }
-                if (aLengthMenu[i] > prefs.PatronsPerPage || aLengthMenu[i] == -1) {
-                    aLengthMenu.splice(i, 0, prefs.PatronsPerPage);
-                    aLengthMenuLabel.splice(i, 0, prefs.PatronsPerPage);
+                if (aLengthMenu[i] > Koha.prefs.PatronsPerPage || aLengthMenu[i] == -1) {
+                    aLengthMenu.splice(i, 0, Koha.prefs.PatronsPerPage);
+                    aLengthMenuLabel.splice(i, 0, Koha.prefs.PatronsPerPage);
                     break;
                 }
             }
@@ -319,7 +319,7 @@
                 order: [[0, "asc"]],
                 pagingType: "full",
                 lengthMenu: [aLengthMenu, aLengthMenuLabel],
-                pageLength: prefs.PatronsPerPage,
+                pageLength: Koha.prefs.PatronsPerPage,
                 autoWidth: false,
             });
             $("#additems").click(function () {

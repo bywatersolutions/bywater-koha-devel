@@ -494,7 +494,7 @@
 
         const has_patrons = [% borrowers ? 1 : 0 | html %]
         const op = "[% op | html %]";
-        addPermissions({
+        Koha.addPermissions({
             CanUpdatePasswordExpiration: [% CanUpdatePasswordExpiration ? 1 : 0 | html %],
             CanUpdateProtectPatron: [% CanUpdateProtectPatron ? 1 : 0 | html %],
         });
@@ -526,7 +526,7 @@
                     selections_column.is_hidden = 1;
                 }
 
-                if (!permissions.CanUpdatePasswordExpiration) {
+                if (!Koha.permissions.CanUpdatePasswordExpiration) {
                     let password_expiration_date_column = table_settings.columns.find(c => c.columnname == "batch_patron_edit_password_expiration_date");
                     password_expiration_date_column.is_hidden = 1;
                     password_expiration_date_column.cannot_be_modified = 1;
@@ -534,7 +534,7 @@
                     password_expiration_date_column.force_visibility = 1;
                 }
 
-                if (!permissions.CanUpdateProtectPatron) {
+                if (!Koha.permissions.CanUpdateProtectPatron) {
                     let protected_column = table_settings.columns.find(c => c.columnname == "batch_patron_edit_protected");
                     protected_column.is_hidden = 1;
                     protected_column.cannot_be_modified = 1;

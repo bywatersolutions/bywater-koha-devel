@@ -462,7 +462,7 @@
         const theme = "[% theme | html %]";
         const import_batch_id = "[% import_batch_id | html %]";
         const record_type = "[% record_type | html %]";
-        addPermissions({
+        Koha.addPermissions({
             CAN_user_editcatalogue_edit_catalogue: [% CAN_user_editcatalogue_edit_catalogue ? 1 : 0 | html %],
         });
     </script>
@@ -613,7 +613,7 @@
                         }
                         if (aData["matched"]) {
                             let buttons = '<a class="btn btn-default btn-xs" target="_blank" href="' + record_details_url + aData["matched"] + '"><i class="fa-solid fa-eye"></i> ' + _("View") + "</a> ";
-                            if (permissions.CAN_user_editcatalogue_edit_catalogue) {
+                            if (Koha.permissions.CAN_user_editcatalogue_edit_catalogue) {
                                 buttons += '<a class="btn btn-default btn-xs" target="_blank" href="' + record_edit_url + aData["matched"] + '"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' + _("Edit") + "</a>";
                             }
                             $("td:eq(6)", nRow).html(buttons);

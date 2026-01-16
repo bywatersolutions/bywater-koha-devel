@@ -1546,7 +1546,7 @@
         const overduecharges = [% overduecharges ? 1 : 0 | html %];
         const was_transferred = [% transfer ? 1 : 0 | html %];
 
-        addPrefs({
+        Koha.addPrefs({
             TransfersBlockCirc: [% Koha.Preference('TransfersBlockCirc') ? 1 : 0 | html %],
             AutomaticConfirmTransfer: [% Koha.Preference('AutomaticConfirmTransfer') ? 1 : 0 | html %],
         });
@@ -1799,7 +1799,7 @@
                 ],
             });
 
-            if (!prefs.TransfersBlockCirc && prefs.AutomaticConfirmTransfer) {
+            if (!Koha.prefs.TransfersBlockCirc && Koha.prefs.AutomaticConfirmTransfer) {
                 $("#wrong-transfer-modal").on("hidden.bs.modal", function () {
                     $("#wrongtransferform").submit();
                 });

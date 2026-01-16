@@ -370,7 +370,7 @@
             table_settings['columns'].splice(5, 1);
         }
 
-        addPrefs({
+        Koha.addPrefs({
             OPACBaseURL: "[% Koha.Preference('OPACBaseURL') | html %]",
         });
         const msg_alert = "[% msg | html %]";
@@ -490,7 +490,7 @@
             }
         }
         function Choose(hashval) {
-            var res = prefs.OPACBaseURL;
+            var res = Koha.prefs.OPACBaseURL;
             res = res.replace(/\/$/, "");
             res = res + "/cgi-bin/koha/opac-retrieve-file.pl?id=" + hashval;
             var index = plugin_index;

@@ -254,7 +254,7 @@
         const payment_id = "[% payment_id | html %]";
         const tendered = "[% tendered | html %]";
         const change = "[% change | html %]";
-        addPrefs({
+        Koha.addPrefs({
             FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
         });
     </script>
@@ -526,7 +526,7 @@
                 }
             });
 
-            if (payment_id && prefs.FinePaymentAutoPopup) {
+            if (payment_id && Koha.prefs.FinePaymentAutoPopup) {
                 $("#printReceipt").click(function () {
                     var win = window.open(`/cgi-bin/koha/pos/printreceipt.pl?action=print&accountlines_id=${payment_id}&tendered=${tendered}&change=${change}`, "_blank");
                     win.focus();

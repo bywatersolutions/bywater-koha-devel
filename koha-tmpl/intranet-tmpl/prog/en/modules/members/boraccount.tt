@@ -582,7 +582,7 @@
     [% Asset.js("js/members-menu.js") | $raw %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings('members', 'fines', 'account-fines', 'json') | $raw %];
-        addPrefs({
+        Koha.addPrefs({
             FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
             UseCashRegisters: [% Koha.Preference('UseCashRegisters') ? 1 : 0 | html %],
         });
@@ -591,7 +591,7 @@
     </script>
     <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
-            if (payment_id && prefs.FinePaymentAutoPopup) {
+            if (payment_id && Koha.prefs.FinePaymentAutoPopup) {
                 window.open(`/cgi-bin/koha/members/printfeercpt.pl?action=print&change_given=${change_given}&accountlines_id=${payment_id}`, "_blank");
             }
 
@@ -651,7 +651,7 @@
             });
 
             // Validate cash register requirement for refunds
-            if (prefs.UseCashRegisters) {
+            if (Koha.prefs.UseCashRegisters) {
                 $("#refund_form").on("submit", function (e) {
                     var refund_type = $("#refund_type").val();
                     var register = $("#refund_registerid").val();

@@ -125,7 +125,7 @@
 <script nonce="[% Koha.CSPNonce | $raw %]">
     var patron_id = "[% borrowernumber | html %]";
     var cardnumber = "[% cardnumber | html %]";
-    addPermissions({
+    Koha.addPermissions({
         CAN_user_tools_manage_patron_lists: [% CAN_user_tools_manage_patron_lists ? 1 : 0 | html %],
     });
 </script>
@@ -136,7 +136,7 @@
     $("#table_listnopatron").kohaTable(patron_lists_dt_params);
     $("#table_inlists").kohaTable(patron_lists_dt_params);
 
-    if (permissions.CAN_user_tools_manage_patron_lists) {
+    if (Koha.permissions.CAN_user_tools_manage_patron_lists) {
         function addToList() {
             var list_id = $("#add_to_patron_list_id_select").val();
             $("#pat_lists_panel").text(_("Loading..."));

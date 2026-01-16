@@ -72,7 +72,7 @@
         var bookings_table;
         var timeline;
         let biblionumber = "[% biblionumber | uri %]";
-        addPermissions({
+        Koha.addPermissions({
             CAN_user_circulate_manage_bookings: [% CAN_user_circulate_manage_bookings ? 1 : 0 | html %],
         });
     </script>
@@ -124,7 +124,7 @@
                             end: $toDisplayDate(endServerTz),
                             content: !isActive ? `<s>${patronContent}</s>` : patronContent,
                             className: booking.status === "cancelled" ? "cancelled" : "",
-                            ...(permissions.CAN_user_circulate_manage_bookings ? { editable: !["cancelled", "completed"].includes(booking.status) ? { remove: true, updateTime: true } : false } : { editable: false }),
+                            ...(Koha.permissions.CAN_user_circulate_manage_bookings ? { editable: !["cancelled", "completed"].includes(booking.status) ? { remove: true, updateTime: true } : false } : { editable: false }),
                             type: "range",
                             group: booking.item_id ?? 0,
                         });
@@ -374,7 +374,7 @@
                             render: function (data, type, row, meta) {
                                 let result = "";
                                 const is_readonly = ["cancelled", "completed"].includes(row.status);
-                                if (permissions.CAN_user_circulate_manage_bookings && !is_readonly) {
+                                if (Koha.permissions.CAN_user_circulate_manage_bookings && !is_readonly) {
                                     result += `
                                 <button type="button" class="btn btn-default btn-xs edit-action"
                                     data-bs-toggle="modal"

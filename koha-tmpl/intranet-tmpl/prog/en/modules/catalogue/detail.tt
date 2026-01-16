@@ -1770,13 +1770,13 @@
             var bundle_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail','bundle_tables','json') | $raw %];
         [% END %]
 
-        addPrefs({
+        Koha.addPrefs({
             AlwaysShowHoldingsTableFilters: [% Koha.Preference('AlwaysShowHoldingsTableFilters') ? 1 : 0 | html %],
             bundlesEnabled: [% Koha.Preference('bundlesEnabled') ? 1 : 0 | html %],
             BundleLostValue: "[% Koha.Preference('BundleLostValue') | html %]",
         });
 
-        addPermissions({
+        Koha.addPermissions({
             CAN_user_editcatalogue_manage_item_groups: [% CAN_user_editcatalogue_manage_item_groups ? 1 : 0 | html %],
         });
     </script>
@@ -1785,13 +1785,13 @@
         items_tab_ids.forEach(function (tab_id, index) {
             // Early return if the tab is not shown (ie. no table)
             if (!$("#%s_table".format(tab_id)).length) return;
-            if (prefs.AlwaysShowHoldingsTableFilters) {
+            if (Koha.prefs.AlwaysShowHoldingsTableFilters) {
                 build_items_table(tab_id, true, {}, build_items_table_drawncallback);
             } else {
                 build_items_table(tab_id, false, {}, build_items_table_drawncallback);
             }
 
-            if (prefs.bundlesEnabled) {
+            if (Koha.prefs.bundlesEnabled) {
                 // Add event listener for opening and closing bundle details
                 $("#" + tab_id + "_table tbody").on("click", "button.details-control", function () {
                     var button = $(this);
@@ -1897,7 +1897,7 @@
                                 searchable: false,
                                 orderable: false,
                                 render: function (data, type, row, meta) {
-                                    if (row.lost_status == prefs.BundleLostValue) {
+                                    if (row.lost_status == Koha.prefs.BundleLostValue) {
                                         let out = '<span class="lost">' + _("Last seen") + ": " + $date(row.last_seen_date) + "</span>";
                                         if (row.return_claim) {
                                             out = out + '<span class="claims_return">' + _("Claims returned by") + ": " + $patron_to_html(row.return_claim.patron, { display_cardnumber: false, url: true }) + "</span>";
@@ -2216,7 +2216,7 @@
                         },
                         {
                             data: function (oObj) {
-                                if (permissions.CAN_user_editcatalogue_manage_item_groups) {
+                                if (Koha.permissions.CAN_user_editcatalogue_manage_item_groups) {
                                     return (
                                         `<button class='item-group-edit btn btn-default btn-xs' data-item-group-id='${oObj.item_group_id}'>
                                     <i class="fa-solid fa-pencil" aria-hidden="true"></i> ${_("Edit")}

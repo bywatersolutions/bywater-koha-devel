@@ -414,7 +414,7 @@
     [% BLOCK jsinclude %]
         [% INCLUDE 'datatables.inc' %]
         <script nonce="[% Koha.CSPNonce | $raw %]">
-            addPrefs({
+            Koha.addPrefs({
                 OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
                 SelfCheckTimeout: "[% Koha.Preference('SelfCheckTimeout') || 120 | html %]",
                 SelfCheckReceiptPrompt: [% Koha.Preference('SelfCheckReceiptPrompt') ? 1 : 0 | html %],
@@ -454,7 +454,7 @@
             function sco_init() {
                 mainTimeout = setTimeout(function () {
                     location.href = "/cgi-bin/koha/sco/sco-main.pl?op=logout";
-                }, prefs.SelfCheckTimeout * 1000);
+                }, Koha.prefs.SelfCheckTimeout * 1000);
             }
             function dofocus() {
                 // named function req'd for body onload event by some FF and IE7 security models
@@ -496,7 +496,7 @@
                     sco_init();
                 }
 
-                var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+                var responsive_display = Koha.prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
                 var dTables = $("#loanTable, #holdst, #finestable");
                 dTables.each(function () {
                     var thIndex = $(this).find("th.psort").index();
@@ -529,7 +529,7 @@
                 $("#logout_form").on("click", function (e) {
                     e.preventDefault(e);
                     clearTimeout(mainTimeout);
-                    if (prefs.SelfCheckReceiptPrompt) {
+                    if (Koha.prefs.SelfCheckReceiptPrompt) {
                         confirmModal("", _("Would you like to print a receipt?"), _("Print receipt and end session"), _("End session"), function (result) {
                             if (result) {
                                 var win = window.open("/cgi-bin/koha/sco/printslip.pl?print=qslip");

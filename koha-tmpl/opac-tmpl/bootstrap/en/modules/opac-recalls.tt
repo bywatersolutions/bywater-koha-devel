@@ -138,7 +138,7 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
-        addPrefs({
+        Koha.addPrefs({
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
         });
     </script>
@@ -148,7 +148,7 @@
                 return confirmDelete(_("Are you sure you want to remove this recall?"));
             });
 
-            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+            var responsive_display = Koha.prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
             $("#recalls-table").kohaTable({
                 responsive: {
                     details: {

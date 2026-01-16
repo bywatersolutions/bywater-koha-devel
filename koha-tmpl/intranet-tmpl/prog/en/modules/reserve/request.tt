@@ -1572,7 +1572,7 @@
 
         const active_tab = [% clubs ? 1 : 0 | html %];
 
-        addPrefs({
+        Koha.addPrefs({
             UseBranchTransferLimits: [% Koha.Preference('UseBranchTransferLimits') ? 1 : 0 | html %],
             EnableItemGroupHolds: [% Koha.Preference('EnableItemGroupHolds') ? 1 : 0 | html %],
         });
@@ -1661,7 +1661,7 @@
                 ToggleHoldsToPlace();
             });
 
-            if (prefs.UseBranchTransferLimits) {
+            if (Koha.prefs.UseBranchTransferLimits) {
                 $("#pickup,#pickup-next-avail,#pickup-item-group").on("change", function () {
                     var pickup = $(this).val();
                     var url = "?pickup=" + pickup;
@@ -1985,7 +1985,7 @@
                 patron_autocomplete($(".search_patron_filter"), { "link-to": "reserve", "url-params": url_biblio_params });
             }
 
-            if (prefs.EnableItemGroupHolds) {
+            if (Koha.prefs.EnableItemGroupHolds) {
                 $(':radio[name="item_group_id"]').change(function () {
                     $('input[name="checkitem"]').prop("checked", false);
                 });

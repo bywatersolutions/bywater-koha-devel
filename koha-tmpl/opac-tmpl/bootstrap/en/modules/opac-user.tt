@@ -1040,7 +1040,7 @@
     <script nonce="[% Koha.CSPNonce | $raw %]">
         const tab = "[% tab | html %]";
         const logged_in_user_borrowernumber = "[% borrowernumber | html %]";
-        addPrefs({
+        Koha.addPrefs({
             OpacRenewalAllowed: [% Koha.Preference('OpacRenewalAllowed') ? 1 : 0 | html %],
             GoogleJackets: [% Koha.Preference('GoogleJackets') ? 1 : 0 | html %],
             AllowCheckoutNotes: [% Koha.Preference('AllowCheckoutNotes') ? 1 : 0 | html %],
@@ -1056,7 +1056,7 @@
         function tableInit(tableId) {
             if (tableId == "checkoutst") {
                 $(".dt-buttons").append('<button type="button" class="dt-button buttons-ical" id="buttons-ics">iCal</button> ');
-                if (prefs.OpacRenewalAllowed && can_renew && !is_debarred) {
+                if (Koha.prefs.OpacRenewalAllowed && can_renew && !is_debarred) {
                     $(".dt-buttons").append(
                         '<button id="renewselected_link" class="dt-button buttons-renew"><i class="fa fa-check" aria-hidden="true"></i> ' +
                             _("Renew selected") +
@@ -1221,7 +1221,7 @@
                     });
             });
 
-            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
+            var responsive_display = Koha.prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
             var dataTables = $("#recalls-table,#article-requests-table");
             dataTables.each(function () {
                 $(this).kohaTable({
@@ -1247,10 +1247,10 @@
                 location.href = "/cgi-bin/koha/opac-ics.pl";
             });
 
-            if (prefs.GoogleJackets) {
+            if (Koha.prefs.GoogleJackets) {
                 KOHA.Google.GetCoverFromIsbn();
             }
-            if (prefs.OpacRenewalAllowed && can_renew && !is_debarred) {
+            if (Koha.prefs.OpacRenewalAllowed && can_renew && !is_debarred) {
                 $("#renewselected").submit(function () {
                     valid = false;
                     $("input[type=checkbox]").each(function () {
@@ -1273,7 +1273,7 @@
                 });
             }
 
-            if (prefs.AllowCheckoutNotes) {
+            if (Koha.prefs.AllowCheckoutNotes) {
                 /* If JS enabled, show button, otherwise show link to redirect to a page where note can be submitted */
                 $(".nonjs_submitnote").hide();
 
