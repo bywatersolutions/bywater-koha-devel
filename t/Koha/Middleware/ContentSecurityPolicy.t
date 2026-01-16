@@ -24,10 +24,13 @@ use Test::NoWarnings;
 use Test::More tests => 3;
 use Test::Warn;
 
+use File::Basename qw(dirname);
 use HTTP::Request::Common;
 use Plack::Builder;
 use Plack::Util;
 use Plack::Test;
+
+use C4::Templates;
 
 use t::lib::Mocks;
 
@@ -50,9 +53,13 @@ subtest 'test Content-Security-Policy header' => sub {
     # Set nonce
     Koha::ContentSecurityPolicy->new->nonce($test_nonce);
 
+    t::lib::Mocks::mock_config( 'opachtdocs', C4::Context->config('intranetdir') . '/t/mock_templates/opac-tmpl' );
+
     my $env = {};
     my $app = sub {
-        my $resp = [
+        require Koha::Plugins;    # this should probably be "use Koha::Plugins;" in C4::Templates instead
+        my $template = C4::Templates::gettemplate( 'opac-csp.tt', 'opac' );
+        my $resp     = [
             200,
             [
                 'Content-Type',
@@ -60,7 +67,7 @@ subtest 'test Content-Security-Policy header' => sub {
                 'Content-Length',
                 12
             ],
-            [ Koha::ContentSecurityPolicy->new->nonce ]
+            [ $template->output ]
         ];
         return $resp;
     };
@@ -79,7 +86,7 @@ subtest 'test Content-Security-Policy header' => sub {
         "Response contains Content-Security-Policy header with the expected value"
     );
     is(
-        $res->content, $test_nonce,
+        $res->content, '<script nonce="' . $test_nonce . '">' . "\n" . '</script>' . "\n",
         "Response contains generated nonce in the body"
     );
 

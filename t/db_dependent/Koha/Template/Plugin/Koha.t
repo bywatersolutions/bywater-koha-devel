@@ -17,7 +17,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 
 use Template::Context;
 use Template::Stash;
@@ -75,6 +75,27 @@ subtest 'GenerateCSRF - New CSRF token generated every time we need one' => sub 
         $plugin->GenerateCSRF, $token,
         'new token generated after the cache is flushed'
     );
+
+    $schema->storage->txn_rollback;
+
+};
+
+subtest 'CSPNonce' => sub {
+    plan tests => 1;
+
+    $schema->storage->txn_begin;
+
+    my $stash   = Template::Stash->new( { sessionID => $session_id } );
+    my $context = Template::Context->new( { STASH => $stash } );
+
+    my $plugin = Koha::Template::Plugin::Koha->new($context);
+
+    my $csp   = Koha::ContentSecurityPolicy->new;
+    my $nonce = $csp->nonce;
+
+    my $token = $plugin->CSPNonce;
+
+    is( $plugin->CSPNonce, $nonce, 'the correct nonce was provided' );
 
     $schema->storage->txn_rollback;
 
