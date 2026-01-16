@@ -2066,7 +2066,7 @@
             }
 
             if (prefs.OpacCoce && prefs.CoceProviders){
-                KOHA.coce.getURL(prefs.CoceHost, prefs_CoceProviders, $('#biblio-cover-slider') );
+                KOHA.coce.getURL(prefs.CoceHost, prefs.CoceProviders, $('#biblio-cover-slider') );
             }
 
             if (prefs.OpenLibraryCovers){
