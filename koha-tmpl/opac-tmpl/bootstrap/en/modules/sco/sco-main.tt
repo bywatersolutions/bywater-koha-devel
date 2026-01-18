@@ -372,7 +372,7 @@
                                         [% FOREACH INPUT IN INPUTS %]
                                             <input type="hidden" name="[% INPUT.name | html %]" value="[% INPUT.value | html %]" />
                                         [% END %]
-                                        <input type="hidden" name="op" value="cud-login" />
+                                        <input type="hidden" name="login_op" value="cud-login" />
                                     </fieldset>
                                 </form>
                                 <!-- /#mainform -->
