@@ -60,7 +60,7 @@ use C4::Acquisition qw( CancelReceipt GetInvoice GetInvoiceDetails get_rounded_p
 use C4::Budgets     qw( GetBudget GetBudgetByOrderNumber GetBudgetName );
 use CGI             qw ( -utf8 );
 use C4::Output      qw( output_html_with_http_headers );
-use C4::Suggestions qw( GetSuggestionInfoFromBiblionumber GetSuggestionInfo );
+use C4::Suggestions qw( GetSuggestionInfo );
 
 use Koha::Acquisition::Baskets;
 use Koha::Acquisition::Bookseller;
@@ -150,10 +150,10 @@ for my $order (@orders) {
     $total_tax_excluded                 += get_rounded_price( $line{unitprice_tax_excluded} ) * $line{quantity};
     $total_tax_included                 += get_rounded_price( $line{unitprice_tax_included} ) * $line{quantity};
 
-    my $suggestion = GetSuggestionInfoFromBiblionumber( $line{biblionumber} );
-    $line{suggestionid}         = $suggestion->{suggestionid};
-    $line{surnamesuggestedby}   = $suggestion->{surnamesuggestedby};
-    $line{firstnamesuggestedby} = $suggestion->{firstnamesuggestedby};
+    my $suggestion = Koha::Suggestions->search( { biblionumber => $line{biblionumber} } )->single;
+    $line{suggestionid}         = $suggestion->suggestionid;
+    $line{surnamesuggestedby}   = $suggestion->suggester->surname;
+    $line{firstnamesuggestedby} = $suggestion->suggester->firstname;
 
     if ( $line{parent_ordernumber} != $line{ordernumber} ) {
         if ( grep { $_->{ordernumber} == $line{parent_ordernumber} } @orders ) {

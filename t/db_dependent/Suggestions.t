@@ -19,7 +19,7 @@ use Modern::Perl;
 
 use DateTime::Duration;
 use Test::NoWarnings;
-use Test::More tests => 92;
+use Test::More tests => 80;
 use Test::Warn;
 
 use t::lib::Mocks;
@@ -38,7 +38,7 @@ use Koha::Suggestions;
 BEGIN {
     use_ok(
         'C4::Suggestions',
-        qw( ModSuggestion GetSuggestionInfo GetSuggestionInfoFromBiblionumber GetSuggestionByStatus ConnectSuggestionAndBiblio DelSuggestion MarcRecordFromNewSuggestion GetUnprocessedSuggestions DelSuggestionsOlderThan )
+        qw( ModSuggestion GetSuggestionInfo GetSuggestionByStatus ConnectSuggestionAndBiblio DelSuggestion MarcRecordFromNewSuggestion GetUnprocessedSuggestions DelSuggestionsOlderThan )
     );
 }
 
@@ -333,53 +333,6 @@ is( $suggestion->{firstnamesuggestedby}, $member->{firstname}, 'GetSuggestionInf
 is(
     $suggestion->{borrnumsuggestedby}, $my_suggestion->{suggestedby},
     'GetSuggestionInfo returns the borrower number correctly'
-);
-
-is(
-    GetSuggestionInfoFromBiblionumber(), undef,
-    'GetSuggestionInfoFromBiblionumber without the biblio number returns undef'
-);
-is(
-    GetSuggestionInfoFromBiblionumber(2), undef,
-    'GetSuggestionInfoFromBiblionumber with an invalid biblio number returns undef'
-);
-$suggestion = GetSuggestionInfoFromBiblionumber( $biblio_1->biblionumber );
-is(
-    $suggestion->{suggestionid}, $my_suggestionid,
-    'GetSuggestionInfoFromBiblionumber returns the suggestion id correctly'
-);
-is( $suggestion->{title}, $mod_suggestion1->{title}, 'GetSuggestionInfoFromBiblionumber returns the title correctly' );
-is(
-    $suggestion->{author}, $mod_suggestion1->{author},
-    'GetSuggestionInfoFromBiblionumber returns the author correctly'
-);
-is(
-    $suggestion->{publishercode}, $mod_suggestion1->{publishercode},
-    'GetSuggestionInfoFromBiblionumber returns the publisher code correctly'
-);
-is(
-    $suggestion->{suggestedby}, $my_suggestion->{suggestedby},
-    'GetSuggestionInfoFromBiblionumber returns the borrower number correctly'
-);
-is(
-    $suggestion->{biblionumber}, $my_suggestion->{biblionumber},
-    'GetSuggestionInfoFromBiblionumber returns the biblio number correctly'
-);
-is(
-    $suggestion->{STATUS}, $mod_suggestion3->{STATUS},
-    'GetSuggestionInfoFromBiblionumber returns the status correctly'
-);
-is(
-    $suggestion->{surnamesuggestedby}, $member->{surname},
-    'GetSuggestionInfoFromBiblionumber returns the surname correctly'
-);
-is(
-    $suggestion->{firstnamesuggestedby}, $member->{firstname},
-    'GetSuggestionInfoFromBiblionumber returns the firstname correctly'
-);
-is(
-    $suggestion->{borrnumsuggestedby}, $my_suggestion->{suggestedby},
-    'GetSuggestionInfoFromBiblionumeber returns the borrower number correctly'
 );
 
 my $suggestions = GetSuggestionByStatus();

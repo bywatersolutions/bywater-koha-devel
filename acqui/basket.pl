@@ -28,7 +28,7 @@ use C4::Acquisition
     qw( GetBasket CanUserManageBasket GetBasketAsCSV NewBasket NewBasketgroup ModBasket ReopenBasket ModBasketUsers GetBasketgroup GetBasketgroups GetBasketUsers GetOrders GetOrder get_rounded_price );
 use C4::Budgets     qw( GetBudgetHierarchy GetBudget CanUserUseBudget );
 use C4::Contract    qw( GetContract );
-use C4::Suggestions qw( GetSuggestionInfoFromBiblionumber GetSuggestionInfo );
+use C4::Suggestions qw( GetSuggestionInfo );
 use Koha::Biblios;
 use Koha::Acquisition::Baskets;
 use Koha::Acquisition::Booksellers;
@@ -658,10 +658,10 @@ sub get_order_infos {
         $line{deleted_biblio} = Koha::Old::Biblios->find( $order->{deleted_biblionumber} );
     }
 
-    my $suggestion = GetSuggestionInfoFromBiblionumber( $line{biblionumber} );
-    $line{suggestionid}         = $$suggestion{suggestionid};
-    $line{surnamesuggestedby}   = $$suggestion{surnamesuggestedby};
-    $line{firstnamesuggestedby} = $$suggestion{firstnamesuggestedby};
+    my $suggestion = Koha::Suggestions->search( { biblionumber => $line{biblionumber} } )->single;
+    $line{suggestionid}         = $suggestion->suggestionid;
+    $line{surnamesuggestedby}   = $suggestion->suggester->surname;
+    $line{firstnamesuggestedby} = $suggestion->suggester->firstname;
 
     $line{estimated_delivery_date} = $order->{estimated_delivery_date};
 
