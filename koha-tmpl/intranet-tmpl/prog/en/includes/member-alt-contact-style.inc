@@ -54,7 +54,7 @@
 [% BLOCK 'alt-contact-style_altcontactsurname' %]
     [% UNLESS noaltcontactsurname %]
         <li>
-            <label for="altcontactsurname" [% IF mandatoryaltcontactsurname %]class="required"[% END %]>Surname: </label>
+            <label for="altcontactsurname" id="altcontactsurname_label" [% IF mandatoryaltcontactsurname %]class="required"[% END %]>Surname: </label>
             <input type="text" name="altcontactsurname" id="altcontactsurname" value="[% patron.altcontactsurname | html %]" />
             [% IF ( mandatoryaltcontactsurname ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -64,7 +64,7 @@
 [% BLOCK 'alt-contact-style_altcontactfirstname' %]
     [% UNLESS noaltcontactfirstname %]
         <li>
-            <label for="altcontactfirstname" [% IF mandatoryaltcontactfirstname %]class="required"[% END %]>First name: </label>
+            <label for="altcontactfirstname" id="altcontactfirstname_label" [% IF mandatoryaltcontactfirstname %]class="required"[% END %]>First name: </label>
             <input type="text" name="altcontactfirstname" id="altcontactfirstname" value="[% patron.altcontactfirstname | html %]" />
             [% IF ( mandatoryaltcontactfirstname ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -74,7 +74,7 @@
 [% BLOCK 'alt-contact-style_altcontactaddress1' %]
     [% UNLESS noaltcontactaddress1 %]
         <li>
-            <label for="altcontactaddress1" [% IF mandatoryaltcontactaddress1 %]class="required"[% END %]>Address: </label>
+            <label for="altcontactaddress1" id="altcontactaddress1_label" [% IF mandatoryaltcontactaddress1 %]class="required"[% END %]>Address: </label>
             <input type="text" name="altcontactaddress1" id="altcontactaddress1" value="[% patron.altcontactaddress1 | html %]" size="40" />
             [% IF ( mandatoryaltcontactaddress1 ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -84,7 +84,7 @@
 [% BLOCK 'alt-contact-style_altcontactaddress2' %]
     [% UNLESS noaltcontactaddress2 %]
         <li>
-            <label for="altcontactaddress2" [% IF mandatoryaltcontactaddress2 %]class="required"[% END %]>Address 2: </label>
+            <label for="altcontactaddress2" id="altcontactaddress2_label" [% IF mandatoryaltcontactaddress2 %]class="required"[% END %]>Address 2: </label>
             <input type="text" name="altcontactaddress2" id="altcontactaddress2" value="[% patron.altcontactaddress2 | html %]" size="40" />
             [% IF ( mandatoryaltcontactaddress2 ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -94,7 +94,7 @@
 [% BLOCK 'alt-contact-style_altcontactzipcode' %]
     [% UNLESS noaltcontactzipcode %]
         <li>
-            <label for="altcontactzipcode" [% IF mandatoryaltcontactzipcode %]class="required"[% END %]>ZIP/Postal code: </label>
+            <label for="altcontactzipcode" id="altcontactzipcode_label" [% IF mandatoryaltcontactzipcode %]class="required"[% END %]>ZIP/Postal code: </label>
             <input type="text" name="altcontactzipcode" id="altcontactzipcode" value="[% patron.altcontactzipcode | html %]" size="5" />
             [% IF ( mandatoryaltcontactzipcode ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -104,9 +104,9 @@
 [% BLOCK 'alt-contact-style_altcontactaddress3' %]
     [% UNLESS noaltcontactaddress3 %]
         <li>
-            <label for="altcontactaddress3" [% IF mandatoryaltcontactaddress3 %]class="required"[% END %]>City: </label>
+            <label for="altcontactaddress3" id="altcontactaddress3_label" [% IF mandatoryaltcontactaddress3 %]class="required"[% END %]>City: </label>
             [% IF cities.count %]
-                <select class="select_city" data-addressfield="altcontact" name="select_city">
+                <select class="select_city" data-addressfield="altcontact" name="select_city" id="altcontactaddress3">
                     <option value="|||"></option>
                     [% FOREACH c IN cities %]
                         [% SET option_value = c.city_zipcode _ '|' _ c.city_name _ '|' _ c.city_state _ '|' _ c.city_country %]
@@ -128,7 +128,7 @@
 [% BLOCK 'alt-contact-style_altcontactstate' %]
     [% UNLESS noaltcontactstate %]
         <li>
-            <label for="altcontactstate" [% IF mandatoryaltcontactstate %]class="required"[% END %]>State: </label>
+            <label for="altcontactstate" id="altcontactstate_label" [% IF mandatoryaltcontactstate %]class="required"[% END %]>State: </label>
             <input type="text" name="altcontactstate" id="altcontactstate" value="[% patron.altcontactstate | html %]" size="20" />
             [% IF ( mandatoryaltcontactstate ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -138,7 +138,7 @@
 [% BLOCK 'alt-contact-style_altcontactcountry' %]
     [% UNLESS noaltcontactcountry %]
         <li>
-            <label for="altcontactcountry" [% IF mandatoryaltcontactcountry %]class="required"[% END %]>Country: </label>
+            <label for="altcontactcountry" id="altcontactcountry_label" [% IF mandatoryaltcontactcountry %]class="required"[% END %]>Country: </label>
             <input type="text" name="altcontactcountry" id="altcontactcountry" value="[% patron.altcontactcountry | html %]" size="20" />
             [% IF ( mandatoryaltcontactcountry ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -148,7 +148,7 @@
 [% BLOCK 'alt-contact-style_altcontactphone' %]
     [% UNLESS noaltcontactphone %]
         <li>
-            <label for="altcontactphone" [% IF mandatoryaltcontactphone %]class="required"[% END %]>Phone: </label>
+            <label for="altcontactphone" id="altcontactphone_label" [% IF mandatoryaltcontactphone %]class="required"[% END %]>Phone: </label>
             <input type="text" name="altcontactphone" id="altcontactphone" value="[% patron.altcontactphone | html %]" />
             [% IF ( mandatoryaltcontactphone ) %]<span class="required">Required</span>[% END %]
         </li>

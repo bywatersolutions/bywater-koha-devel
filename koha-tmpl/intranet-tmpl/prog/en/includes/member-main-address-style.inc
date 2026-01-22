@@ -54,8 +54,8 @@
     [% IF roadtypes.count %]
         [% UNLESS nostreettype %]
             <li>
-                <label for="streettype" [% IF mandatorystreettype %]class="required"[% END %]>Street type: </label>
-                <select name="streettype">
+                <label for="streettype" id="streettype_label" [% IF mandatorystreettype %]class="required"[% END %]>Street type: </label>
+                <select name="streettype" id="streettype">
                     <option value=""></option>
                     [% FOR roadtype IN roadtypes %]
                         [% IF roadtype.authorised_value == patron.streettype %]
@@ -74,7 +74,7 @@
 [% BLOCK 'address-style_address' %]
     [% UNLESS noaddress %]
         <li>
-            <label for="address" [% IF mandatoryaddress %]class="required"[% END %]>Address: </label>
+            <label for="address" id="address_label" [% IF mandatoryaddress %]class="required"[% END %]>Address: </label>
             <input type="text" id="address" name="address" size="40" value="[% patron.address | html %]" />
             [% IF ( mandatoryaddress ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -84,7 +84,7 @@
 [% BLOCK 'address-style_streetnumber' %]
     [% UNLESS nostreetnumber %]
         <li>
-            <label for="streetnumber" [% IF mandatorystreetnumber %]class="required"[% END %]>Street number: </label>
+            <label for="streetnumber" id="streetnumber_label" [% IF mandatorystreetnumber %]class="required"[% END %]>Street number: </label>
             <input type="text" id="streetnumber" name="streetnumber" value="[% patron.streetnumber | html %]" />
             [% IF ( mandatorystreetnumber ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -94,7 +94,7 @@
 [% BLOCK 'address-style_address2' %]
     [% UNLESS noaddress2 %]
         <li>
-            <label for="address2" [% IF mandatoryaddress2 %]class="required"[% END %]>Address 2: </label>
+            <label for="address2" id="address2_label" [% IF mandatoryaddress2 %]class="required"[% END %]>Address 2: </label>
             <input type="text" id="address2" name="address2" size="40" value="[% patron.address2 | html %]" />
             [% IF ( mandatoryaddress2 ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -104,7 +104,7 @@
 [% BLOCK 'address-style_zipcode' %]
     [% UNLESS nozipcode %]
         <li>
-            <label for="zipcode" [% IF mandatoryzipcode %]class="required"[% END %]>ZIP/Postal code: </label>
+            <label for="zipcode" id="zipcode_label" [% IF mandatoryzipcode %]class="required"[% END %]>ZIP/Postal code: </label>
             <input type="text" id="zipcode" name="zipcode" maxlength="10" size="10" value="[% patron.zipcode | html %]" />
             [% IF ( mandatoryzipcode ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -114,7 +114,7 @@
 [% BLOCK 'address-style_city' %]
     [% UNLESS nocity %]
         <li>
-            <label for="city" [% IF mandatorycity %]class="required"[% END %]>City: </label>
+            <label for="city" id="city_label" [% IF mandatorycity %]class="required"[% END %]>City: </label>
             [% IF cities.count %]
                 <select class="select_city" data-addressfield="" name="select_city">
                     <option value="|||"></option>
@@ -138,7 +138,7 @@
 [% BLOCK 'address-style_state' %]
     [% UNLESS nostate %]
         <li>
-            <label for="state" [% IF mandatorystate %]class="required"[% END %]>State: </label>
+            <label for="state" id="state_label" [% IF mandatorystate %]class="required"[% END %]>State: </label>
             <input type="text" id="state" name="state" size="20" value="[% patron.state | html %]" />
             [% IF ( mandatorystate ) %]<span class="required">Required</span>[% END %]
         </li>
@@ -148,7 +148,7 @@
 [% BLOCK 'address-style_country' %]
     [% UNLESS nocountry %]
         <li>
-            <label for="country" [% IF mandatorycountry %]class="required"[% END %]>Country: </label>
+            <label for="country" id="country_label" [% IF mandatorycountry %]class="required"[% END %]>Country: </label>
             <input type="text" id="country" name="country" size="20" value="[% patron.country | html %]" />
             [% IF ( mandatorycountry ) %]<span class="required">Required</span>[% END %]
         </li>
