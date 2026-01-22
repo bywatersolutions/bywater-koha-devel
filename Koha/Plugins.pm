@@ -45,6 +45,15 @@ BEGIN {
     my @pluginsdir = ref($pluginsdir) eq 'ARRAY' ? @$pluginsdir : $pluginsdir;
     push @INC, array_minus( @pluginsdir, @INC );
     pop @INC if $INC[-1] eq '.';
+
+    # Load plugins early to ensure they're available before any transactions begin
+    my $enable_plugins = C4::Context->config("enable_plugins") // 0;
+
+    if ($enable_plugins) {
+        require Koha::Plugins::Loader;
+        Koha::Plugins::Loader->get_enabled_plugins();
+    }
+
 }
 
 =head1 NAME

@@ -22,19 +22,6 @@ use Modern::Perl;
 use vars qw($AUTOLOAD $context);
 
 BEGIN {
-    # Load plugins early to ensure they're available before any transactions begin
-    my $enable_plugins = 0;
-    if ( exists $ENV{'KOHA_CONF'} && -e $ENV{'KOHA_CONF'} ) {
-        require Koha::Config;
-        my $config = Koha::Config->get_instance;
-        $enable_plugins = $config->get('enable_plugins') // 0;
-    }
-
-    if ($enable_plugins) {
-        require Koha::Plugins::Loader;
-        Koha::Plugins::Loader->get_enabled_plugins();
-    }
-
     if ( $ENV{'HTTP_USER_AGENT'} ) {    # Only hit when plack is not enabled
 
         # Redefine multi_param if cgi version is < 4.08
