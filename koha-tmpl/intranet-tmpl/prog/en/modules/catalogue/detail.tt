@@ -164,6 +164,9 @@
                 <span id="catalogue_detail_framework" class="results_summary">
                     <span class="label">MARC framework:</span>
                     <span class="frameworkcode">[% Frameworks.GetName(biblio.frameworkcode) | html %]</span>
+                    [% IF is_fast_add %]
+                        <span class="badge rounded-pill bg-secondary">Fast add</span>
+                    [% END %]
                 </span>
                 [% IF !item_level_itypes || Koha.Preference("BiblioItemtypeInfo") %]
                     <span class="results_summary itemtype">
