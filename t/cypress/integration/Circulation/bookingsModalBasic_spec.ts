@@ -1485,4 +1485,319 @@ describe("Booking Modal Basic Tests", () => {
             }
         });
     });
+
+    it("should correctly handle lead/trail period conflicts for 'any item' bookings", () => {
+        /**
+         * Bug 37707: Lead/Trail Period Conflict Detection for "Any Item" Bookings
+         * ========================================================================
+         *
+         * This test validates that lead/trail period conflict detection works correctly
+         * when "any item of itemtype X" is selected. The key principle is:
+         *
+         * - Only block date selection when ALL items of the itemtype have conflicts
+         * - Allow selection when at least one item is free from lead/trail conflicts
+         *
+         * The bug occurred because the mouseover handler was checking conflicts against
+         * ALL bookings regardless of itemtype, rather than tracking per-item conflicts.
+         *
+         * Test Setup:
+         * ===========
+         * - 3 items of itemtype BK
+         * - Lead period: 2 days, Trail period: 2 days
+         * - ITEM 0: Booking on days 10-12 (trail period: 13-14)
+         * - ITEM 1: Booking on days 10-12 (same as item 0)
+         * - ITEM 2: No bookings (always available)
+         *
+         * Test Scenarios:
+         * ==============
+         * 1. Hover day 15: ITEM 0 and ITEM 1 have trail period conflict (lead period
+         *    June 13-14 overlaps their trail June 13-14), but ITEM 2 is free
+         *    → Should NOT be blocked (at least one item available)
+         *
+         * 2. Create booking on ITEM 2 for days 10-12, then hover day 15 again:
+         *    → ALL items now have trail period conflicts
+         *    → Should BE blocked
+         */
+
+        const today = dayjs();
+        let testItems = [];
+        let testBiblio = null;
+        let testPatron = null;
+        let testLibraries = null;
+
+        // Circulation rules with non-zero lead/trail periods
+        const circulationRules = {
+            bookings_lead_period: 2,
+            bookings_trail_period: 2,
+            issuelength: 14,
+            renewalsallowed: 2,
+            renewalperiod: 7,
+        };
+
+        // Setup: Create biblio with 3 items of the same itemtype
+        cy.task("insertSampleBiblio", { item_count: 3 })
+            .then(objects => {
+                testBiblio = objects.biblio;
+                testItems = objects.items;
+                testLibraries = objects.libraries;
+
+                // Make all items the same itemtype (BK)
+                const itemUpdates = testItems.map((item, index) => {
+                    const enumchron = String.fromCharCode(65 + index);
+                    return cy.task("query", {
+                        sql: "UPDATE items SET bookable = 1, itype = 'BK', homebranch = 'CPL', enumchron = ?, dateaccessioned = ? WHERE itemnumber = ?",
+                        values: [
+                            enumchron,
+                            `2024-12-0${4 - index}`,
+                            item.item_id,
+                        ],
+                    });
+                });
+                return Promise.all(itemUpdates);
+            })
+            .then(() => {
+                return cy.task("buildSampleObject", {
+                    object: "patron",
+                    values: {
+                        firstname: "LeadTrail",
+                        surname: "Tester",
+                        cardnumber: `LT${Date.now()}`,
+                        category_id: "PT",
+                        library_id: "CPL",
+                    },
+                });
+            })
+            .then(mockPatron => {
+                testPatron = mockPatron;
+                return cy.task("query", {
+                    sql: `INSERT INTO borrowers (borrowernumber, firstname, surname, cardnumber, categorycode, branchcode, dateofbirth)
+                          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    values: [
+                        mockPatron.patron_id,
+                        mockPatron.firstname,
+                        mockPatron.surname,
+                        mockPatron.cardnumber,
+                        mockPatron.category_id,
+                        mockPatron.library_id,
+                        "1990-01-01",
+                    ],
+                });
+            })
+            .then(() => {
+                // Create bookings on ITEM 0 and ITEM 1 for days 10-12
+                // ITEM 2 remains free
+                const bookingInserts = [
+                    // ITEM 0: Booked days 10-12
+                    cy.task("query", {
+                        sql: `INSERT INTO bookings (biblio_id, patron_id, item_id, pickup_library_id, start_date, end_date, status)
+                              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                        values: [
+                            testBiblio.biblio_id,
+                            testPatron.patron_id,
+                            testItems[0].item_id,
+                            "CPL",
+                            today.add(10, "day").format("YYYY-MM-DD"),
+                            today.add(12, "day").format("YYYY-MM-DD"),
+                            "new",
+                        ],
+                    }),
+                    // ITEM 1: Booked days 10-12 (same period)
+                    cy.task("query", {
+                        sql: `INSERT INTO bookings (biblio_id, patron_id, item_id, pickup_library_id, start_date, end_date, status)
+                              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                        values: [
+                            testBiblio.biblio_id,
+                            testPatron.patron_id,
+                            testItems[1].item_id,
+                            "CPL",
+                            today.add(10, "day").format("YYYY-MM-DD"),
+                            today.add(12, "day").format("YYYY-MM-DD"),
+                            "new",
+                        ],
+                    }),
+                    // ITEM 2: No booking - remains free
+                ];
+                return Promise.all(bookingInserts);
+            })
+            .then(() => {
+                cy.intercept(
+                    "GET",
+                    `/api/v1/biblios/${testBiblio.biblio_id}/pickup_locations*`
+                ).as("getPickupLocations");
+                cy.intercept("GET", "/api/v1/circulation_rules*", {
+                    body: [circulationRules],
+                }).as("getCirculationRules");
+
+                cy.visit(
+                    `/cgi-bin/koha/catalogue/detail.pl?biblionumber=${testBiblio.biblio_id}`
+                );
+
+                cy.get('[data-bs-target="#placeBookingModal"]').first().click();
+                cy.get("#placeBookingModal").should("be.visible");
+
+                cy.selectFromSelect2(
+                    "#booking_patron_id",
+                    `${testPatron.surname}, ${testPatron.firstname}`,
+                    testPatron.cardnumber
+                );
+                cy.wait("@getPickupLocations");
+
+                cy.get("#pickup_library_id").should("not.be.disabled");
+                cy.selectFromSelect2ByIndex("#pickup_library_id", 0);
+
+                // Select itemtype BK
+                cy.get("#booking_itemtype").should("not.be.disabled");
+                cy.selectFromSelect2("#booking_itemtype", "Books");
+                cy.wait("@getCirculationRules");
+
+                // Select "Any item" (index 0)
+                cy.selectFromSelect2ByIndex("#booking_item_id", 0);
+                cy.get("#booking_item_id").should("have.value", "0");
+
+                cy.get("#period").should("not.be.disabled");
+                cy.get("#period").as("flatpickrInput");
+
+                // ================================================================
+                // SCENARIO 1: Hover day 15 - ITEM 2 is free, should NOT be blocked
+                // ================================================================
+                cy.log(
+                    "=== Scenario 1: Day 15 should be selectable (ITEM 2 is free) ==="
+                );
+
+                /**
+                 * Day 15 as start date:
+                 * - Lead period: days 13-14
+                 * - ITEM 0's trail period: days 13-14 (booking ended day 12, trail = 2 days)
+                 * - ITEM 1's trail period: days 13-14 (same)
+                 * - ITEM 2: No booking, no trail period conflict
+                 *
+                 * The new booking's lead period (13-14) overlaps with ITEM 0 and ITEM 1's
+                 * trail period, but ITEM 2 has no conflict.
+                 *
+                 * With the bug, this would be blocked because ANY booking conflicted.
+                 * With the fix, this should be allowed because ITEM 2 is available.
+                 */
+
+                cy.get("@flatpickrInput").openFlatpickr();
+                cy.get("@flatpickrInput")
+                    .getFlatpickrDate(today.add(15, "day").toDate())
+                    .trigger("mouseover");
+
+                // Day 15 should NOT have leadDisable class (at least one item is free)
+                cy.get("@flatpickrInput")
+                    .getFlatpickrDate(today.add(15, "day").toDate())
+                    .should("not.have.class", "leadDisable");
+
+                cy.log(
+                    "✓ Day 15 is selectable - lead period conflict detection correctly allows selection when one item is free"
+                );
+
+                // Actually click day 15 to verify it's selectable
+                cy.get("@flatpickrInput")
+                    .getFlatpickrDate(today.add(15, "day").toDate())
+                    .should("not.have.class", "flatpickr-disabled")
+                    .click();
+
+                // Verify day 15 was selected as start date
+                cy.get("@flatpickrInput")
+                    .getFlatpickrDate(today.add(15, "day").toDate())
+                    .should("have.class", "selected");
+
+                cy.log(
+                    "✓ CONFIRMED: Day 15 successfully selected as start date"
+                );
+
+                // Reset for next scenario
+                cy.get("@flatpickrInput").clearFlatpickr();
+
+                // ================================================================
+                // SCENARIO 2: Add booking on ITEM 2 - ALL items now have conflicts
+                // ================================================================
+                cy.log(
+                    "=== Scenario 2: Day 15 should be BLOCKED when all items have conflicts ==="
+                );
+
+                // Add booking on ITEM 2 for same period (days 10-12)
+                cy.task("query", {
+                    sql: `INSERT INTO bookings (biblio_id, patron_id, item_id, pickup_library_id, start_date, end_date, status)
+                          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    values: [
+                        testBiblio.biblio_id,
+                        testPatron.patron_id,
+                        testItems[2].item_id,
+                        "CPL",
+                        today.add(10, "day").format("YYYY-MM-DD"),
+                        today.add(12, "day").format("YYYY-MM-DD"),
+                        "new",
+                    ],
+                }).then(() => {
+                    // Reload page to get updated booking data
+                    cy.visit(
+                        `/cgi-bin/koha/catalogue/detail.pl?biblionumber=${testBiblio.biblio_id}`
+                    );
+
+                    cy.get('[data-bs-target="#placeBookingModal"]')
+                        .first()
+                        .click();
+                    cy.get("#placeBookingModal").should("be.visible");
+
+                    cy.selectFromSelect2(
+                        "#booking_patron_id",
+                        `${testPatron.surname}, ${testPatron.firstname}`,
+                        testPatron.cardnumber
+                    );
+                    cy.wait("@getPickupLocations");
+
+                    cy.get("#pickup_library_id").should("not.be.disabled");
+                    cy.selectFromSelect2ByIndex("#pickup_library_id", 0);
+
+                    // Select itemtype BK
+                    cy.get("#booking_itemtype").should("not.be.disabled");
+                    cy.selectFromSelect2("#booking_itemtype", "Books");
+                    cy.wait("@getCirculationRules");
+
+                    // Select "Any item" (index 0)
+                    cy.selectFromSelect2ByIndex("#booking_item_id", 0);
+                    cy.get("#booking_item_id").should("have.value", "0");
+
+                    cy.get("#period").should("not.be.disabled");
+                    cy.get("#period").as("flatpickrInput2");
+
+                    cy.get("@flatpickrInput2").openFlatpickr();
+                    cy.get("@flatpickrInput2")
+                        .getFlatpickrDate(today.add(15, "day").toDate())
+                        .trigger("mouseover");
+
+                    // Day 15 should NOW have leadDisable class (all items have conflicts)
+                    cy.get("@flatpickrInput2")
+                        .getFlatpickrDate(today.add(15, "day").toDate())
+                        .should("have.class", "leadDisable");
+
+                    cy.log(
+                        "✓ Day 15 is BLOCKED - all items have lead period conflicts"
+                    );
+                });
+            });
+
+        // Cleanup
+        cy.then(() => {
+            if (testBiblio) {
+                cy.task("query", {
+                    sql: "DELETE FROM bookings WHERE biblio_id = ?",
+                    values: [testBiblio.biblio_id],
+                });
+                cy.task("deleteSampleObjects", {
+                    biblio: testBiblio,
+                    items: testItems,
+                    libraries: testLibraries,
+                });
+            }
+            if (testPatron) {
+                cy.task("query", {
+                    sql: "DELETE FROM borrowers WHERE borrowernumber = ?",
+                    values: [testPatron.patron_id],
+                });
+            }
+        });
+    });
 });

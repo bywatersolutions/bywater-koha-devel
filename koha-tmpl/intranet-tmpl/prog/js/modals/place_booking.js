@@ -1135,6 +1135,47 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                 withBooking: false,
                             };
 
+                            // For "any item" mode, we need to check if at least one item
+                            // of the selected itemtype is free from lead/trail conflicts.
+                            // For specific item mode, we use the original single-item logic.
+                            const isAnyItemMode =
+                                !booking_item_id && booking_itemtype_id;
+
+                            // Get items of the selected itemtype for "any item" mode
+                            let itemsOfSelectedType = [];
+                            if (isAnyItemMode) {
+                                itemsOfSelectedType = bookable_items.filter(
+                                    item =>
+                                        item.effective_item_type_id ===
+                                        booking_itemtype_id
+                                );
+                            }
+
+                            // Track per-item conflicts for "any item" mode
+                            // Maps item_id -> { leadConflict: bool, trailConflict: bool, leadReason: {...}, trailReason: {...} }
+                            const itemConflicts = new Map();
+                            if (isAnyItemMode) {
+                                itemsOfSelectedType.forEach(item => {
+                                    itemConflicts.set(
+                                        parseInt(item.item_id, 10),
+                                        {
+                                            leadConflict: false,
+                                            trailConflict: false,
+                                            leadReason: {
+                                                withTrail: false,
+                                                withLead: false,
+                                                withBooking: false,
+                                            },
+                                            trailReason: {
+                                                withTrail: false,
+                                                withLead: false,
+                                                withBooking: false,
+                                            },
+                                        }
+                                    );
+                                });
+                            }
+
                             bookings.forEach(booking => {
                                 // Skip if we're editing this booking
                                 if (
@@ -1144,13 +1185,26 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                     return;
                                 }
 
-                                // Skip if not same item (for item-specific bookings)
-                                if (
-                                    booking.item_id &&
-                                    booking_item_id &&
-                                    booking.item_id != booking_item_id
-                                ) {
-                                    return;
+                                const bookingItemId = parseInt(
+                                    booking.item_id,
+                                    10
+                                );
+
+                                // For specific item mode: skip bookings for different items
+                                if (!isAnyItemMode) {
+                                    if (
+                                        booking.item_id &&
+                                        booking_item_id &&
+                                        bookingItemId !==
+                                            parseInt(booking_item_id, 10)
+                                    ) {
+                                        return;
+                                    }
+                                } else {
+                                    // For "any item" mode: skip bookings for items not of the selected itemtype
+                                    if (!itemConflicts.has(bookingItemId)) {
+                                        return;
+                                    }
                                 }
 
                                 const bookingStart = dayjs(
@@ -1181,6 +1235,13 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
 
                                 // Check if new booking's LEAD period overlaps with existing booking
                                 if (!periodPicker.selectedDates[0]) {
+                                    let hasLeadConflict = false;
+                                    let reason = {
+                                        withTrail: false,
+                                        withLead: false,
+                                        withBooking: false,
+                                    };
+
                                     // Check overlap with existing booking's trail period
                                     if (
                                         leadStart.isSameOrBefore(
@@ -1190,8 +1251,8 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                             existingTrailStart
                                         )
                                     ) {
-                                        leadDisable = true;
-                                        leadConflictReason.withTrail = true;
+                                        hasLeadConflict = true;
+                                        reason.withTrail = true;
                                     }
                                     // Check overlap with existing booking's lead period
                                     else if (
@@ -1200,21 +1261,52 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                         ) &&
                                         leadEnd.isSameOrAfter(existingLeadStart)
                                     ) {
-                                        leadDisable = true;
-                                        leadConflictReason.withLead = true;
+                                        hasLeadConflict = true;
+                                        reason.withLead = true;
                                     }
                                     // Check overlap with existing booking itself
                                     else if (
                                         leadStart.isSameOrBefore(bookingEnd) &&
                                         leadEnd.isSameOrAfter(bookingStart)
                                     ) {
-                                        leadDisable = true;
-                                        leadConflictReason.withBooking = true;
+                                        hasLeadConflict = true;
+                                        reason.withBooking = true;
+                                    }
+
+                                    if (hasLeadConflict) {
+                                        if (isAnyItemMode) {
+                                            // Track conflict for this specific item
+                                            const itemState =
+                                                itemConflicts.get(
+                                                    bookingItemId
+                                                );
+                                            if (itemState) {
+                                                itemState.leadConflict = true;
+                                                Object.assign(
+                                                    itemState.leadReason,
+                                                    reason
+                                                );
+                                            }
+                                        } else {
+                                            // Specific item mode: set global flags
+                                            leadDisable = true;
+                                            Object.assign(
+                                                leadConflictReason,
+                                                reason
+                                            );
+                                        }
                                     }
                                 }
 
                                 // Check if new booking's TRAIL period overlaps with existing booking
                                 if (periodPicker.selectedDates[0]) {
+                                    let hasTrailConflict = false;
+                                    let reason = {
+                                        withTrail: false,
+                                        withLead: false,
+                                        withBooking: false,
+                                    };
+
                                     // Check overlap with existing booking's lead period
                                     if (
                                         trailStart.isSameOrBefore(
@@ -1224,8 +1316,8 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                             existingLeadStart
                                         )
                                     ) {
-                                        trailDisable = true;
-                                        trailConflictReason.withLead = true;
+                                        hasTrailConflict = true;
+                                        reason.withLead = true;
                                     }
                                     // Check overlap with existing booking's trail period
                                     else if (
@@ -1236,20 +1328,45 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                             existingTrailStart
                                         )
                                     ) {
-                                        trailDisable = true;
-                                        trailConflictReason.withTrail = true;
+                                        hasTrailConflict = true;
+                                        reason.withTrail = true;
                                     }
                                     // Check overlap with existing booking itself
                                     else if (
                                         trailStart.isSameOrBefore(bookingEnd) &&
                                         trailEnd.isSameOrAfter(bookingStart)
                                     ) {
-                                        trailDisable = true;
-                                        trailConflictReason.withBooking = true;
+                                        hasTrailConflict = true;
+                                        reason.withBooking = true;
+                                    }
+
+                                    if (hasTrailConflict) {
+                                        if (isAnyItemMode) {
+                                            // Track conflict for this specific item
+                                            const itemState =
+                                                itemConflicts.get(
+                                                    bookingItemId
+                                                );
+                                            if (itemState) {
+                                                itemState.trailConflict = true;
+                                                Object.assign(
+                                                    itemState.trailReason,
+                                                    reason
+                                                );
+                                            }
+                                        } else {
+                                            // Specific item mode: set global flags
+                                            trailDisable = true;
+                                            Object.assign(
+                                                trailConflictReason,
+                                                reason
+                                            );
+                                        }
                                     }
                                 }
 
                                 // Find closest bookings for visual feedback (when dates are in view)
+                                // For "any item" mode, only track closest bookings for items of the selected type
                                 if (bookingEnd.isBefore(hoverDate)) {
                                     const distance = hoverDate.diff(
                                         bookingEnd,
@@ -1278,6 +1395,103 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                     }
                                 }
                             });
+
+                            // For "any item" mode: only disable if ALL items have conflicts
+                            if (isAnyItemMode && itemConflicts.size > 0) {
+                                // Check if all items have lead conflicts
+                                let allHaveLeadConflict = true;
+                                let allHaveTrailConflict = true;
+
+                                for (const [
+                                    itemId,
+                                    state,
+                                ] of itemConflicts.entries()) {
+                                    if (!state.leadConflict) {
+                                        allHaveLeadConflict = false;
+                                    }
+                                    if (!state.trailConflict) {
+                                        allHaveTrailConflict = false;
+                                    }
+                                }
+
+                                if (allHaveLeadConflict) {
+                                    leadDisable = true;
+                                    // Use the reason from the first item with a conflict for messaging
+                                    for (const [
+                                        itemId,
+                                        state,
+                                    ] of itemConflicts.entries()) {
+                                        if (state.leadConflict) {
+                                            Object.assign(
+                                                leadConflictReason,
+                                                state.leadReason
+                                            );
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (allHaveTrailConflict) {
+                                    trailDisable = true;
+                                    // Use the reason from the first item with a conflict for messaging
+                                    for (const [
+                                        itemId,
+                                        state,
+                                    ] of itemConflicts.entries()) {
+                                        if (state.trailConflict) {
+                                            Object.assign(
+                                                trailConflictReason,
+                                                state.trailReason
+                                            );
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // For "any item" mode, find closest "all items booked" dates mathematically
+                            // These are dates where ALL items of the itemtype have bookings
+                            // Using mathematical search allows detection across month boundaries
+                            let closestFullyBookedBefore = null;
+                            let closestFullyBookedAfter = null;
+
+                            if (
+                                isAnyItemMode &&
+                                itemsOfSelectedType.length > 0
+                            ) {
+                                const searchLimit = 180; // Days to search in each direction
+
+                                // Search backwards for closest fully-booked date
+                                for (let i = 1; i <= searchLimit; i++) {
+                                    const checkDate = hoverDate.subtract(
+                                        i,
+                                        "day"
+                                    );
+                                    const availableItems =
+                                        getAvailableItemsOnDate(
+                                            checkDate.toDate(),
+                                            itemsOfSelectedType
+                                        );
+                                    if (availableItems.length === 0) {
+                                        closestFullyBookedBefore = checkDate;
+                                        break;
+                                    }
+                                }
+
+                                // Search forwards for closest fully-booked date
+                                for (let i = 1; i <= searchLimit; i++) {
+                                    const checkDate = hoverDate.add(i, "day");
+                                    const availableItems =
+                                        getAvailableItemsOnDate(
+                                            checkDate.toDate(),
+                                            itemsOfSelectedType
+                                        );
+                                    if (availableItems.length === 0) {
+                                        closestFullyBookedAfter = checkDate;
+                                        break;
+                                    }
+                                }
+                            }
 
                             // Work through all days in view and add classes appropraitely based on hovered date
                             periodPicker.calendarContainer
@@ -1346,18 +1560,39 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                         );
                                     }
 
-                                    // Show closest preceding existing booking's trail period
-                                    if (closestBeforeBooking && trailDays > 0) {
+                                    // Show closest preceding booking's trail period
+                                    // For "any item" mode, use closest fully-booked date; for specific item, use closest booking
+                                    const useClosestFullyBookedForTrail =
+                                        isAnyItemMode &&
+                                        closestFullyBookedBefore;
+                                    const useClosestBookingForTrail =
+                                        !isAnyItemMode && closestBeforeBooking;
+
+                                    if (
+                                        trailDays > 0 &&
+                                        (useClosestFullyBookedForTrail ||
+                                            useClosestBookingForTrail)
+                                    ) {
                                         const existingTrailStart =
-                                            closestBeforeBooking.end.add(
-                                                1,
-                                                "day"
-                                            );
+                                            useClosestFullyBookedForTrail
+                                                ? closestFullyBookedBefore.add(
+                                                      1,
+                                                      "day"
+                                                  )
+                                                : closestBeforeBooking.end.add(
+                                                      1,
+                                                      "day"
+                                                  );
                                         const existingTrailEnd =
-                                            closestBeforeBooking.end.add(
-                                                trailDays,
-                                                "day"
-                                            );
+                                            useClosestFullyBookedForTrail
+                                                ? closestFullyBookedBefore.add(
+                                                      trailDays,
+                                                      "day"
+                                                  )
+                                                : closestBeforeBooking.end.add(
+                                                      trailDays,
+                                                      "day"
+                                                  );
 
                                         if (
                                             elemDate.isSameOrAfter(
@@ -1392,18 +1627,39 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                         }
                                     }
 
-                                    // Show closest following existing booking's lead period
-                                    if (closestAfterBooking && leadDays > 0) {
+                                    // Show closest following booking's lead period
+                                    // For "any item" mode, use closest fully-booked date; for specific item, use closest booking
+                                    const useClosestFullyBookedForLead =
+                                        isAnyItemMode &&
+                                        closestFullyBookedAfter;
+                                    const useClosestBookingForLead =
+                                        !isAnyItemMode && closestAfterBooking;
+
+                                    if (
+                                        leadDays > 0 &&
+                                        (useClosestFullyBookedForLead ||
+                                            useClosestBookingForLead)
+                                    ) {
                                         const existingLeadStart =
-                                            closestAfterBooking.start.subtract(
-                                                leadDays,
-                                                "day"
-                                            );
+                                            useClosestFullyBookedForLead
+                                                ? closestFullyBookedAfter.subtract(
+                                                      leadDays,
+                                                      "day"
+                                                  )
+                                                : closestAfterBooking.start.subtract(
+                                                      leadDays,
+                                                      "day"
+                                                  );
                                         const existingLeadEnd =
-                                            closestAfterBooking.start.subtract(
-                                                1,
-                                                "day"
-                                            );
+                                            useClosestFullyBookedForLead
+                                                ? closestFullyBookedAfter.subtract(
+                                                      1,
+                                                      "day"
+                                                  )
+                                                : closestAfterBooking.start.subtract(
+                                                      1,
+                                                      "day"
+                                                  );
 
                                         if (
                                             elemDate.isSameOrAfter(
@@ -1475,6 +1731,7 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                     }
 
                                     // Check for conflicts with existing booking's trail period
+                                    // In "any item" mode, these classes now represent "all items booked" periods
                                     if (
                                         !periodPicker.selectedDates[0] &&
                                         dayElem.classList.contains(
@@ -1491,6 +1748,7 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                     }
 
                                     // Check for conflicts with existing booking's lead period
+                                    // In "any item" mode, these classes now represent "all items booked" periods
                                     if (
                                         periodPicker.selectedDates[0] &&
                                         dayElem.classList.contains(
@@ -1518,6 +1776,7 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                 });
 
                             // Additional check for hovering directly on existing booking's lead/trail periods
+                            // In "any item" mode, these classes now represent "all items booked" periods
                             // If hovering on an existing booking's lead period when selecting start date, block selection
                             if (
                                 !periodPicker.selectedDates[0] &&
@@ -1527,6 +1786,7 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                             }
 
                             // If hovering on an existing booking's trail period when selecting end date, block selection
+                            // In "any item" mode, these classes now represent "all items booked" periods
                             if (
                                 periodPicker.selectedDates[0] &&
                                 target.classList.contains(
