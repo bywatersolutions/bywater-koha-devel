@@ -23,7 +23,7 @@
 # *************************************************************
 
 description:
-  - "'FA', a 'Fast Add' minimal MARC21 framework suitable for ILL or on-the-fly cataloguing."
+  - "'FA', a 'Fast add' minimal MARC21 framework suitable for ILL or on-the-fly cataloguing."
 
 tables:
   - biblio_framework:
@@ -31,7 +31,8 @@ tables:
       multiline: []
       rows:
         - frameworkcode: FA
-          frameworktext: "Fast Add Framework"
+          frameworktext: "Fast add Framework"
+          is_fast_add: 1
 
 sql_statements:
   - "INSERT IGNORE INTO marc_tag_structure (tagfield, liblibrarian, libopac, repeatable, mandatory, authorised_value, frameworkcode)
