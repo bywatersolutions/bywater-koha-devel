@@ -891,7 +891,11 @@
             });
 
             $("#view_guarantees_finesandcharges").on("click", function () {
-                $("#guarantees_finesandcharges-tab").click();
+                bootstrap.Tab
+                    .getOrCreateInstance(
+                        document.getElementById("guarantees_finesandcharges-tab")
+                    )
+                    .show();
             });
 
             $("#cancellation-reason").comboBox({
