@@ -7,51 +7,102 @@ let bookable_items,
     booking_patron,
     booking_itemtype_id;
 
-function containsAny(integers1, integers2) {
-    // Create a hash set to store integers from the second array
-    let integerSet = {};
-    for (let i = 0; i < integers2.length; i++) {
-        integerSet[integers2[i]] = true;
-    }
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 
-    // Check if any integer from the first array exists in the hash set
-    for (let i = 0; i < integers1.length; i++) {
-        if (integerSet[integers1[i]]) {
-            return true; // Found a match, return true
-        }
-    }
-
-    return false; // No match found
+/**
+ * Check if two arrays share any common elements
+ * @param {Array} arr1 - First array of values
+ * @param {Array} arr2 - Second array of values
+ * @returns {boolean} - True if any element exists in both arrays
+ */
+function containsAny(arr1, arr2) {
+    const set = new Set(arr2);
+    return arr1.some(item => set.has(item));
 }
 
-// Check if a specific item is available for the entire booking period
+/**
+ * Parse a value to integer, with fallback to 0
+ * @param {*} value - Value to parse
+ * @returns {number} - Parsed integer or 0
+ */
+function toInt(value) {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? 0 : parsed;
+}
+
+/**
+ * Normalize a date to start of day using dayjs
+ * @param {Date|string|dayjs} date - Date to normalize
+ * @returns {dayjs} - dayjs object at start of day
+ */
+function startOfDay(date) {
+    return dayjs(date).startOf("day");
+}
+
+/**
+ * Check if two date ranges overlap
+ * @param {Date|dayjs} start1 - Start of first range
+ * @param {Date|dayjs} end1 - End of first range
+ * @param {Date|dayjs} start2 - Start of second range
+ * @param {Date|dayjs} end2 - End of second range
+ * @returns {boolean} - True if ranges overlap
+ */
+function datesOverlap(start1, end1, start2, end2) {
+    const s1 = startOfDay(start1);
+    const e1 = startOfDay(end1);
+    const s2 = startOfDay(start2);
+    const e2 = startOfDay(end2);
+    // Ranges overlap if neither is completely before or after the other
+    return !(e1.isBefore(s2, "day") || s1.isAfter(e2, "day"));
+}
+
+/**
+ * Check if a date falls within a date range (inclusive)
+ * @param {Date|dayjs} date - Date to check
+ * @param {Date|dayjs} start - Start of range
+ * @param {Date|dayjs} end - End of range
+ * @returns {boolean} - True if date is within range
+ */
+function isDateInRange(date, start, end) {
+    const d = startOfDay(date);
+    const s = startOfDay(start);
+    const e = startOfDay(end);
+    return d.isSameOrAfter(s, "day") && d.isSameOrBefore(e, "day");
+}
+
+/**
+ * Check if a specific item is available for the entire booking period
+ * @param {number|string} itemId - Item ID to check
+ * @param {Date} startDate - Start of booking period
+ * @param {Date} endDate - End of booking period
+ * @returns {boolean} - True if item is available for the entire period
+ */
 function isItemAvailableForPeriod(itemId, startDate, endDate) {
-    for (let booking of bookings) {
+    const checkItemId = toInt(itemId);
+    for (const booking of bookings) {
         // Skip if we're editing this booking
         if (booking_id && booking_id == booking.booking_id) {
             continue;
         }
-
-        if (booking.item_id !== itemId) {
-            continue; // Different item, no conflict
+        // Skip different items
+        if (toInt(booking.item_id) !== checkItemId) {
+            continue;
         }
-
-        let booking_start = dayjs(booking.start_date);
-        let booking_end = dayjs(booking.end_date);
-        let checkStartDate = dayjs(startDate);
-        let checkEndDate = dayjs(endDate);
-
-        // Check for any overlap with our booking period
+        // Check for overlap
         if (
-            !(
-                checkEndDate.isBefore(booking_start, "day") ||
-                checkStartDate.isAfter(booking_end, "day")
+            datesOverlap(
+                startDate,
+                endDate,
+                booking.start_date,
+                booking.end_date
             )
         ) {
-            return false; // Overlap detected
+            return false;
         }
     }
-    return true; // No conflicts found
+    return true;
 }
 
 $("#placeBookingModal").on("show.bs.modal", function (e) {
@@ -635,7 +686,7 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                         itemsOfType
                     );
                     let availableItems = new Set(
-                        availableOnStart.map(item => parseInt(item.item_id, 10))
+                        availableOnStart.map(item => toInt(item.item_id))
                     );
 
                     let currentDate = dayjs(startDate);
@@ -647,9 +698,7 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                             itemsOfType
                         );
                         let availableIds = new Set(
-                            availableToday.map(item =>
-                                parseInt(item.item_id, 10)
-                            )
+                            availableToday.map(item => toInt(item.item_id))
                         );
 
                         // Remove items from our pool that are no longer available (never add back)
@@ -678,62 +727,48 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
 
                 // Get items of itemtype that are available on a specific date
                 function getAvailableItemsOnDate(date, itemsOfType) {
-                    let unavailableItems = new Set();
+                    const unavailableItems = new Set();
 
-                    // Check all existing bookings for conflicts on this date
-                    for (let booking of bookings) {
+                    for (const booking of bookings) {
                         // Skip if we're editing this booking
                         if (booking_id && booking_id == booking.booking_id) {
                             continue;
                         }
-
-                        let start_date = dayjs(booking.start_date);
-                        let end_date = dayjs(booking.end_date);
-                        let checkDate = dayjs(date);
-
                         // Check if this date falls within this booking period
                         if (
-                            checkDate.isSameOrAfter(start_date, "day") &&
-                            checkDate.isSameOrBefore(end_date, "day")
+                            isDateInRange(
+                                date,
+                                booking.start_date,
+                                booking.end_date
+                            )
                         ) {
-                            // All bookings have item_id, so mark this specific item as unavailable
-                            // Ensure integer comparison consistency
-                            unavailableItems.add(parseInt(booking.item_id, 10));
+                            unavailableItems.add(toInt(booking.item_id));
                         }
                     }
 
-                    // Return items of our type that are not unavailable
-                    let available = itemsOfType.filter(
-                        item =>
-                            !unavailableItems.has(parseInt(item.item_id, 10))
+                    return itemsOfType.filter(
+                        item => !unavailableItems.has(toInt(item.item_id))
                     );
-                    return available;
                 }
 
                 // Item-specific availability logic for specific item bookings
                 function isDateDisabledForSpecificItem(date, selectedDates) {
-                    for (let booking of bookings) {
+                    const selectedItemId = toInt(booking_item_id);
+                    for (const booking of bookings) {
                         // Skip if we're editing this booking
                         if (booking_id && booking_id == booking.booking_id) {
                             continue;
                         }
-
-                        let start_date = dayjs(booking.start_date);
-                        let end_date = dayjs(booking.end_date);
-                        let checkDate = dayjs(date);
-
-                        // Check if this booking conflicts with our selected item and date
+                        // Check if date is within booking period and same item
                         if (
-                            checkDate.isSameOrAfter(start_date, "day") &&
-                            checkDate.isSameOrBefore(end_date, "day")
+                            isDateInRange(
+                                date,
+                                booking.start_date,
+                                booking.end_date
+                            ) &&
+                            toInt(booking.item_id) === selectedItemId
                         ) {
-                            // Same item, disable date (ensure integer comparison)
-                            if (
-                                parseInt(booking.item_id, 10) ===
-                                parseInt(booking_item_id, 10)
-                            ) {
-                                return true;
-                            }
+                            return true;
                         }
                     }
                     return false;
@@ -778,29 +813,24 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                     booking_item_id =
                         e.params.data.id !== undefined &&
                         e.params.data.id !== null
-                            ? parseInt(e.params.data.id, 10)
+                            ? toInt(e.params.data.id)
                             : 0;
 
                     // Disable invalid pickup locations
                     $("#pickup_library_id > option").each(function () {
-                        let option = $(this);
+                        const option = $(this);
                         if (booking_item_id == 0) {
                             option.prop("disabled", false);
                         } else {
-                            let valid_items = String(
+                            const valid_items = String(
                                 option.data("pickup_items")
                             )
                                 .split(",")
                                 .map(Number);
-                            if (
-                                valid_items.includes(
-                                    parseInt(booking_item_id, 10)
-                                )
-                            ) {
-                                option.prop("disabled", false);
-                            } else {
-                                option.prop("disabled", true);
-                            }
+                            option.prop(
+                                "disabled",
+                                !valid_items.includes(toInt(booking_item_id))
+                            );
                         }
                     });
                     $("#pickup_library_id").trigger("change.select2");
@@ -1047,8 +1077,8 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
 
                     // Iterate through each date within the range of start_date and end_date
                     // Use dayjs to maintain browser timezone consistency
-                    let currentDate = dayjs(start_date).startOf("day");
-                    const endDate = dayjs(end_date).startOf("day");
+                    let currentDate = startOfDay(start_date);
+                    const endDate = startOfDay(end_date);
                     while (currentDate.isSameOrBefore(endDate, "day")) {
                         // Format in browser timezone - no UTC conversion
                         const currentDateStr = currentDate.format("YYYY-MM-DD");
@@ -1184,23 +1214,20 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                             const itemConflicts = new Map();
                             if (isAnyItemMode) {
                                 itemsOfSelectedType.forEach(item => {
-                                    itemConflicts.set(
-                                        parseInt(item.item_id, 10),
-                                        {
-                                            leadConflict: false,
-                                            trailConflict: false,
-                                            leadReason: {
-                                                withTrail: false,
-                                                withLead: false,
-                                                withBooking: false,
-                                            },
-                                            trailReason: {
-                                                withTrail: false,
-                                                withLead: false,
-                                                withBooking: false,
-                                            },
-                                        }
-                                    );
+                                    itemConflicts.set(toInt(item.item_id), {
+                                        leadConflict: false,
+                                        trailConflict: false,
+                                        leadReason: {
+                                            withTrail: false,
+                                            withLead: false,
+                                            withBooking: false,
+                                        },
+                                        trailReason: {
+                                            withTrail: false,
+                                            withLead: false,
+                                            withBooking: false,
+                                        },
+                                    });
                                 });
                             }
 
@@ -1213,18 +1240,14 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                     return;
                                 }
 
-                                const bookingItemId = parseInt(
-                                    booking.item_id,
-                                    10
-                                );
+                                const bookingItemId = toInt(booking.item_id);
 
                                 // For specific item mode: skip bookings for different items
                                 if (!isAnyItemMode) {
                                     if (
                                         booking.item_id &&
                                         booking_item_id &&
-                                        bookingItemId !==
-                                            parseInt(booking_item_id, 10)
+                                        bookingItemId !== toInt(booking_item_id)
                                     ) {
                                         return;
                                     }
@@ -1235,12 +1258,10 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                     }
                                 }
 
-                                const bookingStart = dayjs(
+                                const bookingStart = startOfDay(
                                     booking.start_date
-                                ).startOf("day");
-                                const bookingEnd = dayjs(
-                                    booking.end_date
-                                ).startOf("day");
+                                );
+                                const bookingEnd = startOfDay(booking.end_date);
 
                                 // BIDIRECTIONAL: Mathematical checks for conflicts (works across month boundaries)
                                 // Calculate this booking's full protected period
@@ -2128,6 +2149,18 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
     }
 });
 
+/**
+ * Set date range on the period picker
+ * @param {Object} periodPicker - Flatpickr instance
+ * @param {string} start_date - Start date string
+ * @param {string} end_date - End date string
+ */
+function setPickerDates(periodPicker, start_date, end_date) {
+    if (start_date && end_date) {
+        periodPicker.setDate([new Date(start_date), new Date(end_date)], true);
+    }
+}
+
 function setFormValues(
     patron_id,
     booking_item_id,
@@ -2140,33 +2173,26 @@ function setFormValues(
     if (item_type_id) {
         booking_itemtype_id = item_type_id;
     }
+
     // If passed patron, pre-select
     if (patron_id) {
-        let patronSelect = $("#booking_patron_id");
-        let patron = $.ajax({
+        const patronSelect = $("#booking_patron_id");
+        $.ajax({
             url: "/api/v1/patrons/" + patron_id,
             dataType: "json",
             type: "GET",
-        });
-
-        $.when(patron).done(function (patron) {
-            // clone patron_id to id (select2 expects an id field)
+        }).done(function (patron) {
             patron.id = patron.patron_id;
             patron.text =
                 escape_str(patron.surname) +
                 ", " +
                 escape_str(patron.firstname);
 
-            // Add and select new option
-            let newOption = new Option(patron.text, patron.id, true, true);
+            const newOption = new Option(patron.text, patron.id, true, true);
             patronSelect.append(newOption).trigger("change");
-
-            // manually trigger the `select2:select` event
             patronSelect.trigger({
                 type: "select2:select",
-                params: {
-                    data: patron,
-                },
+                params: { data: patron },
             });
         });
     }
@@ -2176,290 +2202,230 @@ function setFormValues(
         // Wait a bit for the item options to be fully created with data attributes
         setTimeout(function () {
             $("#booking_item_id").val(booking_item_id).trigger("change");
-            // Also trigger the select2:select event with proper data
-            let selectedOption = $("#booking_item_id option:selected")[0];
+            const selectedOption = $("#booking_item_id option:selected")[0];
             if (selectedOption) {
                 $("#booking_item_id").trigger({
                     type: "select2:select",
                     params: {
-                        data: {
-                            id: booking_item_id,
-                            element: selectedOption,
-                        },
+                        data: { id: booking_item_id, element: selectedOption },
                     },
                 });
             }
-
-            // IMPORTANT: Set dates AFTER item selection completes
-            // This ensures booking_itemtype_id is set before dates are validated
-            if (start_date) {
-                // Allow invalid pre-load so setDate can set date range
-                // periodPicker.set('allowInvalidPreload', true);
-                // FIXME: Why is this the case.. we're passing two valid Date objects
-                let start = new Date(start_date);
-                let end = new Date(end_date);
-
-                let dates = [new Date(start_date), new Date(end_date)];
-                periodPicker.setDate(dates, true);
-            }
+            // Set dates AFTER item selection to ensure booking_itemtype_id is set
+            setPickerDates(periodPicker, start_date, end_date);
         }, 100);
-    }
-    // If no item selected but dates provided, set them now
-    else if (start_date) {
-        let start = new Date(start_date);
-        let end = new Date(end_date);
-
-        let dates = [new Date(start_date), new Date(end_date)];
-        periodPicker.setDate(dates, true);
-    }
-    // Reset periodPicker, biblio_id may have been nulled
-    else {
+    } else if (start_date) {
+        setPickerDates(periodPicker, start_date, end_date);
+    } else {
         periodPicker.redraw();
+    }
+}
+
+/**
+ * Get available items of a specific itemtype for a booking period
+ * @param {string} startDate - Start date string
+ * @param {string} endDate - End date string
+ * @returns {Array} - Array of available items
+ */
+function getAvailableItemsForPeriod(startDate, endDate) {
+    const itemsOfType = bookable_items.filter(
+        item => item.effective_item_type_id === booking_itemtype_id
+    );
+    return itemsOfType.filter(item =>
+        isItemAvailableForPeriod(
+            item.item_id,
+            new Date(startDate),
+            new Date(endDate)
+        )
+    );
+}
+
+/**
+ * Build the booking payload with item selection logic
+ * @param {Object} basePayload - Base payload with common fields
+ * @param {string} itemId - Selected item ID (0 for "any item")
+ * @param {string} startDate - Start date string
+ * @param {string} endDate - End date string
+ * @returns {Object|null} - Complete payload or null if no items available
+ */
+function buildBookingPayload(basePayload, itemId, startDate, endDate) {
+    const payload = { ...basePayload };
+
+    if (itemId == 0) {
+        const availableItems = getAvailableItemsForPeriod(startDate, endDate);
+        if (availableItems.length === 0) {
+            return null;
+        } else if (availableItems.length === 1) {
+            payload.item_id = availableItems[0].item_id;
+        } else {
+            payload.itemtype_id = booking_itemtype_id;
+        }
+    } else {
+        payload.item_id = itemId;
+    }
+
+    return payload;
+}
+
+/**
+ * Create timeline item data from booking response
+ * @param {Object} data - Booking response data
+ * @returns {Object} - Timeline item data
+ */
+function createTimelineItem(data) {
+    const startServerTz = dayjs(data.start_date).tz($timezone());
+    const endServerTz = dayjs(data.end_date).tz($timezone());
+    return {
+        id: data.booking_id,
+        booking: data.booking_id,
+        patron: data.patron_id,
+        start: $toDisplayDate(startServerTz),
+        end: $toDisplayDate(endServerTz),
+        content: $patron_to_html(booking_patron, {
+            display_cardnumber: true,
+            url: false,
+        }),
+        editable: { remove: true, updateTime: true },
+        type: "range",
+        group: data.item_id ? data.item_id : 0,
+    };
+}
+
+/**
+ * Show error message in booking result area
+ * @param {string} message - Error message to display
+ */
+function showBookingError(message) {
+    $("#booking_result").replaceWith(
+        '<div id="booking_result" class="alert alert-danger">' +
+            message +
+            "</div>"
+    );
+}
+
+/**
+ * Show success feedback and close modal
+ * @param {string} message - Success message to display
+ */
+function showBookingSuccess(message) {
+    $("#transient_result").replaceWith(
+        '<div id="transient_result" class="alert alert-info">' +
+            message +
+            "</div>"
+    );
+    $("#placeBookingModal").modal("hide");
+}
+
+/**
+ * Refresh bookings table if present
+ */
+function refreshBookingsTable() {
+    if (typeof bookings_table !== "undefined" && bookings_table !== null) {
+        bookings_table.api().ajax.reload();
     }
 }
 
 $("#placeBookingForm").on("submit", function (e) {
     e.preventDefault();
 
-    let url = "/api/v1/bookings";
+    const url = "/api/v1/bookings";
+    const start_date = $("#booking_start_date").val();
+    const end_date = $("#booking_end_date").val();
+    const item_id = $("#booking_item_id").val();
 
-    let start_date = $("#booking_start_date").val();
-    let end_date = $("#booking_end_date").val();
-    let pickup_library_id = $("#pickup_library_id").val();
-    let biblio_id = $("#booking_biblio_id").val();
-    let item_id = $("#booking_item_id").val();
-
-    // Prepare booking payload
-    let booking_payload = {
+    const basePayload = {
         start_date: start_date,
         end_date: end_date,
-        pickup_library_id: pickup_library_id,
-        biblio_id: biblio_id,
+        pickup_library_id: $("#pickup_library_id").val(),
+        biblio_id: $("#booking_biblio_id").val(),
         patron_id: $("#booking_patron_id").find(":selected").val(),
     };
 
-    // If "any item" is selected, determine whether to send item_id or itemtype_id
-    if (item_id == 0) {
-        // Get items of the selected itemtype that are available for the period
-        let itemsOfType = bookable_items.filter(
-            item => item.effective_item_type_id === booking_itemtype_id
-        );
-
-        let availableItems = itemsOfType.filter(item => {
-            return isItemAvailableForPeriod(
-                item.item_id,
-                new Date(start_date),
-                new Date(end_date)
-            );
-        });
-
-        if (availableItems.length === 0) {
-            $("#booking_result").replaceWith(
-                '<div id="booking_result" class="alert alert-danger">' +
-                    __("No suitable item found for booking") +
-                    "</div>"
-            );
-            return;
-        } else if (availableItems.length === 1) {
-            // Only one item available - optimization: send specific item_id
-            booking_payload.item_id = availableItems[0].item_id;
-        } else {
-            // Multiple items available - let server choose optimal item
-            booking_payload.itemtype_id = booking_itemtype_id;
-        }
-    } else {
-        // Specific item selected
-        booking_payload.item_id = item_id;
+    const payload = buildBookingPayload(
+        basePayload,
+        item_id,
+        start_date,
+        end_date
+    );
+    if (!payload) {
+        showBookingError(__("No suitable item found for booking"));
+        return;
     }
 
     if (!booking_id) {
-        let posting = $.post(url, JSON.stringify(booking_payload));
+        // Create new booking
+        $.post(url, JSON.stringify(payload))
+            .done(function (data) {
+                bookings.push(data);
+                refreshBookingsTable();
 
-        posting.done(function (data) {
-            // Update bookings store for subsequent bookings
-            bookings.push(data);
+                if (typeof timeline !== "undefined" && timeline !== null) {
+                    timeline.itemsData.add(createTimelineItem(data));
+                    timeline.focus(data.booking_id);
+                }
 
-            // Update bookings page as required
-            if (
-                typeof bookings_table !== "undefined" &&
-                bookings_table !== null
-            ) {
-                bookings_table.api().ajax.reload();
-            }
-            if (typeof timeline !== "undefined" && timeline !== null) {
-                // Convert to library timezone for timeline display
-                const startServerTz = dayjs(data.start_date).tz($timezone());
-                const endServerTz = dayjs(data.end_date).tz($timezone());
-                timeline.itemsData.add({
-                    id: data.booking_id,
-                    booking: data.booking_id,
-                    patron: data.patron_id,
-                    start: $toDisplayDate(startServerTz),
-                    end: $toDisplayDate(endServerTz),
-                    content: $patron_to_html(booking_patron, {
-                        display_cardnumber: true,
-                        url: false,
-                    }),
-                    editable: { remove: true, updateTime: true },
-                    type: "range",
-                    group: data.item_id ? data.item_id : 0,
-                });
-                timeline.focus(data.booking_id);
-            }
-
-            // Update bookings counts
-            $(".bookings_count").html(
-                parseInt($(".bookings_count").html(), 10) + 1
-            );
-
-            // Set feedback
-            $("#transient_result").replaceWith(
-                '<div id="transient_result" class="alert alert-info">' +
-                    __("Booking successfully placed") +
-                    "</div>"
-            );
-
-            // Close modal
-            $("#placeBookingModal").modal("hide");
-        });
-
-        posting.fail(function (data) {
-            $("#booking_result").replaceWith(
-                '<div id="booking_result" class="alert alert-danger">' +
-                    __("Failure") +
-                    "</div>"
-            );
-        });
-    } else {
-        // For edits with "any item" (item_id == 0), use same hybrid approach as new bookings
-        let edit_payload = {
-            booking_id: booking_id,
-            start_date: start_date,
-            end_date: end_date,
-            pickup_library_id: pickup_library_id,
-            biblio_id: biblio_id,
-            patron_id: $("#booking_patron_id").find(":selected").val(),
-        };
-
-        if (item_id == 0) {
-            // Get items of the selected itemtype that are available for the period
-            let itemsOfType = bookable_items.filter(
-                item => item.effective_item_type_id === booking_itemtype_id
-            );
-
-            let availableItems = itemsOfType.filter(item => {
-                return isItemAvailableForPeriod(
-                    item.item_id,
-                    new Date(start_date),
-                    new Date(end_date)
+                $(".bookings_count").html(
+                    toInt($(".bookings_count").html()) + 1
                 );
+                showBookingSuccess(__("Booking successfully placed"));
+            })
+            .fail(function () {
+                showBookingError(__("Failure"));
             });
+    } else {
+        // Update existing booking
+        payload.booking_id = booking_id;
 
-            if (availableItems.length === 0) {
-                $("#booking_result").replaceWith(
-                    '<div id="booking_result" class="alert alert-danger">' +
-                        __("No suitable item found for booking") +
-                        "</div>"
-                );
-                return;
-            } else if (availableItems.length === 1) {
-                // Only one item available - send specific item_id
-                edit_payload.item_id = availableItems[0].item_id;
-            } else {
-                // Multiple items available - let server choose optimal item
-                edit_payload.itemtype_id = booking_itemtype_id;
-            }
-        } else {
-            // Specific item selected
-            edit_payload.item_id = item_id;
-        }
-
-        url += "/" + booking_id;
-        let putting = $.ajax({
+        $.ajax({
             method: "PUT",
-            url: url,
+            url: url + "/" + booking_id,
             contentType: "application/json",
-            data: JSON.stringify(edit_payload),
-        });
+            data: JSON.stringify(payload),
+        })
+            .done(function (data) {
+                const target = bookings.find(
+                    obj => obj.booking_id === data.booking_id
+                );
+                if (target) {
+                    Object.assign(target, data);
+                }
+                refreshBookingsTable();
 
-        putting.done(function (data) {
-            update_success = 1;
+                if (typeof timeline !== "undefined" && timeline !== null) {
+                    timeline.itemsData.update(createTimelineItem(data));
+                    timeline.focus(data.booking_id);
+                }
 
-            // Update bookings store for subsequent bookings
-            let target = bookings.find(
-                obj => obj.booking_id === data.booking_id
-            );
-            Object.assign(target, data);
-
-            // Update bookings page as required
-            if (
-                typeof bookings_table !== "undefined" &&
-                bookings_table !== null
-            ) {
-                bookings_table.api().ajax.reload();
-            }
-            if (typeof timeline !== "undefined" && timeline !== null) {
-                // Convert to library timezone for timeline display
-                const startServerTz = dayjs(data.start_date).tz($timezone());
-                const endServerTz = dayjs(data.end_date).tz($timezone());
-                timeline.itemsData.update({
-                    id: data.booking_id,
-                    booking: data.booking_id,
-                    patron: data.patron_id,
-                    start: $toDisplayDate(startServerTz),
-                    end: $toDisplayDate(endServerTz),
-                    content: $patron_to_html(booking_patron, {
-                        display_cardnumber: true,
-                        url: false,
-                    }),
-                    editable: { remove: true, updateTime: true },
-                    type: "range",
-                    group: data.item_id ? data.item_id : 0,
-                });
-                timeline.focus(data.booking_id);
-            }
-
-            // Set feedback
-            $("#transient_result").replaceWith(
-                '<div id="transient_result" class="alert alert-info">' +
-                    __("Booking successfully updated") +
-                    "</div>"
-            );
-
-            // Close modal
-            $("#placeBookingModal").modal("hide");
-        });
-
-        putting.fail(function (data) {
-            $("#booking_result").replaceWith(
-                '<div id="booking_result" class="alert alert-danger">' +
-                    __("Failure") +
-                    "</div>"
-            );
-        });
+                showBookingSuccess(__("Booking successfully updated"));
+            })
+            .fail(function () {
+                showBookingError(__("Failure"));
+            });
     }
 });
 
 $("#placeBookingModal").on("hidden.bs.modal", function (e) {
     // Reset patron select
-    $("#booking_patron_id").val(null).trigger("change");
-    $("#booking_patron_id").empty();
-    $("#booking_patron_id").prop("disabled", false);
+    $("#booking_patron_id")
+        .val(null)
+        .trigger("change")
+        .empty()
+        .prop("disabled", false);
     booking_patron = undefined;
 
     // Reset item select
-    $("#booking_item_id").val(parseInt(0)).trigger("change");
-    $("#booking_item_id").prop("disabled", true);
+    $("#booking_item_id").val(0).trigger("change").prop("disabled", true);
 
     // Reset itemtype select
-    $("#booking_itemtype").val(null).trigger("change");
-    $("#booking_itemtype").prop("disabled", true);
+    $("#booking_itemtype").val(null).trigger("change").prop("disabled", true);
     booking_itemtype_id = undefined;
 
     // Reset pickup library select
-    $("#pickup_library_id").val(null).trigger("change");
-    $("#pickup_library_id").empty();
-    $("#pickup_library_id").prop("disabled", true);
+    $("#pickup_library_id")
+        .val(null)
+        .trigger("change")
+        .empty()
+        .prop("disabled", true);
 
     // Reset booking period picker
     $("#period").get(0)._flatpickr.clear();
