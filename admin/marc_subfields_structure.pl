@@ -28,6 +28,7 @@ use Koha::Authority::Types;
 use Koha::AuthorisedValueCategories;
 use Koha::Filter::MARC::ViewPolicy;
 use Koha::BiblioFrameworks;
+use Koha::Plugins;
 
 use List::MoreUtils qw( uniq );
 
@@ -128,7 +129,6 @@ if ( $op eq 'add_form' ) {
 
     # Add valuebuilders from plugins
     if ( C4::Context->config("enable_plugins") ) {
-        require Koha::Plugins;
         my $plugins = Koha::Plugins->new();
 
         # Use the dedicated get_valuebuilders_installed method
