@@ -469,7 +469,6 @@ sub plugin_types_to_classes {
     my ($self) = @_;
 
     unless ( exists $self->{_plugin_mapping} ) {
-        require Koha::Plugins;
         my @plugins = Koha::Plugins->new()->GetPlugins( { method => 'background_tasks', } );
 
         foreach my $plugin (@plugins) {
