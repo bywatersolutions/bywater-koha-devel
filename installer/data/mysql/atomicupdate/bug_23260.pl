@@ -12,6 +12,7 @@ return {
         $dbh->do(
             q{
             ALTER TABLE items_last_borrower
+            MODIFY COLUMN borrowernumber int(11) NULL,
             MODIFY created_on timestamp NOT NULL DEFAULT current_timestamp()
         }
         );
