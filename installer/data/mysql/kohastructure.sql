@@ -4255,10 +4255,11 @@ DROP TABLE IF EXISTS `items_last_borrower`;
 CREATE TABLE `items_last_borrower` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `itemnumber` int(11) NOT NULL,
-  `borrowernumber` int(11) NULL,
-  `created_on` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `borrowernumber` int(11) DEFAULT NULL,
+  `created_on` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `borrowernumber` (`borrowernumber`),
+  KEY `items_last_borrower_ibfk_1` (`itemnumber`),
   CONSTRAINT `items_last_borrower_ibfk_1` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `items_last_borrower_ibfk_2` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
