@@ -213,39 +213,21 @@ sub anonymize_last_borrowers {
     my $anonymous_patron = C4::Context->preference('AnonymousPatron');
 
     my $dtf = Koha::Database->new->schema->storage->datetime_parser;
-    my $rs  = $self->_resultset->search(
+
+    # Perform bulk update directly on items_last_borrower table to avoid N+1 queries
+    my $schema                 = Koha::Database->new->schema;
+    my $items_last_borrower_rs = $schema->resultset('ItemsLastBorrower')->search(
         {
-            created_on                            => { '<'   => $dtf->format_datetime($older_than_date), },
-            'items_last_borrowers.borrowernumber' => { 'not' => undef },               # Keep forever
-            'items_last_borrowers.borrowernumber' => { '!='  => $anonymous_patron },
+            created_on             => { '<'  => $dtf->format_datetime($older_than_date) },
+            borrowernumber         => { '!=' => $anonymous_patron, 'not' => undef },
+            'itemnumber.damaged'   => 0,
+            'itemnumber.itemlost'  => 0,
+            'itemnumber.withdrawn' => 0,
         },
-        {
-            join     => ["items_last_borrowers"],
-            distinct => 1,
-        }
+        { join => 'itemnumber' }
     );
-    my $patrons = Koha::Patrons->_new_from_dbic($rs);
 
-    my $nb_rows = 0;
-    while ( my $patron = $patrons->next ) {
-        my $last_borrowers_to_anonymize = $patron->_result->items_last_borrowers->search(
-            {
-                (
-                    $older_than_date
-                    ? ( created_on => { '<' => $dtf->format_datetime($older_than_date) } )
-                    : (),
-                    "itemnumber.damaged"   => 0,
-                    "itemnumber.itemlost"  => 0,
-                    "itemnumber.withdrawn" => 0,
-                ),
-            },
-            { join => ['itemnumber'] }
-        );
-        $nb_rows +=
-            $last_borrowers_to_anonymize->update( { 'items_last_borrower.borrowernumber' => $anonymous_patron } );
-    }
-
-    return $nb_rows;
+    return $items_last_borrower_rs->update( { borrowernumber => $anonymous_patron } );
 }
 
 =head3 delete
