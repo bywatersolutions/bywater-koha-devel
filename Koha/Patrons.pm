@@ -204,13 +204,16 @@ sub anonymize_last_borrowers {
     my ( $self, $params ) = @_;
 
     return unless C4::Context->preference("AnonymizeLastBorrower");
-    return unless C4::Context->preference("AnonymousPatron");
+
+    my $anonymous_patron = C4::Context->preference('AnonymousPatron');
+    return unless $anonymous_patron;
+    my $anon_patron_obj = Koha::Patrons->find($anonymous_patron);
+    return unless $anon_patron_obj;    # Invalid AnonymousPatron value
+
     my $days = C4::Context->preference("AnonymizeLastBorrowerDays") || 0;
     my ( $year, $month, $day )          = Today();
     my ( $newyear, $newmonth, $newday ) = Add_Delta_Days( $year, $month, $day, (-1) * $days );
     my $older_than_date = dt_from_string( sprintf "%4d-%02d-%02d", $newyear, $newmonth, $newday );
-
-    my $anonymous_patron = C4::Context->preference('AnonymousPatron');
 
     my $dtf = Koha::Database->new->schema->storage->datetime_parser;
 
