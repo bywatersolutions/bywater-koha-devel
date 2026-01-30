@@ -792,7 +792,7 @@
             <!-- /#hold-found1 -->
         [% END # /IF waiting %]
 
-        [% IF (transfer || needstransfer) && !(reserved and !recalled and !waitingrecall) %]
+        [% IF (transfer || needstransfer) && !waiting && !(reserved and !recalled and !waitingrecall) %]
             [% IF Koha.Preference('TransfersBlockCirc') %]
                 [% SET div_class='block' %]
             [% ELSE %]
