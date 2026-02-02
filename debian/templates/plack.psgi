@@ -99,6 +99,7 @@ builder {
             enable 'LogWarn';
         }
         enable "+Koha::Middleware::CSRF";
+        enable '+Koha::Middleware::ContentSecurityPolicy';
         $opac;
     };
     mount '/intranet'      => builder {
@@ -119,6 +120,7 @@ builder {
             enable 'LogWarn';
         }
         enable "+Koha::Middleware::CSRF";
+        enable '+Koha::Middleware::ContentSecurityPolicy';
         $intranet;
     };
     mount '/intranet_svc'      => builder {
@@ -127,6 +129,7 @@ builder {
             enable 'LogWarn';
         }
         enable "+Koha::Middleware::CSRF";
+        enable '+Koha::Middleware::ContentSecurityPolicy';
         $intranet_svc;
     };
     mount '/api/v1/app.pl' => builder {

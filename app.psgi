@@ -56,6 +56,7 @@ builder {
     enable 'ReverseProxy';
     enable '+Koha::Middleware::UserEnv';
     enable '+Koha::Middleware::SetEnv';
+    enable '+Koha::Middleware::ContentSecurityPolicy';
     enable '+Koha::Middleware::RealIP';
 
     sub {
