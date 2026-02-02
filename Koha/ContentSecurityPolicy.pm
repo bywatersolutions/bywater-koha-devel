@@ -84,7 +84,7 @@ sub new {
 sub header_name {
     my ( $self, $args ) = @_;
 
-    my $interface //= $args->{interface} || C4::Context->interface;
+    my $interface = $args->{interface} || C4::Context->interface;
 
     my $conf_csp = $self->{config}->get('content_security_policy');
 
@@ -119,7 +119,7 @@ sub header_name {
 sub header_value {
     my ( $self, $args ) = @_;
 
-    my $interface //= $args->{interface} || C4::Context->interface;
+    my $interface = $args->{interface} || C4::Context->interface;
 
     my $conf_csp = $self->{config}->get('content_security_policy');
 
@@ -153,7 +153,7 @@ sub header_value {
 
 sub is_enabled {
     my ( $self, $args ) = @_;
-    my $interface //= $args->{interface} || C4::Context->interface;
+    my $interface = $args->{interface} || C4::Context->interface;
 
     my $conf_csp = $self->{config}->get('content_security_policy');
 
