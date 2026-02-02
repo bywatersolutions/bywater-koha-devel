@@ -311,6 +311,36 @@
    <parallel_loops_count>1</parallel_loops_count>
  </auto_renew_cronjob>
 
+ <!--
+   Content-Security-Policy (CSP) configuration
+   ============================================
+   CSP is a security feature that helps prevent XSS attacks by controlling which
+   resources the browser is allowed to load.
+
+   csp_mode options:
+     - (empty/unset): CSP is disabled (default)
+     - report-only: CSP violations are reported but not enforced (for testing)
+     - enabled: CSP is fully enforced
+
+   csp_header_value: The CSP policy directives. Special placeholders:
+     - _CSP_NONCE_: Replaced with a unique nonce for each request
+
+   Recommended workflow:
+     1. Start with report-only mode to identify violations
+     2. Review logs and fix any legitimate violations
+     3. Switch to enabled mode once violations are resolved
+
+   To enable violation reporting, add report-uri to your policy pointing to Koha's
+   built-in CSP report endpoint. Example with reporting:
+     <csp_header_value>default-src 'self'; script-src 'self' 'nonce-_CSP_NONCE_'; style-src 'self' 'nonce-_CSP_NONCE_'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; report-uri /api/v1/public/csp-reports</csp_header_value>
+
+   Reports are logged via Koha's logging system. Configure log4perl to capture them:
+     log4perl.logger.api.csp = WARN, CSP
+     log4perl.appender.CSP = Log::Log4perl::Appender::File
+     log4perl.appender.CSP.filename = /var/log/koha/csp-violations.log
+     log4perl.appender.CSP.layout = PatternLayout
+     log4perl.appender.CSP.layout.ConversionPattern = [%d] %m%n
+ -->
  <content_security_policy>
    <opac>
      <!-- supported values: report-only, enabled. Any other value, including unset, disables the feature. -->

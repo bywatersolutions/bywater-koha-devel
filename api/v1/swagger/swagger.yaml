@@ -42,6 +42,8 @@ definitions:
     $ref: ./definitions/circ-rule-kind.yaml
   city:
     $ref: ./definitions/city.yaml
+  csp_report:
+    $ref: ./definitions/csp_report.yaml
   credit:
     $ref: ./definitions/credit.yaml
   debit:
@@ -565,6 +567,8 @@ paths:
     $ref: "./paths/libraries.yaml#/~1public~1libraries~1{library_id}"
   "/public/lists":
     $ref: "./paths/lists.yaml#/~1public~1lists"
+  "/public/csp-reports":
+    $ref: ./paths/public_csp_reports.yaml#/~1public~1csp-reports
   "/public/oauth/login/{provider_code}/{interface}":
     $ref: ./paths/public_oauth.yaml#/~1public~1oauth~1login~1{provider_code}~1{interface}
   "/public/patrons/{patron_id}/article_requests/{article_request_id}":

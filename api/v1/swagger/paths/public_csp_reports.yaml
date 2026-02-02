@@ -1,0 +1,43 @@
+"/public/csp-reports":
+  post:
+    x-mojo-to: CSPReports#add
+    operationId: addCSPReport
+    tags:
+      - csp
+    summary: Report a Content-Security-Policy violation
+    description: |
+      This endpoint receives Content-Security-Policy violation reports from browsers.
+      When a CSP violation occurs, browsers can be configured to POST a report to this
+      endpoint using the `report-uri` or `report-to` CSP directive.
+
+      Reports are logged using Koha's logging system for administrator review.
+
+      This is a public endpoint that does not require authentication, as browsers
+      send these reports automatically without user credentials.
+    consumes:
+      - application/csp-report
+      - application/json
+    produces:
+      - application/json
+    parameters:
+      - name: body
+        in: body
+        description: CSP violation report
+        required: true
+        schema:
+          $ref: "../swagger.yaml#/definitions/csp_report"
+    responses:
+      "204":
+        description: Report received successfully
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: Internal server error
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
