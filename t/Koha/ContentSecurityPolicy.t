@@ -168,7 +168,7 @@ subtest 'nonce tests' => sub {
 
     $csp = Koha::ContentSecurityPolicy->new();
     my $nonce = $csp->nonce;
-    like( $nonce, qr/\w{10}/, 'nonce is a random string of 10 characters' );
+    like( $nonce, qr/\w{22}/, 'nonce is a random string of 22 characters (128+ bits entropy)' );
     is( $nonce, $csp->nonce, 're-calling nonce() returns the same randomly generated cached value' );
 
     $cache->set_in_cache( 'CSP-NONCE', 'cached value' );

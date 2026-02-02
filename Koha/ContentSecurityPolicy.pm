@@ -197,7 +197,7 @@ sub nonce {
     }
 
     unless ( $self->{nonce} ) {
-        $nonce = Koha::Token->new()->generate( { pattern => '\w{10}' } );
+        $nonce = Koha::Token->new()->generate( { pattern => '\w{22}' } );
         $self->{nonce} = $nonce;
     }
 
