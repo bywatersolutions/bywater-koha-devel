@@ -119,7 +119,7 @@ $(document).ready(function () {
                 pageSize = results.length;
                 // These values are completely arbitrary, but they enable
                 // us to display pagination links
-                (data.recordsFiltered = 5000), (data.recordsTotal = 5000);
+                ((data.recordsFiltered = 5000), (data.recordsTotal = 5000));
 
                 return results;
             };
