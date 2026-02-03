@@ -74,7 +74,7 @@ sub call {
         # Get the CSRF token from the param list or the header
         my $csrf_token = $req->param('csrf_token') || $req->header('CSRF-TOKEN');
 
-        if ( defined $req->param('op') && $original_op !~ m{^cud-} ) {
+        if ( ( defined $req->param('op') && $original_op !~ m{^cud-} ) && !$req->param('login_op') ) {
             $error = sprintf "Programming error - op '%s' must start with 'cud-' for %s %s (referer: %s)", $original_op,
                 $request_method, $uri, $referer;
         } elsif ( defined $req->param('login_op') && $req->param('login_op') !~ m/^cud-login$/ ) {

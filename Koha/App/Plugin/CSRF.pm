@@ -86,7 +86,7 @@ sub register {
             } else {
                 my $op       = $c->req->param('op');
                 my $login_op = $c->req->param('login_op');
-                if ( $op && $op !~ /^cud-/ ) {
+                if ( ( $op && $op !~ /^cud-/ ) && !$login_op ) {
                     return $c->reply->exception(
                         'Incorrect use of an unsafe HTTP method with an `op` parameter that does not start with "cud-"')
                         ->rendered(400);
