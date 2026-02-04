@@ -37,6 +37,35 @@ Koha::Library::FloatLimits - Koha Library::FloatLimit object set class
 
 =head3 lowest_ratio_library
 
+    my $library = Koha::Library::FloatLimits->lowest_ratio_library(
+        $item, $branchcode, $from_branch
+    );
+
+Determines the optimal library to transfer an item to based on float limit ratios.
+
+This method calculates the ratio of current items to float limits for each library
+with configured float limits for the item's type. It considers items currently at
+the branch, items in transit to/from the branch, and respects library group
+restrictions if the item's return policy is set to 'returnbylibrarygroup'.
+
+The method returns the library with the lowest ratio (most need for this item type),
+with preference given to the current branch in case of ties. Returns undef if no
+suitable transfer destination is found or if branch transfer limits prevent the
+transfer.
+
+=over 4
+
+=item * $item - Koha::Item object to be transferred
+
+=item * $branchcode - branchcode of the return/checkin location
+
+=item * $from_branch - (optional) branchcode where item was previously held, used for
+adjusting item counts during the calculation
+
+=back
+
+Returns: Koha::Library object of the destination branch, or undef if no transfer needed
+
 =cut
 
 sub lowest_ratio_library {

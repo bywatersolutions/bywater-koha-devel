@@ -29,6 +29,7 @@ return {
                 `itemtype` varchar(10) NOT NULL,
                 `float_limit` int(11) NULL DEFAULT NULL,
                 PRIMARY KEY (`branchcode`,`itemtype`),
+                KEY `itemtype_idx` (`itemtype`),
                 CONSTRAINT `library_float_limits_ibfk_bc` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
                 CONSTRAINT `library_float_limits_ibfk_it` FOREIGN KEY (`itemtype`) REFERENCES `itemtypes` (`itemtype`) ON DELETE CASCADE ON UPDATE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
