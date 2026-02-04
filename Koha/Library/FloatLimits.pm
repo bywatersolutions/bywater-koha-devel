@@ -234,8 +234,12 @@ sub lowest_ratio_library {
                 $item->$BranchTransferLimitsType
             );
 
-            $transfer_branch = Koha::Libraries->find( $candidate->{branchcode} ) if $allowed;
-            last;
+            if ($allowed) {
+                $transfer_branch = Koha::Libraries->find( $candidate->{branchcode} );
+                last;    # Found an allowed transfer, exit loop
+            }
+
+            # If not allowed, continue to next candidate
         } else {
             $transfer_branch = Koha::Libraries->find( $candidate->{branchcode} );
             last;
