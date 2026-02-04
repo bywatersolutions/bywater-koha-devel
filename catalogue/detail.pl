@@ -61,8 +61,6 @@ use Koha::Reviews;
 use Koha::SearchEngine::Search;
 use Koha::SearchEngine::QueryBuilder;
 use Koha::Serial::Items;
-use Koha::Library::Group;
-use Koha::Library::Groups;
 
 my $query = CGI->new();
 
@@ -333,69 +331,18 @@ if ( defined $dat->{'itemtype'} ) {
     $dat->{imageurl} = getitemtypeimagelocation( 'intranet', $itemtypes->{ $dat->{itemtype} }->imageurl );
 }
 
-my $total_group_holdings_count = 0;
-my $other_holdings_count       = 0;
-my $branch_holdings_count      = 0;
 if ( C4::Context->preference('SeparateHoldings') ) {
     my $SeparateHoldingsBranch = C4::Context->preference('SeparateHoldingsBranch') || 'homebranch';
-    $branch_holdings_count =
-        $items_to_display->search( { $SeparateHoldingsBranch => { '=' => C4::Context->userenv->{branch} } } )->count;
-    $other_holdings_count = $items_to_display->count - $branch_holdings_count;
+    my $other_holdings_count =
+        $items_to_display->search( { $SeparateHoldingsBranch => { '!=' => C4::Context->userenv->{branch} } } )->count;
+    $template->param( other_holdings_count => $other_holdings_count );
 }
 $template->param(
     count                  => $all_items->count,         # FIXME 'count' is used in catalog-strings.inc
-    other_holdings_count   => $other_holdings_count,     # But it's not a meaningful variable, we should rename it there
+                                                         # But it's not a meaningful variable, we should rename it there
     all_items_count        => $all_items->count,
     items_to_display_count => $items_to_display->count,
-    branch_holdings_count  => $branch_holdings_count,
 );
-if ( C4::Context->preference('SeparateHoldingsByGroup') ) {
-    my $branchcode        = C4::Context->userenv->{branch};
-    my @all_search_groups = Koha::Library::Groups->get_search_groups( { interface => 'staff' } );
-    my @lib_groups;
-    my %branchcode_hash;
-    my %holdings_count;
-
-    foreach my $search_group (@all_search_groups) {
-        while ( my $group = $search_group->next ) {
-            my @all_libs = $group->all_libraries;
-
-            # Check if library is in group
-            if ( grep { $_->branchcode eq $branchcode } @all_libs ) {
-
-                # Get other libraries in group
-                my @other_libs = grep { $_->branchcode ne $branchcode } @all_libs;
-
-                my @libs_branchcodes;
-                push @libs_branchcodes, $branchcode;
-
-                foreach my $lib (@other_libs) {
-                    push @libs_branchcodes, $lib->branchcode;
-                }
-
-                # Build group branchcode hash
-                $branchcode_hash{ $group->id } = \@libs_branchcodes;
-
-                my $SeparateHoldingsBranch = C4::Context->preference('SeparateHoldingsBranch') || 'homebranch';
-                my $group_holdings_count =
-                    $items_to_display->search( { $SeparateHoldingsBranch => { '-in' => \@libs_branchcodes } } )->count;
-                $holdings_count{ $group->id } = $group_holdings_count;
-                $total_group_holdings_count += $group_holdings_count;
-
-                push @lib_groups, $group;
-                $other_holdings_count = ( $items_to_display->count ) - $total_group_holdings_count;
-            }
-        }
-    }
-
-    $template->param(
-        lib_groups                 => \@lib_groups,
-        branchcodes                => \%branchcode_hash,
-        holdings_count_hash        => \%holdings_count,
-        total_group_holdings_count => $total_group_holdings_count,
-        other_holdings_count       => $other_holdings_count,
-    );
-}
 
 my $some_private_shelves = Koha::Virtualshelves->get_some_shelves(
     {

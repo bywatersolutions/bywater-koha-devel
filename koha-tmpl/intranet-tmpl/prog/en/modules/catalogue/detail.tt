@@ -335,9 +335,14 @@
     [% WRAPPER tabs id= "bibliodetails" %]
         [% WRAPPER tabs_nav %]
             [% IF Koha.Preference('SeparateHoldings') %]
-                [% IF branch_holdings_count %]
+                [% IF items_to_display_count - ( other_holdings_count || 0 ) %]
                     [% WRAPPER tab_item tabname= "holdings" %]
-                        <span>[% Branches.GetLoggedInBranchname | html %] holdings ([% branch_holdings_count | html %])</span>
+                        <span>[% Branches.GetLoggedInBranchname | html %] holdings ([% items_to_display_count - ( other_holdings_count || 0 ) - ( hidden_count || 0 ) || 0 | html %])</span>
+                    [% END %]
+                [% END %]
+                [% IF other_holdings_count %]
+                    [% WRAPPER tab_item tabname= "otherholdings" %]
+                        <span>Other holdings ([% other_holdings_count || 0 | html %])</span>
                     [% END %]
                 [% END %]
             [% ELSE %]
@@ -345,25 +350,6 @@
                     <span>Holdings ([% items_to_display_count || 0 | html %])</span>
                 [% END %]
             [% END %]
-
-            [% IF Koha.Preference('SeparateHoldingsByGroup') && lib_groups %]
-                [% FOREACH group IN lib_groups %]
-                    [% IF ( holdings_count_hash.${group.id} > 0 ) %]
-                        [% WRAPPER tab_item tabname="group_holdings_" _ group.id %]
-                            <span>[% group.title | html %] holdings ([% holdings_count_hash.${group.id} | html %])</span>
-                        [% END %]
-                    [% END %]
-                [% END %]
-            [% END %]
-
-            [% IF Koha.Preference('SeparateHoldings') %]
-                [% IF other_holdings_count > 0 %]
-                    [% WRAPPER tab_item tabname= "otherholdings" %]
-                        <span>Other holdings ([% other_holdings_count || 0 | html %])</span>
-                    [% END %]
-                [% END %]
-            [% END %]
-
             [% IF Koha.Preference('EnableItemGroups') %]
                 [% WRAPPER tab_item tabname= "item_groups" %]
                     <span>Item groups</span>
@@ -502,16 +488,6 @@
                 [% WRAPPER tab_panel tabname="otherholdings" %]
                     [% PROCESS items_table tab="otherholdings" %]
                 [% END # /tab_panel %]
-            [% END %]
-            [% IF Koha.Preference('SeparateHoldingsByGroup') && lib_groups %]
-                [% FOREACH group IN lib_groups %]
-                    [% IF ( holdings_count_hash.${group.id} > 0 ) %]
-                        [% SET group_tab = "group_holdings_" _ group.id %]
-                        [% WRAPPER tab_panel tabname=group_tab %]
-                            [% PROCESS items_table tab=group_tab %]
-                        [% END # /tab_panel %]
-                    [% END %]
-                [% END %]
             [% END %]
 
             [% IF ( MARCNOTES ) %]
@@ -1763,29 +1739,15 @@
     [% END %]
     <script>
         var browser;
-        var group_tabs;
         browser = KOHA.browser("[% searchid | html %]", parseInt(biblionumber, 10));
         browser.show();
-        let group_tabs_array = new Array;
-        [% IF Koha.Preference('SeparateHoldingsByGroup') && lib_groups %]
-            [% FOREACH group IN lib_groups %]
-               group_tabs = "group_holdings_[% group.id | html %]"
-               group_tabs_array.push(group_tabs);
-            [% END %]
-          [% END %]
 
         [% IF bundlesEnabled %]
             var bundle_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail','bundle_tables','json') | $raw %];
             var bundle_lost_value = [% Koha.Preference('BundleLostValue') | html %];
         [% END %]
 
-        let items_tab_ids_default = [
-            'holdings',
-            'otherholdings'
-        ];
-
-        let items_tab_ids = items_tab_ids_default.concat(group_tabs_array);
-
+        let items_tab_ids = [ 'holdings', 'otherholdings' ];
         items_tab_ids.forEach( function( tab_id, index ) {
 
             // Early return if the tab is not shown (ie. no table)
