@@ -91,7 +91,7 @@ subtest 'CSPNonce' => sub {
     my $plugin = Koha::Template::Plugin::Koha->new($context);
 
     my $csp   = Koha::ContentSecurityPolicy->new;
-    my $nonce = $csp->nonce;
+    my $nonce = $csp->get_nonce;
 
     my $token = $plugin->CSPNonce;
 

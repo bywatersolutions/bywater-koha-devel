@@ -37,7 +37,6 @@ my $conf_csp_section = 'content_security_policy';
 subtest 'test CSP in OPAC' => sub {
     plan tests => 5;
 
-    my $test_nonce = 'TEST_NONCE';
     my $csp_header_value =
         "default-src 'self'; script-src 'self' 'nonce-_CSP_NONCE_'; style-src 'self' 'nonce-_CSP_NONCE_'; img-src 'self' data:; font-src 'self'; object-src 'none'";
 
@@ -46,9 +45,6 @@ subtest 'test CSP in OPAC' => sub {
         $conf_csp_section,
         { opac => { csp_mode => 'enabled', csp_header_value => $csp_header_value } }
     );
-
-    # Set nonce
-    Koha::ContentSecurityPolicy->new->nonce($test_nonce);
 
     my $env  = {};
     my $home = $ENV{KOHA_HOME};
@@ -63,6 +59,7 @@ subtest 'test CSP in OPAC' => sub {
 
     my $test                      = Plack::Test->create($app);
     my $res                       = $test->request( GET "/opac/opac-main.pl" );
+    my $test_nonce                = Koha::ContentSecurityPolicy->new->get_nonce();
     my $expected_csp_header_value = $csp_header_value;
     $expected_csp_header_value =~ s/_CSP_NONCE_/$test_nonce/g;
     is(
@@ -100,7 +97,6 @@ subtest 'test CSP in OPAC' => sub {
 subtest 'test CSP in staff client' => sub {
     plan tests => 5;
 
-    my $test_nonce = 'TEST_NONCE';
     my $csp_header_value =
         "default-src 'self'; script-src 'self' 'nonce-_CSP_NONCE_'; style-src 'self' 'nonce-_CSP_NONCE_'; img-src 'self' data:; font-src 'self'; object-src 'none'";
 
@@ -108,9 +104,6 @@ subtest 'test CSP in staff client' => sub {
         $conf_csp_section,
         { opac => { csp_mode => 'enabled', csp_header_value => $csp_header_value } }
     );
-
-    # Set nonce
-    Koha::ContentSecurityPolicy->new->nonce($test_nonce);
 
     my $env  = {};
     my $home = $ENV{KOHA_HOME};
@@ -125,6 +118,7 @@ subtest 'test CSP in staff client' => sub {
 
     my $test                      = Plack::Test->create($app);
     my $res                       = $test->request( GET "/intranet/mainpage.pl" );
+    my $test_nonce                = Koha::ContentSecurityPolicy->new->get_nonce();
     my $expected_csp_header_value = $csp_header_value;
     $expected_csp_header_value =~ s/_CSP_NONCE_/$test_nonce/g;
     is(
@@ -154,7 +148,10 @@ subtest 'test CSP in staff client' => sub {
         { intranet => { csp_mode => 'enabled', csp_header_value => $csp_header_value } }
     );
 
-    $res = $test->request( GET "/intranet/mainpage.pl" );
+    $res                       = $test->request( GET "/intranet/mainpage.pl" );
+    $test_nonce                = Koha::ContentSecurityPolicy->new->get_nonce();
+    $expected_csp_header_value = $csp_header_value;
+    $expected_csp_header_value =~ s/_CSP_NONCE_/$test_nonce/g;
     is(
         $res->header('content-security-policy'), $expected_csp_header_value,
         "Response contains Content-Security-Policy header when it is enabled in koha-conf.xml"

@@ -39,6 +39,7 @@ sub call {
     my $req = Plack::Request->new($env);
 
     my $csp = Koha::ContentSecurityPolicy->new;
+    $csp->set_nonce();
 
     my $res = $self->app->($env);
     return $res unless $csp->is_enabled;

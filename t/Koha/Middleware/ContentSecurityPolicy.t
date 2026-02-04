@@ -41,7 +41,6 @@ my $conf_csp_section = 'content_security_policy';
 subtest 'test Content-Security-Policy header' => sub {
     plan tests => 3;
 
-    my $test_nonce = 'TEST_NONCE';
     my $csp_header_value =
         "default-src 'self'; script-src 'self' 'nonce-_CSP_NONCE_'; style-src 'self' 'nonce-_CSP_NONCE_'; img-src 'self' data:; font-src 'self'; object-src 'none'";
 
@@ -49,9 +48,6 @@ subtest 'test Content-Security-Policy header' => sub {
         $conf_csp_section,
         { opac => { csp_mode => 'enabled', csp_header_value => $csp_header_value } }
     );
-
-    # Set nonce
-    Koha::ContentSecurityPolicy->new->nonce($test_nonce);
 
     t::lib::Mocks::mock_config( 'opachtdocs', C4::Context->config('intranetdir') . '/t/mock_templates/opac-tmpl' );
 
@@ -79,6 +75,7 @@ subtest 'test Content-Security-Policy header' => sub {
 
     my $test                      = Plack::Test->create($app);
     my $res                       = $test->request( GET "/" );
+    my $test_nonce                = Koha::ContentSecurityPolicy->new->get_nonce();
     my $expected_csp_header_value = $csp_header_value;
     $expected_csp_header_value =~ s/_CSP_NONCE_/$test_nonce/g;
     is(

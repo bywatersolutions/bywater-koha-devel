@@ -117,6 +117,7 @@ use Cwd qw//;
 use base qw(Class::Accessor);
 
 use C4::Context;
+use Koha::ContentSecurityPolicy;
 
 __PACKAGE__->mk_ro_accessors(
     qw|
@@ -137,7 +138,11 @@ __PACKAGE__->mk_ro_accessors(
 
 sub new {
     my ( $class, $params ) = @_;
-    my $self = $class->SUPER::new();
+    my $self      = $class->SUPER::new();
+    my $csp_nonce = Koha::ContentSecurityPolicy->new->get_nonce;
+    if ($csp_nonce) {
+        $self->{csp_nonce} = $csp_nonce;
+    }
     if ( ref($params) eq 'HASH' ) {
         foreach ( 'name', 'path', 'item_style' ) {
             $self->{$_} = $params->{$_};
@@ -356,6 +361,8 @@ sub _generate_js {
 sub _process_javascript {
     my ( $self, $params, $script ) = @_;
 
+    my $csp_nonce = $self->{csp_nonce};
+
     #remove the script tags; we add them again later
     $script =~ s/\<script[^>]*\>\s*(\/\/\<!\[CDATA\[)?\s*//s;
     $script =~ s/(\/\/\]\]\>\s*)?\<\/script\>//s;
@@ -372,7 +379,7 @@ sub _process_javascript {
     }
     $self->{noclick}    = !$clickfound;
     $self->{javascript} = <<JS;
-<script>
+<script nonce="$csp_nonce">
 \$(document).ready(function () {
 $script
 });

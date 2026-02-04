@@ -57,7 +57,7 @@ sub new {
     my ( $class, $params ) = @_;
     my $self = bless $params // {}, $class;
 
-    $self->nonce( $params->{nonce} );
+    $self->set_nonce( $params->{nonce} ) if $params->{nonce};
     $self->{config} = Koha::Config->get_instance;
     return $self;
 }
@@ -127,7 +127,7 @@ sub header_value {
         unless exists $conf_csp->{$interface}->{csp_header_value};
 
     my $csp_header_value = $conf_csp->{$interface}->{csp_header_value};
-    my $csp_nonce        = $self->nonce;
+    my $csp_nonce        = $self->get_nonce;
 
     $csp_header_value =~ s/_CSP_NONCE_/$csp_nonce/g;
 
@@ -166,44 +166,52 @@ sub is_enabled {
     return 0;
 }
 
-=head2 nonce
+=head2 get_nonce
 
-    $csp->nonce();
+    $csp->get_nonce();
 
-    Generates and returns the nonce.
-
-    $csp->nonce($nonce);
-
-    Sets and returns the nonce.
+    Returns the previously set nonce.
 
     A CSP nonce is a random token that is used both in the inline scripts
     and the Content-Security-Policy[-Report-Only] response header.
 
 =cut
 
-sub nonce {
+sub get_nonce {
+    my ($self) = @_;
+
+    #Koha::Middleware::ContentSecurityPolicy sets an environmental variable
+    #We cannot use the L1 cache since it is cleared after the middleware is applied
+    my $env_value = $ENV{CSP_NONCE};
+
+    return $env_value;
+}
+
+=head2 set_nonce
+
+    $csp->set_nonce($nonce);
+
+    Set the nonce value.
+
+    If value is provided, that value is used. Otherwise, a value is generated.
+
+    A CSP nonce is a random token that is used both in the inline scripts
+    and the Content-Security-Policy[-Report-Only] response header.
+
+=cut
+
+sub set_nonce {
     my ( $self, $nonce ) = @_;
-    my $cache = Koha::Cache::Memory::Lite->new;
 
+    #Koha::Middleware::ContentSecurityPolicy sets an environmental variable
+    #We cannot use the L1 cache since it is cleared after the middleware is applied
     if ($nonce) {
-        $cache->set_in_cache( 'CSP-NONCE', $nonce );
-        $self->{nonce} = $nonce;
-        return $self->{nonce};
+        $ENV{CSP_NONCE} = $nonce;
+    } else {
+        my $nonce = Koha::Token->new()->generate( { pattern => '\w{22}' } );
+        $ENV{CSP_NONCE} = $nonce;
     }
-
-    if ( $nonce = $cache->get_from_cache('CSP-NONCE') ) {
-        $self->{nonce} = $nonce;
-        return $self->{nonce};
-    }
-
-    unless ( $self->{nonce} ) {
-        $nonce = Koha::Token->new()->generate( { pattern => '\w{22}' } );
-        $self->{nonce} = $nonce;
-    }
-
-    $cache->set_in_cache( 'CSP-NONCE', $self->{nonce} );
-
-    return $self->{nonce};
+    return 1;
 }
 
 1;

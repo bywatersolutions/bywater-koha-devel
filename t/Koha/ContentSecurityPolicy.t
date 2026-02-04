@@ -140,10 +140,8 @@ subtest 'header_value tests' => sub {
         $conf_csp_section,
         { opac => { csp_header_value => 'begin nonce-_CSP_NONCE_ end' } }
     );
-    my $cache = Koha::Cache::Memory::Lite->get_instance();
-    $cache->set_in_cache( 'CSP-NONCE', 'cached value' );
+    $csp->set_nonce('cached value');
     is( $csp->header_value, 'begin nonce-cached value end', 'Cached csp_header_value' );
-    $cache->flush;
 
     $csp = Koha::ContentSecurityPolicy->new( { nonce => 'forced value' } );
     is( $csp->header_value, 'begin nonce-forced value end', 'Forced csp_header_value' );
@@ -158,21 +156,20 @@ subtest 'nonce tests' => sub {
     my $csp = Koha::ContentSecurityPolicy->new;
 
     $csp = Koha::ContentSecurityPolicy->new( { nonce => 'forced value' } );
-    is( $csp->nonce, 'forced value', 'nonce is not re-generated as it was passed to new()' );
+    is( $csp->get_nonce, 'forced value', 'nonce is not re-generated as it was passed to new()' );
 
     $csp = Koha::ContentSecurityPolicy->new( { nonce => 'forced value' } );
-    is( $csp->nonce, 'forced value', 'nonce is not re-generated as was cached in memory' );
+    is( $csp->get_nonce, 'forced value', 'nonce is not re-generated as was cached in memory' );
 
-    my $cache = Koha::Cache::Memory::Lite->get_instance();
-    $cache->flush;
+    $csp->set_nonce();
 
     $csp = Koha::ContentSecurityPolicy->new();
-    my $nonce = $csp->nonce;
+    my $nonce = $csp->get_nonce;
     like( $nonce, qr/\w{22}/, 'nonce is a random string of 22 characters (128+ bits entropy)' );
-    is( $nonce, $csp->nonce, 're-calling nonce() returns the same randomly generated cached value' );
+    is( $nonce, $csp->get_nonce, 're-calling nonce() returns the same randomly generated cached value' );
 
-    $cache->set_in_cache( 'CSP-NONCE', 'cached value' );
-    is( $csp->nonce, 'cached value', 'nonce is not re-generated as it was previously cached' );
+    $csp->set_nonce('cached value');
+    is( $csp->get_nonce, 'cached value', 'nonce is not re-generated as it was previously cached' );
 };
 
 1;
