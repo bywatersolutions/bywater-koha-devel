@@ -187,7 +187,8 @@ sub lowest_ratio_library {
             }
         }
 
-        my $ratio = $item_count / $float_limit_val;
+        # Guard against division by zero (float_limit_val should never be 0 due to search filter, but be safe)
+        my $ratio = $float_limit_val > 0 ? $item_count / $float_limit_val : 999999;
 
         push @candidates, {
             branchcode  => $branch,
