@@ -525,13 +525,6 @@ my $recalled = 0;
 # new op dev : we check if the document must be returned to his homebranch directly,
 #  if the document is transferred, we have warning message .
 
-if ( $messages->{'LibraryFloatLimitTransferRequest'} ) {
-    $template->param(
-        LibraryFloatLimitTransferRequest => 1,
-        itemnumber                       => $itemnumber,
-    );
-}
-
 if ( $messages->{'WasTransfered'} ) {
     $template->param(
         found      => 1,
@@ -763,8 +756,6 @@ foreach my $code ( keys %$messages ) {
     } elsif ( $code eq 'RecallNeedsTransfer' ) {
         ;
     } elsif ( $code eq 'TransferredRecall' ) {
-        ;
-    } elsif ( $code eq 'LibraryFloatLimitTransferRequest' ) {
         ;
     } elsif ( $code eq 'InBundle' ) {
         $template->param( InBundle => $messages->{InBundle} );
