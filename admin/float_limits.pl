@@ -48,21 +48,25 @@ if ( $op eq 'cud-set_float_limits' ) {
 
     $schema->txn_do(
         sub {
-            $schema->storage->dbh->do("DELETE FROM library_float_limits");
+            # Clear all existing float limits using DBIC
+            Koha::Library::FloatLimits->delete;
             foreach my $branch (@branches) {
                 foreach my $itemtype (@itemtypes) {
                     my $branchcode = $branch->id;
                     my $itype      = $itemtype->id;
 
                     my $limit = $input->param( "limit_" . $branchcode . "_" . $itype );
-                    Koha::Library::FloatLimit->new(
-                        {
-                            branchcode  => $branchcode,
-                            itemtype    => $itype,
-                            float_limit => $limit,
-                        }
-                    )->store()
-                        if $limit ne q{};    # update or insert
+
+                    # Validate: must be empty or a non-negative integer
+                    if ( $limit ne q{} && $limit =~ /^\d+$/ && $limit >= 0 ) {
+                        Koha::Library::FloatLimit->new(
+                            {
+                                branchcode  => $branchcode,
+                                itemtype    => $itype,
+                                float_limit => $limit,
+                            }
+                        )->store();    # update or insert
+                    }
                 }
             }
             $template->param( float_limits_updated => 1 );
