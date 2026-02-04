@@ -47,11 +47,37 @@ sub call {
     return Plack::Util::response_cb(
         $res,
         sub {
-            my $res     = shift;
-            my $headers = $res->[1];
+            my $res                     = shift;
+            my $headers                 = $res->[1];
+            my $add_reporting_endpoints = 1;
+            for ( my $i = 0 ; $i < @$headers ; $i++ ) {
+
+                # if reporting-endpoints already exists, append it
+                if ( lc( $headers->[$i] ) eq 'reporting-endpoints' ) {
+                    $headers->[ $i + 1 ] = _add_csp_to_reporting_endpoints( $headers->[ $i + 1 ] );
+                    $add_reporting_endpoints = 0;
+                    last;
+                }
+            }
+
+            # reporting-endpoints is not yet defined, so let's define it
+            if ($add_reporting_endpoints) {
+                push @$headers, ( 'Reporting-Endpoints' => _add_csp_to_reporting_endpoints() );
+            }
             push @$headers, ( $csp->header_name => $csp->header_value );
         }
     );
 }
 
+sub _add_csp_to_reporting_endpoints {
+    my ($value) = @_;
+    if ( $value && $value =~ /^\w+/ ) {
+        $value = $value . ', ';
+    } else {
+        $value = '';
+    }
+    $value = $value . 'csp-violations="/api/v1/public/csp-reports"';
+
+    return $value;
+}
 1;

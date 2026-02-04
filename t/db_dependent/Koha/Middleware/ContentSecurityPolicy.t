@@ -21,18 +21,22 @@
 use strict;
 use warnings;
 use Test::NoWarnings;
-use Test::More tests => 4;
+use Test::More tests => 5;
 
 use HTTP::Request::Common;
 use Plack::App::CGIBin;
 use Plack::Builder;
 use Plack::Test;
 
+use Koha::Database;
+
 use t::lib::Mocks;
 
 use_ok("Koha::Middleware::ContentSecurityPolicy");
 
 my $conf_csp_section = 'content_security_policy';
+
+my $schema = Koha::Database->schema;
 
 subtest 'test CSP in OPAC' => sub {
     plan tests => 5;
@@ -158,4 +162,47 @@ subtest 'test CSP in staff client' => sub {
     );
 
     like( $res->content, qr/<body id="main_auth"/, 'mainpage.pl looks okay' );
+};
+
+subtest 'test Reporting-Endpoints for CSP violation reports' => sub {
+    plan tests => 1;
+
+    my $test_nonce = 'TEST_NONCE';
+    my $csp_header_value =
+        "default-src 'self'; script-src 'self' 'nonce-_CSP_NONCE_'; style-src 'self' 'nonce-_CSP_NONCE_'; img-src 'self' data:; font-src 'self'; object-src 'none'";
+
+    t::lib::Mocks::mock_preference( 'SessionStorage', 'tmp' );
+
+    $schema->storage->txn_begin;
+
+    t::lib::Mocks::mock_preference( 'OpacPublic', 1 );
+    t::lib::Mocks::mock_config(
+        $conf_csp_section,
+        { opac => { csp_mode => 'enabled', csp_header_value => $csp_header_value } }
+    );
+
+    # Set nonce
+    Koha::ContentSecurityPolicy->new->set_nonce($test_nonce);
+
+    my $env  = {};
+    my $home = $ENV{KOHA_HOME};
+    my $app  = Plack::App::CGIBin->new( root => $ENV{GIT_INSTALL} ? "$home/opac" : "$home/opac/cgi-bin/opac" )->to_app;
+
+    $app = builder {
+        mount '/opac' => builder {
+            enable "+Koha::Middleware::ContentSecurityPolicy";
+            $app;
+        };
+    };
+
+    my $test                      = Plack::Test->create($app);
+    my $res                       = $test->request( GET "/opac/opac-main.pl" );
+    my $expected_csp_header_value = $csp_header_value;
+    $expected_csp_header_value =~ s/_CSP_NONCE_/$test_nonce/g;
+    like(
+        $res->header('reporting-endpoints'), qr/^csp-violations="\/api\/v1\/public\/csp-reports"$/,
+        "Response contains Reporting-Endpoints header with the expected value"
+    );
+
+    $schema->storage->txn_rollback;
 };
