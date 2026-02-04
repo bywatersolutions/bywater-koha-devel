@@ -97,123 +97,108 @@ sub lowest_ratio_library {
     return unless @float_limits;
 
     my @candidates;
-    my $use_item_level = C4::Context->preference('item-level_itypes');
+    my $use_item_level     = C4::Context->preference('item-level_itypes');
+    my $effective_itemtype = $item->effective_itemtype;
 
-    foreach my $limit (@float_limits) {
-        my $branch          = $limit->get_column('branchcode');
-        my $float_limit_val = $limit->get_column('float_limit');
+    # Build hash of float limits for quick lookup
+    my %float_limit_by_branch = map { $_->get_column('branchcode') => $_->get_column('float_limit') } @float_limits;
+    my @branch_codes          = keys %float_limit_by_branch;
 
-        my $item_count;
-
-        if ($use_item_level) {
-            my $at_branch_count = Koha::Items->search(
-                {
-                    itype         => $item->effective_itemtype,
-                    holdingbranch => $branch,
-                    onloan        => undef
-                },
-            )->count;
-
-            # Count items in transit TO this branch
-            my $in_transit_to_count = Koha::Items->search(
-                {
-                    itype => $item->effective_itemtype,
-
-                    # Join with active transfers where this branch is the destination
-                },
-                {
-                    join  => 'branchtransfers',
-                    where => {
-                        'branchtransfers.tobranch'      => $branch,
-                        'branchtransfers.datearrived'   => undef,     # Still in transit
-                        'branchtransfers.datecancelled' => undef,     #Not cancelled
-                    },
-                    distinct => 1
-                }
-            )->count;
-
-            my $in_transit_from_count = Koha::Items->search(
-                { itype => $item->effective_itemtype },
-                {
-                    join  => 'branchtransfers',
-                    where => {
-                        'branchtransfers.frombranch'    => $branch,
-                        'branchtransfers.datearrived'   => undef,     # Still in transit
-                        'branchtransfers.datecancelled' => undef,     #Not cancelled
-                    },
-                    distinct => 1
-                }
-            )->count;
-            $item_count = $at_branch_count + $in_transit_to_count - $in_transit_from_count;
-
-            # artificially adjust counts for the item being checked in
-            if ($from_branch) {
-
-                # This is the checkin branch - artificially add 1
-                if ( $branch eq $branchcode ) {
-                    $item_count++;
-                }
-
-                # This is where the item came from - artificially subtract 1
-                if ( $branch eq $from_branch ) {
-                    $item_count--;
-                }
+    # Get item counts at branches in a single aggregated query
+    my %at_branch_counts;
+    if ($use_item_level) {
+        my $at_branch_rs = $schema->resultset('Item')->search(
+            {
+                itype         => $effective_itemtype,
+                holdingbranch => { -in => \@branch_codes },
+                onloan        => undef
+            },
+            {
+                select   => [ 'holdingbranch', { count => 'itemnumber', -as => 'item_count' } ],
+                as       => [ 'holdingbranch', 'item_count' ],
+                group_by => ['holdingbranch']
             }
-
-        } else {
-            my $at_branch_count = Koha::Items->search(
-                {
-                    holdingbranch         => $branch,
-                    'biblioitem.itemtype' => $item->effective_itemtype,
-                    onloan                => undef
-                },
-            )->count;
-
-            # Count items in transit TO this branch
-            my $in_transit_to_count = Koha::Items->search(
-                {
-                    itype => $item->effective_itemtype,
-                },
-                {
-                    join  => 'branchtransfers',
-                    where => {
-                        'branchtransfers.tobranch'      => $branch,
-                        'branchtransfers.datearrived'   => undef,     # Still in transit
-                        'branchtransfers.datecancelled' => undef,     #Not cancelled
-                    },
-                    distinct => 1
-                }
-            )->count;
-
-            my $in_transit_from_count = Koha::Items->search(
-                {
-                    itype => $item->effective_itemtype,
-                },
-                {
-                    join  => 'branchtransfers',
-                    where => {
-                        'branchtransfers.frombranch'    => $branch,
-                        'branchtransfers.datearrived'   => undef,     # Still in transit
-                        'branchtransfers.datecancelled' => undef,     #Not cancelled
-                    },
-                    distinct => 1
-                }
-            )->count;
-            $item_count = $at_branch_count + $in_transit_to_count - $in_transit_from_count;
-
-            # artificially adjust counts for the item being checked in
-            if ($from_branch) {
-
-                # This is the checkin branch - artificially add 1
-                if ( $branch eq $branchcode ) {
-                    $item_count++;
-                }
-
-                # This is where the item came from - artificially subtract 1
-                if ( $branch eq $from_branch ) {
-                    $item_count--;
-                }
+        );
+        while ( my $row = $at_branch_rs->next ) {
+            $at_branch_counts{ $row->get_column('holdingbranch') } = $row->get_column('item_count');
+        }
+    } else {
+        my $at_branch_rs = $schema->resultset('Item')->search(
+            {
+                holdingbranch         => { -in => \@branch_codes },
+                'biblioitem.itemtype' => $effective_itemtype,
+                onloan                => undef
+            },
+            {
+                join     => 'biblioitem',
+                select   => [ 'me.holdingbranch', { count => 'me.itemnumber', -as => 'item_count' } ],
+                as       => [ 'holdingbranch',    'item_count' ],
+                group_by => ['me.holdingbranch']
             }
+        );
+        while ( my $row = $at_branch_rs->next ) {
+            $at_branch_counts{ $row->get_column('holdingbranch') } = $row->get_column('item_count');
+        }
+    }
+
+    # Get items in transit TO branches in a single aggregated query
+    my %in_transit_to_counts;
+    my $to_transit_rs = $schema->resultset('Item')->search(
+        { 'me.itype' => $effective_itemtype },
+        {
+            join  => 'branchtransfers',
+            where => {
+                'branchtransfers.tobranch'      => { -in => \@branch_codes },
+                'branchtransfers.datearrived'   => undef,
+                'branchtransfers.datecancelled' => undef,
+            },
+            select => [ 'branchtransfers.tobranch', { count => { distinct => 'me.itemnumber' }, -as => 'item_count' } ],
+            as     => [ 'tobranch',                 'item_count' ],
+            group_by => ['branchtransfers.tobranch']
+        }
+    );
+    while ( my $row = $to_transit_rs->next ) {
+        $in_transit_to_counts{ $row->get_column('tobranch') } = $row->get_column('item_count');
+    }
+
+    # Get items in transit FROM branches in a single aggregated query
+    my %in_transit_from_counts;
+    my $from_transit_rs = $schema->resultset('Item')->search(
+        { 'me.itype' => $effective_itemtype },
+        {
+            join  => 'branchtransfers',
+            where => {
+                'branchtransfers.frombranch'    => { -in => \@branch_codes },
+                'branchtransfers.datearrived'   => undef,
+                'branchtransfers.datecancelled' => undef,
+            },
+            select =>
+                [ 'branchtransfers.frombranch', { count => { distinct => 'me.itemnumber' }, -as => 'item_count' } ],
+            as       => [ 'frombranch', 'item_count' ],
+            group_by => ['branchtransfers.frombranch']
+        }
+    );
+    while ( my $row = $from_transit_rs->next ) {
+        $in_transit_from_counts{ $row->get_column('frombranch') } = $row->get_column('item_count');
+    }
+
+    # Calculate ratios for each branch using the aggregated counts
+    foreach my $branch (@branch_codes) {
+        my $float_limit_val = $float_limit_by_branch{$branch};
+
+        my $item_count =
+            ( $at_branch_counts{$branch}       || 0 ) +
+            ( $in_transit_to_counts{$branch}   || 0 ) -
+            ( $in_transit_from_counts{$branch} || 0 );
+
+        # Artificially adjust counts for the item being checked in
+        if ($from_branch) {
+
+            # This is the checkin branch - artificially add 1
+            $item_count++ if $branch eq $branchcode;
+
+            # This is where the item came from - artificially subtract 1
+            $item_count-- if $branch eq $from_branch;
         }
 
         # Guard against division by zero (float_limit_val should never be 0 due to search filter, but be safe)
