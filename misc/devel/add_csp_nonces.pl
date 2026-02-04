@@ -117,7 +117,7 @@ sub process_file {
     #
     # We use a callback replacement to handle each match individually
     $content =~ s{
-        (<script)                    # Capture opening <script
+        (<script|<style)                    # Capture opening <script or <style
         (                            # Capture existing attributes
             (?:
                 \s+                  # Whitespace before attribute
