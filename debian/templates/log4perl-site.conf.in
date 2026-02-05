@@ -76,3 +76,19 @@ log4perl.appender.EDI.mode=append
 log4perl.appender.EDI.layout=PatternLayout
 log4perl.appender.EDI.layout.ConversionPattern=[%d] [%P] [%p] %X{accountid}@%X{peeraddr}: %m %l%n
 log4perl.appender.EDI.utf8=1
+
+log4perl.logger.csp = WARN, CSP
+log4perl.appender.CSP=Log::Log4perl::Appender::File
+log4perl.appender.CSP.filename=__LOG_DIR__/csp-violations.log
+log4perl.appender.CSP.mode=append
+log4perl.appender.CSP.layout=PatternLayout
+log4perl.appender.CSP.layout.ConversionPattern=[%d] %m%n
+log4perl.appender.CSP.utf8=1
+
+log4perl.logger.plack-csp = WARN, PLACKCSP
+log4perl.appender.PLACKCSP=Log::Log4perl::Appender::File
+log4perl.appender.PLACKCSP.filename=__LOG_DIR__/plack-csp-violations.log
+log4perl.appender.PLACKCSP.mode=append
+log4perl.appender.PLACKCSP.layout=PatternLayout
+log4perl.appender.PLACKCSP.layout.ConversionPattern=[%d] %m%n
+log4perl.appender.PLACKCSP.utf8=1

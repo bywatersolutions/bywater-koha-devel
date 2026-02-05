@@ -51,7 +51,7 @@ sub add {
     # CSP reports come wrapped in a 'csp-report' key
     my $csp_report = $report->{'csp-report'} // $report;
 
-    my $logger = Koha::Logger->get( { interface => 'api', category => 'csp' } );
+    my $logger = Koha::Logger->get( { interface => 'csp' } );
 
     # Extract key fields for logging
     my $document_uri  = $csp_report->{'document-uri'}       // 'unknown';
