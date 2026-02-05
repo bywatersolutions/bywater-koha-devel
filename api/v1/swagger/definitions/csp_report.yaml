@@ -11,37 +11,54 @@ properties:
       document-uri:
         type: string
         description: The URI of the document where the violation occurred
+        maxLength: 200
       referrer:
         type: string
         description: The referrer of the document where the violation occurred
+        maxLength: 200
       violated-directive:
         type: string
         description: The directive that was violated (e.g., "script-src 'self'")
+        maxLength: 100
       effective-directive:
         type: string
         description: The effective directive that was violated
+        maxLength: 100
       original-policy:
         type: string
         description: The original CSP policy as specified in the header
+        maxLength: 400
       disposition:
         type: string
         description: Either "enforce" or "report" depending on CSP mode
+        enum:
+          - enforce
+          - report
       blocked-uri:
         type: string
         description: The URI of the resource that was blocked
+        maxLength: 200
       line-number:
         type: integer
         description: Line number in the document where the violation occurred
+        minimum: 0
+        maximum: 999999
       column-number:
         type: integer
         description: Column number where the violation occurred
+        minimum: 0
+        maximum: 999999
       source-file:
         type: string
         description: The URI of the script where the violation occurred
+        maxLength: 200
       status-code:
         type: integer
         description: HTTP status code of the document
+        minimum: 0
+        maximum: 999
       script-sample:
         type: string
         description: First 40 characters of the inline script that caused the violation
+        maxLength: 41
 additionalProperties: true

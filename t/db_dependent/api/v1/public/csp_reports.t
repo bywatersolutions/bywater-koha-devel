@@ -36,7 +36,7 @@ t::lib::Mocks::mock_preference( 'RESTBasicAuth', 1 );
 
 subtest 'add() tests' => sub {
 
-    plan tests => 7;
+    plan tests => 15;
 
     $schema->storage->txn_begin;
 
@@ -52,10 +52,38 @@ subtest 'add() tests' => sub {
             'blocked-uri'         => 'inline',
             'line-number'         => 42,
             'column-number'       => 10,
-            'source-file'         => 'https://library.example.org/cgi-bin/koha/opac-main.pl',
+            'source-file'         => 'https://library.example.org/cgi-bin/koah/opac-main.pl',
             'status-code'         => 200,
         }
     };
+
+    $csp_report->{'csp-report'}->{'line-number'} = 99999999999999999;
+
+    # Too large integers should be rejected
+    $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => 'application/csp-report' } => json => $csp_report )
+        ->status_is( 400, 'CSP report rejected (400) because of line-number exceeding maximum value' );
+
+    $csp_report->{'csp-report'}->{'line-number'} = -1;
+
+    # Too small integers should be rejected
+    $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => 'application/csp-report' } => json => $csp_report )
+        ->status_is( 400, 'CSP report rejected (400) because of line-number not reaching minimum value' );
+    $csp_report->{'csp-report'}->{'line-number'} = 42;
+
+    $csp_report->{'csp-report'}->{'disposition'} = 'this is not okay';
+
+    # Enum values should be confirmed
+    $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => 'application/csp-report' } => json => $csp_report )
+        ->status_is( 400, 'CSP report rejected (400) because of disposition is not either "enforce" nor "report"' );
+    $csp_report->{'csp-report'}->{'disposition'} = 'enforce';
+
+    $csp_report->{'csp-report'}->{'script-sample'} =
+        'this is way too long script sample. a maximum of only 40 characters is allowed';
+
+    # Too long strings should be rejected
+    $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => 'application/csp-report' } => json => $csp_report )
+        ->status_is( 400, 'CSP report rejected (400) because of script-sample exceeding maximum length' );
+    $csp_report->{'csp-report'}->{'script-sample'} = 'console.log("hi");';
 
     # Anonymous request should work (browsers send these without auth)
     $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => 'application/csp-report' } => json => $csp_report )
