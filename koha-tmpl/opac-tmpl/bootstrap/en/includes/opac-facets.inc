@@ -18,7 +18,9 @@
                                 [% SET search_filter_id = search_filter.id | uri %]
                                 <li>
                                     [% IF active_filters.${search_filter.id} %]
-                                        <span class="filter_label">[% search_filter.name | html %]<a href="[% base_url _ '&nolimit=search_filter:' _ search_filter_id | $raw %]">[x]</a></span>
+                                        <span class="filter_label facet-label-selected">
+                                            [% search_filter.name | html %] &nbsp;<a href="[% base_url _ '&nolimit=search_filter:' _ search_filter_id | $raw %]" title="Remove search filter"><span class="badge facet-remove">x</span></a>
+                                        </span>
                                     [% ELSE %]
                                         <span class="filter_label"><a href="[% base_url _ '&limit=search_filter:' _ search_filter_id | $raw %]">[% search_filter.name | html %]</a></span>
                                     [% END %]
