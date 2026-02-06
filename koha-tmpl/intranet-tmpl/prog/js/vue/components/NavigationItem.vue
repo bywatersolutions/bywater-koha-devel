@@ -3,7 +3,7 @@
         <span>
             <router-link
                 v-if="item.name && !item.disabled"
-                :to="{ name: item.name, params }"
+                :to="{ name: item.name, params: item.is_base ? {} : params }"
             >
                 <template v-if="item.icon">
                     <i :class="`${item.icon}`"></i>&nbsp;
