@@ -880,6 +880,7 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('useDaysMode','Calendar'),
 ('useDefaultReplacementCost', '0'),
 ('useDischarge','0'),
+('UseHoldsQueueFilterOptions','1'),
 ('UseICUStyleQuotes','0'),
 ('UseLibraryFloatLimits', '0'),
 ('UseLocationAsAQInSIP', '0'),
