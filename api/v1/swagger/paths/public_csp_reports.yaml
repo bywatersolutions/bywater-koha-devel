@@ -17,6 +17,7 @@
     consumes:
       - application/csp-report
       - application/json
+      - application/reports+json
     produces:
       - application/json
     parameters:
@@ -25,7 +26,7 @@
         description: CSP violation report
         required: true
         schema:
-          $ref: "../swagger.yaml#/definitions/csp_report"
+          $ref: "../swagger.yaml#/definitions/csp_report_uri_to"
     responses:
       "204":
         description: Report received successfully

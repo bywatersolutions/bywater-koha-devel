@@ -49,7 +49,7 @@ sub add {
     my $report = $c->req->json;
 
     # CSP reports come wrapped in a 'csp-report' key
-    my $csp_report = $report->{'csp-report'} // $report;
+    my $csp_report = $report->{'csp-report'} // $report->{'body'} // $report;
 
     my $logger = Koha::Logger->get( { interface => 'csp' } );
 

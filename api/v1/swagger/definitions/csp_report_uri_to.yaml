@@ -1,0 +1,27 @@
+---
+type: object
+description: |
+  A Content-Security-Policy violation report as sent by browsers.
+  See https://www.w3.org/TR/CSP3/#violation-reports for specification.
+properties:
+  csp-report:
+    $ref: "csp_report.yaml"
+  body:
+    $ref: "csp_report.yaml"
+  user_agent:
+    type: string
+    maxLength: 300
+  destination:
+    type: string
+    maxLength: 200
+  url:
+    type: string
+    maxLength: 200
+  timestamp:
+    type: string
+    maxLength: 50
+  attempts:
+    type: integer
+    minimum: 0
+    maximum: 99
+additionalProperties: true
