@@ -502,7 +502,11 @@
                     {
                         "data": "transport",
                         "render": function(data, type, row, meta) {
-                            return data.toUpperCase();
+                            var transport = data.toUpperCase();
+                            if (data == "ftp" && row.passive == 1) {
+                                transport += " [% tp('FTP connection mode', '(passive)') %]";
+                            }
+                            return transport;
                         },
                         "searchable": true,
                         "orderable": false

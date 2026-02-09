@@ -49,7 +49,7 @@ if ( $op eq 'cud-add' ) {
     my $host               = $input->param('host')      || 'localhost';
     my $port               = $input->param('port')      || 22;
     my $transport          = $input->param('transport') || 'sftp';
-    my $passive            = ( scalar $input->param('passiv') ) ? 1 : 0;
+    my $passive            = ( scalar $input->param('passive') ) ? 1 : 0;
     my $auth_mode          = $input->param('auth_mode')          || 'password';
     my $user_name          = $input->param('user_name')          || undef;
     my $password           = $input->param('password')           || undef;
@@ -139,7 +139,7 @@ if ( $op eq 'cud-add' ) {
         my $host               = $input->param('host')      || 'localhost';
         my $port               = $input->param('port')      || 22;
         my $transport          = $input->param('transport') || 'sftp';
-        my $passive            = ( scalar $input->param('passiv') ) ? 1 : 0;
+        my $passive            = ( scalar $input->param('passive') ) ? 1 : 0;
         my $auth_mode          = $input->param('auth_mode')          || 'password';
         my $user_name          = $input->param('user_name')          || undef;
         my $password           = $input->param('password')           || undef;
