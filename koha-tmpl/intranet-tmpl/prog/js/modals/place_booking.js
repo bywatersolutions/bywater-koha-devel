@@ -1999,7 +1999,7 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                             }
                                         } else {
                                             message = __(
-                                                "Cannot select: conflicts with existing an booking"
+                                                "Cannot select: conflicts with an existing booking"
                                             );
                                         }
                                     }
