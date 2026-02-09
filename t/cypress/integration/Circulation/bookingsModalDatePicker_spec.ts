@@ -452,6 +452,7 @@ describe("Booking Modal Date Picker Tests", () => {
          *                                             └─ Renewal 1 Period (Days 60-64)
          *
          * Expected Visual Styling:
+         * - Day 50: Bold (start date)
          * - Day 59: Bold (issue period)
          * - Day 64: Bold (renewal 1 period)
          * - Day 69: Bold (renewal 2 period)
@@ -561,8 +562,11 @@ describe("Booking Modal Date Picker Tests", () => {
          */
 
         // Calculate expected bold dates based on circulation rules (like original test)
-        // Bold dates occur at period endpoints: start + issuelength, start + issuelength + renewalperiod, etc.
+        // Bold dates occur at: the start date itself, plus period endpoints
         const expectedBoldDates = [];
+
+        // Start date is always bold (see place_booking.js boldDates = [new Date(startDate)])
+        expectedBoldDates.push(clearZoneStart);
 
         // Issue period end (after issuelength days)
         expectedBoldDates.push(
