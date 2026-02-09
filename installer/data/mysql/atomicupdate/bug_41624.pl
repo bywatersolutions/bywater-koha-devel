@@ -8,24 +8,11 @@ return {
         my ($args) = @_;
         my ( $dbh, $out ) = @$args{qw(dbh out)};
 
-        # Check if the preference exists before removing
-        my ($exists) = $dbh->selectrow_array(
+        $dbh->do(
             q{
-                SELECT COUNT(*)
-                FROM systempreferences
+                DELETE FROM systempreferences
                 WHERE variable = 'SeparateHoldingsByGroup'
             }
-        );
-
-        if ($exists) {
-            $dbh->do(
-                q{
-                    DELETE FROM systempreferences
-                    WHERE variable = 'SeparateHoldingsByGroup'
-                }
-            );
-        }
-
-        say_success( $out, "Removed system preference 'SeparateHoldingsByGroup'" );
+        ) != '0E0' && say_success( $out, "Removed system preference 'SeparateHoldingsByGroup'" );
     },
 };
