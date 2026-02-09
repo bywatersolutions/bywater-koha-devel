@@ -138,7 +138,7 @@
             EnableItemGroups: [% Koha.Preference('EnableItemGroups') ? 1 : 0 | html %],
             UseRecalls: [% Koha.Preference('UseRecalls') ? 1 : 0 | html %],
             UseCourseReserves: [% Koha.Preference('UseCourseReserves') ? 1 : 0 | html %],
-            ClaimReturnedLostValue: [% Koha.Preference('ClaimReturnedLostValue') | html %],
+            ClaimReturnedLostValue: [% Koha.Preference('ClaimReturnedLostValue') || 0 | html %],
             EasyAnalyticalRecords: [% Koha.Preference('EasyAnalyticalRecords') ? 1 : 0| html %],
             SeparateHoldings: [% Koha.Preference('SeparateHoldings') ? 1 : 0 | html %],
             SeparateHoldingsBranch: "[% Koha.Preference('SeparateHoldingsBranch') || 'homebranch' | html %]",
