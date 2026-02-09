@@ -160,8 +160,8 @@ SKIP: {
     $s->submit_form;
 
     # Get the interface in the correct language
-    C4::Context->set_preference( 'language',      $languages->{$lang} );
-    C4::Context->set_preference( 'opaclanguages', $languages->{$lang} );
+    C4::Context->set_preference( 'StaffInterfaceLanguages', $languages->{$lang} );
+    C4::Context->set_preference( 'opaclanguages',           $languages->{$lang} );
 
     $s->click( { href => '/mainpage.pl', main => 'onboarding-step5' } );
 
