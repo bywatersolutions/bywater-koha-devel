@@ -1777,6 +1777,45 @@
     [% Asset.js( "js/throttledButton.js" ) | $raw %]
     [% INCLUDE 'select2.inc' %]
     <script>
+        let op = "";
+        [% IF create %]
+            op = "create";
+        [% ELSIF editsql %]
+            op = "editsql";
+        [% ELSIF save %]
+            op = "save";
+        [% ELSIF showsql %]
+            op = "showsql";
+        [% ELSIF showreport %]
+            op = "showreport";
+        [% END %]
+
+        let saved1 = [% saved1 ? 1 : 0 | html %];
+        const interface = "[% interface | html %]";
+        const theme = "[% theme | html %]";
+        const has_errors = [% errors ? 1 : 0 | html %];
+        const original_results = [% results.json || '[]'| $raw %];
+        const all_results = [% allresults.json || '[]' | $raw %];
+        const header_row = [% header_row.json || '[]' | $raw %];
+        const unlimited_total = [% unlimited_total || 0 | $raw %];
+
+        var group_subgroups = {};
+        [% FOREACH group IN groups_with_subgroups %]
+            var gid = "[% group.id | html %]"
+            group_subgroups[gid] = new Array();
+            [% FOREACH subgroup IN group.subgroups %]
+                var sgid = "[% subgroup.id | html %]";
+                var sgname = "[% subgroup.name | html %]";
+                group_subgroups[gid].push([sgid, sgname]);
+            [% END %]
+        [% END %]
+
+        var table_settings = [% TablesSettings.GetTableSettings( 'reports', 'saved-sql', 'table_reports', 'json' ) | $raw %];
+
+        const tables = [% To.json(tables || []) | $raw %];
+    </script>
+
+    <script>
         //  if the report param form has multiselects override default form submission
         if( $('#report_param_form').find('select[multiple]').length ) {
             $('#report_param_form').on('submit', function(e) {
@@ -1825,18 +1864,8 @@
         }
 
         var MSG_CONFIRM_DELETE = _("Are you sure you want to delete this report? This cannot be undone.");
-        var group_subgroups = {};
-        [% FOREACH group IN groups_with_subgroups %]
-            var gid = "[% group.id | html %]"
-            group_subgroups[gid] = new Array();
-            [% FOREACH subgroup IN group.subgroups %]
-                var sgid = "[% subgroup.id | html %]";
-                var sgname = "[% subgroup.name | html %]";
-                group_subgroups[gid].push([sgid, sgname]);
-            [% END %]
-        [% END %]
 
-        [% IF ( create || editsql || save ) %]
+        if (op == "create" || op == "editsql" || op == "save" ) {
 
             var editor = CodeMirror.fromTextArea(sql, {
                 lineNumbers: true,
@@ -1849,7 +1878,7 @@
                 },
                 hint: CodeMirror.hint.sql,
                 hintOptions: {
-                    tables: [% To.json(tables) | $raw %]
+                    tables
                 }
             });
             var ExcludedTriggerKeys = { //key-code combinations of keys that will not fire the auto-complete script
@@ -1925,9 +1954,9 @@
                 validator.resetForm();//remove error class on name elements and clear history
                 validator.reset();//remove all error and success data
             }
-        [% END %]
+        }
 
-        [% IF ( showsql || showreport ) %]
+        if (op == "showsql" || op == "showreport") {
 
             var editor = CodeMirror.fromTextArea(sql, {
                 lineNumbers: false,
@@ -1939,7 +1968,7 @@
                     "<<(.*?)>>":"style1"
                },
             });
-        [% END %]
+        }
 
         function showParamModal( category ){
             var modal = $("#runtime_parameters");
@@ -2050,7 +2079,7 @@
             }
 
             $("body").on('click',".fetch_chart_data",function(){
-                if( [% unlimited_total || 0 | $raw %] > 1000 ){
+                if( unlimited_total > 1000 ){
                     if( confirm( _("Fetching full chart data for reports with many rows can cause performance issues. Are you sure you want to chart this report?") ) ){
                         return true;
                     } else {
@@ -2089,7 +2118,7 @@
             $('#download-chart').hide();
             var chart;
 
-            [% IF results && !errors %]
+            if ( original_results && !has_errors ) {
                 $('#draw-chart').click(function() {
 
                     var x_elements = $('select[name="x"]').val();
@@ -2098,19 +2127,19 @@
                     var lines = [];
                     var options = {};
 
-                    headers = [% header_row.json | $raw %];
+                    headers = header_row;
 
                     var results;
-                    [% IF allresults.size %]
+                    if (all_results.length){
                         if ($('input[name="chart-include-all"]').prop('checked')) {
-                            results = [% allresults.json | $raw %]
+                            results = all_results;
                         }
                         else {
-                            results = [% results.json | $raw %]
+                            results = original_results;
                         }
-                    [% ELSE %]
-                        results = [% results.json | $raw %];
-                    [% END %]
+                    } else {
+                        results = original_results;
+                    }
 
                     if ($('input[name="chart-exclude-last"]').prop('checked')) {
                         results.splice(-1, 1);
@@ -2163,10 +2192,10 @@
                     $("#toggle_chart_settings_vis").hide();
                     $("#chartModal").modal("hide");
                 });
-            [% END %]
-            [% IF ( create ) %]
+            }
+            if (op == "create"){
                 load_group_subgroups();
-            [% END %]
+            }
 
             $('#limit').change(function() {
                 $('#limitselect').submit();
@@ -2215,8 +2244,7 @@
                 delColumn();
             });
 
-            [% IF (saved1) %]
-                var table_settings = [% TablesSettings.GetTableSettings( 'reports', 'saved-sql', 'table_reports', 'json' ) | $raw %];
+            if (saved1){
                 var rtable = $("#table_reports").kohaTable(
                     {
                         autoWidth: false,
@@ -2281,15 +2309,15 @@
 
                 $("#update_sql").on("hidden.bs.modal", function(){
                     $("#update_sql_label").html("");
-                    $("#update_sql .modal-body").html("<div id=\"loading\"><img src=\"[% interface | html %]/[% theme | html %]/img/spinner-small.gif\" alt=\"\" /> "+_("Loading")+"</div>");
+                    $("#update_sql .modal-body").html('<div id="loading"><img src="' + interface + "/" + theme + '/img/spinner-small.gif" alt="" /> ' + _("Loading") + "</div>");
                 });
-            [% END %]
+            }
 
-            [% IF ( showsql ) %]
+            if (op == "showsql"){
                 $("#sql").focus(function() {
                     $(this).select();
                 });
-            [% END %]
+            }
 
             $("#toggle_sql").click(function(){
                 var sql_output = $("#sql_output");
@@ -2313,7 +2341,7 @@
                 $("#chart, #toggle_chart_settings_hid, #toggle_chart_settings_vis").toggle();
             });
 
-            [% IF (create || editsql || save) %]
+            if (op == "create" || op == "editsql" || op == "save"){
 
                 var validated_form = $("#sql_report_form").validate({
                     reportname: "required",
@@ -2458,7 +2486,7 @@
                     $("#param_category").val( $(this).val() );
                 });
 
-            [% END %]
+            }
 
             $("#mana_search_form").submit(function(e){
                 e.preventDefault();
