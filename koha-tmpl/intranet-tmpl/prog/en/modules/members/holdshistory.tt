@@ -182,9 +182,9 @@
         const patron_id = "[% patron.borrowernumber | html %]";
     </script>
     <script>
-        $(document).ready(function() {
-            let item_type_column = table_settings.columns.find(c => c.columnname == 'itemtype');
-            if ( !show_itemtype_column ) {
+        $(document).ready(function () {
+            let item_type_column = table_settings.columns.find(c => c.columnname == "itemtype");
+            if (!show_itemtype_column) {
                 item_type_column.is_hidden = 1;
                 item_type_column.cannot_be_toggled = 1;
             } else {
@@ -194,208 +194,207 @@
 
             let current_holds_table = build_holds_table("#table_holdshistory");
             let old_holds_table = build_holds_table("#table_oldholdshistory", 1);
-            function build_holds_table(table_id, old){
+            function build_holds_table(table_id, old) {
                 let additional_filters = {
-                    "-and": function(){
+                    "-and": function () {
                         let statuses = [];
                         let include_cancelled = false;
-                        if ( table_id == '#table_holdshistory' ) {
-                            if ( $("#current_pending_filter").is(":checked") ) {
+                        if (table_id == "#table_holdshistory") {
+                            if ($("#current_pending_filter").is(":checked")) {
                                 statuses.push(null);
                             }
-                            if ( $("#current_waiting_filter").is(":checked") ) {
+                            if ($("#current_waiting_filter").is(":checked")) {
                                 statuses.push("W");
                             }
-                            if ( $("#current_processing_filter").is(":checked") ) {
+                            if ($("#current_processing_filter").is(":checked")) {
                                 statuses.push("P");
                             }
-                            if ( $("#current_transit_filter").is(":checked") ) {
+                            if ($("#current_transit_filter").is(":checked")) {
                                 statuses.push("T");
                             }
                         } else {
-                            if ( $("#old_fulfilled_filter").is(":checked") ) {
+                            if ($("#old_fulfilled_filter").is(":checked")) {
                                 statuses.push("F");
                             }
-                            if ( $("#old_cancelled_filter").is(":checked") ) {
+                            if ($("#old_cancelled_filter").is(":checked")) {
                                 include_cancelled = true;
                             }
                         }
-                        if ( include_cancelled ) {
-                            return [{status: statuses}, { cancellation_date: {"<": new Date().toISOString() } } ]; // cancellation_date cannot be in the future. Would be better a 'not null' here however.
+                        if (include_cancelled) {
+                            return [{ status: statuses }, { cancellation_date: { "<": new Date().toISOString() } }]; // cancellation_date cannot be in the future. Would be better a 'not null' here however.
                         } else {
-                            return [{status: statuses}];
+                            return [{ status: statuses }];
                         }
                     },
-
                 };
 
                 let table_url = `/api/v1/patrons/${patron_id}/holds`;
-                let table_embeds = ['+strings', 'biblio', 'item', 'pickup_library'];
-                if (old){
-                    table_url += '?old=1';
-                    table_embeds.push('deleted_biblio');
+                let table_embeds = ["+strings", "biblio", "item", "pickup_library"];
+                if (old) {
+                    table_url += "?old=1";
+                    table_embeds.push("deleted_biblio");
                 }
-                return $(table_id).kohaTable({
-                    ajax: {
-                        url: table_url,
-                    },
-                    order: [],
-                    embed: table_embeds,
-                    columns: [
-                        {
-                            data: "biblio.title:biblio.subtitle:biblio.medium",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                if( row.biblio ){
-                                    return $biblio_to_html(row.biblio, { link: 1 });
-                                } else {
-                                    return $biblio_to_html(row.deleted_biblio, { link: 0, deleted: 1 });
-                                }
-                            }
+                return $(table_id).kohaTable(
+                    {
+                        ajax: {
+                            url: table_url,
                         },
-                        {
-                            data: "biblio.author",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                let biblio = row.biblio ? row.biblio : row.deleted_biblio;
-                                return biblio ? biblio.author : "";
-                            }
-                        },
-                        {
-                            data: "item.external_id",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                return row.item ? row.item.external_id : "";
-                            }
-                        },
-                        {
-                            data: "item.callnumber",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                return row.item ? row.item.callnumber: "";
-                            }
-                        },
-                        {
-                            data: "me.pickup_library_id",
-                            datatype: "coded_value:library",
-                            dataFilter: "libraries",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                return escape_str(row._strings.pickup_library_id ? row._strings.pickup_library_id.str : row.pickup_library_id);
-                            }
-                        },
-                        {
-                            data: "hold_date",
-                            type: "date",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                return $date(row.hold_date);
-                            }
-                        },
-                        {
-                            data: "expiration_date",
-                            type: "date",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                return $date(row.expiration_date)
-                            }
-                        },
-                        {
-                            data: "waiting_date",
-                            type: "date",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                return $date(row.waiting_date)
-                            }
-                        },
-                        {
-                            data: "cancellation_date",
-                            type: "date",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                return $date(row.cancellation_date)
-                            }
-                        },
-                        ...(show_itemtype_column?
-                        [{
-                            data: "item_type_id",
-                            datatype: "coded_value:item_type",
-                            dataFilter: "item_types",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                [% IF Koha.Preference('AllowHoldItemTypeSelection') %]
-                                    if ( row.item_type_id ) {
-                                        return row._strings.item_type_id ? row._strings.item_type_id.str : row.item_type_id;
+                        order: [],
+                        embed: table_embeds,
+                        columns: [
+                            {
+                                data: "biblio.title:biblio.subtitle:biblio.medium",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    if (row.biblio) {
+                                        return $biblio_to_html(row.biblio, { link: 1 });
                                     } else {
-                                        return _("Any item type");
+                                        return $biblio_to_html(row.deleted_biblio, { link: 0, deleted: 1 });
                                     }
-                                [% ELSE %]
-                                    return "";
-                                [% END %]
-                            }
-                        }]:[]),
-                        {
-                            data: "status",
-                            searchable: false,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                if ( row.status == 'F' ) {
-                                    return _("Fulfilled");
-                                } else if (row.cancellation_date) {
-                                    let r = _("Cancelled");
-                                    if (row.cancellation_reason){
-                                        r += " (%s)".format(row._strings.cancellation_reason.str);
+                                },
+                            },
+                            {
+                                data: "biblio.author",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    let biblio = row.biblio ? row.biblio : row.deleted_biblio;
+                                    return biblio ? biblio.author : "";
+                                },
+                            },
+                            {
+                                data: "item.external_id",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    return row.item ? row.item.external_id : "";
+                                },
+                            },
+                            {
+                                data: "item.callnumber",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    return row.item ? row.item.callnumber : "";
+                                },
+                            },
+                            {
+                                data: "me.pickup_library_id",
+                                datatype: "coded_value:library",
+                                dataFilter: "libraries",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    return escape_str(row._strings.pickup_library_id ? row._strings.pickup_library_id.str : row.pickup_library_id);
+                                },
+                            },
+                            {
+                                data: "hold_date",
+                                type: "date",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    return $date(row.hold_date);
+                                },
+                            },
+                            {
+                                data: "expiration_date",
+                                type: "date",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    return $date(row.expiration_date);
+                                },
+                            },
+                            {
+                                data: "waiting_date",
+                                type: "date",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    return $date(row.waiting_date);
+                                },
+                            },
+                            {
+                                data: "cancellation_date",
+                                type: "date",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    return $date(row.cancellation_date);
+                                },
+                            },
+                            {
+                                data: "item_type_id",
+                                datatype: "coded_value:item_type",
+                                dataFilter: "item_types",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    if (show_itemtype_column) {
+                                        if (row.item_type_id) {
+                                            return row._strings.item_type_id ? row._strings.item_type_id.str : row.item_type_id;
+                                        } else {
+                                            return _("Any item type");
+                                        }
+                                    } else {
+                                        return "";
                                     }
-                                    return r;
-                                } else if (row.status == 'W') {
-                                    return _("Waiting");
-                                } else if (row.status == 'P') {
-                                    return _("Processing");
-                                } else if (row.status == 'T') {
-                                    return _("In transit");
-                                }
+                                },
+                            },
+                            {
+                                data: "status",
+                                searchable: false,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    if (row.status == "F") {
+                                        return _("Fulfilled");
+                                    } else if (row.cancellation_date) {
+                                        let r = _("Cancelled");
+                                        if (row.cancellation_reason) {
+                                            r += " (%s)".format(row._strings.cancellation_reason.str);
+                                        }
+                                        return r;
+                                    } else if (row.status == "W") {
+                                        return _("Waiting");
+                                    } else if (row.status == "P") {
+                                        return _("Processing");
+                                    } else if (row.status == "T") {
+                                        return _("In transit");
+                                    }
 
-                                return _("Pending");
-                            }
-                        },
-                        {
-                            data: "notes",
-                            searchable: true,
-                            orderable: true,
-                            render: function (data, type, row, meta) {
-                                return row.notes;
-                            }
-                        },
-                    ],
-                    bKohaColumnsUseNames: true,
-                },
-                table_settings,
-                true,
-                additional_filters,
-                filters_options,
+                                    return _("Pending");
+                                },
+                            },
+                            {
+                                data: "notes",
+                                searchable: true,
+                                orderable: true,
+                                render: function (data, type, row, meta) {
+                                    return row.notes;
+                                },
+                            },
+                        ],
+                        bKohaColumnsUseNames: true,
+                    },
+                    table_settings,
+                    true,
+                    additional_filters,
+                    filters_options
                 );
             }
-            $("#current_holds_filters :checkbox, #old_holds_filters :checkbox").on("change", function(e){
+            $("#current_holds_filters :checkbox, #old_holds_filters :checkbox").on("change", function (e) {
                 e.preventDefault();
                 let container = $(this).closest("div");
-                if ( $(this).hasClass("show_all") ) {
-                    if ( $(this).is(":checked") ) {
+                if ($(this).hasClass("show_all")) {
+                    if ($(this).is(":checked")) {
                         container.find(":checkbox").prop("checked", true);
                     }
-                } else if ( $(this).not(":checked") ) {
+                } else if ($(this).not(":checked")) {
                     container.find(".show_all").prop("checked", false);
                 }
-                let table_dt = $("#"+container.data("table-id")).DataTable();
+                let table_dt = $("#" + container.data("table-id")).DataTable();
                 table_dt.draw();
             });
         });
