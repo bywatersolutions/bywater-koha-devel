@@ -1542,7 +1542,7 @@ $("#placeBookingModal").on("show.bs.modal", function (e) {
                                 }
                             }
 
-                            // Work through all days in view and add classes appropraitely based on hovered date
+                            // Work through all days in view and add classes appropriately based on hovered date
                             periodPicker.calendarContainer
                                 .querySelectorAll(".flatpickr-day")
                                 .forEach(function (dayElem) {
