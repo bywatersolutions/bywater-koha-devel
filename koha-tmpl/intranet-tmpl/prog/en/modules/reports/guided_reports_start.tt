@@ -1814,235 +1814,237 @@
 
         const tables = [% To.json(tables || []) | $raw %];
     </script>
-
     <script>
         //  if the report param form has multiselects override default form submission
-        if( $('#report_param_form').find('select[multiple]').length ) {
-            $('#report_param_form').on('submit', function(e) {
-                $('#report_param_form').find('select[multiple]').each( function (i) {
-                    $(this).find('option:first').prop('disabled', false);
-                    var selection;
-                    if( $(this).find('option:selected').length === 0 ) {
-                        selection = $(this).find('option:first').val();
-                        $(this).val(selection);
-                    } else if( $(this).find('option:selected').length > 1 ) {
-                        selection = $(this).val().join('\n');
-                        $(this).find('option:selected').prop('selected', false);
-                        $(this).find('option:first').val(selection);
-                        $(this).find('option:first').prop('selected', 'selected');
-                    }
-                });
+        if ($("#report_param_form").find("select[multiple]").length) {
+            $("#report_param_form").on("submit", function (e) {
+                $("#report_param_form")
+                    .find("select[multiple]")
+                    .each(function (i) {
+                        $(this).find("option:first").prop("disabled", false);
+                        var selection;
+                        if ($(this).find("option:selected").length === 0) {
+                            selection = $(this).find("option:first").val();
+                            $(this).val(selection);
+                        } else if ($(this).find("option:selected").length > 1) {
+                            selection = $(this).val().join("\n");
+                            $(this).find("option:selected").prop("selected", false);
+                            $(this).find("option:first").val(selection);
+                            $(this).find("option:first").prop("selected", "selected");
+                        }
+                    });
             });
         }
 
         function hide_bar_element() {
-            $('#chart-column-horizontal').hide()
-            $('.chart-column-group').each(function( index ) {
-                $( this ).hide();
+            $("#chart-column-horizontal").hide();
+            $(".chart-column-group").each(function (index) {
+                $(this).hide();
             });
-            $('.chart-column-line').each(function( index ) {
-                $( this ).hide()
+            $(".chart-column-line").each(function (index) {
+                $(this).hide();
             });
         }
 
         function show_bar_element() {
-            $('#chart-column-horizontal').show()
-            $('.chart-column-group').each(function( index ) {
-                $( this ).show()
+            $("#chart-column-horizontal").show();
+            $(".chart-column-group").each(function (index) {
+                $(this).show();
             });
-            $('.chart-column-line').each(function( index ) {
-                $( this ).show()
+            $(".chart-column-line").each(function (index) {
+                $(this).show();
             });
         }
 
         function removeColumn(id) {
-            $('#'+id).remove();
+            $("#" + id).remove();
 
-            if ( $('.chart-column-conf').length == 1 ) {
-                $('.chart-column-delete').remove();
+            if ($(".chart-column-conf").length == 1) {
+                $(".chart-column-delete").remove();
             }
         }
 
         var MSG_CONFIRM_DELETE = _("Are you sure you want to delete this report? This cannot be undone.");
 
-        if (op == "create" || op == "editsql" || op == "save" ) {
-
+        if (op == "create" || op == "editsql" || op == "save") {
             var editor = CodeMirror.fromTextArea(sql, {
                 lineNumbers: true,
                 mode: "text/x-sql",
                 lineWrapping: true,
                 smartIndent: false,
-                keyword: { // Custom highlighting for items bounded in [[ ]] or << >>.
-                    "\\[\\[(.*?)\\]\\]":"style1",
-                    "<<(.*?)>>":"style1"
+                keyword: {
+                    // Custom highlighting for items bounded in [[ ]] or << >>.
+                    "\\[\\[(.*?)\\]\\]": "style1",
+                    "<<(.*?)>>": "style1",
                 },
                 hint: CodeMirror.hint.sql,
                 hintOptions: {
-                    tables
+                    tables,
+                },
+            });
+            var ExcludedTriggerKeys = {
+                //key-code combinations of keys that will not fire the auto-complete script
+                8: "backspace",
+                9: "tab",
+                13: "enter",
+                16: "shift",
+                17: "ctrl",
+                18: "alt",
+                19: "pause",
+                20: "capslock",
+                27: "escape",
+                33: "pageup",
+                32: "spacebar",
+                34: "pagedown",
+                35: "end",
+                36: "home",
+                37: "left",
+                38: "up",
+                39: "right",
+                40: "down",
+                45: "insert",
+                46: "delete",
+                56: "asterisk",
+                59: "semicolon",
+                91: "left window key",
+                92: "right window key",
+                93: "select",
+                106: "asterisk",
+                107: "add",
+                109: "subtract",
+                110: "decimal point",
+                111: "divide",
+                112: "f1",
+                113: "f2",
+                114: "f3",
+                115: "f4",
+                116: "f5",
+                117: "f6",
+                118: "f7",
+                119: "f8",
+                120: "f9",
+                121: "f10",
+                122: "f11",
+                123: "f12",
+                144: "numlock",
+                145: "scrolllock",
+                186: "semicolon",
+                187: "equalsign",
+                188: "comma",
+                189: "dash",
+                191: "slash",
+                192: "graveaccent",
+                220: "backslash",
+                222: "quote",
+            };
+            //Trigger auto-complete on all keys not in dictionary of exclusions above.
+            editor.on("keyup", function (cm, e) {
+                if (ExcludedTriggerKeys[e.keyCode] == undefined) {
+                    CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
                 }
             });
-            var ExcludedTriggerKeys = { //key-code combinations of keys that will not fire the auto-complete script
-                "8": "backspace",
-                "9": "tab",
-                "13": "enter",
-                "16": "shift",
-                "17": "ctrl",
-                "18": "alt",
-                "19": "pause",
-                "20": "capslock",
-                "27": "escape",
-                "33": "pageup",
-                "32": "spacebar",
-                "34": "pagedown",
-                "35": "end",
-                "36": "home",
-                "37": "left",
-                "38": "up",
-                "39": "right",
-                "40": "down",
-                "45": "insert",
-                "46": "delete",
-                "56": "asterisk",
-                "59": "semicolon",
-                "91": "left window key",
-                "92": "right window key",
-                "93": "select",
-                "106": "asterisk",
-                "107": "add",
-                "109": "subtract",
-                "110": "decimal point",
-                "111": "divide",
-                "112": "f1",
-                "113": "f2",
-                "114": "f3",
-                "115": "f4",
-                "116": "f5",
-                "117": "f6",
-                "118": "f7",
-                "119": "f8",
-                "120": "f9",
-                "121": "f10",
-                "122": "f11",
-                "123": "f12",
-                "144": "numlock",
-                "145": "scrolllock",
-                "186": "semicolon",
-                "187": "equalsign",
-                "188": "comma",
-                "189": "dash",
-                "191": "slash",
-                "192": "graveaccent",
-                "220": "backslash",
-                "222": "quote"
-            }
-            //Trigger auto-complete on all keys not in dictionary of exclusions above.
-            editor.on("keyup", function(cm, e) {
-                if (ExcludedTriggerKeys[e.keyCode] == undefined) {
-                         CodeMirror.commands.autocomplete(editor, null, { completeSingle: false });
-                }
-            })
 
-           // https://stackoverflow.com/questions/2086287/how-to-clear-jquery-validation-error-messages#answer-16025232
-            function clearValidation( formElement ){
+            // https://stackoverflow.com/questions/2086287/how-to-clear-jquery-validation-error-messages#answer-16025232
+            function clearValidation(formElement) {
                 // formElement should be a jQuery object
                 var validator = formElement.validate();
                 // Iterate through named elements inside of the form, and mark them as error free
-                $('[name]',formElement).each(function(){
-                    validator.successList.push(this);//mark as error free
-                    validator.showErrors();//remove error messages if present
+                $("[name]", formElement).each(function () {
+                    validator.successList.push(this); //mark as error free
+                    validator.showErrors(); //remove error messages if present
                 });
-                validator.resetForm();//remove error class on name elements and clear history
-                validator.reset();//remove all error and success data
+                validator.resetForm(); //remove error class on name elements and clear history
+                validator.reset(); //remove all error and success data
             }
         }
 
         if (op == "showsql" || op == "showreport") {
-
             var editor = CodeMirror.fromTextArea(sql, {
                 lineNumbers: false,
                 mode: "text/x-sql",
                 lineWrapping: true,
                 readOnly: true,
-                keyword: { // Custom highlighting for items bounded in [[ ]] or << >>.
-                    "\\[\\[(.*?)\\]\\]":"style2",
-                    "<<(.*?)>>":"style1"
-               },
+                keyword: {
+                    // Custom highlighting for items bounded in [[ ]] or << >>.
+                    "\\[\\[(.*?)\\]\\]": "style2",
+                    "<<(.*?)>>": "style1",
+                },
             });
         }
 
-        function showParamModal( category ){
+        function showParamModal(category) {
             var modal = $("#runtime_parameters");
             var modalTitle = $("#runtime_parametersLabel");
-            switch ( category ){
+            switch (category) {
                 case "insertAuthVal":
-                    modalTitle.text( _("Insert authorized value parameter") );
-                    $("#paramLabel").val( _("Authorized value") );
+                    modalTitle.text(_("Insert authorized value parameter"));
+                    $("#paramLabel").val(_("Authorized value"));
                     $("#authorised_value_category").show();
                     $("label[for='authorised_value']").addClass("required");
-                    $("#authorised_value").prop("required", true ).attr("required", "required").addClass("required");
+                    $("#authorised_value").prop("required", true).attr("required", "required").addClass("required");
                     $("#runtime_param_options").show();
                     break;
                 case "insertCnSource":
-                    modalTitle.text( _("Insert classification source parameter") );
-                    $("#paramLabel").val( _("Source of classification or shelving scheme") );
+                    modalTitle.text(_("Insert classification source parameter"));
+                    $("#paramLabel").val(_("Source of classification or shelving scheme"));
                     $("#param_category").val("cn_source");
                     $("#runtime_param_options").show();
                     break;
                 case "insertFramework":
-                    modalTitle.text( _("Insert bibliographic framework parameter") );
-                    $("#paramLabel").val( _("Framework") );
+                    modalTitle.text(_("Insert bibliographic framework parameter"));
+                    $("#paramLabel").val(_("Framework"));
                     $("#param_category").val("biblio_framework");
                     $("#runtime_param_options").show();
                     break;
                 case "insertDate":
-                    modalTitle.text( _("Insert date parameter") );
-                    $("#paramLabel").val( _("Date") );
+                    modalTitle.text(_("Insert date parameter"));
+                    $("#paramLabel").val(_("Date"));
                     $("#param_category").val("date");
                     break;
                 case "insertItemtypes":
-                    modalTitle.text( _("Insert item types parameter") );
-                    $("#paramLabel").val( _("Item type") );
+                    modalTitle.text(_("Insert item types parameter"));
+                    $("#paramLabel").val(_("Item type"));
                     $("#param_category").val("itemtypes");
                     $("#runtime_param_options").show();
                     break;
                 case "insertBranches":
-                    modalTitle.text( _("Insert libraries parameter") );
-                    $("#paramLabel").val( _("Library") );
+                    modalTitle.text(_("Insert libraries parameter"));
+                    $("#paramLabel").val(_("Library"));
                     $("#param_category").val("branches");
                     $("#runtime_param_options").show();
                     break;
                 case "insertCategorycode":
-                    modalTitle.text( _("Insert patron category parameter") );
-                    $("#paramLabel").val( _("Patron category") );
+                    modalTitle.text(_("Insert patron category parameter"));
+                    $("#paramLabel").val(_("Patron category"));
                     $("#param_category").val("categorycode");
                     $("#runtime_param_options").show();
                     break;
                 case "insertCashregister":
-                    modalTitle.text( _("Insert cash register parameter") );
-                    $("#paramLabel").val( _("Cash register") );
+                    modalTitle.text(_("Insert cash register parameter"));
+                    $("#paramLabel").val(_("Cash register"));
                     $("#param_category").val("cash_registers");
                     $("#runtime_param_options").show();
                     break;
                 case "insertDebittypes":
-                    modalTitle.text( _("Insert debit type parameter") );
-                    $("#paramLabel").val( _("Debit type") );
+                    modalTitle.text(_("Insert debit type parameter"));
+                    $("#paramLabel").val(_("Debit type"));
                     $("#param_category").val("debit_types");
                     $("#runtime_param_options").show();
                     break;
                 case "insertCredittypes":
-                    modalTitle.text( _("Insert credit type parameter") );
-                    $("#paramLabel").val( _("Credit type") );
+                    modalTitle.text(_("Insert credit type parameter"));
+                    $("#paramLabel").val(_("Credit type"));
                     $("#param_category").val("credit_types");
                     $("#runtime_param_options").show();
                     break;
                 case "insertList":
-                    modalTitle.text( _("Insert list parameter") );
-                    $("#paramLabel").val( _("List of values") );
+                    modalTitle.text(_("Insert list parameter"));
+                    $("#paramLabel").val(_("List of values"));
                     $("#param_category").val("list");
                     break;
                 case "insertText":
-                    modalTitle.text( _("Insert text parameter") );
-                    $("#paramLabel").val( _("Text") );
+                    modalTitle.text(_("Insert text parameter"));
+                    $("#paramLabel").val(_("Text"));
                     $("#param_category").val("");
                     break;
             }
@@ -2050,37 +2052,38 @@
             modal.modal("show");
         }
 
-        function load_group_subgroups () {
+        function load_group_subgroups() {
             var group = $("#group_select").val();
             var subgroup = $("#subgroup_select").val();
             var sg = $("#subgroup");
-            $(sg).find('option[value!=""]').each(function() {
-                $(this).remove();
-            });
+            $(sg)
+                .find('option[value!=""]')
+                .each(function () {
+                    $(this).remove();
+                });
             $(sg).hide();
             if (group) {
-                var select = $(sg).find('select')[0];
-                $.each( group_subgroups[group], function(index, value) {
-                    if ( value[0] == subgroup ) {
-                        $('<option selected="selected" value="' + value[0] + '">' + value[1] + '</option>').appendTo(select);
+                var select = $(sg).find("select")[0];
+                $.each(group_subgroups[group], function (index, value) {
+                    if (value[0] == subgroup) {
+                        $('<option selected="selected" value="' + value[0] + '">' + value[1] + "</option>").appendTo(select);
                     } else {
-                        $('<option value="' + value[0] + '">' + value[1] + '</option>').appendTo(select);
+                        $('<option value="' + value[0] + '">' + value[1] + "</option>").appendTo(select);
                     }
-                } );
+                });
                 $("#subgroup, #subgroup *").show();
             }
         }
 
-        $(document).ready(function(){
-
+        $(document).ready(function () {
             var activeTab = localStorage.getItem("sql_reports_activetab");
-            if( activeTab == 0 ){
+            if (activeTab == 0) {
                 $("#subgroup_filter_block").hide();
             }
 
-            $("body").on('click',".fetch_chart_data",function(){
-                if( unlimited_total > 1000 ){
-                    if( confirm( _("Fetching full chart data for reports with many rows can cause performance issues. Are you sure you want to chart this report?") ) ){
+            $("body").on("click", ".fetch_chart_data", function () {
+                if (unlimited_total > 1000) {
+                    if (confirm(_("Fetching full chart data for reports with many rows can cause performance issues. Are you sure you want to chart this report?"))) {
                         return true;
                     } else {
                         return false;
@@ -2091,36 +2094,34 @@
             var showsql;
             hide_bar_element();
 
-            if ( $('.chart-column-conf').length == 1 ) {
-                $('.chart-column-delete').remove();
+            if ($(".chart-column-conf").length == 1) {
+                $(".chart-column-delete").remove();
             }
 
-            $(".chart-column-delete").on('click', function(e){
+            $(".chart-column-delete").on("click", function (e) {
                 e.preventDefault();
-                removeColumn('column_' + $(this).data('column'));
-            })
-
-            $('#download-chart').click(function() {
-                var svg = '<svg>' + $('#chart svg').html() + '</svg>';
-                this.href = 'data:application/octet-stream;base64,' + btoa(svg);
-                this.setAttribute('download', 'chart.svg');
+                removeColumn("column_" + $(this).data("column"));
             });
 
-            $('#chart-type').change(function() {
-                if ($(this).val() == 'bar') {
+            $("#download-chart").click(function () {
+                var svg = "<svg>" + $("#chart svg").html() + "</svg>";
+                this.href = "data:application/octet-stream;base64," + btoa(svg);
+                this.setAttribute("download", "chart.svg");
+            });
+
+            $("#chart-type").change(function () {
+                if ($(this).val() == "bar") {
                     show_bar_element();
-                }
-                else {
+                } else {
                     hide_bar_element();
                 }
             });
 
-            $('#download-chart').hide();
+            $("#download-chart").hide();
             var chart;
 
-            if ( original_results && !has_errors ) {
-                $('#draw-chart').click(function() {
-
+            if (original_results && !has_errors) {
+                $("#draw-chart").click(function () {
                     var x_elements = $('select[name="x"]').val();
                     var y_elements = [];
                     var groups = [];
@@ -2130,61 +2131,59 @@
                     headers = header_row;
 
                     var results;
-                    if (all_results.length){
-                        if ($('input[name="chart-include-all"]').prop('checked')) {
+                    if (all_results.length) {
+                        if ($('input[name="chart-include-all"]').prop("checked")) {
                             results = all_results;
-                        }
-                        else {
+                        } else {
                             results = original_results;
                         }
                     } else {
                         results = original_results;
                     }
 
-                    if ($('input[name="chart-exclude-last"]').prop('checked')) {
+                    if ($('input[name="chart-exclude-last"]').prop("checked")) {
                         results.splice(-1, 1);
                     }
 
-                    $('select[name="y"]').each(function( index ) {
-                        y_elements.push( $(this).val() );
+                    $('select[name="y"]').each(function (index) {
+                        y_elements.push($(this).val());
                     });
-                    $('select[name="group"]').each(function( index ) {
-                        groups.push( $(this).val() );
+                    $('select[name="group"]').each(function (index) {
+                        groups.push($(this).val());
                     });
-                    $('.column-line').each(function( index ) {
-                        if ($(this).prop('checked')) {
-                            lines.push( $(this).attr('name') );
+                    $(".column-line").each(function (index) {
+                        if ($(this).prop("checked")) {
+                            lines.push($(this).attr("name"));
                         }
                     });
 
                     // Remove deleted columns from headers and results.
                     var deleted_indexes = [];
                     var kept_headers = [];
-                    $.each(headers, function(index, value) {
+                    $.each(headers, function (index, value) {
                         if (value.cell != x_elements && $.inArray(value.cell, y_elements) === -1) {
                             // This header is neither a x element nor in y elements. Don't need it.
                             deleted_indexes.push(index);
-                        }
-                        else {
-                            kept_headers.push({cell: value.cell});
+                        } else {
+                            kept_headers.push({ cell: value.cell });
                         }
                     });
 
                     // Remove corresponding cells.
                     var kept_results = [];
-                    $.each(results, function(index, value) {
+                    $.each(results, function (index, value) {
                         var line = {};
-                        line['cells'] = [];
-                        $.each(value.cells, function(i, val) {
+                        line["cells"] = [];
+                        $.each(value.cells, function (i, val) {
                             if ($.inArray(i, deleted_indexes) === -1) {
-                                line['cells'].push({cell: val.cell});
+                                line["cells"].push({ cell: val.cell });
                             }
                         });
                         kept_results.push(line);
                     });
 
                     options.type = $('select[name="chart-type"]').val();
-                    options.horizontal = $('input[name="column-horizontal"]').prop('checked');
+                    options.horizontal = $('input[name="column-horizontal"]').prop("checked");
                     options.lines = lines;
 
                     chart = create_chart(kept_headers, kept_results, x_elements, y_elements, groups, options);
@@ -2193,35 +2192,34 @@
                     $("#chartModal").modal("hide");
                 });
             }
-            if (op == "create"){
+            if (op == "create") {
                 load_group_subgroups();
             }
 
-            $('#limit').change(function() {
-                $('#limitselect').submit();
+            $("#limit").change(function () {
+                $("#limitselect").submit();
             });
 
-            $(document).click(function() {
-                $('#report_updated').hide();
+            $(document).click(function () {
+                $("#report_updated").hide();
             });
 
-            $(".goback").on("click",function(e){
+            $(".goback").on("click", function (e) {
                 e.preventDefault();
                 window.history.back();
             });
 
-            $("body").on("click", ".mana_search_button", function(){
+            $("body").on("click", ".mana_search_button", function () {
                 $("#mana-loading").show();
                 mana_search($("#mana_search_field").val());
             });
 
-            $(".ShareButton").on("click", function(){
+            $(".ShareButton").on("click", function () {
                 $("#note-error").hide();
-                if($(this).closest("tr").find(".report_notes").text().length < 20 || $(this).closest("tr").find(".report_name").text().length < 20){
+                if ($(this).closest("tr").find(".report_notes").text().length < 20 || $(this).closest("tr").find(".report_name").text().length < 20) {
                     $(".shared_infos").hide();
                     $("#note-error").show();
-                }
-                else{
+                } else {
                     $("#reportid").val($(this).closest("tr").find(".report_id").text());
                     $("#shared_id").html($(this).closest("tr").find(".report_id").text());
                     $("#shared_name").html($(this).closest("tr").find(".report_name").text());
@@ -2232,19 +2230,19 @@
                 }
             });
 
-            $("#mana_share_report").on("hidden.bs.modal", function(){
+            $("#mana_share_report").on("hidden.bs.modal", function () {
                 $(".shared_infos").show();
             });
 
-            $("#addColumn").on("click",function(){
+            $("#addColumn").on("click", function () {
                 addColumn();
             });
 
-            $("#delColumn").on("click",function(){
+            $("#delColumn").on("click", function () {
                 delColumn();
             });
 
-            if (saved1){
+            if (saved1) {
                 var rtable = $("#table_reports").kohaTable(
                     {
                         autoWidth: false,
@@ -2259,116 +2257,115 @@
                 let table_dt = rtable.DataTable();
 
                 $("#tabs a[data-bs-toggle='tab']").on("shown.bs.tab", function (e) {
-                    tabsInit( $(e.target).parent(), rtable );
+                    tabsInit($(e.target).parent(), rtable);
                 });
 
-                if( activeTab ){
+                if (activeTab) {
                     $("#tabs li:eq(" + activeTab + ") a").tab("show");
                 }
 
-                $("#subgroup_filter").change(function() {
-                    var selected = $(this).find('option:selected');
+                $("#subgroup_filter").change(function () {
+                    var selected = $(this).find("option:selected");
                     var sg_id = $(selected).val();
                     let col = table_dt.columns(5);
                     if (sg_id.length > 0) {
-                        col.search(sg_id, {exact:true}).visible(false).draw();
+                        col.search(sg_id, { exact: true }).visible(false).draw();
                     } else {
                         col.search("").visible(true).draw();
                     }
                 });
 
-                $("#reports_form").submit(function(){
+                $("#reports_form").submit(function () {
                     var checkedItems = $("input[name=id]:checked");
                     if ($(checkedItems).size() == 0) {
                         alert(_("You must select one or more reports to delete"));
                         return false;
                     }
-                    $(checkedItems).parents('tr').addClass("warn");
-                    if( confirm(_("Are you sure you want to delete the selected reports?")) ) {
+                    $(checkedItems).parents("tr").addClass("warn");
+                    if (confirm(_("Are you sure you want to delete the selected reports?"))) {
                         return true;
                     } else {
-                        $(checkedItems).parents('tr').removeClass("warn");
+                        $(checkedItems).parents("tr").removeClass("warn");
                         return false;
                     }
                 });
 
-                $("body").on("click", ".update_sql", function(e){
+                $("body").on("click", ".update_sql", function (e) {
                     e.preventDefault();
                     var ltitle = $(this).text();
                     var report_id = $(this).data("report_id");
                     var page = $(this).attr("href");
-                    $("#update_sql .modal-body").load(page + " div", function(){
+                    $("#update_sql .modal-body").load(page + " div", function () {
                         var diff1 = $("#col1 .show_sql").text();
                         var diff2 = $("#col2 .show_sql").text();
-                        var diffs = diffString( escape(diff1), escape(diff2) );
+                        var diffs = diffString(escape(diff1), escape(diff2));
                         $("#col1 .show_sql,#col2 .show_sql").html(diffs);
                     });
-                    $('#update_sql').modal('show');
+                    $("#update_sql").modal("show");
                     $("#update_sql_button").attr("href", "/cgi-bin/koha/reports/guided_reports.pl?op=convert&id=" + report_id);
                 });
 
-                $("#update_sql").on("hidden.bs.modal", function(){
+                $("#update_sql").on("hidden.bs.modal", function () {
                     $("#update_sql_label").html("");
                     $("#update_sql .modal-body").html('<div id="loading"><img src="' + interface + "/" + theme + '/img/spinner-small.gif" alt="" /> ' + _("Loading") + "</div>");
                 });
             }
 
-            if (op == "showsql"){
-                $("#sql").focus(function() {
+            if (op == "showsql") {
+                $("#sql").focus(function () {
                     $(this).select();
                 });
             }
 
-            $("#toggle_sql").click(function(){
+            $("#toggle_sql").click(function () {
                 var sql_output = $("#sql_output");
                 sql_output.toggle();
-                if( sql_output.is(":visible") ){
-                    $(this).button('complete');
+                if (sql_output.is(":visible")) {
+                    $(this).button("complete");
                 } else {
-                    $(this).button('reset');
+                    $(this).button("reset");
                 }
-                if( !showsql ){
+                if (!showsql) {
                     showsql = CodeMirror.fromTextArea(sql, {
                         lineNumbers: false,
                         mode: "text/x-sql",
                         lineWrapping: true,
-                        readOnly: true
+                        readOnly: true,
                     });
                 }
             });
 
-            $(".toggle_chart_settings").click(function(){
+            $(".toggle_chart_settings").click(function () {
                 $("#chart, #toggle_chart_settings_hid, #toggle_chart_settings_vis").toggle();
             });
 
-            if (op == "create" || op == "editsql" || op == "save"){
-
+            if (op == "create" || op == "editsql" || op == "save") {
                 var validated_form = $("#sql_report_form").validate({
                     reportname: "required",
                     group_input: {
                         required: {
-                            depends: function(element) {
-                                return $("#create_group").prop("checked") && $("#groupdesc_input").val() != '';
-                            }
-                        }
+                            depends: function (element) {
+                                return $("#create_group").prop("checked") && $("#groupdesc_input").val() != "";
+                            },
+                        },
                     },
                     groupdesc_input: {
                         required: {
-                            depends: function(element) {
-                                return $("#create_group").prop("checked") && $("#group_input").val() != '';
-                            }
-                        }
-                    }
+                            depends: function (element) {
+                                return $("#create_group").prop("checked") && $("#group_input").val() != "";
+                            },
+                        },
+                    },
                 });
 
-                $("#select_group").change(function() {
-                    if($(this).prop('checked')) {
-                        $("#group_input").attr("class","").prop('disabled', true).prop("required", false);
-                        $("#groupdesc_input").attr("class","").prop('disabled', true).prop("required", false);
-                        $("#group_select").prop('disabled', false);
-                        clearValidation( $("#sql_report_form") );
+                $("#select_group").change(function () {
+                    if ($(this).prop("checked")) {
+                        $("#group_input").attr("class", "").prop("disabled", true).prop("required", false);
+                        $("#groupdesc_input").attr("class", "").prop("disabled", true).prop("required", false);
+                        $("#group_select").prop("disabled", false);
+                        clearValidation($("#sql_report_form"));
                         if ($("#group_select").val().length > 0) {
-                            $("#select_subgroup").prop('checked', true);
+                            $("#select_subgroup").prop("checked", true);
                             $("#select_subgroup").change();
                             $("#subgroup, #subgroup *").show();
                         } else {
@@ -2376,75 +2373,75 @@
                         }
                     }
                 });
-                $("#create_group").change(function() {
-                    if($(this).prop('checked')) {
-                        $("#group_input").prop('disabled', false).prop("required", true );
-                        $("#groupdesc_input").prop('disabled', false).prop("required", true );
-                        $("#group_select").prop('disabled', true);
+                $("#create_group").change(function () {
+                    if ($(this).prop("checked")) {
+                        $("#group_input").prop("disabled", false).prop("required", true);
+                        $("#groupdesc_input").prop("disabled", false).prop("required", true);
+                        $("#group_select").prop("disabled", true);
                         // $("#create_subgroup").prop('checked', true).change();
                         $("#subgroup_select").hide();
                         $("#subgroup input[type='radio']").hide();
                         $("#subgroup label[for]").hide();
-                        $("#subgroup_input").prop("required", false ).prop("disabled", false).show();
-                        $("#subgroupdesc_input").prop("required", false ).prop("disabled", false).show();
+                        $("#subgroup_input").prop("required", false).prop("disabled", false).show();
+                        $("#subgroupdesc_input").prop("required", false).prop("disabled", false).show();
                         $("#subgroup").show();
                         // Add validation rules for fields which were previously hidden
                         $("#subgroup_input").rules("add", {
                             required: {
-                                depends: function(element) {
-                                    return $("#create_group").prop("checked") &&  $("#subgroupdesc_input").val() != '';
-                                }
-                            }
+                                depends: function (element) {
+                                    return $("#create_group").prop("checked") && $("#subgroupdesc_input").val() != "";
+                                },
+                            },
                         });
                         $("#subgroupdesc_input").rules("add", {
                             required: {
-                                depends: function(element) {
-                                    return $("#create_group").prop("checked") &&  $("#subgroup_input").val() != '';
-                                }
-                            }
+                                depends: function (element) {
+                                    return $("#create_group").prop("checked") && $("#subgroup_input").val() != "";
+                                },
+                            },
                         });
                     }
                 });
-                $("#select_subgroup").change(function() {
-                    if($(this).prop('checked')) {
-                        $("#subgroup_select").prop('disabled', false);
-                        $("#subgroup_input").prop('disabled', true).prop("required", false );
-                        $("#subgroupdesc_input").prop('disabled', true).prop("required", false );
-                        clearValidation( $("#sql_report_form") );
+                $("#select_subgroup").change(function () {
+                    if ($(this).prop("checked")) {
+                        $("#subgroup_select").prop("disabled", false);
+                        $("#subgroup_input").prop("disabled", true).prop("required", false);
+                        $("#subgroupdesc_input").prop("disabled", true).prop("required", false);
+                        clearValidation($("#sql_report_form"));
                     }
                 });
-                $("#create_subgroup").change(function() {
-                    if($(this).prop('checked')) {
-                        $("#subgroup_input").prop('disabled', false).prop("required", true );
-                        $("#subgroupdesc_input").prop('disabled', false).prop("required", true );
-                        $("#subgroup_select").val("").prop('disabled', true);
+                $("#create_subgroup").change(function () {
+                    if ($(this).prop("checked")) {
+                        $("#subgroup_input").prop("disabled", false).prop("required", true);
+                        $("#subgroupdesc_input").prop("disabled", false).prop("required", true);
+                        $("#subgroup_select").val("").prop("disabled", true);
                     }
                 });
                 $("#select_group").change();
                 $("#select_subgroup").change();
-                $("#group_select").on("change",function(){
+                $("#group_select").on("change", function () {
                     load_group_subgroups();
                 });
 
-                $(".insertParam").on("click", function(e){
+                $(".insertParam").on("click", function (e) {
                     e.preventDefault();
                     var category = this.id;
-                    showParamModal( category );
+                    showParamModal(category);
                 });
 
-                $("#runtime_parameters").on("shown.bs.modal", function(){
+                $("#runtime_parameters").on("shown.bs.modal", function () {
                     $("#paramLabel").focus();
                 });
 
-                $("#runtime_parameters").on("hide.bs.modal", function(){
+                $("#runtime_parameters").on("hide.bs.modal", function () {
                     $("#send_runtime_parameter")[0].reset();
                     $("#authorised_value_category").val("").hide();
                     $("#runtime_param_options").val("").hide();
                     $("label[for='authorised_value']").removeClass("required");
-                    $("#authorised_value").prop("required", false ).removeAttr("required").removeClass("required");
+                    $("#authorised_value").prop("required", false).removeAttr("required").removeClass("required");
                 });
 
-                $("#send_runtime_parameter").on("submit", function(e){
+                $("#send_runtime_parameter").on("submit", function (e) {
                     e.preventDefault();
                     /* Get form values */
                     var paramLabel = $("#paramLabel").val();
@@ -2457,23 +2454,23 @@
                     var cursor = doc.getCursor();
                     var pos = {
                         line: cursor.line,
-                        ch: cursor.ch
-                    }
+                        ch: cursor.ch,
+                    };
                     /* Build runtime parameter text string */
                     var text = "";
-                    if( paramLabel && param_category ){
+                    if (paramLabel && param_category) {
                         text += paramLabel + "|" + param_category;
-                    } else if( paramLabel ) {
+                    } else if (paramLabel) {
                         text += paramLabel;
-                    } else if( param_category ){
+                    } else if (param_category) {
                         text += param_category;
                     }
-                    if( param_option ){
+                    if (param_option) {
                         text += param_option;
                     }
-                    if( text != "" ){
+                    if (text != "") {
                         text = " <<" + text + ">> ";
-                        if( selection.length > 0){
+                        if (selection.length > 0) {
                             editor.replaceSelection(text);
                         } else {
                             doc.replaceRange(text, pos);
@@ -2482,75 +2479,73 @@
                     $("#runtime_parameters").modal("hide");
                 });
 
-                $("#authorised_value").on("change", function(){
-                    $("#param_category").val( $(this).val() );
+                $("#authorised_value").on("change", function () {
+                    $("#param_category").val($(this).val());
                 });
-
             }
 
-            $("#mana_search_form").submit(function(e){
+            $("#mana_search_form").submit(function (e) {
                 e.preventDefault();
             });
 
-            $("#column_submit").submit(function() {
+            $("#column_submit").submit(function () {
                 if ($("#selectedColumns option").size() < 1) {
                     alert(_("No columns selected!"));
                     return false;
                 }
-                $("#selectedColumns option").attr("selected", "selected");  // Select everything still in #selectedColumns
+                $("#selectedColumns option").attr("selected", "selected"); // Select everything still in #selectedColumns
                 return true;
             });
 
             // Mana KB
-            $("body").on("click", ".mana-use", function(e) {
+            $("body").on("click", ".mana-use", function (e) {
                 e.preventDefault();
-                $(this).find("i").attr("class","fa-solid fa-rotate fa-spin");
-                mana_use( $(this).data("report_id") );
+                $(this).find("i").attr("class", "fa-solid fa-rotate fa-spin");
+                mana_use($(this).data("report_id"));
             });
 
-            $("#mana_search_result").on("shown.bs.modal", function(){
+            $("#mana_search_result").on("shown.bs.modal", function () {
                 $("#mana_search_field").focus();
             });
 
-            $("#mana_search_result").on("hide.bs.modal", function(){
+            $("#mana_search_result").on("hide.bs.modal", function () {
                 $("#mana_result_content").html("");
                 $("#mana_search_field").val("");
             });
 
-            $(".batch_op").on("click", function(e){
+            $(".batch_op").on("click", function (e) {
                 e.preventDefault();
                 var target_form = $(this).data("submit");
-                $("#" + target_form ).submit();
+                $("#" + target_form).submit();
             });
 
-            $("#batch_add_to_list").on("submit", function(e){
+            $("#batch_add_to_list").on("submit", function (e) {
                 e.preventDefault();
                 addToList();
             });
 
-            $("body").on("click", ".preview_sql", function(e){
+            $("body").on("click", ".preview_sql", function (e) {
                 e.preventDefault();
                 var reportid = $(this).data("reportid");
-                previewSql( reportid );
+                previewSql(reportid);
             });
-            $(".limitselect").on("click", function(){
+            $(".limitselect").on("click", function () {
                 var limit = $(this).data("limit");
-                $("#limit").val( limit );
+                $("#limit").val(limit);
                 $("#limitselect").submit();
             });
 
             // Apply select2 to all select fields having a "multiple" attribute
-            let selectFields = document.querySelectorAll('#report_param_form select[multiple]');
-            selectFields.forEach((selectField) => {
-                selectField.style.minWidth = '320px';
+            let selectFields = document.querySelectorAll("#report_param_form select[multiple]");
+            selectFields.forEach(selectField => {
+                selectField.style.minWidth = "320px";
                 $(selectField).select2();
             });
-
         });
 
-        $("#toggle_auto_links").on("click", function(e){
+        $("#toggle_auto_links").on("click", function (e) {
             e.preventDefault();
-            if( $(".data-plain").is(":visible") ){
+            if ($(".data-plain").is(":visible")) {
                 /* if a data-plain element is visible, this click hides it and shows auto-links */
                 localStorage.removeItem("reports_auto_link_off");
             } else {
@@ -2559,16 +2554,16 @@
             }
             $(".data-plain,.autolink").toggle();
         });
-        if ( localStorage.getItem("reports_auto_link_off") == 1 ){
+        if (localStorage.getItem("reports_auto_link_off") == 1) {
             $("#toggle_auto_links").click();
         }
 
-        function tabsInit( tab, rtable ){
+        function tabsInit(tab, rtable) {
             var activeTab = tab.index();
-            localStorage.setItem("sql_reports_activetab", activeTab );
+            localStorage.setItem("sql_reports_activetab", activeTab);
 
-            $("#subgroup_filter option").each(function() {
-                if($(this).val().length > 0) {
+            $("#subgroup_filter option").each(function () {
+                if ($(this).val().length > 0) {
                     $(this).remove();
                 }
             });
@@ -2579,18 +2574,15 @@
             col5.search("").visible(true);
 
             var g_id = tab.find("a").data("tabname");
-            if (g_id === 'reports') {
-                g_id = '';
+            if (g_id === "reports") {
+                g_id = "";
             }
 
             if (g_id !== null && g_id !== undefined && g_id.toString().length > 0) {
-                col4.search(g_id, {exact:true}).visible(false);
-                if( group_subgroups[g_id] && group_subgroups[g_id].length > 0 ){
-                    for(var i in group_subgroups[g_id]) {
-                        $("#subgroup_filter").append(
-                            '<option value="' + group_subgroups[g_id][i][0] + '">'
-                            + group_subgroups[g_id][i][1] + '</option>'
-                        );
+                col4.search(g_id, { exact: true }).visible(false);
+                if (group_subgroups[g_id] && group_subgroups[g_id].length > 0) {
+                    for (var i in group_subgroups[g_id]) {
+                        $("#subgroup_filter").append('<option value="' + group_subgroups[g_id][i][0] + '">' + group_subgroups[g_id][i][1] + "</option>");
                     }
                     $("#subgroup_filter_block").show();
                 } else {
@@ -2610,126 +2602,123 @@
         }
 
         // Mana KB
-        function mana_use( mana_id ){
-            $.ajax( {
-                type:"POST",
+        function mana_use(mana_id) {
+            $.ajax({
+                type: "POST",
                 url: "/cgi-bin/koha/svc/mana/use",
-                data: {id:mana_id, resource: 'report', saveinbase: 1, csrf_token: $('meta[name="csrf-token"]').attr('content')},
+                data: { id: mana_id, resource: "report", saveinbase: 1, csrf_token: $('meta[name="csrf-token"]').attr("content") },
                 dataType: "json",
             })
-            .done( function (result){
-                if ( result.errmsg ){
-                    alert( result.errmsg );
-                }
-                else{
-                    window.location = ("/cgi-bin/koha/reports/guided_reports.pl?id=").concat(result.id).concat("&op=show&mana_success=1");
-                }
-            })
-            .fail(function( error ) {
-                $(".mana_use_status").hide();
-                $("#mana_use_errortext").html( error.status + " " + error.statusText );
-                $("#mana_use_failed").show();
-                $(".mana-use i").attr("class","fa fa-download");
-            });
+                .done(function (result) {
+                    if (result.errmsg) {
+                        alert(result.errmsg);
+                    } else {
+                        window.location = "/cgi-bin/koha/reports/guided_reports.pl?id=".concat(result.id).concat("&op=show&mana_success=1");
+                    }
+                })
+                .fail(function (error) {
+                    $(".mana_use_status").hide();
+                    $("#mana_use_errortext").html(error.status + " " + error.statusText);
+                    $("#mana_use_failed").show();
+                    $(".mana-use i").attr("class", "fa fa-download");
+                });
         }
 
-        function mana_search( textquery ){
+        function mana_search(textquery) {
             $(".mana_search_status").hide();
-            $("#mana_result_content").load("/cgi-bin/koha/svc/mana/search #mana_results", "resource=report&usecomments=1&id=" + textquery, function( response, status, xhr ) {
+            $("#mana_result_content").load("/cgi-bin/koha/svc/mana/search #mana_results", "resource=report&usecomments=1&id=" + textquery, function (response, status, xhr) {
+                if (status == "error") {
+                    $("#mana_search_errortext").html(xhr.status + " " + xhr.statusText);
+                    $("#mana_search_failed").show();
+                    $("#mana-loading").hide();
+                } else {
+                    $(".mana_search_status").hide();
+                    $("#mana_search_result_label").text(_("Results from Mana Knowledge Base"));
+                    $("#mana-loading").hide();
+                    $("#mana_results_datatable").kohaTable({
+                        pagingType: "full",
+                        autoWidth: false,
+                        columnDefs: [{ width: "35%", targets: 1 }],
+                    });
 
-                    if ( status == "error" ) {
-                        $("#mana_search_errortext").html( xhr.status + " " + xhr.statusText );
-                        $("#mana_search_failed").show();
-                        $("#mana-loading").hide();
-                    } else {
-                        $(".mana_search_status").hide();
-                        $("#mana_search_result_label").text(_("Results from Mana Knowledge Base"));
-                        $("#mana-loading").hide();
-                        $("#mana_results_datatable").kohaTable({
-                            pagingType: "full",
-                            autoWidth: false,
-                            columnDefs: [
-                                { "width": "35%", targets: 1 }
-                            ],
-                        });
+                    $(".showbutton").on("click", function (e) {
+                        e.preventDefault();
+                        $(this).parent().hide();
+                        $(this).parent().next().show();
+                    });
 
-                        $(".showbutton").on("click", function(e){
-                            e.preventDefault();
-                            $(this).parent().hide();
-                            $(this).parent().next().show();
-                        });
+                    $(".hidebutton").on("click", function (e) {
+                        e.preventDefault();
+                        $(this).parent().hide();
+                        $(this).parent().prev().show();
+                    });
 
-                        $(".hidebutton").on("click", function(e){
-                            e.preventDefault();
-                            $(this).parent().hide();
-                            $(this).parent().prev().show();
-                        });
-
-                        if($("td.dataTables_empty").length == 0){
-                            $("#mana_search_message").show();
-                        }
+                    if ($("td.dataTables_empty").length == 0) {
+                        $("#mana_search_message").show();
                     }
-                });
+                }
+            });
         }
 
         function addToList() {
             var biblionumbers = [];
-            $(".bib_to_list").each(function() {
-                var biblionumber = Number( $(this).val() );
-                if( biblionumbers.indexOf( biblionumber ) < 0 ){
-                    biblionumbers.push( biblionumber );
+            $(".bib_to_list").each(function () {
+                var biblionumber = Number($(this).val());
+                if (biblionumbers.indexOf(biblionumber) < 0) {
+                    biblionumbers.push(biblionumber);
                 }
             });
             bibs = biblionumbers.join("/");
             var url = "/cgi-bin/koha/virtualshelves/addbybiblionumber.pl?biblionumbers=" + bibs;
-            window.open(url, 'Add_to_virtualshelf', 'width=500, height=400, toolbar=false, scrollbars=yes');
+            window.open(url, "Add_to_virtualshelf", "width=500, height=400, toolbar=false, scrollbars=yes");
             return false;
         }
 
         // Adapted from https://gist.github.com/jnormore/7418776
         function previewSql(reportid) {
-            var message = $("#previewSql" + reportid ).val();
-            var title = $("#previewSql" + reportid ).data("title");
-            if( $("#preview-sql-modal").length > 0) {
+            var message = $("#previewSql" + reportid).val();
+            var title = $("#previewSql" + reportid).data("title");
+            if ($("#preview-sql-modal").length > 0) {
                 $("#preview-sql-modal").remove();
             }
 
             // Clone the template content
-            var template = document.getElementById('preview-sql-modal-template');
+            var template = document.getElementById("preview-sql-modal-template");
             var clone = document.importNode(template.content, true);
 
             // Fill in the placeholders
             clone.querySelector('[data-placeholder="title"]').textContent = title;
 
             Object.assign(clone.querySelector('[data-placeholder="code"]'), {
-                id: 'code' + reportid,
-                textContent: message
+                id: "code" + reportid,
+                textContent: message,
             });
 
-            clone.querySelector('[data-placeholder="edit-href"]').href = '/cgi-bin/koha/reports/guided_reports.pl?id=' + encodeURIComponent(reportid) + '&op=edit_form';
-            clone.querySelector('[data-placeholder="duplicate-href"]').href = '/cgi-bin/koha/reports/guided_reports.pl?op=duplicate&id=' + encodeURIComponent(reportid);
-            clone.querySelector('[data-placeholder="schedule-href"]').href = '/cgi-bin/koha/tools/scheduler.pl?id=' + encodeURIComponent(reportid);
+            clone.querySelector('[data-placeholder="edit-href"]').href = "/cgi-bin/koha/reports/guided_reports.pl?id=" + encodeURIComponent(reportid) + "&op=edit_form";
+            clone.querySelector('[data-placeholder="duplicate-href"]').href = "/cgi-bin/koha/reports/guided_reports.pl?op=duplicate&id=" + encodeURIComponent(reportid);
+            clone.querySelector('[data-placeholder="schedule-href"]').href = "/cgi-bin/koha/tools/scheduler.pl?id=" + encodeURIComponent(reportid);
 
             Object.assign(clone.querySelector('[data-placeholder="delete-attrs"]').dataset, {
                 id: reportid,
-                action: 'guided_reports.pl',
-                method: 'post',
-                op: 'cud-delete'
+                action: "guided_reports.pl",
+                method: "post",
+                op: "cud-delete",
             });
 
-            clone.querySelector('[data-placeholder="run-href"]').href = '/cgi-bin/koha/reports/guided_reports.pl?id=' + encodeURIComponent(reportid) + '&op=run';
+            clone.querySelector('[data-placeholder="run-href"]').href = "/cgi-bin/koha/reports/guided_reports.pl?id=" + encodeURIComponent(reportid) + "&op=run";
 
             document.body.appendChild(clone);
 
-            $("#preview-sql-modal").on("shown.bs.modal", function(){
-                CodeMirror.fromTextArea( document.getElementById("code" + reportid ), {
-                    lineNumbers: false,
-                    mode: "text/x-sql",
-                    lineWrapping: true,
-                    readOnly: true
-                });
-            })
-            .modal('show');
+            $("#preview-sql-modal")
+                .on("shown.bs.modal", function () {
+                    CodeMirror.fromTextArea(document.getElementById("code" + reportid), {
+                        lineNumbers: false,
+                        mode: "text/x-sql",
+                        lineWrapping: true,
+                        readOnly: true,
+                    });
+                })
+                .modal("show");
         }
     </script>
 [% END %]
