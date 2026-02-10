@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 
+use Koha::ContentSecurityPolicy;
 use Koha::Logger;
 
 =head1 NAME
@@ -45,6 +46,15 @@ is violated. This endpoint logs those reports for administrator review.
 
 sub add {
     my $c = shift->openapi->valid_input or return;
+
+    # Return HTTP 204 if CSP is disabled.
+    # We could return 4xx, but clients do not need to be aware of the configured
+    # status of this endpoint
+    my $csp = Koha::ContentSecurityPolicy->new;
+    return $c->render(
+        status  => 204,
+        openapi => undef
+    ) if !$csp->is_enabled( { interface => 'opac' } ) && !$csp->is_enabled( { interface => 'intranet' } );
 
     my $logger = Koha::Logger->get( { interface => 'csp' } );
 

@@ -42,7 +42,7 @@ subtest 'add() tests' => sub {
 
     foreach my $csp_report_type ( 'report-uri', 'report-to' ) {
         subtest "Test $csp_report_type" => sub {
-            plan tests => 15;
+            plan tests => 17;
             my $content_type = $csp_report_type eq 'report-to' ? 'application/csp-report' : 'application/reports+json';
 
             # Test with standard CSP report-uri format
@@ -104,6 +104,18 @@ subtest 'add() tests' => sub {
             $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
                 ->status_is( 204, 'CSP report accepted' );
 
+            # Correct status code should be returned if the feature is disabled
+            t::lib::Mocks::mock_config(
+                'content_security_policy',
+                { opac => { csp_mode => '' } }
+            );
+            $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
+                ->status_is( 204, 'CSP report accepted' );
+            t::lib::Mocks::mock_config(
+                'content_security_policy',
+                { opac => { csp_mode => 'enabled' } }
+            );
+
             # Test with application/json content type (also valid)
             $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
                 ->status_is( 204, 'CSP report accepted with application/json content type' );
@@ -123,7 +135,7 @@ subtest 'add() tests' => sub {
                 ->status_is( 204, 'Minimal CSP report accepted' );
 
             subtest 'make sure log entries are being written' => sub {
-                plan tests => 18;
+                plan tests => 22;
 
                 my $log4perl_conf_file = C4::Context->config('intranetdir') . '/etc/log4perl.conf';
                 open my $fh, '<:encoding(UTF-8)', $log4perl_conf_file or do {
@@ -158,6 +170,22 @@ subtest 'add() tests' => sub {
 
                 is( $appender->buffer,      '', 'Nothing in log buffer yet' );
                 is( $appenderplack->buffer, '', 'Nothing in plack log buffer yet' );
+
+                # Correct status code should be returned if the feature is disabled
+                t::lib::Mocks::mock_config(
+                    'content_security_policy',
+                    { opac => { csp_mode => '' } }
+                );
+                $t->post_ok(
+                    '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
+                    ->status_is( 204, 'CSP report accepted' );
+
+                is( $appender->buffer,      '', 'Nothing in log buffer yet, because the feature is disabled' );
+                is( $appenderplack->buffer, '', 'Nothing in plack log buffer yet, because the feature is disabled' );
+                t::lib::Mocks::mock_config(
+                    'content_security_policy',
+                    { opac => { csp_mode => 'enabled' } }
+                );
 
                 $t->post_ok(
                     '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
