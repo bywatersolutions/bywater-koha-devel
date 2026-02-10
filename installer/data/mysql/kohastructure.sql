@@ -4461,6 +4461,24 @@ CREATE TABLE `letter` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `library_float_limits`
+--
+
+DROP TABLE IF EXISTS `library_float_limits`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `library_float_limits` (
+  `branchcode` varchar(10) NOT NULL,
+  `itemtype` varchar(10) NOT NULL,
+  `float_limit` int(11) DEFAULT NULL,
+  PRIMARY KEY (`branchcode`,`itemtype`),
+  KEY `itemtype_idx` (`itemtype`),
+  CONSTRAINT `library_float_limits_ibfk_bc` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `library_float_limits_ibfk_it` FOREIGN KEY (`itemtype`) REFERENCES `itemtypes` (`itemtype`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `library_groups`
 --
 
@@ -6884,20 +6902,6 @@ CREATE TABLE `transport_cost` (
   KEY `transport_cost_ibfk_2` (`tobranch`),
   CONSTRAINT `transport_cost_ibfk_1` FOREIGN KEY (`frombranch`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `transport_cost_ibfk_2` FOREIGN KEY (`tobranch`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
-DROP TABLE IF EXISTS `library_float_limits`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `library_float_limits` (
-  `branchcode` varchar(10) NOT NULL,
-  `itemtype` varchar(10) NOT NULL,
-  `float_limit` int(11) NULL DEFAULT NULL,
-  PRIMARY KEY (`branchcode`,`itemtype`),
-  KEY `itemtype_idx` (`itemtype`),
-  CONSTRAINT `library_float_limits_ibfk_bc` FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `library_float_limits_ibfk_it` FOREIGN KEY (`itemtype`) REFERENCES `itemtypes` (`itemtype`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
