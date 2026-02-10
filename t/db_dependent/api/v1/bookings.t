@@ -135,11 +135,13 @@ subtest 'list() tests' => sub {
 
     $api_filter = encode_json(
         { 'me.start_date' => { '<=' => output_pref( { dateformat => "rfc3339", dt => dt_from_string } ) } } );
-    $t->get_ok("//$userid:$password@/api/v1/bookings?q=$api_filter")->status_is(200)
+    $t->get_ok("//$userid:$password@/api/v1/bookings?q=$api_filter")
+        ->status_is(200)
         ->json_is( '' => [ $booking_0->to_api ], 'filtering to before today also works' );
 
     # Warn on unsupported query parameter
-    $t->get_ok("//$userid:$password@/api/v1/bookings?booking_blah=blah")->status_is(400)
+    $t->get_ok("//$userid:$password@/api/v1/bookings?booking_blah=blah")
+        ->status_is(400)
         ->json_is( [ { path => '/query/booking_blah', message => 'Malformed query string' } ] );
 
     $schema->storage->txn_rollback;
@@ -176,14 +178,16 @@ subtest 'get() tests' => sub {
     $t->get_ok( "//$unauth_userid:$password@/api/v1/bookings/" . $booking->booking_id )->status_is(403);
 
     # Authorized user tests
-    $t->get_ok( "//$userid:$password@/api/v1/bookings/" . $booking->booking_id )->status_is(200)
+    $t->get_ok( "//$userid:$password@/api/v1/bookings/" . $booking->booking_id )
+        ->status_is(200)
         ->json_is( $booking->to_api );
 
     my $booking_to_delete = $builder->build_object( { class => 'Koha::Bookings' } );
     my $non_existent_id   = $booking_to_delete->id;
     $booking_to_delete->delete;
 
-    $t->get_ok("//$userid:$password@/api/v1/bookings/$non_existent_id")->status_is(404)
+    $t->get_ok("//$userid:$password@/api/v1/bookings/$non_existent_id")
+        ->status_is(404)
         ->json_is( '/error' => 'Booking not found' );
 
     $schema->storage->txn_rollback;
@@ -244,7 +248,8 @@ subtest 'add() tests' => sub {
     # Authorized attempt to write invalid data
     my $booking_with_invalid_field = { %{$booking}, blah => 'some stuff' };
 
-    $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking_with_invalid_field )->status_is(400)
+    $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking_with_invalid_field )
+        ->status_is(400)
         ->json_is(
         "/errors" => [
             {
@@ -256,8 +261,10 @@ subtest 'add() tests' => sub {
 
     # Authorized attempt to write
     my $booking_id =
-        $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking )->status_is( 201, 'REST3.2.1' )
-        ->header_like( Location => qr|^\/api\/v1\/bookings/\d*|, 'REST3.4.1' )->json_is( '/biblio_id' => $biblio->id )
+        $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking )
+        ->status_is( 201, 'REST3.2.1' )
+        ->header_like( Location => qr|^\/api\/v1\/bookings/\d*|, 'REST3.4.1' )
+        ->json_is( '/biblio_id' => $biblio->id )
         ->tx->res->json->{booking_id};
 
     # Authorized attempt to create with null id
@@ -270,7 +277,8 @@ subtest 'add() tests' => sub {
     $booking->{start_date} = output_pref( { dateformat => "rfc3339", dt => dt_from_string->add( days => 10 ) } );
     $booking->{end_date}   = output_pref( { dateformat => "rfc3339", dt => dt_from_string->add( days => 14 ) } );
     warnings_like {
-        $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking )->status_is(409)
+        $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking )
+            ->status_is(409)
             ->json_is( "/error" => "Duplicate booking_id" );
     }
     qr/DBD::mysql::st execute failed: Duplicate entry '(.*?)' for key '(.*\.?)PRIMARY'/;
@@ -338,7 +346,8 @@ subtest 'update() tests' => sub {
     };
 
     $t->put_ok( "//$userid:$password@/api/v1/bookings/$booking_id" => json => $booking_with_missing_field )
-        ->status_is(400)->json_is( "/errors" => [ { message => "Missing property.", path => "/body/biblio_id" } ] );
+        ->status_is(400)
+        ->json_is( "/errors" => [ { message => "Missing property.", path => "/body/biblio_id" } ] );
 
     # Full object update on PUT
     my $booking_with_updated_field = {
@@ -351,7 +360,8 @@ subtest 'update() tests' => sub {
     };
 
     $t->put_ok( "//$userid:$password@/api/v1/bookings/$booking_id" => json => $booking_with_updated_field )
-        ->status_is(200)->json_is( '/biblio_id' => $biblio->id );
+        ->status_is(200)
+        ->json_is( '/biblio_id' => $biblio->id );
 
     # Authorized attempt to write invalid data
     my $booking_with_invalid_field = {
@@ -365,7 +375,8 @@ subtest 'update() tests' => sub {
     };
 
     $t->put_ok( "//$userid:$password@/api/v1/bookings/$booking_id" => json => $booking_with_invalid_field )
-        ->status_is(400)->json_is(
+        ->status_is(400)
+        ->json_is(
         "/errors" => [
             {
                 message => "Properties not allowed: blah.",
@@ -434,7 +445,8 @@ subtest 'delete() tests' => sub {
     # Unauthorized attempt to delete
     $t->delete_ok("//$unauth_userid:$password@/api/v1/bookings/$booking_id")->status_is(403);
 
-    $t->delete_ok("//$userid:$password@/api/v1/bookings/$booking_id")->status_is( 204, 'REST3.2.4' )
+    $t->delete_ok("//$userid:$password@/api/v1/bookings/$booking_id")
+        ->status_is( 204, 'REST3.2.4' )
         ->content_is( '', 'REST3.3.4' );
 
     $t->delete_ok("//$userid:$password@/api/v1/bookings/$booking_id")->status_is(404);
@@ -494,7 +506,8 @@ subtest 'patch() tests' => sub {
     };
 
     $t->patch_ok( "//$userid:$password@/api/v1/bookings/$booking_id" => json => $booking_with_invalid_field )
-        ->status_is(400)->json_is(
+        ->status_is(400)
+        ->json_is(
         "/errors" => [
             {
                 message => "Properties not allowed: blah.",
@@ -573,7 +586,8 @@ subtest 'add() with itemtype_id tests' => sub {
 
     my $tx =
         $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking_with_itemtype )
-        ->status_is( 201, 'Created booking with itemtype_id' )->json_has( '/item_id', 'Server assigned an item_id' )
+        ->status_is( 201, 'Created booking with itemtype_id' )
+        ->json_has( '/item_id', 'Server assigned an item_id' )
         ->json_is( '/biblio_id' => $biblio->id );
 
     my $assigned_item_id = $tx->tx->res->json->{item_id};
@@ -593,7 +607,8 @@ subtest 'add() with itemtype_id tests' => sub {
         end_date          => output_pref( { dateformat => "rfc3339", dt => dt_from_string->add( days => 14 ) } ),
     };
 
-    $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking_with_both )->status_is(400)
+    $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking_with_both )
+        ->status_is(400)
         ->json_is( '/error' => 'Cannot specify both item_id and itemtype_id' );
 
     # Test 3: Booking with neither item_id nor itemtype_id should fail
@@ -605,7 +620,8 @@ subtest 'add() with itemtype_id tests' => sub {
         end_date          => output_pref( { dateformat => "rfc3339", dt => dt_from_string->add( days => 24 ) } ),
     };
 
-    $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking_with_neither )->status_is(400)
+    $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking_with_neither )
+        ->status_is(400)
         ->json_is( '/error' => 'Either item_id or itemtype_id must be provided' );
 
     # Test 4: Verify optimal selection - book all items, then try to book again
@@ -632,7 +648,8 @@ subtest 'add() with itemtype_id tests' => sub {
         end_date          => output_pref( { dateformat => "rfc3339", dt => dt_from_string->add( days => 5 ) } ),
     };
 
-    $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking_should_fail )->status_is(400)
+    $t->post_ok( "//$userid:$password@/api/v1/bookings" => json => $booking_should_fail )
+        ->status_is(400)
         ->json_is( '/error' => 'Booking would conflict' );
 
     $schema->storage->txn_rollback;
