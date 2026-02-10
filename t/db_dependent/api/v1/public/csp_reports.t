@@ -57,34 +57,32 @@ subtest 'add() tests' => sub {
                     'blocked-uri'         => 'inline',
                     'line-number'         => 42,
                     'column-number'       => 10,
+                    'script-sample'       => 'console.log("hi");',
                     'source-file'         => 'https://library.example.org/cgi-bin/koah/opac-main.pl',
                     'status-code'         => 200,
                 }
             };
-            if ( $csp_report_type eq 'report-to' ) {
-                $csp_report->{'body'}       = delete $csp_report->{'csp-report'};
-                $csp_report->{'age'}        = 1;
-                $csp_report->{'type'}       = 'csp-violation';
-                $csp_report->{'url'}        = 'https://library.example.org/cgi-bin/koha/opac-main.pl';
-                $csp_report->{'user_agent'} = 'Test::Mojo';
-            }
 
+            # as the parameters between report-to and report-uri differ, the following hashref maintains
+            # the proper parameter keys for both types
+            my $csp_param_names = { map { $_ => $_ } keys %{ $csp_report->{'csp-report'} } };
+            _convert_report_uri_to_report_to( $csp_param_names, $csp_report ) if $csp_report_type eq 'report-to';
             my $csp_report_body_key = $csp_report_type eq 'report-uri' ? 'csp-report' : 'body';
 
-            $csp_report->{$csp_report_body_key}->{'line-number'} = 99999999999999999;
+            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } = 99999999999999999;
 
             # Too large integers should be rejected
             $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
                 ->status_is( 400, 'CSP report rejected (400) because of line-number exceeding maximum value' );
 
-            $csp_report->{$csp_report_body_key}->{'line-number'} = -1;
+            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } = -1;
 
             # Too small integers should be rejected
             $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
                 ->status_is( 400, 'CSP report rejected (400) because of line-number not reaching minimum value' );
-            $csp_report->{$csp_report_body_key}->{'line-number'} = 42;
+            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } = 42;
 
-            $csp_report->{$csp_report_body_key}->{'disposition'} = 'this is not okay';
+            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'disposition'} } = 'this is not okay';
 
             # Enum values should be confirmed
             $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
@@ -92,15 +90,15 @@ subtest 'add() tests' => sub {
                 400,
                 'CSP report rejected (400) because of disposition is not either "enforce" nor "report"'
                 );
-            $csp_report->{$csp_report_body_key}->{'disposition'} = 'enforce';
+            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'disposition'} } = 'enforce';
 
-            $csp_report->{$csp_report_body_key}->{'script-sample'} =
+            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'script-sample'} } =
                 'this is way too long script sample. a maximum of only 40 characters is allowed';
 
             # Too long strings should be rejected
             $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
                 ->status_is( 400, 'CSP report rejected (400) because of script-sample exceeding maximum length' );
-            $csp_report->{$csp_report_body_key}->{'script-sample'} = 'console.log("hi");';
+            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'script-sample'} } = 'console.log("hi");';
 
             # Anonymous request should work (browsers send these without auth)
             $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
@@ -118,20 +116,14 @@ subtest 'add() tests' => sub {
                     'blocked-uri'        => 'https://evil.example.com/script.js',
                 }
             };
-            if ( $csp_report_type eq 'report-to' ) {
-                $minimal_report->{'body'}       = delete $minimal_report->{'csp-report'};
-                $minimal_report->{'age'}        = 1;
-                $minimal_report->{'type'}       = 'csp-violation';
-                $minimal_report->{'url'}        = 'https://library.example.org/cgi-bin/koha/opac-main.pl';
-                $minimal_report->{'user_agent'} = 'Test::Mojo';
-            }
+            _convert_report_uri_to_report_to( $csp_param_names, $minimal_report ) if $csp_report_type eq 'report-to';
 
             $t->post_ok(
                 '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $minimal_report )
                 ->status_is( 204, 'Minimal CSP report accepted' );
 
             subtest 'make sure log entries are being written' => sub {
-                plan tests => 17;
+                plan tests => 18;
 
                 my $log4perl_conf_file = C4::Context->config('intranetdir') . '/etc/log4perl.conf';
                 open my $fh, '<:encoding(UTF-8)', $log4perl_conf_file or do {
@@ -173,13 +165,13 @@ subtest 'add() tests' => sub {
 
                 my $expected_log_entry = sprintf(
                     "CSP violation: '%s' blocked '%s' on page '%s'%s",
-                    $csp_report->{$csp_report_body_key}->{'violated-directive'},
-                    $csp_report->{$csp_report_body_key}->{'blocked-uri'},
-                    $csp_report->{$csp_report_body_key}->{'document-uri'},
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'violated-directive'} },
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'blocked-uri'} },
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'document-uri'} },
                     ' at '
-                        . $csp_report->{$csp_report_body_key}->{'source-file'} . ':'
-                        . $csp_report->{$csp_report_body_key}->{'line-number'} . ':'
-                        . $csp_report->{$csp_report_body_key}->{'column-number'}
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'source-file'} } . ':'
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } . ':'
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'column-number'} }
                 );
 
                 like(
@@ -188,6 +180,49 @@ subtest 'add() tests' => sub {
                 );
                 is( $appenderplack->buffer, '', 'Nothing in plack log buffer yet' );
                 $appender->clear();
+
+                # clear buffers
+                $appender->clear();
+                $appenderplack->clear();
+
+                subtest 'test array as input' => sub {
+                    plan tests => 7;
+
+                    my $csp_report_copy = {%$csp_report};    # make a shallow copy
+                    $csp_report_copy->{'body'} = { %{ $csp_report->{'body'} } };
+
+                    # for testing multiple reports being logged correctly, differentiate the two reports
+                    # by violatedDir
+                    $csp_report_copy->{'body'}->{'effectiveDirective'} = 'style-src';
+                    ( my $expected_log_entry_copy = $expected_log_entry ) =~ s/script-src/style-src/;
+
+                    $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json =>
+                            [ $csp_report, $csp_report_copy ] )->status_is( 204, 'Multiple CSP reports accepted' );
+                    my @log_entries = split( /\n/, $appender->buffer );
+                    is(
+                        scalar @log_entries, 2,
+                        'There are two log entries because we sent two reports simultaneously.'
+                    );
+                    like( $expected_log_entry, qr/: 'script-src' blocked/, 'Verify correct directive' );
+                    like(
+                        $log_entries[0], qr/^\[\d+.*?\] $expected_log_entry$/,
+                        'First entry is the expected log entry'
+                    );
+                    like(
+                        $expected_log_entry_copy, qr/: 'style-src' blocked/,
+                        'Verify correct directive for the second entry'
+                    );
+                    like(
+                        $log_entries[1], qr/^\[\d+.*?\] $expected_log_entry_copy$/,
+                        'Second entry is the expected log entry'
+                    );
+                    $appender->clear();
+                    }
+                    if $csp_report_type eq 'report-to';
+                ok(
+                    1,
+                    'report-uri does not support array format. this test is just a placeholder for counting planned tests'
+                ) if $csp_report_type eq 'report-uri';
 
                 $ENV{'plack.is.enabled.for.this.test'} = 1;    # tricking C4::Context->psgi_env
                 $t->post_ok(
@@ -225,5 +260,35 @@ HERE
 
     $schema->storage->txn_rollback;
 };
+
+sub _convert_report_uri_to_report_to {
+    my ( $csp_param_names, $csp_report ) = @_;
+
+    foreach my $key ( keys %{ $csp_report->{'csp-report'} } ) {
+        my $orig_key = $key;
+        $key =~ s/uri/URL/g;    # uri is replaced with URL in the camelCase version
+        my @parts      = split( /-/, $key );
+        my $camelcased = shift(@parts);
+        foreach my $part (@parts) {
+            $camelcased .= ucfirst($part);
+        }
+        $csp_report->{'csp-report'}->{$camelcased} = delete $csp_report->{'csp-report'}->{$orig_key};
+        $csp_param_names->{$orig_key} = $camelcased;
+    }
+
+    $csp_report->{'body'}       = delete $csp_report->{'csp-report'};
+    $csp_report->{'age'}        = 1;
+    $csp_report->{'type'}       = 'csp-violation';
+    $csp_report->{'url'}        = 'https://library.example.org/cgi-bin/koha/opac-main.pl';
+    $csp_report->{'user_agent'} = 'Test::Mojo';
+
+    # script-sample (report-uri) => sample (report-to)
+    $csp_report->{'body'}->{'sample'} = delete $csp_report->{'body'}->{'scriptSample'}
+        if exists $csp_report->{'body'}->{'scriptSample'};
+    $csp_param_names->{'script-sample'} = 'sample';
+
+    # violated-directive does not exist in report-to
+    delete $csp_report->{'body'}->{'violatedDir'};
+}
 
 1;
