@@ -424,9 +424,9 @@
 
         $(document).ready(function () {
             if (listclosed) {
-                $("#basket_groups a[href='#closed']").tab("show");
+                $("#basket_groups a[href='#closed_panel']").tab("show");
             } else {
-                $("#basket_groups a[href='#opened']").tab("show");
+                $("#basket_groups a[href='#opened_panel']").tab("show");
             }
 
             if (!grouping) {
