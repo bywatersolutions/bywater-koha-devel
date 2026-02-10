@@ -309,6 +309,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 library_float_limits
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::LibraryFloatLimit>
+
+=cut
+
+__PACKAGE__->has_many(
+  "library_float_limits",
+  "Koha::Schema::Result::LibraryFloatLimit",
+  { "foreign.itemtype" => "self.itemtype" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 old_reserves
 
 Type: has_many
@@ -360,8 +375,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07051 @ 2025-08-20 19:06:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:T/3QdCb353e+qBkN4as7Bg
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-02-10 17:39:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jdGLBem2+Cj1STCmWCf2Bg
 
 __PACKAGE__->add_columns(
     '+automatic_checkin'            => { is_boolean => 1 },

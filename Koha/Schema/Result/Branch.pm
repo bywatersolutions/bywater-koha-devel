@@ -800,6 +800,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 library_float_limits
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::LibraryFloatLimit>
+
+=cut
+
+__PACKAGE__->has_many(
+  "library_float_limits",
+  "Koha::Schema::Result::LibraryFloatLimit",
+  { "foreign.branchcode" => "self.branchcode" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 library_groups
 
 Type: has_many
@@ -996,8 +1011,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07051 @ 2024-05-03 13:13:25
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HiH1QNlDqKcq9GeM85Pu0A
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-02-10 17:39:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qVz4KJbAEtT4XDNdAxWc7w
 
 __PACKAGE__->has_many(
     "additional_field_values",

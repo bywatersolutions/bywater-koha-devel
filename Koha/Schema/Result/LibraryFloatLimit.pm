@@ -1,5 +1,4 @@
 use utf8;
-
 package Koha::Schema::Result::LibraryFloatLimit;
 
 # Created by DBIx::Class::Schema::Loader
@@ -46,12 +45,12 @@ __PACKAGE__->table("library_float_limits");
 =cut
 
 __PACKAGE__->add_columns(
-    "branchcode",
-    { data_type => "varchar", is_foreign_key => 1, is_nullable => 0, size => 10 },
-    "itemtype",
-    { data_type => "varchar", is_foreign_key => 1, is_nullable => 0, size => 10 },
-    "float_limit",
-    { data_type => "integer", is_nullable => 1 },
+  "branchcode",
+  { data_type => "varchar", is_foreign_key => 1, is_nullable => 0, size => 10 },
+  "itemtype",
+  { data_type => "varchar", is_foreign_key => 1, is_nullable => 0, size => 10 },
+  "float_limit",
+  { data_type => "integer", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -66,7 +65,7 @@ __PACKAGE__->add_columns(
 
 =cut
 
-__PACKAGE__->set_primary_key( "branchcode", "itemtype" );
+__PACKAGE__->set_primary_key("branchcode", "itemtype");
 
 =head1 RELATIONS
 
@@ -79,10 +78,10 @@ Related object: L<Koha::Schema::Result::Branch>
 =cut
 
 __PACKAGE__->belongs_to(
-    "branchcode",
-    "Koha::Schema::Result::Branch",
-    { branchcode    => "branchcode" },
-    { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  "branchcode",
+  "Koha::Schema::Result::Branch",
+  { branchcode => "branchcode" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 itemtype
@@ -94,14 +93,15 @@ Related object: L<Koha::Schema::Result::Itemtype>
 =cut
 
 __PACKAGE__->belongs_to(
-    "itemtype",
-    "Koha::Schema::Result::Itemtype",
-    { itemtype      => "itemtype" },
-    { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  "itemtype",
+  "Koha::Schema::Result::Itemtype",
+  { itemtype => "itemtype" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2023-12-19 18:47:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AnpZIyNq9oO1vmDSXmQEMQ
+
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-02-10 17:39:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:k3cunGcwURNA1Hv/HY8+oQ
 
 =head2 koha_object_class
 
