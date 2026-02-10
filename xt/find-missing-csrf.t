@@ -50,7 +50,9 @@ sub check_csrf_in_forms {
     for my $line (@lines) {
         $line_number++;
         $open = $line_number if $line =~ m{<form.*method=('|")post('|")}i;
-        $found++ if $open && $line =~ m{csrf-token\.inc};
+        $found++
+            if $open && $line =~ m{csrf-token\.inc}
+            || $line =~ m{<input type="hidden" name="csrf_token" value="\$\{csrf_token\}" />};
         if ( $open && $line =~ m{</form} ) {
             push @errors, $open unless $found;
             $found = 0;
