@@ -63,12 +63,13 @@ sub add {
         my $csp_report = $report->{'csp-report'} // $report->{body};
 
         # Extract key fields for logging
-        my $document_uri  = $csp_report->{'documentURL'}        // $csp_report->{'document-uri'}        // 'unknown';
-        my $violated_dir  = $csp_report->{'effectiveDirective'} // $csp_report->{'effective-directive'} // 'unknown';
-        my $blocked_uri   = $csp_report->{'blockedURL'}         // $csp_report->{'blocked-uri'}         // 'unknown';
-        my $source_file   = $csp_report->{'sourceFile'}         // $csp_report->{'source-file'}         // '';
-        my $line_number   = $csp_report->{'lineNumber'}         // $csp_report->{'line-number'}         // '';
-        my $column_number = $csp_report->{'columnNumber'}       // $csp_report->{'column-number'}       // '';
+        my $document_uri = $csp_report->{'documentURL'} // $csp_report->{'document-uri'} // 'unknown';
+        my $violated_dir = $csp_report->{'effectiveDirective'} // $csp_report->{'effective-directive'}
+            // $csp_report->{'violated-directive'} // 'unknown';
+        my $blocked_uri   = $csp_report->{'blockedURL'}   // $csp_report->{'blocked-uri'}   // 'unknown';
+        my $source_file   = $csp_report->{'sourceFile'}   // $csp_report->{'source-file'}   // '';
+        my $line_number   = $csp_report->{'lineNumber'}   // $csp_report->{'line-number'}   // '';
+        my $column_number = $csp_report->{'columnNumber'} // $csp_report->{'column-number'} // '';
 
         # Build location string if available
         my $location = '';
