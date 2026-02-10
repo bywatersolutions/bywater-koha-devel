@@ -41,9 +41,9 @@ properties:
     maximum: 999999
     minimum: 0
   sample:
-      type: string
-      description: First 40 characters of the inline script that caused the violation
-      maxLength: 41
+    type: string
+    description: First 40 characters of the inline script that caused the violation
+    maxLength: 41
   sourceFile:
     type: string
     description: The URI of the script where the violation occurred
