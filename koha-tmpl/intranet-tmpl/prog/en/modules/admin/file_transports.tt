@@ -504,7 +504,7 @@
                         "render": function(data, type, row, meta) {
                             var transport = data.toUpperCase();
                             if (data == "ftp" && row.passive == 1) {
-                                transport += " [% tp('FTP connection mode', '(passive)') %]";
+                                transport += " [% tp('FTP connection mode', '(passive)') | html %]";
                             }
                             return transport;
                         },
