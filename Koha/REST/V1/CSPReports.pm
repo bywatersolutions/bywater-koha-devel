@@ -46,43 +46,53 @@ is violated. This endpoint logs those reports for administrator review.
 sub add {
     my $c = shift->openapi->valid_input or return;
 
-    my $report = $c->req->json;
-
-    # CSP reports come wrapped in a 'csp-report' key
-    my $csp_report = $report->{'csp-report'} // $report->{'body'} // $report;
-
     my $logger = Koha::Logger->get( { interface => 'csp' } );
 
-    # Extract key fields for logging
-    my $document_uri  = $csp_report->{'document-uri'}       // 'unknown';
-    my $violated_dir  = $csp_report->{'violated-directive'} // 'unknown';
-    my $blocked_uri   = $csp_report->{'blocked-uri'}        // 'unknown';
-    my $source_file   = $csp_report->{'source-file'}        // '';
-    my $line_number   = $csp_report->{'line-number'}        // '';
-    my $column_number = $csp_report->{'column-number'}      // '';
+    my @reports           = ();
+    my $reports_from_json = $c->req->json;
+    if ( ref $reports_from_json eq 'ARRAY' ) {
 
-    # Build location string if available
-    my $location = '';
-    if ($source_file) {
-        $location = " at $source_file";
-        $location .= ":$line_number"   if $line_number;
-        $location .= ":$column_number" if $column_number;
+        #FIXME: We could just take the top X number of reports...
+        push( @reports, @$reports_from_json );
+    } elsif ( ref $reports_from_json eq 'HASH' ) {
+        push( @reports, $reports_from_json );
     }
 
-    $logger->warn(
-        sprintf(
-            "CSP violation: '%s' blocked '%s' on page '%s'%s",
-            $violated_dir,
-            $blocked_uri,
-            $document_uri,
-            $location
-        )
-    );
+    # CSP reports come wrapped in a 'csp-report' key
+    foreach my $report (@reports) {
+        my $csp_report = $report->{'csp-report'} // $report->{body};
 
-    # Log full report at debug level for detailed analysis
-    if ( $logger->is_debug ) {
-        require JSON;
-        $logger->debug( "CSP report details: " . JSON::encode_json($csp_report) );
+        # Extract key fields for logging
+        my $document_uri  = $csp_report->{'documentURL'}        // $csp_report->{'document-uri'}        // 'unknown';
+        my $violated_dir  = $csp_report->{'effectiveDirective'} // $csp_report->{'effective-directive'} // 'unknown';
+        my $blocked_uri   = $csp_report->{'blockedURL'}         // $csp_report->{'blocked-uri'}         // 'unknown';
+        my $source_file   = $csp_report->{'sourceFile'}         // $csp_report->{'source-file'}         // '';
+        my $line_number   = $csp_report->{'lineNumber'}         // $csp_report->{'line-number'}         // '';
+        my $column_number = $csp_report->{'columnNumber'}       // $csp_report->{'column-number'}       // '';
+
+        # Build location string if available
+        my $location = '';
+        if ($source_file) {
+            $location = " at $source_file";
+            $location .= ":$line_number"   if $line_number;
+            $location .= ":$column_number" if $column_number;
+        }
+
+        $logger->warn(
+            sprintf(
+                "CSP violation: '%s' blocked '%s' on page '%s'%s",
+                $violated_dir,
+                $blocked_uri,
+                $document_uri,
+                $location
+            )
+        );
+
+        # Log full report at debug level for detailed analysis
+        if ( $logger->is_debug ) {
+            require JSON;
+            $logger->debug( "CSP report details: " . JSON::encode_json($csp_report) );
+        }
     }
 
     return $c->render(
