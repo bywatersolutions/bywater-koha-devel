@@ -629,6 +629,7 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('OverduesBlockCirc','noblock'),
 ('OverduesBlockRenewing','allow'),
 ('PassItemMarcToXSLT','0'),
+('PatronAgeRestriction', ''),
 ('PatronAnonymizeDelay',''),
 ('PatronAutoComplete','1'),
 ('PatronDuplicateMatchingAddFields','surname|firstname|dateofbirth'),
