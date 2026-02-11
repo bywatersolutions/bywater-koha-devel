@@ -627,20 +627,20 @@
                                     "</a><br/>";
                             }
 
-                            if ( row.biblio != null ) {
-                                if ( row.biblio.items_count - row.items.length > 0 ||
-                                    row.biblio.uncancelled_orders_count > 1 ||
-                                    row.biblio.subscriptions_count > 0 ||
-                                    row.biblio.holds_count > 0 ) { // biblio can be deleted
-                                    result += '<span class="button" title="'
-                                            + _("Can't delete catalog record, see constraints below") + '">'
-                                            + _("Can't cancel order and delete catalog record") + '</span><br>';
-                                }
-                                else {
-                                    result += '<a href="/cgi-bin/koha/acqui/cancelorder.pl?ordernumber='
-                                            + encodeURIComponent(row.order_id) + '&biblionumber=' + encodeURIComponent(row.biblio_id)
-                                            + '&del_biblio=1&referrer=/cgi-bin/koha/acqui/parcel.pl?invoiceid=' + invoide_id
-                                            + _("Cancel order and catalog record") + '</a><br/>';
+                            if (row.biblio != null) {
+                                if (row.biblio.items_count - row.items.length > 0 || row.biblio.uncancelled_orders_count > 1 || row.biblio.subscriptions_count > 0 || row.biblio.holds_count > 0) {
+                                    // biblio can be deleted
+                                    result += '<span class="button" title="' + _("Can't delete catalog record, see constraints below") + '">' + _("Can't cancel order and delete catalog record") + "</span><br>";
+                                } else {
+                                    result +=
+                                        '<a href="/cgi-bin/koha/acqui/cancelorder.pl?ordernumber=' +
+                                        encodeURIComponent(row.order_id) +
+                                        "&biblionumber=" +
+                                        encodeURIComponent(row.biblio_id) +
+                                        "&del_biblio=1&referrer=/cgi-bin/koha/acqui/parcel.pl?invoiceid=" +
+                                        invoide_id +
+                                        _("Cancel order and catalog record") +
+                                        "</a><br/>";
                                 }
 
                                 if (row.biblio.items_count - row.items.length > 0) {
