@@ -194,6 +194,8 @@ definitions:
     $ref: ./definitions/file_transport.yaml
   suggestion:
     $ref: ./definitions/suggestion.yaml
+  syspref:
+    $ref: ./definitions/syspref.yaml
   ticket:
     $ref: ./definitions/ticket.yaml
   ticket_update:
@@ -631,6 +633,8 @@ paths:
     $ref: "./paths/suggestions.yaml#/~1suggestions~1{suggestion_id}"
   /suggestions/managers:
     $ref: "./paths/suggestions.yaml#/~1suggestions~1managers"
+  /sysprefs:
+    $ref: ./paths/sysprefs.yaml#/~1sysprefs
   "/tickets":
     $ref: "./paths/tickets.yaml#/~1tickets"
   "/tickets/{ticket_id}":
@@ -1417,6 +1421,9 @@ tags:
   - description: "Manage SMTP servers configurations\n"
     name: smtp_servers
     x-displayName: SMTP servers
+  - description: "Manage system preferences\n"
+    name: sysprefs
+    x-displayName: System preferences
   - description: "Manage file transport configurations\n"
     name: file_transports
     x-displayName: File transports

@@ -1,0 +1,29 @@
+---
+type: object
+properties:
+  variable:
+    type: string
+    description: name of the syspref
+  value:
+    description: value of the syspref
+    type: string
+  options:
+    description: the possible values
+    type:
+      - string
+      - "null"
+  explanation:
+    description: explanation of the pref
+    type:
+      - string
+      - "null"
+  type:
+    description: type of the pref
+    type:
+      - string
+      - "null"
+additionalProperties: false
+
+required:
+  - variable
+  - value
