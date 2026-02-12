@@ -347,6 +347,15 @@ describe("Form features", () => {
             new RegExp("/api/v1/acquisitions/vendors/(?!config$).+"),
             vendor
         ).as("get-vendor");
+        cy.intercept(
+            "GET",
+            "/api/v1/acquisitions/vendors/extended_attribute_types*",
+            {
+                body: [],
+                statusCode: 200,
+            }
+        );
+
         cy.get("#name").type(vendor.name);
         cy.get("#toolbar button").contains("Save").click();
         cy.wait("@get-vendor");
