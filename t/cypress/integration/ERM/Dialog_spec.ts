@@ -90,6 +90,10 @@ describe("Dialog operations", () => {
             { force: true }
         );
 
+        cy.intercept("POST", "/api/v1/erm/eholdings/local/packages", {
+            statusCode: 201,
+            body: erm_package,
+        });
         cy.intercept(
             "GET",
             "/api/v1/erm/eholdings/local/packages/*",
