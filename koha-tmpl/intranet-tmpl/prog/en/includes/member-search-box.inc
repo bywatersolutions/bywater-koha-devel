@@ -6,25 +6,7 @@
 [% IF CAN_user_borrowers_edit_borrowers || CAN_user_borrowers_list_borrowers %]
     [%- SET searchtype = searchtype || Koha.Preference('DefaultPatronSearchMethod') -%]
     [% WRAPPER tab_panel tabname="patron_search" bt_active= bs_tab_active %]
-        <form method="get" action="/cgi-bin/koha/members/member.pl" onsubmit="return validatePatronSearch(this);">
-            <script>
-                function validatePatronSearch(form) {
-                    const searchTerm = form.searchmember.value.trim();
-                    const branchSelected = form.branchcode_filter && form.branchcode_filter.value !== "";
-                    const categorySelected = form.categorycode_filter && form.categorycode_filter.value !== "";
-
-                    if (!searchTerm && !branchSelected && !categorySelected) {
-                        $(form.searchmember)
-                            .tooltip({ trigger: "manual", placement: "bottom", title: _("Please enter a card number or name") })
-                            .tooltip("show");
-                        $(document).on("click", function () {
-                            $(form.searchmember).tooltip("hide");
-                        });
-                        return false;
-                    }
-                    return true;
-                }
-            </script>
+        <form id="patron_header_search" method="get" action="/cgi-bin/koha/members/member.pl">
             <input type="hidden" name="quicksearch" value="1" />
 
             <div class="form-title">
