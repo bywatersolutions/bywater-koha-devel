@@ -1,5 +1,5 @@
 /* global shortcut delBasket AUDIO_ALERT_PATH Cookies */
-/* exported addBibToContext delBibToContext escape_str escape_price openWindow _ removeFocus toUC confirmDelete confirmClone playSound */
+/* exported addBibToContext delBibToContext escape_str escape_price openWindow _ removeFocus toUC confirmDelete confirmClone playSound validatePatronSearch */
 if (KOHA === undefined) var KOHA = {};
 
 function _(s) {
@@ -476,6 +476,11 @@ $(document).ready(function () {
     $(".collapsed,.expanded").on("click", function (e) {
         e.preventDefault();
         togglePanel($(this));
+    });
+
+    $("#patron_header_search").on("submit", function (e) {
+        e.preventDefault();
+        validatePatronSearch($(this)[0]);
     });
 });
 
@@ -1065,4 +1070,27 @@ function getScrollto(target, elemid) {
         elem_height = 0;
     }
     return yoffset.top - elem_height - 20;
+}
+
+function validatePatronSearch(form) {
+    const searchTerm = form.searchmember.value.trim();
+    const branchSelected =
+        form.branchcode_filter && form.branchcode_filter.value !== "";
+    const categorySelected =
+        form.categorycode_filter && form.categorycode_filter.value !== "";
+
+    if (!searchTerm && !branchSelected && !categorySelected) {
+        $(form.searchmember)
+            .tooltip({
+                trigger: "manual",
+                placement: "bottom",
+                title: __("Please enter a card number or name"),
+            })
+            .tooltip("show");
+        $(document).on("click", function () {
+            $(form.searchmember).tooltip("hide");
+        });
+        return false;
+    }
+    return true;
 }
