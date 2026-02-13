@@ -17,7 +17,7 @@
 use Modern::Perl;
 use File::Basename;
 use Test::MockModule;
-use Test::More tests => 6;
+use Test::More tests => 9;
 use Test::NoWarnings;
 use Test::Warn;
 
@@ -35,12 +35,15 @@ BEGIN {
     t::lib::Mocks::mock_config( 'pluginsdir', $path );
 
     use_ok('Koha::Plugins::Loader');
+    use_ok('Koha::Plugins');
+    use_ok('Koha::Plugins::Handler');
+    use_ok('Koha::Plugin::Test');
 }
 
 my $schema = Koha::Database->new->schema;
 
 subtest 'get_enabled_plugins - basic functionality' => sub {
-    plan tests => 4;
+    plan tests => 8;
 
     $schema->storage->txn_begin;
 
@@ -50,13 +53,41 @@ subtest 'get_enabled_plugins - basic functionality' => sub {
     # Remove any existing plugins
     Koha::Plugins::Datas->delete;
 
+    my $cache_key = 'enabled_plugins';
+
     # Test with no enabled plugins
     my @plugins = Koha::Plugins::Loader->get_enabled_plugins();
     is( scalar @plugins, 0, 'Returns empty list when no plugins are enabled' );
 
     # Test caching behavior
-    my @plugins_cached = Koha::Plugins::Loader->get_enabled_plugins();
-    is( scalar @plugins_cached, 0, 'Cached empty result works correctly' );
+    my $cached = Koha::Cache::Memory::Lite->get_from_cache($cache_key);
+    is( $cached, undef, "Nothing cached when no plugins" );
+
+    my $mock_plugins = Test::MockModule->new("Koha::Plugins");
+    $mock_plugins->mock( 'can_load', sub { return 0; } );
+
+    # Test with invalid plugin class that can't be loaded by adding directly to DB
+    Koha::Plugins::Data->new(
+        {
+            plugin_class => 'Koha::Plugin::Test',
+            plugin_key   => '__ENABLED__',
+            plugin_value => 1,
+        }
+    )->store;
+    my $mock_test_plugin = Test::MockModule->new("Koha::Plugin::Test");
+    $mock_test_plugin->mock( 'new', sub { return "Test"; } );
+
+    @plugins = Koha::Plugins::Loader->get_enabled_plugins();
+    is( scalar @plugins, 0, 'Returns empty list when no plugins are loaded' );
+    $cached = Koha::Cache::Memory::Lite->get_from_cache($cache_key);
+    is( $cached, undef, "Nothing cached when no plugins can be loaded" );
+
+    $mock_plugins->mock( "can_load", sub { return 1; } );
+
+    @plugins = Koha::Plugins::Loader->get_enabled_plugins();
+    is( scalar @plugins, 1, 'Returns the plugin when loaded' );
+    $cached = Koha::Cache::Memory::Lite->get_from_cache($cache_key);
+    is( @{$cached}[0], $plugins[0], "Plugin successfully loaded and cached" );
 
     # The core functionality of loading plugins is tested indirectly through
     # the Koha::Plugins tests which use the Loader
