@@ -60,11 +60,13 @@ if plugins are not available or none are enabled.
 =cut
 
 sub get_enabled_plugins {
-    my ($class) = @_;
+    my ( $class, $params ) = @_;
 
     my $cache_key = 'enabled_plugins';
     my $cached    = Koha::Cache::Memory::Lite->get_from_cache($cache_key);
     return @$cached if $cached;
+
+    my $verbose = $params->{verbose} // 0;
 
     # Check if plugin_data table exists (using DBH for early init safety)
     my $dbh = eval { Koha::Database->dbh };
@@ -101,12 +103,14 @@ sub get_enabled_plugins {
         if ( eval { Koha::Plugins->can('can_load') } ) {
 
             # Use Koha::Plugins::can_load if it exists (might be mocked in tests)
-            $can_load_result = eval { Koha::Plugins::can_load( modules => { $plugin_class => undef }, nocache => 1 ) };
+            $can_load_result = eval {
+                Koha::Plugins::can_load( modules => { $plugin_class => undef }, verbose => $verbose, nocache => 1 );
+            };
         }
         if ( !defined $can_load_result ) {
 
             # Fall back to Module::Load::Conditional
-            $can_load_result = can_load( modules => { $plugin_class => undef }, nocache => 1 );
+            $can_load_result = can_load( modules => { $plugin_class => undef }, verbose => $verbose, nocache => 1 );
         }
 
         next unless $can_load_result;
