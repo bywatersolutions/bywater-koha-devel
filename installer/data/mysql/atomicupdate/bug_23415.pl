@@ -49,5 +49,16 @@ return {
         );
 
         say $out "Added new system preference 'FineNoRenewalsBlockSelfCheckRenew'";
+
+        # Fix typo in notice templates: oweing -> owing
+        $dbh->do(
+            q{
+            UPDATE letter
+            SET content = REPLACE(content, 'auto_too_much_oweing', 'auto_too_much_owing')
+            WHERE content LIKE '%auto_too_much_oweing%'
+        }
+        );
+
+        say $out "Fixed typo in notice templates: 'oweing' -> 'owing'";
     },
 };

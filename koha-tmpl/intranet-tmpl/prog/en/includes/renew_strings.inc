@@ -15,7 +15,7 @@
     <span>Scheduled for automatic renewal and cannot be renewed because the patron's account has expired</span>
 [% CASE 'auto_renew' %]
     <span>Scheduled for automatic renewal</span>
-[% CASE 'auto_too_much_oweing' %]
+[% CASE 'auto_too_much_owing' %]
     <span>Scheduled for automatic renewal and cannot be renewed because the patron has too many outstanding charges</span>
 [% CASE 'on_reserve' %]
     <span>On hold for another patron</span>
