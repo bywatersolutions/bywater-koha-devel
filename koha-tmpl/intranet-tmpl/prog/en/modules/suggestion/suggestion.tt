@@ -1122,11 +1122,11 @@
                                                 </li>
                                                 <li>
                                                     <label for="suggesteddate_from">Suggested date from:</label>
-                                                    <input type="text" id="suggesteddate_from" size="10" name="suggesteddate_from" value="[% suggestion.suggesteddate_from | html %]" data-date_to="suggesteddate_to" class="flatpickr" />
+                                                    <input type="text" id="suggesteddate_from" size="10" name="suggesteddate_from" value="[% suggesteddate_from | html %]" data-date_to="suggesteddate_to" class="flatpickr" />
                                                 </li>
                                                 <li>
                                                     <label for="suggesteddate_to">To:</label>
-                                                    <input type="text" id="suggesteddate_to" size="10" name="suggesteddate_to" value="[% suggestion.suggesteddate_to | html %]" class="flatpickr" />
+                                                    <input type="text" id="suggesteddate_to" size="10" name="suggesteddate_to" value="[% suggesteddate_to | html %]" class="flatpickr" />
                                                 </li>
                                                 <li>
                                                     <label for="managedby"> Managed by:</label>
