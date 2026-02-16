@@ -101,7 +101,7 @@ my $reasonsloop = GetAuthorisedValues("SUGGEST");
 
 my $suggestion_ref = { $input->Vars };
 my $stored_suggestion;
-unless ( $op eq "cud-update_status" ) {
+if ( $op eq "edit_form" ) {
     $stored_suggestion = Koha::Suggestions->find( $input->param('suggestionid') ) if $input->param('suggestionid');
 }
 
