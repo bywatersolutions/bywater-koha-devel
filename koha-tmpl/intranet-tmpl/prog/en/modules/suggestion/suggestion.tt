@@ -1064,8 +1064,8 @@
                                         <fieldset class="collapse suggestion_information">
                                             <ol>
                                                 <li>
-                                                    <label for="STATUS-[% suggestion.suggestiontype | html %]"> Status:</label>
-                                                    <select name="STATUS" id="STATUS-[% suggestion.suggestiontype | html %]">
+                                                    <label for="STATUS"> Status:</label>
+                                                    <select name="STATUS" id="STATUS">
                                                         <option value="">Any</option>
                                                         [% IF (statusselected_ASKED ) %]
                                                             <option value="ASKED" selected="selected">Pending</option>
