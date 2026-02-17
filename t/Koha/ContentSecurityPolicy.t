@@ -117,22 +117,13 @@ subtest 'header_name tests' => sub {
 };
 
 subtest 'header_value tests' => sub {
-    plan tests => 6;
+    plan tests => 3;
 
     t::lib::Mocks::mock_config( $conf_csp_section, {} );
     C4::Context->interface('opac');
 
     my $csp = Koha::ContentSecurityPolicy->new;
 
-    throws_ok { $csp->header_value } 'Koha::Exceptions::Config::MissingEntry',
-        'Exception thrown when missing csp_header_value';
-
-    t::lib::Mocks::mock_config( $conf_csp_section, { opac => {} } );
-    throws_ok { $csp->header_value } 'Koha::Exceptions::Config::MissingEntry',
-        'Exception thrown when missing csp_header_value';
-
-    t::lib::Mocks::mock_config( $conf_csp_section, { opac => { csp_header_value => '' } } );
-    is( $csp->header_value, '', 'Even an empty csp_header_value is retrieved form koha-conf.xml' );
     t::lib::Mocks::mock_config( $conf_csp_section, { opac => { csp_header_value => 'some value' } } );
     is( $csp->header_value, 'some value', 'csp_header_value is retrieved from koha-conf.xml' );
 

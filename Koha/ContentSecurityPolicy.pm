@@ -88,11 +88,10 @@ sub header_name {
 
     my $conf_csp = $self->{config}->get('content_security_policy');
 
-    Koha::Exceptions::Config::MissingEntry->throw( error => 'Missing request content_security_policy csp_header_value' )
-        unless exists $conf_csp->{$interface}->{csp_mode};
-
-    return 'Content-Security-Policy-Report-Only' if $conf_csp->{$interface}->{csp_mode} eq 'report-only';
-    return 'Content-Security-Policy'             if $conf_csp->{$interface}->{csp_mode} eq 'enabled';
+    if ( $conf_csp && $conf_csp->{$interface} && $conf_csp->{$interface}->{csp_mode} ) {
+        return 'Content-Security-Policy-Report-Only' if $conf_csp->{$interface}->{csp_mode} eq 'report-only';
+        return 'Content-Security-Policy'             if $conf_csp->{$interface}->{csp_mode} eq 'enabled';
+    }
 
     Koha::Exceptions::Config::MissingEntry->throw(
         error => 'Content Security Policy is disabled. Header name should only be retrieved when CSP is enabled.' );
@@ -112,8 +111,6 @@ sub header_name {
 
     Returns content_security_policy.[opac|staff].csp_header_value
 
-    Throws Koha::Exceptions::Config::MissingEntry is CSP property "csp_header_value" is missing in KOHA_CONF
-
 =cut
 
 sub header_value {
@@ -121,15 +118,29 @@ sub header_value {
 
     my $interface = $args->{interface} || C4::Context->interface;
 
+    my @default_policy_lines = (
+        q#default-src 'self'#,
+        q# script-src 'self' 'nonce-_CSP_NONCE_'#,
+        q# style-src 'self' 'nonce-_CSP_NONCE_'#,
+        q# style-src-attr 'unsafe-inline'#,
+        q# img-src 'self' data:#,
+        q# font-src 'self'#,
+        q# object-src 'none'#,
+    );
+    my $default_policy = join( ';', @default_policy_lines );
+
     my $conf_csp = $self->{config}->get('content_security_policy');
 
-    Koha::Exceptions::Config::MissingEntry->throw( error => 'Missing request content_security_policy csp_header_value' )
-        unless exists $conf_csp->{$interface}->{csp_header_value};
+    my $user_policy = $conf_csp->{$interface}->{csp_header_value};
 
-    my $csp_header_value = $conf_csp->{$interface}->{csp_header_value};
+    my $csp_policy = ($user_policy) ? $user_policy : $default_policy;
+
+    my $csp_header_value = $csp_policy;
     my $csp_nonce        = $self->get_nonce;
 
-    $csp_header_value =~ s/_CSP_NONCE_/$csp_nonce/g;
+    if ($csp_nonce) {
+        $csp_header_value =~ s/_CSP_NONCE_/$csp_nonce/g;
+    }
 
     return $csp_header_value;
 }

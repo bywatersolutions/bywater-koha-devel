@@ -514,21 +514,39 @@ __END_SRU_PUBLICSERVER__
    csp_header_value: The CSP policy directives. Special placeholders:
      - _CSP_NONCE_: Replaced with a unique nonce for each request
 
-   Recommended workflow:
-     1. Start with report-only mode to identify violations
-     2. Review logs and fix any legitimate violations
-     3. Switch to enabled mode once violations are resolved
+   NOTE: Koha comes with a hard-coded csp_header_value. You only need to define your own
+   csp_header_value if you want or need a different Content-Security-Policy value.
 
-   To enable violation reporting, add report-to to your policy pointing to csp-violations.
+   To enable violation reporting, create your own csp_header_value including
+    'report-to' pointing to csp-violations and add 'report-uri'.
+
+   NOTE: You must be using HTTPS to receive violation reports.
+
    Example with reporting:
-     <csp_header_value>default-src 'self'; script-src 'self' 'nonce-_CSP_NONCE_'; style-src 'self' 'nonce-_CSP_NONCE_'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; report-uri /api/v1/public/csp-reports; report-to csp-violations</csp_header_value>
+   <content_security_policy>
+      <opac>
+        <csp_mode>report-only</csp_mode>
+        <csp_header_value>default-src 'self'; script-src 'self' 'nonce-_CSP_NONCE_'; style-src 'self' 'nonce-_CSP_NONCE_'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; report-uri /api/v1/public/csp-reports; report-to csp-violations</csp_header_value>
+      </opac>
+      <intranet>
+        <csp_mode>report-only</csp_mode>
+        <csp_header_value>default-src 'self'; script-src 'self' 'nonce-_CSP_NONCE_'; style-src 'self' 'nonce-_CSP_NONCE_'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; report-uri /api/v1/public/csp-reports; report-to csp-violations</csp_header_value>
+      </intranet>
+    </content_security_policy>
 
    Reports are logged via Koha's logging system. Configure log4perl to capture them:
-     log4perl.logger.api.csp = WARN, CSP
-     log4perl.appender.CSP = Log::Log4perl::Appender::File
-     log4perl.appender.CSP.filename = /var/log/koha/__KOHASITE__/csp-violations.log
-     log4perl.appender.CSP.layout = PatternLayout
-     log4perl.appender.CSP.layout.ConversionPattern = [%d] %m%n
+    log4perl.logger.plack-csp = WARN, PLACKCSP
+    log4perl.appender.PLACKCSP=Log::Log4perl::Appender::File
+    log4perl.appender.PLACKCSP.filename=/var/log/koha/<kohasite>/plack-csp-violations.log
+    log4perl.appender.PLACKCSP.mode=append
+    log4perl.appender.PLACKCSP.layout=PatternLayout
+    log4perl.appender.PLACKCSP.layout.ConversionPattern=[%d] %m%n
+    log4perl.appender.PLACKCSP.utf8=1
+
+   Recommended workflow:
+     1. Start with report-only mode to identify violations
+     2. Review logs and fix any legitimate violations (by fixing the code or by modifying your csp_header_value)
+     3. Switch to enabled mode once violations are resolved
  -->
  <content_security_policy>
    <opac>
