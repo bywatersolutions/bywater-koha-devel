@@ -172,7 +172,12 @@ It should be cached by Koha::Middleware::ContentSecurityPolicy.
 =cut
 
 sub CSPNonce {
-    return Koha::ContentSecurityPolicy->new->get_nonce;
+    my $csp = Koha::ContentSecurityPolicy->new();
+    my $nonce;
+    if ( $csp->is_enabled ) {
+        $nonce = $csp->get_nonce;
+    }
+    return $nonce;
 }
 
 1;
