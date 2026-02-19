@@ -26,7 +26,6 @@ BEGIN {
         ConnectSuggestionAndBiblio
         DelSuggestion
         GetSuggestion
-        GetSuggestionByStatus
         ModStatus
         ModSuggestion
         DelSuggestionsOlderThan
@@ -69,65 +68,6 @@ All aqorders of a borrower can be seen by the borrower itself.
 Suggestions done by other borrowers can be seen when not "AVAILABLE"
 
 =head1 FUNCTIONS
-
-=head2 GetSuggestionByStatus
-
-$aqorders = &GetSuggestionByStatus($status,[$branchcode])
-
-Get a suggestion from it's status
-
-return :
-all the suggestion with C<$status>
-
-=cut
-
-sub GetSuggestionByStatus {
-    my $status     = shift;
-    my $branchcode = shift;
-    my $dbh        = C4::Context->dbh;
-    my @sql_params = ($status);
-    my $query      = q{
-        SELECT suggestions.*,
-            U1.surname          AS surnamesuggestedby,
-            U1.firstname        AS firstnamesuggestedby,
-            U1.branchcode       AS branchcodesuggestedby,
-            B1.branchname       AS branchnamesuggestedby,
-            U1.borrowernumber   AS borrnumsuggestedby,
-            U1.categorycode     AS categorycodesuggestedby,
-            C1.description      AS categorydescriptionsuggestedby,
-            U2.surname          AS surnamemanagedby,
-            U2.firstname        AS firstnamemanagedby,
-            U2.borrowernumber   AS borrnummanagedby
-        FROM suggestions
-            LEFT JOIN borrowers     AS U1 ON suggestedby=U1.borrowernumber
-            LEFT JOIN borrowers     AS U2 ON managedby=U2.borrowernumber
-            LEFT JOIN categories    AS C1 ON C1.categorycode=U1.categorycode
-            LEFT JOIN branches      AS B1 on B1.branchcode=U1.branchcode
-        WHERE status = ?
-        ORDER BY suggestionid
-    };
-
-    # filter on branch
-    if ( C4::Context->preference("IndependentBranches") || $branchcode ) {
-        my $userenv = C4::Context->userenv;
-        if ($userenv) {
-            unless ( C4::Context->IsSuperLibrarian() ) {
-                push @sql_params, $userenv->{branch};
-                $query .= q{ AND (U1.branchcode = ? OR U1.branchcode ='') };
-            }
-        }
-        if ($branchcode) {
-            push @sql_params, $branchcode;
-            $query .= q{ AND (U1.branchcode = ? OR U1.branchcode ='') };
-        }
-    }
-
-    my $sth = $dbh->prepare($query);
-    $sth->execute(@sql_params);
-    my $results;
-    $results = $sth->fetchall_arrayref( {} );
-    return $results;
-}
 
 =head2 ModSuggestion
 

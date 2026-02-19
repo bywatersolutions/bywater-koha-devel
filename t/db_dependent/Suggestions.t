@@ -19,7 +19,7 @@ use Modern::Perl;
 
 use DateTime::Duration;
 use Test::NoWarnings;
-use Test::More tests => 69;
+use Test::More tests => 53;
 use Test::Warn;
 
 use t::lib::Mocks;
@@ -38,7 +38,7 @@ use Koha::Suggestions;
 BEGIN {
     use_ok(
         'C4::Suggestions',
-        qw( ModSuggestion GetSuggestionByStatus ConnectSuggestionAndBiblio DelSuggestion MarcRecordFromNewSuggestion GetUnprocessedSuggestions DelSuggestionsOlderThan )
+        qw( ModSuggestion ConnectSuggestionAndBiblio DelSuggestion MarcRecordFromNewSuggestion GetUnprocessedSuggestions DelSuggestionsOlderThan )
     );
 }
 
@@ -310,47 +310,6 @@ $messages = C4::Letters::GetQueuedMessages( { borrowernumber => $borrowernumber2
 
 is( scalar(@$messages), 1, 'No new letter should have been generated if the update raised an error' );
 
-my $suggestions = GetSuggestionByStatus();
-is( @$suggestions, 0, 'GetSuggestionByStatus without the status returns an empty array' );
-$suggestions = GetSuggestionByStatus('CHECKED');
-is( @$suggestions,                     2, 'GetSuggestionByStatus returns the correct number of suggestions' );
-is( $suggestions->[0]->{suggestionid}, $my_suggestionid, 'GetSuggestionByStatus returns the suggestion id correctly' );
-is( $suggestions->[0]->{title},  $mod_suggestion1->{title},  'GetSuggestionByStatus returns the title correctly' );
-is( $suggestions->[0]->{author}, $mod_suggestion1->{author}, 'GetSuggestionByStatus returns the author correctly' );
-is(
-    $suggestions->[0]->{publishercode}, $mod_suggestion1->{publishercode},
-    'GetSuggestionByStatus returns the publisher code correctly'
-);
-is(
-    $suggestions->[0]->{suggestedby}, $my_suggestion->{suggestedby},
-    'GetSuggestionByStatus returns the borrower number correctly'
-);
-is(
-    $suggestions->[0]->{biblionumber}, $my_suggestion->{biblionumber},
-    'GetSuggestionByStatus returns the biblio number correctly'
-);
-is( $suggestions->[0]->{STATUS}, $mod_suggestion3->{STATUS}, 'GetSuggestionByStatus returns the status correctly' );
-is(
-    $suggestions->[0]->{surnamesuggestedby}, $member->{surname},
-    'GetSuggestionByStatus returns the surname correctly'
-);
-is(
-    $suggestions->[0]->{firstnamesuggestedby}, $member->{firstname},
-    'GetSuggestionByStatus returns the firstname correctly'
-);
-is(
-    $suggestions->[0]->{branchcodesuggestedby}, $member->{branchcode},
-    'GetSuggestionByStatus returns the branch code correctly'
-);
-is(
-    $suggestions->[0]->{borrnumsuggestedby}, $my_suggestion->{suggestedby},
-    'GetSuggestionByStatus returns the borrower number correctly'
-);
-is(
-    $suggestions->[0]->{categorycodesuggestedby}, $member->{categorycode},
-    'GetSuggestionByStatus returns the category code correctly'
-);
-
 is( ConnectSuggestionAndBiblio(), '0E0', 'ConnectSuggestionAndBiblio without arguments returns 0E0' );
 my $biblio_2                      = $builder->build_object( { class => 'Koha::Biblios' } );
 my $connect_suggestion_and_biblio = ConnectSuggestionAndBiblio( $my_suggestionid, $biblio_2->biblionumber );
@@ -377,10 +336,6 @@ is(
 );
 $suggestion = DelSuggestion( $borrowernumber, $my_suggestionid );
 is( $suggestion, 1, 'DelSuggestion deletes one suggestion' );
-
-$suggestions = GetSuggestionByStatus('CHECKED');
-is( @$suggestions,              2,                        'DelSuggestion deletes one suggestion' );
-is( $suggestions->[1]->{title}, $del_suggestion->{title}, 'DelSuggestion deletes the correct suggestion' );
 
 # Test budgetid fk
 $my_suggestion->{budgetid} = '';    # If budgetid == '', NULL should be set in DB
