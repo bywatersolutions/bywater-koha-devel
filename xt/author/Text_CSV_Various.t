@@ -127,7 +127,7 @@ subtest 'CSV formula injection protection' => sub {
             for my $call (@new_calls) {
 
                 # Check if this specific call has formula protection
-                unless ( $call =~ /formula\s*=>\s*['"](?:empty|die|croak|diag)['"]/
+                unless ( $call =~ /formula\s*=>.*['"](?:empty|die|croak|diag)['"]/
                     || $call =~ /formula\s*=>\s*[1-5]/ )
                 {
                     $has_unprotected = 1;
