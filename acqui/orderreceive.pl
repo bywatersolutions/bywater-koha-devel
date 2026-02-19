@@ -66,8 +66,7 @@ use C4::Auth        qw( get_template_and_user );
 use C4::Output      qw( output_html_with_http_headers );
 use C4::Budgets     qw( GetBudget GetBudgetPeriods GetBudgetPeriod GetBudgetHierarchy CanUserUseBudget );
 use C4::Members;
-use C4::Biblio      qw( GetMarcStructure );
-use C4::Suggestions qw( GetSuggestionInfo );
+use C4::Biblio qw( GetMarcStructure );
 
 use Koha::Acquisition::Booksellers;
 use Koha::Acquisition::Currencies;
@@ -131,12 +130,6 @@ if ($order) {
             $order_vendornote   = $parent_order->order_vendornote;
         }
         $template->param( orders => $orders, );
-    }
-
-    my $suggestion = GetSuggestionInfoFromBiblionumber( $order->biblionumber );
-
-    if ($suggestion) {
-        $template->param( suggestion => $suggestion );
     }
 
     $template->param(

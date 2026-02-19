@@ -27,7 +27,6 @@ BEGIN {
         DelSuggestion
         GetSuggestion
         GetSuggestionByStatus
-        GetSuggestionInfo
         ModStatus
         ModSuggestion
         DelSuggestionsOlderThan
@@ -70,33 +69,6 @@ All aqorders of a borrower can be seen by the borrower itself.
 Suggestions done by other borrowers can be seen when not "AVAILABLE"
 
 =head1 FUNCTIONS
-
-=head2 GetSuggestionInfo
-
-Get a suggestion and borrower's information from it's suggestionid
-
-return :
-all information (suggestion and borrower) of the suggestion which is related to the suggestionid given.
-
-=cut
-
-sub GetSuggestionInfo {
-    my ($suggestionid) = @_;
-    my $query = q{
-        SELECT suggestions.*,
-            U1.surname          AS surnamesuggestedby,
-            U1.firstname        AS firstnamesuggestedby,
-            U1.borrowernumber   AS borrnumsuggestedby
-        FROM suggestions
-            LEFT JOIN borrowers AS U1 ON suggestedby=U1.borrowernumber
-        WHERE suggestionid=?
-        LIMIT 1
-    };
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare($query);
-    $sth->execute($suggestionid);
-    return $sth->fetchrow_hashref;
-}
 
 =head2 GetSuggestionByStatus
 

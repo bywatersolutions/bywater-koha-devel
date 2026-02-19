@@ -19,7 +19,7 @@ use Modern::Perl;
 
 use DateTime::Duration;
 use Test::NoWarnings;
-use Test::More tests => 80;
+use Test::More tests => 69;
 use Test::Warn;
 
 use t::lib::Mocks;
@@ -38,7 +38,7 @@ use Koha::Suggestions;
 BEGIN {
     use_ok(
         'C4::Suggestions',
-        qw( ModSuggestion GetSuggestionInfo GetSuggestionByStatus ConnectSuggestionAndBiblio DelSuggestion MarcRecordFromNewSuggestion GetUnprocessedSuggestions DelSuggestionsOlderThan )
+        qw( ModSuggestion GetSuggestionByStatus ConnectSuggestionAndBiblio DelSuggestion MarcRecordFromNewSuggestion GetUnprocessedSuggestions DelSuggestionsOlderThan )
     );
 }
 
@@ -309,31 +309,6 @@ warning_like(
 $messages = C4::Letters::GetQueuedMessages( { borrowernumber => $borrowernumber2 } );
 
 is( scalar(@$messages), 1, 'No new letter should have been generated if the update raised an error' );
-
-is( GetSuggestionInfo(), undef, 'GetSuggestionInfo without the suggestion id returns undef' );
-$suggestion = GetSuggestionInfo($my_suggestionid);
-is( $suggestion->{suggestionid}, $my_suggestionid,           'GetSuggestionInfo returns the suggestion id correctly' );
-is( $suggestion->{title},        $mod_suggestion1->{title},  'GetSuggestionInfo returns the title correctly' );
-is( $suggestion->{author},       $mod_suggestion1->{author}, 'GetSuggestionInfo returns the author correctly' );
-is(
-    $suggestion->{publishercode}, $mod_suggestion1->{publishercode},
-    'GetSuggestionInfo returns the publisher code correctly'
-);
-is(
-    $suggestion->{suggestedby}, $my_suggestion->{suggestedby},
-    'GetSuggestionInfo returns the borrower number correctly'
-);
-is(
-    $suggestion->{biblionumber}, $my_suggestion->{biblionumber},
-    'GetSuggestionInfo returns the biblio number correctly'
-);
-is( $suggestion->{STATUS},             $mod_suggestion3->{STATUS}, 'GetSuggestionInfo returns the status correctly' );
-is( $suggestion->{surnamesuggestedby}, $member->{surname},         'GetSuggestionInfo returns the surname correctly' );
-is( $suggestion->{firstnamesuggestedby}, $member->{firstname}, 'GetSuggestionInfo returns the firstname correctly' );
-is(
-    $suggestion->{borrnumsuggestedby}, $my_suggestion->{suggestedby},
-    'GetSuggestionInfo returns the borrower number correctly'
-);
 
 my $suggestions = GetSuggestionByStatus();
 is( @$suggestions, 0, 'GetSuggestionByStatus without the status returns an empty array' );

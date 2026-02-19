@@ -72,7 +72,6 @@ use C4::Budgets qw( GetBudget GetBudgetHierarchy CanUserUseBudget );
 
 use C4::Acquisition qw( GetOrder GetBasket FillWithDefaultValues GetOrderUsers );
 use C4::Contract    qw( GetContract );
-use C4::Suggestions qw( GetSuggestionInfo );
 use C4::Biblio      qw(
     AddBiblio
     GetBiblioData
@@ -323,7 +322,7 @@ if ( not $ordernumber or $biblionumber ) {
 $template->param( catalog_details => \@catalog_details, );
 
 my $suggestion;
-$suggestion = GetSuggestionInfo($suggestionid) if $suggestionid;
+$suggestion = Koha::Suggestions->find( { suggestionid => $suggestionid } ) if $suggestionid;
 
 my $active_currency = Koha::Acquisition::Currencies->get_active;
 
@@ -461,9 +460,9 @@ $template->param(
     closedate            => $basket->{'closedate'},
 
     # order details
-    suggestionid         => $suggestion->{suggestionid},
-    surnamesuggestedby   => $suggestion->{surnamesuggestedby},
-    firstnamesuggestedby => $suggestion->{firstnamesuggestedby},
+    suggestionid         => $suggestion->suggestionid,
+    surnamesuggestedby   => $suggestion->surname,
+    firstnamesuggestedby => $suggestion->firstname,
     biblionumber         => $biblionumber,
     uncertainprice       => $data->{'uncertainprice'},
     discount_2dp         => sprintf( "%.2f", $bookseller->discount ),      # for display
