@@ -19,8 +19,10 @@
 
 use Modern::Perl;
 
+use Test::NoWarnings;
+
 use Test::MockModule;
-use Test::More tests => 2;
+use Test::More tests => 3;
 
 use t::lib::Mocks::Logger;
 use t::lib::TestBuilder;
