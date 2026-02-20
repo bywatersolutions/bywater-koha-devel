@@ -306,10 +306,14 @@ sub _get_usage {
 }
 
 =head2 _choose_records
-    this function takes input of candidate record ids to merging
-    and returns
-        first the record to merge to
-        and list of records to merge from
+
+    @record_ids = _choose_records(@record_ids);
+
+    This function sorts the list of record ids, based on the passed
+    methods (see script options).
+    By default, it sorts on usage count.
+    It is used in the main loop to decide which record to keep.
+
 =cut
 
 sub _choose_records {
