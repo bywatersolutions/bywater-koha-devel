@@ -1,5 +1,6 @@
 #!/usr/bin/perl
-# Import an iso2709 file into Koha 3
+
+# Import an iso2709 file into Koha
 
 use Modern::Perl;
 
