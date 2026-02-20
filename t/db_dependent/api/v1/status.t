@@ -50,8 +50,13 @@ subtest 'version() tests' => sub {
     $librarian->set_password( { password => $password, skip_validation => 1 } );
     my $userid = $librarian->userid;
 
-    $t->get_ok("//$userid:$password@/api/v1/status/version")->status_is(200)->json_is( '/version' => Koha::version() )
-        ->json_has('/major')->json_has('/minor')->json_has('/release')->json_has('/maintenance')
+    $t->get_ok("//$userid:$password@/api/v1/status/version")
+        ->status_is(200)
+        ->json_is( '/version' => Koha::version() )
+        ->json_has('/major')
+        ->json_has('/minor')
+        ->json_has('/release')
+        ->json_has('/maintenance')
         ->json_like( '/version' => qr/^\d+\.\d+\.\d+\.\d+$/ );
 
     $schema->storage->txn_rollback;
