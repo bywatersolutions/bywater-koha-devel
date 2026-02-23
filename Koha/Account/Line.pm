@@ -30,6 +30,7 @@ use Koha::Exceptions::Account;
 use Koha::Patron::Debarments;
 use Koha::Notice::Templates;
 use C4::Letters;
+use C4::Scrubber;
 
 use base qw(Koha::Object Koha::Object::Mixin::AdditionalFields);
 
@@ -1151,7 +1152,8 @@ sub store {
                 );
 
                 if ( $letter && $letter->{content} ) {
-                    $self->description( $letter->{content} );
+                    my $scrubber = C4::Scrubber->new('note');
+                    $self->description( $scrubber->scrub( $letter->{content} ) );
                 }
             }
         }
