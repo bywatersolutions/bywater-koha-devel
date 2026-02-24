@@ -926,25 +926,6 @@ export default {
             },
         ];
 
-        const additionalToolbarButtons = (resource, componentData) => {
-            const buttons = {
-                form: [
-                    {
-                        title: $__("Submit"),
-                        form: componentData.resourceForm,
-                    },
-                    {
-                        to: {
-                            name: "SIP2AccountsList",
-                        },
-                        title: $__("Cancel"),
-                        cssClass: "btn btn-link",
-                    },
-                ],
-            };
-            return buttons;
-        };
-
         const baseResource = useBaseResource({
             resourceName: "account",
             nameAttr: "login_id",
@@ -971,7 +952,6 @@ export default {
                     APIClient.sip2.httpClient._baseURL + "accounts",
                 options: { embed: "institution" },
             },
-            additionalToolbarButtons,
             stickyToolbar: ["Form"],
             embedded: props.embedded,
             formGroupsDisplayMode: "accordion",
