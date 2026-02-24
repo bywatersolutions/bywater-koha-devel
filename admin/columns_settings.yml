@@ -2711,6 +2711,8 @@ modules:
               columnname: suspended_until
             -
               columnname: notes
+            -
+              columnname: result
     logviewer:
       logst:
         default_display_length: 20
