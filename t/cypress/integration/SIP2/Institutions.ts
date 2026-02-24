@@ -57,7 +57,7 @@ describe("Institutions", () => {
         cy.left_menu_active_item_is("Institutions");
 
         // Fill in the form for normal attributes
-        cy.get("#institutions_add").contains("Submit").click();
+        cy.get("#institutions_add").contains("Save").click();
         cy.get("input:invalid,textarea:invalid,select:invalid").should(
             "have.length",
             1
@@ -83,7 +83,7 @@ describe("Institutions", () => {
         cy.intercept("POST", "/api/v1/sip2/institutions", {
             statusCode: 500,
         });
-        cy.get("#institutions_add").contains("Submit").click();
+        cy.get("#institutions_add").contains("Save").click();
 
         cy.get("main div[class='alert alert-warning']").contains(
             "Something went wrong: Error: Internal Server Error"
@@ -94,7 +94,7 @@ describe("Institutions", () => {
             statusCode: 201,
             body: institution,
         });
-        cy.get("#institutions_add").contains("Submit").click();
+        cy.get("#institutions_add").contains("Save").click();
         cy.get("main div[class='alert alert-info']").contains(
             "Institution created"
         );
@@ -152,7 +152,7 @@ describe("Institutions", () => {
                 delay: 1000,
             });
         });
-        cy.get("#institutions_add").contains("Submit").click();
+        cy.get("#institutions_add").contains("Save").click();
 
         cy.get("main div[class='modal_centered']").contains("Submitting...");
         cy.wait(1000);
@@ -165,7 +165,7 @@ describe("Institutions", () => {
             statusCode: 200,
             body: institution,
         });
-        cy.get("#institutions_add").contains("Submit").click();
+        cy.get("#institutions_add").contains("Save").click();
         cy.get("main div[class='alert alert-info']").contains(
             "Institution updated"
         );
