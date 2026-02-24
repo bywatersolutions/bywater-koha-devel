@@ -29,6 +29,8 @@ use Koha::Cache::Memory::Lite;
 use Koha::Database;
 use Koha::Template::Plugin::Koha;
 
+use t::lib::Mocks;
+
 my $schema = Koha::Database->new->schema;
 
 my $session_id  = 42;
@@ -81,7 +83,7 @@ subtest 'GenerateCSRF - New CSRF token generated every time we need one' => sub 
 };
 
 subtest 'CSPNonce' => sub {
-    plan tests => 1;
+    plan tests => 3;
 
     $schema->storage->txn_begin;
 
@@ -90,12 +92,25 @@ subtest 'CSPNonce' => sub {
 
     my $plugin = Koha::Template::Plugin::Koha->new($context);
 
-    my $csp   = Koha::ContentSecurityPolicy->new;
+    C4::Context->interface('opac');
+    t::lib::Mocks::mock_config(
+        'content_security_policy',
+        { 'opac' => { csp_mode => 'enabled', csp_header_value => 'test' } }
+    );
+
+    my $csp = Koha::ContentSecurityPolicy->new;
+    $csp->set_nonce();
     my $nonce = $csp->get_nonce;
 
-    my $token = $plugin->CSPNonce;
-
     is( $plugin->CSPNonce, $nonce, 'the correct nonce was provided' );
+    like( $nonce, qr/^\w{22}$/, 'nonce is a random string of 22 characters' );
+
+    t::lib::Mocks::mock_config(
+        'content_security_policy',
+        { 'opac' => { csp_mode => 'disabled', csp_header_value => 'test' } }
+    );
+
+    is( $plugin->CSPNonce, undef, 'no nonce was provided because CSP is dsabled' );
 
     $schema->storage->txn_rollback;
 
