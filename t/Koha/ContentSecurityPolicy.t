@@ -117,12 +117,18 @@ subtest 'header_name tests' => sub {
 };
 
 subtest 'header_value tests' => sub {
-    plan tests => 3;
+    plan tests => 4;
 
     t::lib::Mocks::mock_config( $conf_csp_section, {} );
     C4::Context->interface('opac');
 
     my $csp = Koha::ContentSecurityPolicy->new;
+
+    t::lib::Mocks::mock_config( $conf_csp_section, { opac => { csp_header_value => '' } } );
+    like(
+        $csp->header_value, qr/^default-src 'self';.*_CSP_NONCE_/,
+        'csp_header_value is retrieved from ContentSecurityPolicy.pm'
+    );
 
     t::lib::Mocks::mock_config( $conf_csp_section, { opac => { csp_header_value => 'some value' } } );
     is( $csp->header_value, 'some value', 'csp_header_value is retrieved from koha-conf.xml' );
