@@ -33,6 +33,46 @@ Koha::Reports - Koha Report Object set class
 
 =cut
 
+=head3 running
+
+Returns a list of reports that are currently running
+
+my @query_ids = Koha::Reports->running({ [ user_id => $user->userid ] });
+
+=cut
+
+sub running {
+    my ( $self, $params ) = @_;
+
+    my $user_id   = $params->{user_id};
+    my $report_id = $params->{report_id};
+
+    my $dbh = Koha::Database->dbh;
+
+    my $query = q{
+        SELECT id, info
+         FROM information_schema.processlist
+        WHERE command != 'Sleep'
+          AND info LIKE '%saved_sql.id%'
+    };
+
+    my @ids;
+
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    while ( my $row = $sth->fetchrow_hashref ) {
+        if ($user_id) {
+            next unless $row->{info} =~ /{ user_id: $user_id }/;
+        }
+        if ($report_id) {
+            next unless $row->{info} =~ /{ saved_sql.id: $report_id }/;
+        }
+        push @ids, $row->{id};
+    }
+
+    return @ids;
+}
+
 =head3 _type
 
 Returns name of corresponding DBIC resultset
