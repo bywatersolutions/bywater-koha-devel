@@ -231,7 +231,10 @@ sub prep_report {
 
     $sql = $self->_might_add_limit($sql) if $params->{export};
 
-    $sql = "$sql /* saved_sql.id: ${\( $self->id )} */";
+    my $report_id = $self->id;
+    my $user_id   = C4::Context->userenv ? C4::Context->userenv->{number} : 0;
+    $sql .= " /* { saved_sql.id: $report_id } { user_id: $user_id } */";
+
     return $sql, $headers;
 }
 
