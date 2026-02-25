@@ -1638,7 +1638,9 @@
                         <div class="alert alert-warning">
                             <strong>The following error was encountered:</strong><br />
                             [% FOREACH error IN errors %]
-                                [% IF ( error.sqlerr ) %]
+                                [% IF ( error.duplicate_running_report_ids ) %]
+                                    This report is already running. Please wait for it to finish before running it again.
+                                [% ELSIF ( error.sqlerr ) %]
                                     This report contains the SQL keyword <strong>[% error.sqlerr | html %]</strong>.<br />
                                     Use of this keyword is not allowed in Koha reports due to security and data integrity risks. Only SELECT queries are allowed.<br />
                                     Please return to the &quot;Saved Reports&quot; screen and delete this report or retry creating a new one.

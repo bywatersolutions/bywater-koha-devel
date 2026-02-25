@@ -824,6 +824,12 @@ if ( $op eq 'run' ) {
     my $template_id     = $input->param('template');
     my $want_full_chart = $input->param('want_full_chart') || 0;
 
+    my @duplicate_running_report_ids;
+    if ( C4::Context->userenv ) {
+        my $user_id = C4::Context->userenv ? C4::Context->userenv->{number} : undef;
+        @duplicate_running_report_ids = Koha::Reports->running( { report_id => $report_id, user_id => $user_id } );
+    }
+
     # offset algorithm
     if ( $input->param('page') ) {
         $offset = ( $input->param('page') - 1 ) * $limit;
@@ -1008,6 +1014,18 @@ if ( $op eq 'run' ) {
                 'enter_params'    => 1,
                 'id'              => $report_id,
                 'template_id'     => $template_id,
+            );
+        } elsif (@duplicate_running_report_ids) {
+            $template->param(
+                'sql'          => $sql,
+                'original_sql' => $original_sql,
+                'id'           => $report_id,
+                'execute'      => 1,
+                'name'         => $name,
+                'notes'        => $notes,
+                'errors'       => [ { duplicate_running_report_ids => \@duplicate_running_report_ids } ],
+                'sql_params'   => \@sql_params,
+                'param_names'  => \@param_names,
             );
         } else {
             my ( $sql, $header_types ) = $report->prep_report( \@param_names, \@sql_params );
