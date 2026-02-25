@@ -345,6 +345,9 @@ __END_SRU_PUBLICSERVER__
  <plack_max_requests>50</plack_max_requests>
  <plack_workers>2</plack_workers>
 
+ <!-- SQL report limits, 0 means the feature is disabled -->
+ <duplicate_running_reports_per_user_limit>0</duplicate_running_reports_per_user_limit>
+
  <!-- Configuration for X-Forwarded-For -->
  <!-- Set enable_trusted_proxy_for_headers to 0 to never trust proxy headers, always use given REMOTE_ADDRESS -->
  <!--

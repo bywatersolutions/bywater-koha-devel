@@ -825,7 +825,8 @@ if ( $op eq 'run' ) {
     my $want_full_chart = $input->param('want_full_chart') || 0;
 
     my @duplicate_running_report_ids;
-    if ( C4::Context->userenv ) {
+    my $duplicate_running_reports_per_user_limit = C4::Context->config('duplicate_running_reports_per_user_limit');
+    if ( $duplicate_running_reports_per_user_limit && C4::Context->userenv ) {
         my $user_id = C4::Context->userenv ? C4::Context->userenv->{number} : undef;
         @duplicate_running_report_ids = Koha::Reports->running( { report_id => $report_id, user_id => $user_id } );
     }
@@ -1015,7 +1016,9 @@ if ( $op eq 'run' ) {
                 'id'              => $report_id,
                 'template_id'     => $template_id,
             );
-        } elsif (@duplicate_running_report_ids) {
+        } elsif ( $duplicate_running_reports_per_user_limit
+            && ( scalar @duplicate_running_report_ids >= $duplicate_running_reports_per_user_limit ) )
+        {
             $template->param(
                 'sql'          => $sql,
                 'original_sql' => $original_sql,
