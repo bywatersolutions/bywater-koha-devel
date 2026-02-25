@@ -225,9 +225,36 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("id");
 
+=head1 RELATIONS
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2022-10-03 11:30:07
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1uIZOogM1tV2M7fbpPRDwg
+=head2 z3950servers_branches
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::Z3950serversBranch>
+
+=cut
+
+__PACKAGE__->has_many(
+  "z3950servers_branches",
+  "Koha::Schema::Result::Z3950serversBranch",
+  { "foreign.server_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 branchcodes
+
+Type: many_to_many
+
+Composing rels: L</z3950servers_branches> -> branchcode
+
+=cut
+
+__PACKAGE__->many_to_many("branchcodes", "z3950servers_branches", "branchcode");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-02-25 12:31:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/DnBvnHv6+20UJTjYYacBw
 
 =head2 koha_object_class
 
