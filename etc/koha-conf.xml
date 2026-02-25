@@ -157,6 +157,9 @@
  <plack_max_requests>50</plack_max_requests>
  <plack_workers>2</plack_workers>
 
+ <!-- SQL report limits, 0 means the feature is disabled -->
+ <duplicate_running_reports_per_user_limit>0</duplicate_running_reports_per_user_limit>
+
  <!-- Configuration for X-Forwarded-For -->
  <!--
  <koha_trusted_proxies>1.2.3.4 2.3.4.5 3.4.5.6</koha_trusted_proxies>
