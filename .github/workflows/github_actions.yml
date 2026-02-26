@@ -86,62 +86,21 @@ jobs:
 
             - name: Export additional variables needed by koha-testing-docker
               run: |
-                  export LOCAL_USER_ID="$(id -u)" # Needed for koha-testing-docker
                   KOHA_BRANCH=${GITHUB_REF##*/}
                   echo "BRANCH: $KOHA_BRANCH"
-                  export SYNC_REPO=.
-                  echo "LOCAL_USER_ID=$LOCAL_USER_ID" >> $GITHUB_ENV
                   echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
-                  echo "SYNC_REPO=$SYNC_REPO" >> $GITHUB_ENV
-                  if [ "$DEBUG_SESSION" == "true" ]; then
-                      echo "RUN_TESTS_AND_EXIT=no" >> $GITHUB_ENV
-                  else
-                      echo "RUN_TESTS_AND_EXIT=yes" >> $GITHUB_ENV
-                  fi
                   echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
-
-            - name: Set up koha-testing-docker
-              run: |
-                  sudo sysctl -w vm.max_map_count=262144
-                  wget -O docker-compose.yml https://gitlab.com/koha-community/koha-testing-docker/raw/25.11/docker-compose.yml
-                  wget -O docker-compose.es7.yml https://gitlab.com/koha-community/koha-testing-docker/raw/25.11/docker-compose.es7.yml
-                  mkdir -p env
-                  wget -O env/defaults.env https://gitlab.com/koha-community/koha-testing-docker/raw/25.11/env/defaults.env
-                  cp env/defaults.env .env
-                  echo 'INSTALL_MISSING_FROM_CPANFILE=yes' >> .env
-                  pwd
-                  ls -alh
-
-            - name: Show files
-              run: |
-                  pwd
-                  ls -alh
-
-            - name: Pull docker images
-              run: |
-                  docker compose -f docker-compose.es7.yml -f docker-compose.yml pull
 
             - name: Setup Debug Session
               if: env.DEBUG_SESSION == 'true'
               uses: csexton/debugger-action@master
 
-            - name: Create kohanet
-              run: |
-                  docker network create kohanet
-
             - name: Run tests
               run: |
-                  docker compose -f docker-compose.es7.yml -f docker-compose.yml -p koha up --abort-on-container-exit --no-color
-                  cat $GITHUB_WORKSPACE/testing.success
-
-            - name: Post test cleanup
-              run: |
-                  docker compose down
-                  docker rm -f $(docker ps -a -f "name=koha-" -q)
-                  docker volume prune -f
-                  docker image  prune -f
-                  rm docker-compose.yml
-                  rm -rf env .env
+                  sudo apt-get update
+                  sudo apt-get install -y cpanminus
+                  sudo cpanm Modern::Perl IPC::Cmd
+                  perl .github/workflows/koha_tests_runner.pl --run-all-tests
 
             - uses: bywatersolutions/action-slack@v3
               with:
