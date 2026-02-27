@@ -91,7 +91,7 @@ sub new {
     my $self = $class->SUPER::new(
         {
             binary       => 1,                                  # Always 1 for UTF-8
-            formula      => undef,                              # Hard-coded to empty for security
+            formula      => 'empty',                            # Hard-coded to 'empty' for security
             always_quote => $params->{always_quote} // 0,       # Overridable
             eol          => $params->{eol}          // "\n",    # Overridable
             sep_char     => $sep_char,                          # From Koha config or override
@@ -101,7 +101,7 @@ sub new {
     $self->{_csv} = Text::CSV_XS->new(
         {
             binary       => $self->binary,
-            formula      => $self->formula // 'empty',
+            formula      => $self->formula // 'empty',          # Hard-coded catch-all of 'empty' for security
             always_quote => $self->always_quote,
             eol          => $self->eol,
             sep_char     => $self->sep_char,
