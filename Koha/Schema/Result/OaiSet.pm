@@ -129,6 +129,14 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-07-08 15:06:22
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ju63fVMgLPbeFxeZJsQHRQ
 
+=head2 koha_object_class
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+Returns the Koha::Object class for this table
+
+=cut
+
+sub koha_object_class {
+    return 'Koha::OAI::Set';
+}
+
 1;
