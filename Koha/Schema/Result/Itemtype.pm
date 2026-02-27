@@ -96,14 +96,6 @@ controls if the hourly rental fee is calculated directly or using finesCalendar
 
 default replacement cost
 
-=head2 processfee
-
-  data_type: 'decimal'
-  is_nullable: 1
-  size: [28,6]
-
-default text be recorded in the column note when the processing fee is applied
-
 =head2 notforloan
 
   data_type: 'tinyint'
@@ -213,8 +205,6 @@ __PACKAGE__->add_columns(
   "rentalcharge_hourly_calendar",
   { data_type => "tinyint", default_value => 1, is_nullable => 0 },
   "defaultreplacecost",
-  { data_type => "decimal", is_nullable => 1, size => [28, 6] },
-  "processfee",
   { data_type => "decimal", is_nullable => 1, size => [28, 6] },
   "notforloan",
   { data_type => "tinyint", default_value => 0, is_nullable => 0 },
@@ -375,8 +365,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-02-10 17:39:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jdGLBem2+Cj1STCmWCf2Bg
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-02-27 18:28:47
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nIbK4y9VAP6U+o7feeGsDA
 
 __PACKAGE__->add_columns(
     '+automatic_checkin'            => { is_boolean => 1 },
