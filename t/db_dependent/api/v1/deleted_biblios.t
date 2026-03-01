@@ -293,7 +293,7 @@ subtest 'restore() tests' => sub {
             source => 'UserPermission',
             value  => {
                 borrowernumber => $librarian->borrowernumber,
-                module_bit     => 13,
+                module_bit     => 9,
                 code           => 'records_restore',
             }
         }
@@ -326,7 +326,8 @@ subtest 'restore() tests' => sub {
 
     $t->put_ok("//$unauth_userid:$password@/api/v1/deleted/biblios/$biblionumber")->status_is(403);
 
-    $t->put_ok("//$userid:$password@/api/v1/deleted/biblios/$biblionumber")->status_is(200)
+    $t->put_ok("//$userid:$password@/api/v1/deleted/biblios/$biblionumber")
+        ->status_is(200)
         ->json_is( '/biblio_id' => $biblionumber );
 
     my $restored_biblio = Koha::Biblios->find($biblionumber);
@@ -362,7 +363,7 @@ subtest 'restore() with library group permissions tests' => sub {
             source => 'UserPermission',
             value  => {
                 borrowernumber => $librarian->borrowernumber,
-                module_bit     => 13,
+                module_bit     => 9,
                 code           => 'records_restore',
             }
         }
@@ -413,8 +414,11 @@ subtest 'restore() with library group permissions tests' => sub {
 
     $t->put_ok(
         "//$userid:$password@/api/v1/deleted/biblios/$biblionumber" => { 'Content-Type' => 'application/json' } =>
-            $body )->status_is(200)->json_is( '/biblio_id' => $biblionumber )
-        ->json_is( '/restored_items/0' => $item1_id )->json_is( '/skipped_items/0' => $item2_id );
+            $body )
+        ->status_is(200)
+        ->json_is( '/biblio_id'        => $biblionumber )
+        ->json_is( '/restored_items/0' => $item1_id )
+        ->json_is( '/skipped_items/0'  => $item2_id );
 
     my $restored_biblio = Koha::Biblios->find($biblionumber);
     ok( $restored_biblio, 'Biblio restored' );

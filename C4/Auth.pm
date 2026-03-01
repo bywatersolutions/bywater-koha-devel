@@ -2329,7 +2329,6 @@ sub get_cataloguing_page_permissions {
         marc_modification_templates
         records_batchdel
         records_batchmod
-        records_restore
         stage_marc_import
         upload_cover_images
     );

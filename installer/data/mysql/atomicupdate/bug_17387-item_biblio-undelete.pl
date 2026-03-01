@@ -11,11 +11,11 @@ return {
         $dbh->do(
             q{
             INSERT IGNORE INTO permissions (module_bit, code, description)
-            VALUES (13, 'records_restore', 'Restore deleted records')
+            VALUES (9, 'records_restore', 'Restore deleted bibliographic records and items')
         }
         );
 
-        say_success( $out, "Added new permission 'tools:records_restore'" );
+        say_success( $out, "Added new permission 'editcatalogue:records_restore'" );
 
     },
 };

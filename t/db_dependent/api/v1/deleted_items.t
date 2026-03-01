@@ -120,7 +120,8 @@ subtest 'get() tests' => sub {
 
     my $non_existent_id = $item_id + 99999;
 
-    $t->get_ok("//$userid:$password@/api/v1/deleted/items/$non_existent_id")->status_is(404)
+    $t->get_ok("//$userid:$password@/api/v1/deleted/items/$non_existent_id")
+        ->status_is(404)
         ->json_is( '/error' => 'Item not found' );
 
     $schema->storage->txn_rollback;
@@ -147,7 +148,7 @@ subtest 'restore() tests' => sub {
             source => 'UserPermission',
             value  => {
                 borrowernumber => $librarian->borrowernumber,
-                module_bit     => 13,
+                module_bit     => 9,
                 code           => 'records_restore',
             }
         }
@@ -196,7 +197,9 @@ subtest 'restore() tests' => sub {
     $item_without_biblio->delete;
     Koha::Biblios->find($orphan_biblio_id)->delete;
 
-    $t->put_ok("//$userid:$password@/api/v1/deleted/items/$orphan_item_id")->status_is(409)->json_has('/error')
+    $t->put_ok("//$userid:$password@/api/v1/deleted/items/$orphan_item_id")
+        ->status_is(409)
+        ->json_has('/error')
         ->json_like( '/error', qr/Bibliographic record not found/ );
 
     $schema->storage->txn_rollback;
@@ -223,7 +226,7 @@ subtest 'restore() with library group permissions tests' => sub {
             source => 'UserPermission',
             value  => {
                 borrowernumber => $librarian->borrowernumber,
-                module_bit     => 13,
+                module_bit     => 9,
                 code           => 'records_restore',
             }
         }
@@ -262,7 +265,8 @@ subtest 'restore() with library group permissions tests' => sub {
     my $restored_item = Koha::Items->find($item_allowed_id);
     ok( $restored_item, 'Item from allowed library restored' );
 
-    $t->put_ok("//$userid:$password@/api/v1/deleted/items/$item_restricted_id")->status_is(403)
+    $t->put_ok("//$userid:$password@/api/v1/deleted/items/$item_restricted_id")
+        ->status_is(403)
         ->json_is( '/error' => 'You do not have permission to restore items from this library.' );
 
     my $not_restored = Koha::Items->find($item_restricted_id);

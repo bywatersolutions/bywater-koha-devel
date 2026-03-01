@@ -120,7 +120,7 @@
         </div>
 
         <div class="col-sm-4 col-md-4">
-            [% IF ( CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel || CAN_user_tools_records_batchmod || CAN_user_tools_records_batchdel || CAN_user_tools_records_restore || CAN_user_tools_marc_modification_templates ) %]
+            [% IF ( CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel || CAN_user_tools_records_batchmod || CAN_user_tools_records_batchdel || CAN_user_editcatalogue_records_restore || CAN_user_tools_marc_modification_templates ) %]
                 <h3>Batch editing</h3>
                 <ul class="buttons-list">
                     [% IF ( CAN_user_tools_items_batchmod ) %]
@@ -149,7 +149,7 @@
                             <a class="circ-button" href="/cgi-bin/koha/tools/marc_modification_templates.pl"><i class="fa fa-gear"></i> MARC modification templates</a>
                         </li>
                     [% END %]
-                    [% IF ( CAN_user_tools_records_restore ) %]
+                    [% IF ( CAN_user_editcatalogue_records_restore ) %]
                         <li>
                             <a class="circ-button" href="/cgi-bin/koha/tools/restore-records.pl"><i class="fa fa-undo"></i> Restore deleted records</a>
                         </li>
