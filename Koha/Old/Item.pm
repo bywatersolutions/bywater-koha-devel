@@ -23,6 +23,7 @@ use C4::Context;
 use C4::Log qw( logaction );
 use Koha::Biblio;
 use Koha::Biblios;
+use Koha::Database;
 use Koha::Exceptions;
 use Koha::Item;
 use Koha::Old::Biblios;
@@ -78,12 +79,17 @@ sub restore {
     Koha::Exceptions::ObjectNotFound->throw("Bibliographic record not found for item")
         unless $biblio;
 
-    my $item_data = $self->unblessed;
-    delete $item_data->{deleted_on};
+    my $new_item = Koha::Database->schema->txn_do(
+        sub {
+            my $item_data = $self->unblessed;
+            delete $item_data->{deleted_on};
 
-    my $new_item = Koha::Item->new($item_data)->store;
+            my $item = Koha::Item->new($item_data)->store;
+            $self->delete;
 
-    $self->delete;
+            return $item;
+        }
+    );
 
     my $indexer = Koha::SearchEngine::Indexer->new( { index => $Koha::SearchEngine::BIBLIOS_INDEX } );
     $indexer->index_records( $new_item->biblionumber, "specialUpdate", "biblioserver" );

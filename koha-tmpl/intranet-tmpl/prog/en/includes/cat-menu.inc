@@ -43,7 +43,7 @@
         </ul>
     [% END %]
 
-    [% IF ( CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel || CAN_user_tools_records_batchmod || CAN_user_tools_records_batchdel || CAN_user_tools_records_restore || CAN_user_tools_marc_modification_templates || CAN_user_editcatalogue_edit_catalogue ) %]
+    [% IF ( CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel || CAN_user_tools_records_batchmod || CAN_user_tools_records_batchdel || CAN_user_tools_records_restore || CAN_user_tools_marc_modification_templates ) %]
         <h5>Batch editing</h5>
         <ul>
             [% IF ( CAN_user_tools_items_batchmod ) %]

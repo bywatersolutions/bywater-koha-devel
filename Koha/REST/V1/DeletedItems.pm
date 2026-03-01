@@ -20,6 +20,7 @@ use Modern::Perl;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Koha::Exceptions;
+use Koha::Exceptions::Object;
 use Koha::Old::Items;
 
 use Scalar::Util qw( blessed );
@@ -108,6 +109,12 @@ sub restore {
                     error =>
                         "Bibliographic record not found for this item. Cannot restore item without its bibliographic record."
                 }
+            );
+        }
+        if ( blessed $_ && $_->isa('Koha::Exceptions::Object::DuplicateID') ) {
+            return $c->render(
+                status  => 409,
+                openapi => { error => "Cannot restore item: another item with the same barcode already exists." }
             );
         }
         $c->unhandled_exception($_);

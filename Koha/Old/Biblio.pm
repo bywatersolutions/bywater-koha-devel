@@ -181,35 +181,42 @@ sub restore {
 
     $params //= {};
 
-    my $biblio_data     = $self->unblessed;
-    my $biblioitem      = $self->biblioitem;
-    my $biblioitem_data = $biblioitem->unblessed;
-    my $metadata        = $self->metadata;
-    my $metadata_data   = $metadata->unblessed;
-
-    my $new_biblio = Koha::Biblio->new($biblio_data)->store;
-
-    $biblioitem_data->{biblionumber}     = $new_biblio->biblionumber;
-    $biblioitem_data->{biblioitemnumber} = $new_biblio->biblionumber;
-    Koha::Biblioitem->new($biblioitem_data)->store;
-
-    delete $metadata_data->{id};
-    $metadata_data->{biblionumber} = $new_biblio->biblionumber;
-    Koha::Biblio::Metadata->new($metadata_data)->store;
-
-    $metadata->delete;
-    $biblioitem->delete;
-    $self->delete;
-
     my $patron      = $params->{patron};
     my $item_ids    = $params->{item_ids};
     my $restore_all = $params->{restore_all} // 0;
 
+    my $biblionumber = $self->biblionumber;
     my @restored_items;
     my @skipped_items;
 
+    my $new_biblio = Koha::Database->schema->txn_do(
+        sub {
+            my $biblio_data     = $self->unblessed;
+            my $biblioitem      = $self->biblioitem;
+            my $biblioitem_data = $biblioitem->unblessed;
+            my $metadata        = $self->metadata;
+            my $metadata_data   = $metadata->unblessed;
+
+            my $biblio = Koha::Biblio->new($biblio_data)->store;
+
+            $biblioitem_data->{biblionumber}     = $biblio->biblionumber;
+            $biblioitem_data->{biblioitemnumber} = $biblio->biblionumber;
+            Koha::Biblioitem->new($biblioitem_data)->store;
+
+            delete $metadata_data->{id};
+            $metadata_data->{biblionumber} = $biblio->biblionumber;
+            Koha::Biblio::Metadata->new($metadata_data)->store;
+
+            $metadata->delete;
+            $biblioitem->delete;
+            $self->delete;
+
+            return $biblio;
+        }
+    );
+
     if ( $restore_all || $item_ids ) {
-        my $deleted_items = $self->items;
+        my $deleted_items = Koha::Old::Items->search( { biblionumber => $biblionumber } );
         while ( my $deleted_item = $deleted_items->next ) {
             my $should_restore = 0;
 

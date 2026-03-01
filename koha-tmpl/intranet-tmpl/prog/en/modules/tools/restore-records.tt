@@ -216,7 +216,7 @@
                 }
             }, 100);
 
-            function buildApiUrl(baseUrl) {
+            function buildApiUrl(baseUrl, dateField) {
                 var from = $("#from").val();
                 var to = $("#to").val();
 
@@ -226,15 +226,15 @@
 
                 var query = {};
                 if (from && to) {
-                    query["me.timestamp"] = {
+                    query[dateField] = {
                         "-between": [from + "T00:00:00Z", to + "T23:59:59Z"],
                     };
                 } else if (from) {
-                    query["me.timestamp"] = {
+                    query[dateField] = {
                         ">=": from + "T00:00:00Z",
                     };
                 } else if (to) {
-                    query["me.timestamp"] = {
+                    query[dateField] = {
                         "<=": to + "T23:59:59Z",
                     };
                 }
@@ -245,7 +245,7 @@
             // Deleted biblios DataTable
             var biblios_table = $("#deleted_biblios_table").kohaTable({
                 ajax: {
-                    url: buildApiUrl("/api/v1/deleted/biblios"),
+                    url: buildApiUrl("/api/v1/deleted/biblios", "me.timestamp"),
                 },
                 embed: "items",
                 order: [[3, "desc"]],
@@ -313,7 +313,7 @@
             // Deleted items DataTable
             var items_table = $("#deleted_items_table").kohaTable({
                 ajax: {
-                    url: buildApiUrl("/api/v1/deleted/items"),
+                    url: buildApiUrl("/api/v1/deleted/items", "me.deleted_on"),
                 },
                 embed: "biblio",
                 order: [[5, "desc"]],
@@ -405,30 +405,20 @@
             var modal_items_table = null;
             var modal_items_table_api = null;
 
-            // Restore biblio handler
-            $("#deleted_biblios_table").on("click", ".restore-biblio", function (e) {
-                e.preventDefault();
-                var button = $(this);
-                var biblio_id = button.data("biblio-id");
-                var title = button.data("title");
-                var row = biblios_table_api.row(button.closest("tr")).data();
-
-                // Populate modal with biblio info
+            // Populate and show the restore biblio modal.
+            // preselectedItemId: optional item_id to pre-check in the items list.
+            function showRestoreBiblioModal(biblio_id, title, author, items, preselectedItemId) {
                 $("#restore-modal-biblio-id").text(biblio_id);
                 $("#restore-modal-biblio-title").text(title || _("(No title)"));
-                $("#restore-modal-biblio-author").text(row.author || _("(No author)"));
+                $("#restore-modal-biblio-author").text(author || _("(No author)"));
 
-                // Check if there are deleted items
-                var items = row.items || [];
                 if (items.length > 0) {
                     $("#items-section").show();
 
-                    // Destroy existing DataTable if it exists
                     if (modal_items_table_api) {
                         modal_items_table_api.destroy();
                     }
 
-                    // Initialize kohaTable with the items data
                     modal_items_table = $("#deleted-items-list").kohaTable({
                         data: items,
                         paging: false,
@@ -439,7 +429,8 @@
                                     if (type === "display") {
                                         var canEdit = canEditItem(row.home_library_id);
                                         var disabled = canEdit ? '' : ' disabled';
-                                        var checkbox = '<input type="checkbox" class="item-checkbox" data-item-id="' + row.item_id + '"' + disabled + '>';
+                                        var preselected = (preselectedItemId && row.item_id == preselectedItemId && canEdit) ? ' checked' : '';
+                                        var checkbox = '<input type="checkbox" class="item-checkbox" data-item-id="' + row.item_id + '"' + disabled + preselected + '>';
 
                                         if (!canEdit) {
                                             return '<span title="' + _("You do not have permission to restore items from this library") + '">' + checkbox + '</span>';
@@ -501,12 +492,21 @@
                     $("#items-section").hide();
                 }
 
-                // Store biblio data
                 $("#restore-biblio-with-items-button").data("biblio-id", biblio_id);
-                $("#restore-biblio-with-items-button").data("restore-button", button);
 
                 var modal = new bootstrap.Modal(document.getElementById("restoreBiblioModal"));
                 modal.show();
+            }
+
+            // Restore biblio handler (from deleted biblios table)
+            $("#deleted_biblios_table").on("click", ".restore-biblio", function (e) {
+                e.preventDefault();
+                var button = $(this);
+                var biblio_id = button.data("biblio-id");
+                var row = biblios_table_api.row(button.closest("tr")).data();
+
+                $("#restore-biblio-with-items-button").data("restore-button", button);
+                showRestoreBiblioModal(biblio_id, row.title, row.author, row.items || []);
             });
 
             // Restore item handler
@@ -561,30 +561,37 @@
                 });
             });
 
-            // Restore biblio from modal
+            // "Restore bibliographic record" button in the deleted-bib warning modal:
+            // fetch the biblio (with items) and open the full restore modal with the
+            // originally clicked item pre-selected.
             $("#restore-biblio-button").on("click", function () {
                 var button = $(this);
                 var biblio_id = button.data("biblio-id");
-                var item_id = button.data("item-id");
+                var original_item_id = button.data("item-id");
                 var item_button = button.data("item-button");
 
                 button.prop("disabled", true);
 
                 $.ajax({
                     url: "/api/v1/deleted/biblios/" + biblio_id,
-                    type: "PUT",
+                    type: "GET",
                     headers: {
-                        "x-koha-request-id": Math.random(),
+                        "x-koha-embed": "items",
                     },
-                    success: function (data) {
-                        showMessage(_("Bibliographic record %s restored successfully").format(biblio_id), "success");
+                    success: function (biblio) {
                         bootstrap.Modal.getInstance(document.getElementById("deletedBiblioModal")).hide();
-                        biblios_table_api.ajax.reload();
-                        items_table_api.ajax.reload();
+                        $("#restore-biblio-with-items-button").data("restore-button", item_button);
+                        showRestoreBiblioModal(
+                            biblio.biblio_id,
+                            biblio.title,
+                            biblio.author,
+                            biblio.items || [],
+                            original_item_id
+                        );
                         button.prop("disabled", false);
                     },
                     error: function (xhr) {
-                        var error_msg = _("Error restoring bibliographic record %s").format(biblio_id);
+                        var error_msg = _("Error loading bibliographic record %s").format(biblio_id);
                         if (xhr.responseJSON && xhr.responseJSON.error) {
                             error_msg += ": " + xhr.responseJSON.error;
                         }
@@ -678,8 +685,8 @@
             });
 
             $("#filter_table").on("click", function () {
-                biblios_table_api.ajax.url(buildApiUrl("/api/v1/deleted/biblios")).load();
-                items_table_api.ajax.url(buildApiUrl("/api/v1/deleted/items")).load();
+                biblios_table_api.ajax.url(buildApiUrl("/api/v1/deleted/biblios", "me.timestamp")).load();
+                items_table_api.ajax.url(buildApiUrl("/api/v1/deleted/items", "me.deleted_on")).load();
             });
 
             $("#clear_filters").on("click", function () {

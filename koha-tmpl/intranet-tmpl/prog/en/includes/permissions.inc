@@ -464,7 +464,7 @@
         <span class="sub_permission records_batchmod_subpermission"> Perform batch modification of records (biblios or authorities) </span>
         <span class="permissioncode">([% name | html %])</span>
     [%- CASE 'records_restore' -%]
-        <span class="sub_permission records_restore_subpermission"> Restore deleted records </span>
+        <span class="sub_permission records_restore_subpermission"> Restore deleted bibliographic records and items </span>
         <span class="permissioncode">([% name | html %])</span>
     [%- CASE 'rotating_collections' -%]
         <span class="sub_permission rotating_collections_subpermission"> Manage rotating collections </span>
