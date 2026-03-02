@@ -102,6 +102,20 @@ $enable-dark-mode: false;
     opacity: unset;
 }
 
+.ms-parent {
+    .ms-drop {
+        label {
+            span {
+                margin-left: 5px;
+            }
+        }
+
+        ul {
+            padding: 5px 0;
+        }
+    }
+}
+
 .dropup .dropdown-menu[data-bs-popper] {
     margin-bottom: 0;
 }

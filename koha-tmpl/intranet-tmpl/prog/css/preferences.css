@@ -185,14 +185,6 @@ span.overridden {
     padding-left: 0;
 }
 
-#admin_preferences .ms-drop ul {
-    padding: 5px 0;
-}
-
-#admin_preferences .ms-drop label span {
-    margin-left: 5px;
-}
-
 .category-heading {
     display: flex;
     justify-content: space-between;
