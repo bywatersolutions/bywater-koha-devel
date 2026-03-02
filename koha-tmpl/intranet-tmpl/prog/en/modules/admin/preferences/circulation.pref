@@ -696,7 +696,6 @@ Circulation:
               multiple:
                 intransit: In-transit
                 checkedout: Checked out
-            -
         -
             - pref: BlockReturnOfLostItems
               choices:
@@ -921,7 +920,6 @@ Circulation:
                   1: in random order.
                   0: in that order.
             - "<br><strong>NOTE:</strong> This system preference requires the <code>misc/cronjobs/holds/build_holds_queue.pl</code> cronjob. Ask your system administrator to schedule it."
-            -
         -
             - pref: canreservefromotherbranches
               choices:
@@ -1431,7 +1429,6 @@ Circulation:
                 date: Date
                 pages: Pages
                 chapters: Chapters
-            -
         -
             - "For records that are only record level requestable, make the following fields mandatory:"
             - pref: ArticleRequestsMandatoryFieldsRecordOnly
@@ -1443,7 +1440,6 @@ Circulation:
                 date: Date
                 pages: Pages
                 chapters: Chapters
-            -
         -
             - "For records that are only item level requestable, make the following fields mandatory:"
             - pref: ArticleRequestsMandatoryFieldsItemOnly
@@ -1455,7 +1451,6 @@ Circulation:
                 date: Date
                 pages: Pages
                 chapters: Chapters
-            -
         -
             - "The following article request formats are supported:"
             - pref: ArticleRequestsSupportedFormats
@@ -1524,7 +1519,7 @@ Circulation:
         -
             - Mark a recall as problematic if it has been waiting to be picked up for
             - pref: RecallsMaxPickUpDelay
-            - class: integer
+              class: integer
             - days.
         -
             - pref: UseRecalls

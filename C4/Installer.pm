@@ -460,10 +460,8 @@ sub set_marcflavour_syspref {
     # marc_cleaned finds the marcflavour, without the variant.
     my $marc_cleaned = 'MARC21';
     $marc_cleaned = 'UNIMARC' if $marcflavour =~ /unimarc/i;
-    my $request =
-        $self->{'dbh'}->prepare(
-        "INSERT IGNORE INTO `systempreferences` (variable,value,explanation,options,type) VALUES('marcflavour','$marc_cleaned','Define global MARC flavor (MARC21 or UNIMARC) used for character encoding','MARC21|UNIMARC','Choice');"
-        );
+    my $request = $self->{'dbh'}
+        ->prepare("INSERT IGNORE INTO `systempreferences` (variable, value) VALUES('marcflavour', '$marc_cleaned')");
     $request->execute;
 }
 
