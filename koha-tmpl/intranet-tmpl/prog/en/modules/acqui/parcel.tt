@@ -238,9 +238,9 @@
                                                 [% order.copyrightdate | html %]
                                             [% END %]
                                         [% END %]
-                                        [% IF ( order.suggestionid ) %]
+                                        [% IF ( order.suggestion ) %]
                                             <br />
-                                            Suggested by: [% order.surnamesuggestedby | html %][% IF ( order.firstnamesuggestedby ) %], [% order.firstnamesuggestedby | html %][% END %] (<a
+                                            Suggested by: [% order.suggestion.suggester.surname | html %][% IF ( order.suggestion.suggester.firstname ) %], [% order.suggestion.suggester.firstname | html %][% END %] (<a
                                                 href="/cgi-bin/koha/suggestion/suggestion.pl?suggestionid=[% order.suggestionid | uri %]&amp;op=show"
                                                 >suggestion #[% order.suggestionid | html %]</a
                                             >)

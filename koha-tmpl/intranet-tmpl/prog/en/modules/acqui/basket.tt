@@ -834,12 +834,10 @@
                                                         [% books_loo.copyrightdate | html %]
                                                     [% END -%]
                                                     [%- IF ( books_loo.editionstatement ) %], [% books_loo.editionstatement | html %][% END -%]
-                                                    [%- IF ( books_loo.suggestionid ) %]
+                                                    [%- IF ( books_loo.suggestion ) %]
                                                         <br />
-                                                        Suggested by: [% books_loo.surnamesuggestedby | html %][% IF ( books_loo.firstnamesuggestedby ) %], [% books_loo.firstnamesuggestedby | html %][% END %] (<a
-                                                            href="/cgi-bin/koha/suggestion/suggestion.pl?suggestionid=[% books_loo.suggestionid | uri %]&amp;op=show"
-                                                            >suggestion #[% books_loo.suggestionid | html %]</a
-                                                        >)
+                                                        Suggested by: [% books_loo.suggestion.suggester.surname | html %][% IF ( books_loo.suggestion.suggester.firstname ) %], [% books_loo.suggestion.suggester.firstname | html %][% END %]
+                                                        (<a href="/cgi-bin/koha/suggestion/suggestion.pl?suggestionid=[% books_loo.suggestion.suggestionid | uri %]&amp;op=show">suggestion #[% books_loo.suggestion.suggestionid | html %]</a>)
                                                     [% END %]
                                                 </p>
                                                 [% IF ( books_loo.order_internalnote ) %]
@@ -962,7 +960,7 @@
                                                         <a href="#" class="transfer_order" data-ordernumber="[% books_loo.ordernumber | html %]">Transfer</a>
                                                         <br />
                                                     [% END %]
-                                                    [% UNLESS ( books_loo.suggestionid ) %]
+                                                    [% UNLESS ( books_loo.suggestion.suggestionid ) %]
                                                         <a
                                                             data-action="/cgi-bin/koha/acqui/newordersuggestion.pl"
                                                             data-booksellerid="[% booksellerid | html %]"

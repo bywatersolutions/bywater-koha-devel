@@ -151,9 +151,7 @@ for my $order (@orders) {
     $total_tax_included                 += get_rounded_price( $line{unitprice_tax_included} ) * $line{quantity};
 
     my $suggestion = Koha::Suggestions->search( { biblionumber => $line{biblionumber} } )->single;
-    $line{suggestionid}         = $suggestion->suggestionid;
-    $line{surnamesuggestedby}   = $suggestion->suggester->surname;
-    $line{firstnamesuggestedby} = $suggestion->suggester->firstname;
+    $line{suggestion} = $suggestion;
 
     if ( $line{parent_ordernumber} != $line{ordernumber} ) {
         if ( grep { $_->{ordernumber} == $line{parent_ordernumber} } @orders ) {

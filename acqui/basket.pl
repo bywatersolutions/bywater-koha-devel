@@ -659,9 +659,7 @@ sub get_order_infos {
     }
 
     my $suggestion = Koha::Suggestions->search( { biblionumber => $line{biblionumber} } )->single;
-    $line{suggestionid}         = $suggestion->suggestionid;
-    $line{surnamesuggestedby}   = $suggestion->suggester->surname;
-    $line{firstnamesuggestedby} = $suggestion->suggester->firstname;
+    $line{suggestion} = $suggestion;
 
     $line{estimated_delivery_date} = $order->{estimated_delivery_date};
 
