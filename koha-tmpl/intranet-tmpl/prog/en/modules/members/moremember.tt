@@ -849,6 +849,7 @@
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
     [% Asset.js("js/recalls.js") | $raw %]
+    [% Asset.js("js/throttledButton.js") | $raw %]
     [% Asset.js("js/hold-group.js") | $raw %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
         const LoadCheckoutsTableDelay = 0;
