@@ -143,7 +143,7 @@
             cloneItemBlock(0, '[% UniqueItemFields | html %]');
         [% END %]
 
-        [% IF ( suggestionid ) %]updateCosts();[% END %]
+        [% IF ( suggestion ) %]updateCosts();[% END %]
         $("#quantity").change(function() {
             updateCosts();
         });
@@ -348,7 +348,7 @@
             <input type="hidden" name="biblionumber" value="[% biblionumber | html %]" />
             <input type="hidden" name="listinc" id="listinc" value="[% listincgst | html %]" />
             <input type="hidden" name="invoiceincgst" id="invoiceincgst" value="[% invoiceincgst | html %]" />
-            <input type="hidden" name="suggestionid" value="[% suggestionid | html %]" />
+            <input type="hidden" name="suggestionid" value="[% suggestion.suggestionid | html %]" />
             <input type="hidden" name="import_batch_id" value="[% import_batch_id | html %]" />
 
             [% FOREACH c IN currencies %]
@@ -466,14 +466,15 @@
             [% END %]
         </fieldset>
 
-        [% IF ( suggestionid ) %]
+        [% IF ( suggestion ) %]
             <fieldset class="rows">
                 <legend>Suggestion</legend>
                 <ol>
                     <li>
                         <span class="label">Suggested by: </span>
-                        [% surnamesuggestedby | html %][% IF ( firstnamesuggestedby ) %], [% firstnamesuggestedby | html %][% END %] (<a href="/cgi-bin/koha/suggestion/suggestion.pl?suggestionid=[% suggestionid | uri %]&amp;op=show"
-                            >suggestion #[% suggestionid | html %]</a
+                        [% suggestion.suggester.surname | html %][% IF ( suggestion.suggester.firstname ) %], [% suggestion.suggester.firstname | html %][% END %] (<a
+                            href="/cgi-bin/koha/suggestion/suggestion.pl?suggestionid=[% suggestion.suggestionid | uri %]&amp;op=show"
+                            >suggestion #[% suggestion.suggestionid | html %]</a
                         >)
                     </li>
                 </ol>
@@ -743,7 +744,7 @@
             <input type="hidden" id="op" name="op" value="cud-order" />
             <input type="hidden" name="subscriptionid" value="[% subscriptionid | html %]" />
             <input type="submit" class="btn btn-primary" value="Save" />
-            [% IF (suggestionid) %]
+            [% IF (suggestion) %]
                 <a class="cancel" href="/cgi-bin/koha/acqui/newordersuggestion.pl?booksellerid=[% booksellerid | html %]&amp;basketno=[% basketno | html %]">Cancel</a>
             [% ELSE %]
                 [% IF subscriptionid %]
