@@ -369,6 +369,7 @@
 
    <intranet>
      <!-- supported values: report-only, enabled. Any other value, including unset, disables the feature. -->
+     <!-- BEWARE: the intranet/staff interface is not yet production ready for "enabled" mode -->
      <csp_mode></csp_mode>
      <!-- defines the value of the CSP header. _CSP_NONCE_ can be used as a placeholder for the generated CSP nonce. -->
      <csp_header_value></csp_header_value>
