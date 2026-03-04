@@ -364,14 +364,14 @@
      <!-- supported values: report-only, enabled. Any other value, including unset, disables the feature. -->
      <csp_mode></csp_mode>
      <!-- defines the value of the CSP header. _CSP_NONCE_ can be used as a placeholder for the generated CSP nonce. -->
-     <csp_header_value>default-src 'self'; script-src 'self' 'nonce-_CSP_NONCE_'; style-src 'self' 'nonce-_CSP_NONCE_'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'</csp_header_value>
+     <csp_header_value></csp_header_value>
    </opac>
 
    <intranet>
      <!-- supported values: report-only, enabled. Any other value, including unset, disables the feature. -->
      <csp_mode></csp_mode>
      <!-- defines the value of the CSP header. _CSP_NONCE_ can be used as a placeholder for the generated CSP nonce. -->
-     <csp_header_value>default-src 'self'; script-src 'self' 'nonce-_CSP_NONCE_'; style-src 'self' 'nonce-_CSP_NONCE_'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'</csp_header_value>
+     <csp_header_value></csp_header_value>
    </intranet>
  </content_security_policy>
 
