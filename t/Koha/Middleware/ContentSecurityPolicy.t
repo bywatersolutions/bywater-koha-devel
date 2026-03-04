@@ -18,8 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Koha; if not, see <https://www.gnu.org/licenses>.
 
-use strict;
-use warnings;
+use Modern::Perl;
 use Test::NoWarnings;
 use Test::More tests => 3;
 use Test::Warn;
