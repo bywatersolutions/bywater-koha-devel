@@ -24,6 +24,10 @@ use Koha::Token;
 
 use Koha::Exceptions::Config;
 
+#NOTE: To cache the nonce, we just use a package level variable,
+#which will be reset after every HTTP request.
+my $cached_nonce;
+
 =head1 NAME
 
 Koha::ContentSecurityPolicy - Object for handling Content-Security-Policy header
@@ -192,7 +196,7 @@ sub get_nonce {
 
     #Koha::Middleware::ContentSecurityPolicy sets an environmental variable
     #We cannot use the L1 cache since it is cleared after the middleware is applied
-    my $env_value = $ENV{CSP_NONCE};
+    my $env_value = $cached_nonce;
 
     return $env_value;
 }
@@ -216,10 +220,10 @@ sub set_nonce {
     #Koha::Middleware::ContentSecurityPolicy sets an environmental variable
     #We cannot use the L1 cache since it is cleared after the middleware is applied
     if ($nonce) {
-        $ENV{CSP_NONCE} = $nonce;
+        $cached_nonce = $nonce;
     } else {
         my $nonce = Koha::Token->new()->generate( { pattern => '\w{22}' } );
-        $ENV{CSP_NONCE} = $nonce;
+        $cached_nonce = $nonce;
     }
     return 1;
 }
