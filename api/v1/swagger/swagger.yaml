@@ -1239,6 +1239,9 @@ tags:
   - description: "Manage checkouts\n"
     name: checkouts
     x-displayName: Checkouts
+  - description: "Report Content-Security-Policy violations\n"
+    name: csp-reports
+    x-displayName: Content-Security-Policy violations
   - description: "Manage circulation desks\n"
     name: desks
     x-displayName: Circulation desks

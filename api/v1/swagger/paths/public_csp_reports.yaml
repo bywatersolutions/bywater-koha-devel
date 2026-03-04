@@ -3,7 +3,7 @@
     x-mojo-to: CSPReports#add
     operationId: addCSPReport
     tags:
-      - csp
+      - csp-reports
     summary: Report a Content-Security-Policy violation
     description: |
       This endpoint receives Content-Security-Policy violation reports from browsers.
