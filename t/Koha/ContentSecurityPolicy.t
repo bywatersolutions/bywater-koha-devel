@@ -25,7 +25,6 @@ use Test::Exception;
 BEGIN { use_ok('Koha::ContentSecurityPolicy') }
 
 use C4::Context;
-use Koha::Cache::Memory::Lite;
 
 use t::lib::Mocks;
 

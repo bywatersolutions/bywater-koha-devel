@@ -20,7 +20,6 @@ package Koha::ContentSecurityPolicy;
 use Modern::Perl;
 
 use C4::Context;
-use Koha::Cache::Memory::Lite;
 use Koha::Token;
 
 use Koha::Exceptions::Config;
