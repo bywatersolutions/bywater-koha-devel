@@ -42,7 +42,7 @@ subtest 'add() tests' => sub {
 
     foreach my $csp_report_type ( 'report-uri', 'report-to' ) {
         subtest "Test $csp_report_type" => sub {
-            plan tests => 17;
+            plan tests => 9;
             my $content_type = $csp_report_type eq 'report-to' ? 'application/csp-report' : 'application/reports+json';
 
             # Test with standard CSP report-uri format
@@ -68,37 +68,6 @@ subtest 'add() tests' => sub {
             my $csp_param_names = { map { $_ => $_ } keys %{ $csp_report->{'csp-report'} } };
             _convert_report_uri_to_report_to( $csp_param_names, $csp_report ) if $csp_report_type eq 'report-to';
             my $csp_report_body_key = $csp_report_type eq 'report-uri' ? 'csp-report' : 'body';
-
-            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } = 99999999999999999;
-
-            # Too large integers should be rejected
-            $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
-                ->status_is( 400, 'CSP report rejected (400) because of line-number exceeding maximum value' );
-
-            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } = -1;
-
-            # Too small integers should be rejected
-            $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
-                ->status_is( 400, 'CSP report rejected (400) because of line-number not reaching minimum value' );
-            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } = 42;
-
-            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'disposition'} } = 'this is not okay';
-
-            # Enum values should be confirmed
-            $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
-                ->status_is(
-                400,
-                'CSP report rejected (400) because of disposition is not either "enforce" nor "report"'
-                );
-            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'disposition'} } = 'enforce';
-
-            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'script-sample'} } =
-                'this is way too long script sample. a maximum of only 40 characters is allowed';
-
-            # Too long strings should be rejected
-            $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
-                ->status_is( 400, 'CSP report rejected (400) because of script-sample exceeding maximum length' );
-            $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'script-sample'} } = 'console.log("hi");';
 
             # Anonymous request should work (browsers send these without auth)
             $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
@@ -135,7 +104,7 @@ subtest 'add() tests' => sub {
                 ->status_is( 204, 'Minimal CSP report accepted' );
 
             subtest 'make sure log entries are being written' => sub {
-                plan tests => 22;
+                plan tests => 30;
 
                 my $log4perl_conf_file = C4::Context->config('intranetdir') . '/etc/log4perl.conf';
                 open my $fh, '<:encoding(UTF-8)', $log4perl_conf_file or do {
@@ -212,6 +181,73 @@ subtest 'add() tests' => sub {
                 # clear buffers
                 $appender->clear();
                 $appenderplack->clear();
+
+                # Do not crash if input is not JSON
+                $t->post_ok( '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => "not json" )
+                    ->status_is( 204, 'CSP report accepted' );
+
+                # Too large integers should be truncated
+                $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } = 99999999999999999;
+                $t->post_ok(
+                    '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
+                    ->status_is(204);
+                $expected_log_entry = sprintf(
+                    "CSP violation: '%s' blocked '%s' on page '%s'%s",
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'violated-directive'} },
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'blocked-uri'} },
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'document-uri'} },
+                    ' at '
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'source-file'} } . ':'
+                        . '9999999...:'
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'column-number'} }
+                );
+
+                like(
+                    $appender->buffer, qr/$expected_log_entry/
+                    ,                  'Too long line number was truncated'
+                );
+                $appender->clear();
+
+                $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } = 42;
+
+                # Too long strings should be rejected
+                $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'effective-directive'} } =
+                    'this is an example of a way too long effective-directive. a maximum of only 100 characters is allowed. so this should be truncated';
+                $t->post_ok(
+                    '/api/v1/public/csp-reports' => { 'Content-Type' => $content_type } => json => $csp_report )
+                    ->status_is(204);
+
+                $expected_log_entry = sprintf(
+                    "CSP violation: '%s' blocked '%s' on page '%s'%s",
+                    substr(
+                        $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'effective-directive'} }, 0, 100
+                        )
+                        . '...',
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'blocked-uri'} },
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'document-uri'} },
+                    ' at '
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'source-file'} } . ':'
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } . ':'
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'column-number'} }
+                );
+
+                like(
+                    $appender->buffer, qr/$expected_log_entry/
+                    ,                  'Too long line number was truncated'
+                );
+                $appender->clear();
+                $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'effective-directive'} } = 'script-src';
+
+                $expected_log_entry = sprintf(
+                    "CSP violation: '%s' blocked '%s' on page '%s'%s",
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'violated-directive'} },
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'blocked-uri'} },
+                    $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'document-uri'} },
+                    ' at '
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'source-file'} } . ':'
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'line-number'} } . ':'
+                        . $csp_report->{$csp_report_body_key}->{ $csp_param_names->{'column-number'} }
+                );
 
                 subtest 'test array as input' => sub {
                     plan tests => 7;

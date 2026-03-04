@@ -81,6 +81,13 @@ sub add {
         my $line_number   = $csp_report->{'lineNumber'}   // $csp_report->{'line-number'}   // '';
         my $column_number = $csp_report->{'columnNumber'} // $csp_report->{'column-number'} // '';
 
+        $document_uri  = length($document_uri) > 200 ? substr( $document_uri,  0, 200 ) . "..." : $document_uri;
+        $violated_dir  = length($violated_dir) > 100 ? substr( $violated_dir,  0, 100 ) . "..." : $violated_dir;
+        $blocked_uri   = length($blocked_uri) > 200  ? substr( $blocked_uri,   0, 200 ) . "..." : $blocked_uri;
+        $source_file   = length($source_file) > 200  ? substr( $source_file,   0, 200 ) . "..." : $source_file;
+        $line_number   = length($line_number) > 7    ? substr( $line_number,   0, 7 ) . "..."   : $line_number;
+        $column_number = length($column_number) > 7  ? substr( $column_number, 0, 7 ) . "..."   : $column_number;
+
         # Build location string if available
         my $location = '';
         if ($source_file) {

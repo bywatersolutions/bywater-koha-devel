@@ -20,13 +20,6 @@
       - application/reports+json
     produces:
       - application/json
-    parameters:
-      - name: body
-        in: body
-        description: CSP violation report
-        required: true
-        schema:
-          $ref: "../swagger.yaml#/definitions/csp_report_uri_to"
     responses:
       "204":
         description: Report received successfully

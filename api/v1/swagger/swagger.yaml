@@ -42,10 +42,6 @@ definitions:
     $ref: ./definitions/circ-rule-kind.yaml
   city:
     $ref: ./definitions/city.yaml
-  csp_report:
-    $ref: ./definitions/csp_report.yaml
-  csp_report_uri_to:
-    $ref: ./definitions/csp_report_uri_to.yaml
   credit:
     $ref: ./definitions/credit.yaml
   debit:
