@@ -49,9 +49,10 @@ The script:
 
 use Modern::Perl;
 use Carp qw( carp );
-use File::Find;
 use Getopt::Long;
 use Pod::Usage;
+
+use Koha::Devel::Files;
 
 my $apply   = 0;
 my $verbose = 0;
@@ -70,34 +71,14 @@ pod2usage(1) if $help;
 # The nonce attribute to add
 my $nonce_attr = 'nonce="[% Koha.CSPNonce | $raw %]"';
 
-# Patterns to skip (library files, etc.)
-my @skip_patterns = (
-    qr{/lib/},             # Third-party libraries
-    qr{/vendor/},          # Vendor files
-    qr{\.min\.},           # Minified files
-    qr{/node_modules/},    # Node modules
-);
-
 my %stats = (
     files_scanned  => 0,
     files_modified => 0,
     tags_modified  => 0,
 );
 
-sub should_skip_file {
-    my ($file) = @_;
-    for my $pattern (@skip_patterns) {
-        return 1 if $file =~ $pattern;
-    }
-    return 0;
-}
-
 sub process_file {
     my ($file) = @_;
-
-    return unless -f $file;
-    return unless $file =~ /\.(tt|inc)$/;
-    return if should_skip_file($file);
 
     $stats{files_scanned}++;
 
@@ -174,15 +155,11 @@ sub process_file {
 }
 
 # Find and process all template files
-find(
-    {
-        wanted => sub {
-            process_file($File::Find::name);
-        },
-        no_chdir => 1,
-    },
-    $dir
-);
+my $dev_files = Koha::Devel::Files->new;
+my @tt_files  = $dev_files->ls_tt_files;
+for my $file (@tt_files) {
+    process_file($file);
+}
 
 # Print summary
 say "";
