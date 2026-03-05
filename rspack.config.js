@@ -19,15 +19,30 @@ module.exports = [
             },
         },
         entry: {
-            erm: "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/erm.ts",
-            preservation:
+            erm: [
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/csp-nonce.js",
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/erm.ts",
+            ],
+            preservation: [
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/csp-nonce.js",
                 "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/preservation.ts",
-            "admin/record_sources":
+            ],
+            "admin/record_sources": [
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/csp-nonce.js",
                 "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/admin/record_sources.ts",
-            acquisitions:
+            ],
+            acquisitions: [
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/csp-nonce.js",
                 "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/acquisitions.ts",
-            islands: "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/islands.ts",
-            sip2: "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/sip2.ts",
+            ],
+            islands: [
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/csp-nonce.js",
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/islands.ts",
+            ],
+            sip2: [
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/csp-nonce.js",
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/sip2.ts",
+            ],
         },
         output: {
             filename: "[name].js",
@@ -102,7 +117,10 @@ module.exports = [
             outputModule: true,
         },
         entry: {
-            islands: "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/islands.ts",
+            islands: [
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/csp-nonce.js",
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/modules/islands.ts",
+            ],
         },
         output: {
             filename: "[name].esm.js",
@@ -169,8 +187,10 @@ module.exports = [
     },
     {
         entry: {
-            "api-client.cjs":
+            "api-client.cjs": [
+                "./koha-tmpl/intranet-tmpl/prog/js/vue/csp-nonce.js",
                 "./koha-tmpl/intranet-tmpl/prog/js/fetch/api-client.js",
+            ],
         },
         devtool: false,
         output: {

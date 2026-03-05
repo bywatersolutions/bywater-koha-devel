@@ -2,7 +2,9 @@ import { createApp } from "vue";
 import { createWebHistory, createRouter } from "vue-router";
 import { createPinia } from "pinia";
 
-import { library } from "@fortawesome/fontawesome-svg-core";
+import { config, library } from "@fortawesome/fontawesome-svg-core";
+config.autoAddCss = false;
+import "@fortawesome/fontawesome-svg-core/styles.css";
 import {
     faEye,
     faEyeSlash,
