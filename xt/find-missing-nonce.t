@@ -25,7 +25,7 @@ use Data::Dumper;
 
 use Koha::Devel::Files;
 
-my $dev_files = Koha::Devel::Files->new;
+my $dev_files = Koha::Devel::Files->new( { context => 'nonce' } );
 my @files     = $dev_files->ls_tt_files;
 ok( @files > 0, 'We should test something' );
 
@@ -50,7 +50,6 @@ sub catch_missing_nonce {
     for my $line (@lines) {
         $line_number++;
         if ( $line =~ m{<script} && $line !~ m{<script nonce=} && $line !~ m{src="} ) {
-            next if $line =~ m{Babeltheque_url_js};    # Exception
             push @errors, "$line_number: $line";
         }
         if ( $line =~ m{<style} && $line !~ m{<style nonce=} ) {
