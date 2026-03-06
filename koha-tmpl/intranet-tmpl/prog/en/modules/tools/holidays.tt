@@ -454,42 +454,42 @@
     </script>
     <script>
         function holidayOperation(formObject, opType) {
-            var op = document.getElementsByName('operation');
+            var op = document.getElementsByName("operation");
             op[0].value = opType;
             formObject.submit();
         }
 
         // This function shows the "Show Holiday" panel //
-        function showHoliday (exceptionPossibility, dayName, day, month, year, weekDay, title, description, holidayType) {
+        function showHoliday(exceptionPossibility, dayName, day, month, year, weekDay, title, description, holidayType) {
             $("#newHoliday").slideUp("fast");
             $("#showHoliday").slideDown("fast");
-            $('#showDaynameOutput').html(dayName);
-            $('#showDayname').val(dayName);
-            $('#showBranchNameOutput').html($("#branch :selected").text());
-            $('#showBranchName').val($("#branch").val());
-            $('#showDayOutput').html(day);
-            $('#showDay').val(day);
-            $('#showMonthOutput').html(month);
-            $('#showMonth').val(month);
-            $('#showYearOutput').html(year);
-            $('#showYear').val(year);
-            $('#showDescription').val(description);
-            $('#showWeekday:first').val(weekDay);
-            $('#showTitle').val(title);
-            $('#showHolidayType').val(holidayType);
+            $("#showDaynameOutput").html(dayName);
+            $("#showDayname").val(dayName);
+            $("#showBranchNameOutput").html($("#branch :selected").text());
+            $("#showBranchName").val($("#branch").val());
+            $("#showDayOutput").html(day);
+            $("#showDay").val(day);
+            $("#showMonthOutput").html(month);
+            $("#showMonth").val(month);
+            $("#showYearOutput").html(year);
+            $("#showYear").val(year);
+            $("#showDescription").val(description);
+            $("#showWeekday:first").val(weekDay);
+            $("#showTitle").val(title);
+            $("#showHolidayType").val(holidayType);
 
-            if (holidayType == 'exception') {
+            if (holidayType == "exception") {
                 $("#showOperationDelLabel").html(_("Delete this exception."));
-                $("#holtype").attr("class","key exception").html(_("Holiday exception"));
-            } else if(holidayType == 'weekday') {
+                $("#holtype").attr("class", "key exception").html(_("Holiday exception"));
+            } else if (holidayType == "weekday") {
                 $("#showOperationDelLabel").html(_("Delete this holiday."));
-                $("#holtype").attr("class","key repeatableweekly").html(_("Holiday repeating weekly"));
-            } else if(holidayType == 'daymonth') {
+                $("#holtype").attr("class", "key repeatableweekly").html(_("Holiday repeating weekly"));
+            } else if (holidayType == "daymonth") {
                 $("#showOperationDelLabel").html(_("Delete this holiday."));
-                $("#holtype").attr("class","key repeatableyearly").html(_("Holiday repeating yearly"));
+                $("#holtype").attr("class", "key repeatableyearly").html(_("Holiday repeating yearly"));
             } else {
                 $("#showOperationDelLabel").html(_("Delete this holiday."));
-                $("#holtype").attr("class","key holiday").html(_("Unique holiday"));
+                $("#holtype").attr("class", "key holiday").html(_("Unique holiday"));
             }
 
             if (exceptionPossibility == 1) {
@@ -500,13 +500,13 @@
         }
 
         // This function shows the "Add Holiday" panel //
-        function newHoliday (dayName, day, month, year, weekDay) {
+        function newHoliday(dayName, day, month, year, weekDay) {
             $("#showHoliday").slideUp("fast");
             $("#newHoliday").slideDown("fast");
             $("#newDaynameOutput").html(dayName);
             $("#newDayname").val(dayName);
-            $("#newBranchNameOutput").html($('#branch :selected').text());
-            $("#newBranchName").val($('#branch').val());
+            $("#newBranchNameOutput").html($("#branch :selected").text());
+            $("#newBranchName").val($("#branch").val());
             $("#newDayOutput").html(day);
             $("#newDay").val(day);
             $("#newMonthOutput").html(month);
@@ -517,103 +517,100 @@
         }
 
         function hidePanel(aPanelName) {
-            $("#"+aPanelName).slideUp("fast");
+            $("#" + aPanelName).slideUp("fast");
         }
 
-        function changeBranch () {
+        function changeBranch() {
             var branch = $("#branch option:selected").val();
-            location.href='/cgi-bin/koha/tools/holidays.pl?branch=' + branch + '&calendardate=' + calendardate;
+            location.href = "/cgi-bin/koha/tools/holidays.pl?branch=" + branch + "&calendardate=" + calendardate;
         }
 
         /**
-        * Build settings to be passed to the formatDay function for each day in the calendar
-        * @param  {object} dayElem - HTML node passed from Flatpickr
-        * @return {void}
-        */
-        function dateStatusHandler( dayElem ) {
+         * Build settings to be passed to the formatDay function for each day in the calendar
+         * @param  {object} dayElem - HTML node passed from Flatpickr
+         * @return {void}
+         */
+        function dateStatusHandler(dayElem) {
             var day = dayElem.dateObj.getDate();
             var month = dayElem.dateObj.getMonth() + 1;
             var year = dayElem.dateObj.getFullYear();
             var weekDay = dayElem.dateObj.getDay();
-            var dayMonth = month + '/' + day;
-            var dateString = year + '/' + month + '/' + day;
+            var dayMonth = month + "/" + day;
+            var dateString = year + "/" + month + "/" + day;
             if (exception_holidays[dateString] != null) {
-                formatDay( [ "exception", _("Exception: %s").format(exception_holidays[dateString].title)], dayElem );
-            } else if ( week_days[weekDay] != null ){
-                formatDay( [ "repeatableweekly", _("Weekly holiday: %s").format(week_days[weekDay].title)], dayElem );
-            } else if ( day_month_holidays[dayMonth] != null ) {
-                formatDay( [ "repeatableyearly", _("Yearly holiday: %s").format(day_month_holidays[dayMonth].title)], dayElem );
+                formatDay(["exception", _("Exception: %s").format(exception_holidays[dateString].title)], dayElem);
+            } else if (week_days[weekDay] != null) {
+                formatDay(["repeatableweekly", _("Weekly holiday: %s").format(week_days[weekDay].title)], dayElem);
+            } else if (day_month_holidays[dayMonth] != null) {
+                formatDay(["repeatableyearly", _("Yearly holiday: %s").format(day_month_holidays[dayMonth].title)], dayElem);
             } else if (holidays[dateString] != null) {
-                formatDay( [ "holiday", _("Single holiday: %s").format(holidays[dateString].title)], dayElem );
+                formatDay(["holiday", _("Single holiday: %s").format(holidays[dateString].title)], dayElem);
             } else {
-                formatDay( [ "normalday", _("Normal day")], dayElem );
+                formatDay(["normalday", _("Normal day")], dayElem);
             }
         }
 
         /**
-        * Adds style and title attribute to a day on the calendar
-        * @param  {object} settings - span class attribute ([0]) and title attribute ([1])
-        * @param  {node}   dayElem  - HTML node passed from Flatpickr
-        * @return {void}
-        */
-        function formatDay( settings, dayElem ){
-            $(dayElem).attr("title", settings[1]).addClass( settings[0]);
+         * Adds style and title attribute to a day on the calendar
+         * @param  {object} settings - span class attribute ([0]) and title attribute ([1])
+         * @param  {node}   dayElem  - HTML node passed from Flatpickr
+         * @return {void}
+         */
+        function formatDay(settings, dayElem) {
+            $(dayElem).attr("title", settings[1]).addClass(settings[0]);
         }
 
         /**
-        * Triggers an action based on a click on a calendar day: If a holiday exists on
-        * that day it loads an edit form. If there is no existing holiday one can be created
-        * @param  {object} calendar - a Date object corresponding to the clicked day
-        * @return {void}
-        */
-        function dateChanged( calendar ) {
+         * Triggers an action based on a click on a calendar day: If a holiday exists on
+         * that day it loads an edit form. If there is no existing holiday one can be created
+         * @param  {object} calendar - a Date object corresponding to the clicked day
+         * @return {void}
+         */
+        function dateChanged(calendar) {
             var day = calendar.getDate();
             var month = calendar.getMonth() + 1;
             var year = calendar.getFullYear();
             var weekDay = calendar.getDay();
             var dayName = weekdays[weekDay];
-            var dayMonth = month + '/' + day;
-            var dateString = year + '/' + month + '/' + day;
+            var dayMonth = month + "/" + day;
+            var dateString = year + "/" + month + "/" + day;
             if (holidays[dateString] != null) {
-                showHoliday(0, dayName, day, month, year, weekDay, holidays[dateString].title,     holidays[dateString].description, 'ymd');
+                showHoliday(0, dayName, day, month, year, weekDay, holidays[dateString].title, holidays[dateString].description, "ymd");
             } else if (exception_holidays[dateString] != null) {
-                showHoliday(0, dayName, day, month, year, weekDay, exception_holidays[dateString].title, exception_holidays[dateString].description, 'exception');
+                showHoliday(0, dayName, day, month, year, weekDay, exception_holidays[dateString].title, exception_holidays[dateString].description, "exception");
             } else if (week_days[weekDay] != null) {
-                showHoliday(1, dayName, day, month, year, weekDay, week_days[weekDay].title,     week_days[weekDay].description, 'weekday');
+                showHoliday(1, dayName, day, month, year, weekDay, week_days[weekDay].title, week_days[weekDay].description, "weekday");
             } else if (day_month_holidays[dayMonth] != null) {
-                showHoliday(1, dayName, day, month, year, weekDay, day_month_holidays[dayMonth].title, day_month_holidays[dayMonth].description, 'daymonth');
+                showHoliday(1, dayName, day, month, year, weekDay, day_month_holidays[dayMonth].title, day_month_holidays[dayMonth].description, "daymonth");
             } else {
                 newHoliday(dayName, day, month, year, weekDay);
             }
-        };
+        }
 
         /* Custom table search configuration: If a table row
             has an "expired" class, hide it UNLESS the
             show_expired checkbox is checked */
-        $.fn.dataTable.ext.search.push(
-            function( settings, searchData, index, rowData, counter ) {
-                var table = settings.nTable.id;
-                var row = $(settings.aoData[index].nTr);
-                if( row.hasClass("date_past") && !$("#show_past_" + table ).prop("checked") ){
-                    return false;
-                } else {
-                    return true;
-                }
+        $.fn.dataTable.ext.search.push(function (settings, searchData, index, rowData, counter) {
+            var table = settings.nTable.id;
+            var row = $(settings.aoData[index].nTr);
+            if (row.hasClass("date_past") && !$("#show_past_" + table).prop("checked")) {
+                return false;
+            } else {
+                return true;
             }
-        );
+        });
 
         // Create current date variable
         var date = new Date();
         var datestring = date.toISOString().substring(0, 10);
 
-        $(document).ready(function() {
-
+        $(document).ready(function () {
             $(".helptext + .hint").hide();
-            $("#branch").change(function(){
+            $("#branch").change(function () {
                 changeBranch();
             });
-            $("#holidayweeklyrepeatable>tbody>tr").each(function(){
-                var first_td = $(this).find('td').first();
+            $("#holidayweeklyrepeatable>tbody>tr").each(function () {
+                var first_td = $(this).find("td").first();
                 first_td.html(weekdays[first_td.html()]);
             });
             $("#holidayweeklyrepeatable").kohaTable({
@@ -636,61 +633,65 @@
             $("#holidaysunique").kohaTable(dt_params);
 
             let exceptions_table = $("#holidayexceptions").DataTable();
-            let unique_table     = $("#holidaysunique").DataTable();
+            let unique_table = $("#holidaysunique").DataTable();
 
-            $(".show_past").on("change", function(){
+            $(".show_past").on("change", function () {
                 exceptions_table.draw();
                 unique_table.draw();
             });
 
-            $("a.helptext").click(function(){
-                $(this).parent().find(".helptext + .hint").toggle(); return false;
+            $("a.helptext").click(function () {
+                $(this).parent().find(".helptext + .hint").toggle();
+                return false;
             });
 
             const dateofrange = document.querySelector("#dateofrange")._flatpickr;
             const datecancelrange = document.querySelector("#datecancelrange")._flatpickr;
 
-            $("#dateofrange").each(function () { this.value = "" });
-            $("#datecancelrange").each(function () { this.value = "" });
+            $("#dateofrange").each(function () {
+                this.value = "";
+            });
+            $("#datecancelrange").each(function () {
+                this.value = "";
+            });
 
             var maincalendar = $("#calendar-anchor").flatpickr({
                 inline: true,
-                onReady: function( selectedDates, dateStr, instance ){
+                onReady: function (selectedDates, dateStr, instance) {
                     // We do not want to display the 'close' icon in this case
-                    $(instance.input).siblings('.flatpickr-input').hide();
+                    $(instance.input).siblings(".flatpickr-input").hide();
                 },
-                onDayCreate: function( dObj, dStr, fp, dayElem ){
+                onDayCreate: function (dObj, dStr, fp, dayElem) {
                     /* for each day on the calendar, get the
                       correct status information for the date */
-                    dateStatusHandler( dayElem );
+                    dateStatusHandler(dayElem);
                 },
-                onChange: function( selectedDates, dateStr, instance ){
+                onChange: function (selectedDates, dateStr, instance) {
                     var fromdate = selectedDates[0];
                     var enddate = dateofrange.selectedDates[0];
 
-                    dateChanged( fromdate );
+                    dateChanged(fromdate);
 
-                    dateofrange.set( 'defaultDate', fromdate );
-                    dateofrange.set( 'minDate', fromdate );
+                    dateofrange.set("defaultDate", fromdate);
+                    dateofrange.set("minDate", fromdate);
 
-                    if ( enddate != undefined ) {
-                        if ( enddate < fromdate ) {
+                    if (enddate != undefined) {
+                        if (enddate < fromdate) {
                             dateofrange.set("defaultDate", fromdate);
                             dateofrange.setDate(fromdate);
                         }
                     }
-
                 },
-                defaultDate: new Date(keydate);
+                defaultDate: new Date(keydate),
             });
 
-            $(".hidePanel").on("click",function(){
-                if( $(this).hasClass("showHoliday") ){
+            $(".hidePanel").on("click", function () {
+                if ($(this).hasClass("showHoliday")) {
                     hidePanel("showHoliday");
                 } else {
                     hidePanel("newHoliday");
                 }
-            })
+            });
         });
     </script>
 [% END %]
