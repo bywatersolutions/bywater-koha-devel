@@ -68,6 +68,9 @@
 [% END %]
 <script>
     const patron_id = "[% borrower.borrowernumber | html %]";
+    addPrefs({
+        OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
+    });
 </script>
 
 <script>
@@ -100,11 +103,7 @@
         return false;
     }
 
-    [% IF ( Koha.Preference('OPACTableColExpandedByDefault') ) %]
-        var responsive_display = DataTable.Responsive.display.childRowImmediate;
-    [% ELSE %]
-        var responsive_display = DataTable.Responsive.display.childRow;
-    [% END %]
+    var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
 
         var Tables = $("#clubs-table-enrolled,#clubs-table-unenrolled");
         Tables.each(function(){
