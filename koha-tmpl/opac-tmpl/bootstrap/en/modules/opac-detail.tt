@@ -1938,10 +1938,10 @@
                 case 'subscriptions':
                 case 'serialcollection':
                     showBsTab("bibliodescriptions", defaulttab);
-                    break
-                case 'media'
+                    break;
+                case 'media':
                     showBsTab("bibliodescriptions", "html5media");
-                    break
+                    break;
                 default:
                     showBsTab("bibliodescriptions", "holdings");
             }
