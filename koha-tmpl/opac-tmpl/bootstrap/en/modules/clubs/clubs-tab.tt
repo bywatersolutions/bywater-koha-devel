@@ -72,67 +72,64 @@
         OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
     });
 </script>
-
 <script>
-    function loadEnrollmentForm( id ) {
+    function loadEnrollmentForm(id) {
         $("body").css("cursor", "progress");
-        $('#opac-user-clubs_panel').load('/cgi-bin/koha/clubs/enroll.pl?borrowernumber=' + patron_id + '&id=' + id, function() {
+        $("#opac-user-clubs_panel").load("/cgi-bin/koha/clubs/enroll.pl?borrowernumber=" + patron_id + "&id=" + id, function () {
             $("body").css("cursor", "default");
         });
 
         return false;
     }
 
-    function cancelEnrollment( id ) {
+    function cancelEnrollment(id) {
         $("body").css("cursor", "progress");
         $.ajax({
             type: "POST",
-            url: '/cgi-bin/koha/svc/club/cancel_enrollment',
-            data: { id: id, csrf_token: $('meta[name="csrf-token"]').attr('content'), },
-            success: function( data ) {
-                if ( data.success ) {
-                    $('#opac-user-clubs_panel').load('/cgi-bin/koha/clubs/clubs-tab.pl?borrowernumber=' + patron_id, function() {
+            url: "/cgi-bin/koha/svc/club/cancel_enrollment",
+            data: { id: id, csrf_token: $('meta[name="csrf-token"]').attr("content") },
+            success: function (data) {
+                if (data.success) {
+                    $("#opac-user-clubs_panel").load("/cgi-bin/koha/clubs/clubs-tab.pl?borrowernumber=" + patron_id, function () {
                         $("body").css("cursor", "default");
                     });
                 } else {
                     alert(_("Unable to cancel enrollment!"));
                 }
             },
-            dataType: 'json'
+            dataType: "json",
         });
         return false;
     }
 
     var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
 
-        var Tables = $("#clubs-table-enrolled,#clubs-table-unenrolled");
-        Tables.each(function(){
-            $(this).kohaTable({
-                searching: false,
-                paging: false,
-                info: false,
-                responsive: {
-                    details: {
-                        display: responsive_display,
-                        type: "column",
-                        target: -1
-                    },
+    var Tables = $("#clubs-table-enrolled,#clubs-table-unenrolled");
+    Tables.each(function () {
+        $(this).kohaTable({
+            searching: false,
+            paging: false,
+            info: false,
+            responsive: {
+                details: {
+                    display: responsive_display,
+                    type: "column",
+                    target: -1,
                 },
-                columnDefs: [
-                    { className: "dtr-control", orderable: false, targets: -1 },
-                ],
-            });
+            },
+            columnDefs: [{ className: "dtr-control", orderable: false, targets: -1 }],
         });
+    });
 
-        $(".cancel_enrollment").on("click", function(e){
-            e.preventDefault();
-            let clubid = $(this).data("id");
-            cancelEnrollment( clubid );
-        });
+    $(".cancel_enrollment").on("click", function (e) {
+        e.preventDefault();
+        let clubid = $(this).data("id");
+        cancelEnrollment(clubid);
+    });
 
-        $(".load_enrollment").on("click", function(e){
-            e.preventDefault();
-            let clubid = $(this).data("id");
-            loadEnrollmentForm( clubid );
-        });
+    $(".load_enrollment").on("click", function (e) {
+        e.preventDefault();
+        let clubid = $(this).data("id");
+        loadEnrollmentForm(clubid);
+    });
 </script>

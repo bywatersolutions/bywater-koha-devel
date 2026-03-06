@@ -61,7 +61,6 @@
 <script>
     const borrowernumber = "[% borrowernumber | html %]";
 </script>
-
 <script>
     var clubs_dt_params = {
         paging: true,
@@ -69,37 +68,36 @@
     $("#table_clubnoenrollmemnts").kohaTable(clubs_dt_params);
     $("#table_clubenrollments").kohaTable(clubs_dt_params);
 </script>
-
 [% IF CAN_user_clubs_enroll %]
-<script>
-    function loadEnrollmentForm( id, enrollent_id = 0 ) {
-        $("body").css("cursor", "progress");
-        $('#clubs_panel').load('/cgi-bin/koha/clubs/patron-enroll.pl?borrowernumber=" + borrowernumber + " &id=' + id +'&enrollent_id='+ enrollent_id, function() {
-            $("body").css("cursor", "default");
-        });
+    <script>
+        function loadEnrollmentForm(id, enrollent_id = 0) {
+            $("body").css("cursor", "progress");
+            $("#clubs_panel").load('/cgi-bin/koha/clubs/patron-enroll.pl?borrowernumber=" + borrowernumber + " &id=' + id + "&enrollent_id=" + enrollent_id, function () {
+                $("body").css("cursor", "default");
+            });
 
-        return false;
-    }
+            return false;
+        }
 
-    function cancelEnrollment( id ) {
-        $("body").css("cursor", "progress");
-        const client = APIClient.club;
-        client.enrollments.cancel(id).then(
-            success => {
-                if ( success.success ) {
-                    $('#clubs_panel').load('/cgi-bin/koha/clubs/patron-clubs-tab.pl?borrowernumber=" + borrowernumber + "', function() {
-                        $("body").css("cursor", "default");
-                    });
-                } else {
+        function cancelEnrollment(id) {
+            $("body").css("cursor", "progress");
+            const client = APIClient.club;
+            client.enrollments.cancel(id).then(
+                success => {
+                    if (success.success) {
+                        $("#clubs_panel").load('/cgi-bin/koha/clubs/patron-clubs-tab.pl?borrowernumber=" + borrowernumber + "', function () {
+                            $("body").css("cursor", "default");
+                        });
+                    } else {
+                        alert(_("Unable to cancel enrollment!"));
+                    }
+                },
+                error => {
+                    console.warn("Something wrong happened: %s".format(error));
                     alert(_("Unable to cancel enrollment!"));
                 }
-            },
-            error => {
-                console.warn("Something wrong happened: %s".format(error));
-                alert(_("Unable to cancel enrollment!"));
-            }
-        );
-        return false;
-    }
-</script>
+            );
+            return false;
+        }
+    </script>
 [% END %]
