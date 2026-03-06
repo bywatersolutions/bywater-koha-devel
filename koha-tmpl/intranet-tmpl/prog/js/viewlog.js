@@ -41,9 +41,20 @@ function renderStructDiff(raw) {
     if (!entries.length) return "";
 
     function fmt(v) {
-        if (v === undefined) return "";
-        var s = typeof v === "object" ? JSON.stringify(v) : String(v);
-        return $("<span>").text(s).html();
+        if (v === undefined || v === null) return "";
+        if (typeof v !== "object") return $("<span>").text(String(v)).html();
+        var items = Object.keys(v)
+            .map(function (k) {
+                return (
+                    "<li>" +
+                    $("<span>").text(k).html() +
+                    ": " +
+                    fmt(v[k]) +
+                    "</li>"
+                );
+            })
+            .join("");
+        return '<ul class="diff-obj">' + items + "</ul>";
     }
 
     var rows = entries
