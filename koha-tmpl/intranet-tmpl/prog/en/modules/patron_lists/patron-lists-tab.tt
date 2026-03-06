@@ -136,22 +136,22 @@
     $("#table_listnopatron").kohaTable(patron_lists_dt_params);
     $("#table_inlists").kohaTable(patron_lists_dt_params);
 
-    if (permissions.CAN_user_tools_manage_patron_lists){
+    if (permissions.CAN_user_tools_manage_patron_lists) {
         function addToList() {
             var list_id = $("#add_to_patron_list_id_select").val();
-            $('#pat_lists_panel').text(_("Loading..."));
+            $("#pat_lists_panel").text(_("Loading..."));
             $("body").css("cursor", "progress");
-            $('#pat_lists_panel').load(`/cgi-bin/koha/patron_lists/patron-lists-tab.pl?borrowernumber=${patron_id}&patron_list_id=${list_id}&patrons_to_add=${cardnumber}, function() {
+            $("#pat_lists_panel").load(`/cgi-bin/koha/patron_lists/patron-lists-tab.pl?borrowernumber=${patron_id}&patron_list_id=${list_id}&patrons_to_add=${cardnumber}`, function () {
                 $("body").css("cursor", "default");
             });
 
             return false;
         }
 
-        function removeFromList( list_id, patron_list_patron_id ) {
-            $('#pat_lists_panel').text(_("Loading..."));
+        function removeFromList(list_id, patron_list_patron_id) {
+            $("#pat_lists_panel").text(_("Loading..."));
             $("body").css("cursor", "progress");
-            $('#pat_lists_panel').load(`/cgi-bin/koha/patron_lists/patron-lists-tab.pl?borrowernumber=${patron_id}&patron_list_id=${list_id}&patrons_to_remove=${patron_list_patron_id}`, function() {
+            $("#pat_lists_panel").load(`/cgi-bin/koha/patron_lists/patron-lists-tab.pl?borrowernumber=${patron_id}&patron_list_id=${list_id}&patrons_to_remove=${patron_list_patron_id}`, function () {
                 $("body").css("cursor", "default");
             });
 
