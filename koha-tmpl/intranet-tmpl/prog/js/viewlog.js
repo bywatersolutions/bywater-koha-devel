@@ -1,3 +1,95 @@
+/**
+ * Recursively collect changed entries from a Struct::Diff node.
+ * Returns an array of { key, before, after } objects.
+ * Nested diffs are flattened with dot-separated keys.
+ */
+function collectDiffEntries(node, prefix) {
+    var entries = [];
+    Object.keys(node).forEach(function (key) {
+        var change = node[key];
+        var fullKey = prefix ? prefix + "." + key : key;
+        if ("O" in change || "N" in change) {
+            entries.push({ key: fullKey, before: change.O, after: change.N });
+        } else if ("A" in change) {
+            entries.push({ key: fullKey, before: undefined, after: change.A });
+        } else if ("R" in change) {
+            entries.push({ key: fullKey, before: change.R, after: undefined });
+        } else if ("D" in change) {
+            entries = entries.concat(collectDiffEntries(change.D, fullKey));
+        }
+    });
+    return entries;
+}
+
+/**
+ * Render Struct::Diff JSON as a human-readable before/after table.
+ * Falls back to a <pre> block for non-Struct::Diff JSON or plain text.
+ */
+function renderStructDiff(raw) {
+    if (!raw) return "";
+    var diff;
+    try {
+        diff = JSON.parse(raw);
+    } catch (e) {
+        return $("<pre>").text(raw)[0].outerHTML;
+    }
+    if (!diff || !diff.D || typeof diff.D !== "object") {
+        return $("<pre>").text(raw)[0].outerHTML;
+    }
+
+    var entries = collectDiffEntries(diff.D, "");
+    if (!entries.length) return "";
+
+    function fmt(v) {
+        if (v === undefined) return "";
+        var s = typeof v === "object" ? JSON.stringify(v) : String(v);
+        return $("<span>").text(s).html();
+    }
+
+    var rows = entries
+        .map(function (e) {
+            var before =
+                e.before !== undefined
+                    ? "<del>" + fmt(e.before) + "</del>"
+                    : "";
+            var after =
+                e.after !== undefined ? "<ins>" + fmt(e.after) + "</ins>" : "";
+            return (
+                "<tr>" +
+                '<td class="diff-key">' +
+                $("<span>").text(e.key).html() +
+                "</td>" +
+                '<td class="diff-before">' +
+                before +
+                "</td>" +
+                '<td class="diff-after">' +
+                after +
+                "</td>" +
+                "</tr>"
+            );
+        })
+        .join("");
+
+    return (
+        '<table class="struct-diff">' +
+        "<thead><tr>" +
+        "<th>" +
+        __("Field") +
+        "</th>" +
+        "<th>" +
+        __("Before") +
+        "</th>" +
+        "<th>" +
+        __("After") +
+        "</th>" +
+        "</tr></thead>" +
+        "<tbody>" +
+        rows +
+        "</tbody>" +
+        "</table>"
+    );
+}
+
 function tickAll(section) {
     $("input[type='checkbox'][name='" + section + "']").prop("checked", true);
     $("#" + section.slice(0, -1) + "ALL").prop("checked", true);
@@ -150,6 +242,13 @@ $(document).ready(function () {
     $("#select_none").on("click", function (e) {
         e.preventDefault();
         $(".compare:checked").prop("checked", false).change();
+    });
+
+    $("td.diff-col").each(function () {
+        var raw = $(this).text().trim();
+        if (raw) {
+            $(this).html(renderStructDiff(raw));
+        }
     });
     patron_autocomplete($("#user"), {
         "on-select-callback": function (event, ui) {
