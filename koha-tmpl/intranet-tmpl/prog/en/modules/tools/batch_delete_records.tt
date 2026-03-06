@@ -264,7 +264,7 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     <script>
-        const record_type = "[% recordtype | html %]";
+        const recordtype = "[% recordtype | html %]";
     </script>
     <script>
         var MSG_CANNOT_BE_DELETED = _("This record cannot be deleted, at least one item is currently checked out.");
