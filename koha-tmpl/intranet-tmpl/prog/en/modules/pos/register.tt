@@ -576,7 +576,9 @@
                             var result =
                                 '<a class="btn btn-default btn-xs" role="button" data-bs-toggle="modal" data-cashup="' +
                                 encodeURIComponent(row.cashup_id) +
-                                '" data-register="${register.description}" href="#cashupSummaryModal"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' +
+                                '" data-register="' +
+                                register.description +
+                                '" href="#cashupSummaryModal"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' +
                                 _("Summary") +
                                 "</a>\n";
                             return result;
@@ -590,10 +592,10 @@
             1
         );
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Check for cashup hash in URL
             let hash = window.location.hash;
-            if (hash && hash.startsWith('#cashup-')) {
+            if (hash && hash.startsWith("#cashup-")) {
                 let cashup_id = hash.substring(8); // Remove '#cashup-' prefix
                 let $button = $('[data-cashup="' + cashup_id + '"]');
                 if ($button.length) {
