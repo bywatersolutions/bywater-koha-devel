@@ -2109,7 +2109,7 @@
                                 if (prefs.OpenLibraryCovers){
                                     KOHA.OpenLibrary.GetCoverFromIsbn();
                                 }
-                                if (OPACLocalCoverImages){
+                                if (prefs.OPACLocalCoverImages){
                                     KOHA.LocalCover.GetCoverFromBibnumber(true);
                                 }
                             }
