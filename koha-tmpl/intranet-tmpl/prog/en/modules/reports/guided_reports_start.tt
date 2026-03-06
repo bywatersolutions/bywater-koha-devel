@@ -2120,7 +2120,7 @@
             $("#download-chart").hide();
             var chart;
 
-            if (original_results && !has_errors) {
+            if (original_results.length && !has_errors) {
                 $("#draw-chart").click(function () {
                     var x_elements = $('select[name="x"]').val();
                     var y_elements = [];
