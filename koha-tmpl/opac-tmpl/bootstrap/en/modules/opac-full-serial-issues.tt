@@ -193,30 +193,29 @@
     <script>
         const min_year = "[% yearmin | html %]";
     </script>
-
     <script>
-        $(document).ready(function(){
+        $(document).ready(function () {
             showlayer(min_year);
             $("a.tabsubs:first").addClass("currentsubtab");
-            $("#filterform").submit(function(){
+            $("#filterform").submit(function () {
                 filterByLibrary();
                 return false;
             });
-            $("#libraryfilter").change(function(){
+            $("#libraryfilter").change(function () {
                 filterByLibrary();
             });
-            $("#subscriptionidfilter").change(function(){
+            $("#subscriptionidfilter").change(function () {
                 filterBySubscriptionId();
             });
-            $("#reset").click(function(){
+            $("#reset").click(function () {
                 clearFilters();
             });
-            $("a.tabsubs").on("click", function(e){
+            $("a.tabsubs").on("click", function (e) {
                 e.preventDefault();
                 let year = $(this).data("year");
                 $("a.tabsubs").removeClass("currentsubtab");
                 $(this).addClass("currentsubtab");
-                showlayer( year );
+                showlayer(year);
             });
             $(".subscriptionstclass").kohaTable({
                 order: [[0, "desc"]],
@@ -230,73 +229,77 @@
 
             // Getting each branchcode from the currently displayed tab
             var subarray = [];
-            $("div#" + currentYear + " table.subscriptionstclass tbody tr:visible td.libraryfilterclass").each(function() {
-                if (subarray.indexOf($(this).text()) == -1) { subarray.push($(this).text()); }
+            $("div#" + currentYear + " table.subscriptionstclass tbody tr:visible td.libraryfilterclass").each(function () {
+                if (subarray.indexOf($(this).text()) == -1) {
+                    subarray.push($(this).text());
+                }
             });
 
             // Setting the option values with branchcodes
-            $("#libraryfilter").append('<option value="all">'+_("(All)")+'</option>');
+            $("#libraryfilter").append('<option value="all">' + _("(All)") + "</option>");
             for (var i = 0; i < subarray.length; i++) {
-                $("#libraryfilter").append('<option value="' + subarray[i] + '">' + subarray[i] + '</option>');
+                $("#libraryfilter").append('<option value="' + subarray[i] + '">' + subarray[i] + "</option>");
             }
         }
 
         // Filter by Library
         function filterByLibrary() {
-
             selectedStatus = $("#libraryfilter").val();
 
             // Reset the filters but keeps the selected library
             clearFilters(true);
 
-            if (selectedStatus != 'all') {
-
+            if (selectedStatus != "all") {
                 // We hide everything
-            $("table.subscriptionstclass tbody tr").hide();
+                $("table.subscriptionstclass tbody tr").hide();
 
-            // Then show the lines that match the currently selected library
-            $("table.subscriptionstclass tbody tr td.libraryfilterclass:contains(" + selectedStatus + ")").parent().show();
+                // Then show the lines that match the currently selected library
+                $("table.subscriptionstclass tbody tr td.libraryfilterclass:contains(" + selectedStatus + ")")
+                    .parent()
+                    .show();
 
+                // We then prepare the subscription filter :
 
-            // We then prepare the subscription filter :
+                // Getting subscription id's for the selected library
+                var subarray = [];
+                $("div#" + currentYear + " table.subscriptionstclass tbody tr:visible td.subscriptionidfilterclass").each(function () {
+                    if (subarray.indexOf($(this).text()) == -1) {
+                        subarray.push($(this).text());
+                    }
+                });
+                // Setting the option values with subscription id's
+                $("#subscriptionidfilter").append('<option value="all">' + _("(All)") + "</option>");
+                for (var i = 0; i < subarray.length; i++) {
+                    $("#subscriptionidfilter").append('<option value="' + subarray[i] + '">' + subarray[i] + "</option>");
+                }
 
-            // Getting subscription id's for the selected library
-            var subarray = [];
-            $("div#" + currentYear + " table.subscriptionstclass tbody tr:visible td.subscriptionidfilterclass").each(function() {
-                if (subarray.indexOf($(this).text()) == -1) { subarray.push($(this).text()); }
-            });
-            // Setting the option values with subscription id's
-            $("#subscriptionidfilter").append('<option value="all">'+_("(All)")+'</option>');
-            for (var i = 0; i < subarray.length; i++) {
-                $("#subscriptionidfilter").append('<option value="' + subarray[i] + '">' + subarray[i] + '</option>');
-            }
-
-            // Subscription filtering is now ready
-            $("#subscriptionidfilter").removeAttr("disabled");
+                // Subscription filtering is now ready
+                $("#subscriptionidfilter").removeAttr("disabled");
             }
         }
 
         // Filter by subscription id
         function filterBySubscriptionId() {
-
             selectedSubscription = $("#subscriptionidfilter").val();
-            selectedLibrary      = $("#libraryfilter").val();
+            selectedLibrary = $("#libraryfilter").val();
 
             if (selectedSubscription == "all") {
-            clearFilters(true);
-            filterByLibrary();
+                clearFilters(true);
+                filterByLibrary();
             } else {
+                // We hide everything
+                $("table.subscriptionstclass tbody tr").hide();
 
-            // We hide everything
-            $("table.subscriptionstclass tbody tr").hide();
+                // Then show the lines that match the currently selected library
+                $("table.subscriptionstclass tbody tr td.libraryfilterclass:contains(" + selectedLibrary + ")")
+                    .parent()
+                    .show();
 
-            // Then show the lines that match the currently selected library
-            $("table.subscriptionstclass tbody tr td.libraryfilterclass:contains(" + selectedLibrary + ")").parent().show();
-
-            // Then hide the lines where the subscription id does not match the selected one
-            $("table.subscriptionstclass tbody tr td.subscriptionidfilterclass").not(
-                $("table.subscriptionstclass tbody tr td.subscriptionidfilterclass:contains(" + selectedSubscription + ")")
-            ).parent().hide();
+                // Then hide the lines where the subscription id does not match the selected one
+                $("table.subscriptionstclass tbody tr td.subscriptionidfilterclass")
+                    .not($("table.subscriptionstclass tbody tr td.subscriptionidfilterclass:contains(" + selectedSubscription + ")"))
+                    .parent()
+                    .hide();
             }
         }
 
@@ -308,23 +311,23 @@
 
             // Remove old subscription options
             $("#subscriptionidfilter option").remove();
-            $("#subscriptionidfilter option").append('<option value="all">'+_("(All)")+'</option>');
+            $("#subscriptionidfilter option").append('<option value="all">' + _("(All)") + "</option>");
             $("#subscriptionidfilter").attr("disabled", "disabled");
 
             if (keeplibrary != true) {
-            // Reinit library options
-            initFilters();
-            $("#libraryfilter option[value=all]").attr("selected", "selected");
+                // Reinit library options
+                initFilters();
+                $("#libraryfilter option[value=all]").attr("selected", "selected");
             }
         }
 
-        function showlayer(numlayer){
-            $(".yeardata").each(function(){
+        function showlayer(numlayer) {
+            $(".yeardata").each(function () {
                 ong = $(this).attr("id");
-                if(ong == "show"+numlayer){
+                if (ong == "show" + numlayer) {
                     $(this).show();
                     currentYear = ong;
-                } else  {
+                } else {
                     $(this).hide();
                 }
             });

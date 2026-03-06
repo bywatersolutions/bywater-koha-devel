@@ -368,56 +368,58 @@
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
         });
     </script>
-
     <script>
-        $(document).ready(function(){
-            function toggle_digest(id){
-                let phone_checked = prefs.TalkingTechItivaPhoneNotification ? false : prefs.PhoneNotification ? $("#phone"+id).prop("checked") : false;
+        $(document).ready(function () {
+            function toggle_digest(id) {
+                let phone_checked = prefs.TalkingTechItivaPhoneNotification ? false : prefs.PhoneNotification ? $("#phone" + id).prop("checked") : false;
 
-                if ( $("#email"+id).prop("checked") || $("#sms"+id).prop("checked") || phone_checked ) {
-                    $("#digest"+id).attr("disabled", false).tooltip('disable');
+                if ($("#email" + id).prop("checked") || $("#sms" + id).prop("checked") || phone_checked) {
+                    $("#digest" + id)
+                        .attr("disabled", false)
+                        .tooltip("disable");
                 } else {
-                    $("#digest"+id).attr("disabled", true).prop("checked",false).tooltip('enable');
+                    $("#digest" + id)
+                        .attr("disabled", true)
+                        .prop("checked", false)
+                        .tooltip("enable");
                 }
-
             }
             // At load time, we want digest disabled if no digest using transport is enabled
-            $(".pmp_email").each(function(){
+            $(".pmp_email").each(function () {
                 toggle_digest(Number($(this).attr("id").replace("email", "")));
             });
 
             // If user clears all digest using transports for a notice, disable digest checkbox
-            $(".pmp_email").click(function(){
+            $(".pmp_email").click(function () {
                 toggle_digest(Number($(this).attr("id").replace("email", "")));
             });
-            $(".pmp_sms").click(function(){
+            $(".pmp_sms").click(function () {
                 toggle_digest(Number($(this).attr("id").replace("sms", "")));
             });
-            $(".pmp_phone").click(function(){
+            $(".pmp_phone").click(function () {
                 toggle_digest(Number($(this).attr("id").replace("phone", "")));
             });
-
         });
 
-        function normalizeSMS(value){
-            let has_plus = value.charAt(0) === '+';
-            let new_value = value.replace(/\D/g,'');
-            if ( has_plus ) new_value = '+' + new_value;
+        function normalizeSMS(value) {
+            let has_plus = value.charAt(0) === "+";
+            let new_value = value.replace(/\D/g, "");
+            if (has_plus) new_value = "+" + new_value;
             return new_value;
         }
 
-        var sms_input = document.getElementById('SMSnumber');
+        var sms_input = document.getElementById("SMSnumber");
 
-        if (typeof sms_input !== 'undefined' && sms_input !== null) {
-            sms_input.addEventListener('keyup', function(){
+        if (typeof sms_input !== "undefined" && sms_input !== null) {
+            sms_input.addEventListener("keyup", function () {
                 var field = sms_input.value;
                 sms_input.value = normalizeSMS(field);
             });
 
-            sms_input.addEventListener('paste', function(event) {
-                let paste = (event.clipboardData || window.clipboardData).getData('text');
+            sms_input.addEventListener("paste", function (event) {
+                let paste = (event.clipboardData || window.clipboardData).getData("text");
                 setTimeout(function () {
-                sms_input.value = normalizeSMS(paste);
+                    sms_input.value = normalizeSMS(paste);
                 }, 100);
             });
         }
@@ -431,7 +433,7 @@
                 details: {
                     display: responsive_display,
                     type: "column",
-                    target: -1
+                    target: -1,
                 },
             },
             columnDefs: [{ className: "dtr-control", orderable: false, targets: -1 }],

@@ -86,112 +86,106 @@
     <script>
         const ENABLE_OPAC_PAYMENTS = [% ENABLE_OPAC_PAYMENTS ? 1 : 0 | html %];
     </script>
-
     <script>
-        $( document ).ready(function() {
-
+        $(document).ready(function () {
             var txtActivefilter = _("Filter paid transactions");
             var txtInactivefilter = _("Show all transactions");
 
             var fines_table = $("#finestable").kohaTable({
-                ...(ENABLE_OPAC_PAYMENTS
-                    ? {order: [[ 1, "desc" ]]}
-                    : {order: [[ 0, "desc" ]]}
-                ),
-                 dom: '<"#filter_p">',
-                 responsive: {
-                    details: { "type": 'column',"target": -1 }
-                 },
-                 columnDefs: [
-                    { className: 'dtr-control', orderable: false, targets: -1 }
-                 ],
-                 drawCallback: function() {
-                    show_hiddentfoot('#finestable');
-                 }
-            } );
+                ...(ENABLE_OPAC_PAYMENTS ? { order: [[1, "desc"]] } : { order: [[0, "desc"]] }),
+                dom: '<"#filter_p">',
+                responsive: {
+                    details: { type: "column", target: -1 },
+                },
+                columnDefs: [{ className: "dtr-control", orderable: false, targets: -1 }],
+                drawCallback: function () {
+                    show_hiddentfoot("#finestable");
+                },
+            });
 
             $('table[id^="finestable-"]').kohaTable({
-                 responsive: {
-                    details: { "type": 'column',"target": -1 }
-                 },
-                 columnDefs: [
-                    { className: 'dtr-control', orderable: false, targets: -1 }
-                 ],
-                 drawCallback: function() {
+                responsive: {
+                    details: { type: "column", target: -1 },
+                },
+                columnDefs: [{ className: "dtr-control", orderable: false, targets: -1 }],
+                drawCallback: function () {
                     show_hiddentfoot('table[id^="finestable-"]');
-                 }
+                },
             });
 
             function show_hiddentfoot(selector) {
-                $('.finestable tfoot .sum').show();
+                $(".finestable tfoot .sum").show();
                 if ($(".finestable tfoot td.dtr-hidden").length > 0) {
-                    $(selector+" tfoot th").removeAttr( "colspan" );
+                    $(selector + " tfoot th").removeAttr("colspan");
                     $(".finestable tfoot .dtr-control").hide();
                 }
             }
-            $("#filter_p").html('<p><a href="#" id="filter_paid"><i class="fa fa-filter" aria-hidden="true"></i> '+txtActivefilter+'</a>');
-            $('#filter_paid').click(function(e) {
+            $("#filter_p").html('<p><a href="#" id="filter_paid"><i class="fa fa-filter" aria-hidden="true"></i> ' + txtActivefilter + "</a>");
+            $("#filter_paid").click(function (e) {
                 e.preventDefault();
-                let filteredValue = '';
-                if ($(this).hasClass('filtered')) {
-                    $(this).html('<i class="fa fa-filter" aria-hidden="true"></i> '+txtActivefilter);
-                } else { //Not filtered. Let's do it!
-                    filteredValue = '^((?!0.00).*)$'; //Filter not matching 0.00 http://stackoverflow.com/a/406408
-                    $(this).html('<i class="fa fa-filter" aria-hidden="true"></i> '+txtInactivefilter);
+                let filteredValue = "";
+                if ($(this).hasClass("filtered")) {
+                    $(this).html('<i class="fa fa-filter" aria-hidden="true"></i> ' + txtActivefilter);
+                } else {
+                    //Not filtered. Let's do it!
+                    filteredValue = "^((?!0.00).*)$"; //Filter not matching 0.00 http://stackoverflow.com/a/406408
+                    $(this).html('<i class="fa fa-filter" aria-hidden="true"></i> ' + txtInactivefilter);
                 }
-                fines_table.DataTable().columns(-2).search(filteredValue, {regex: true}).draw();
-                $(this).toggleClass('filtered');
+                fines_table.DataTable().columns(-2).search(filteredValue, { regex: true }).draw();
+                $(this).toggleClass("filtered");
             });
 
             //Start filtered
-            $('#filter_paid').click();
+            $("#filter_paid").click();
 
             $(".pay-online").removeClass("hidden");
 
             $("#amount-to-pay-label").hide();
 
-            $(".checkbox-pay, input[name='payment_method']").change( function() {
+            $(".checkbox-pay, input[name='payment_method']").change(function () {
                 // Disable the pay button if no fees are selected
                 //$("#submit-pay").prop("disabled", ! $(".checkbox-pay:checked").length );
 
                 // Calculate the total amount to be paid based on selected fees
                 var total = 0;
-                $(".checkbox-pay").each( function() {
-                    if ( $(this).is(":checked") ) {
+                $(".checkbox-pay").each(function () {
+                    if ($(this).is(":checked")) {
                         var id = this.id.split("checkbox-pay-")[1];
-                        total += parseFloat( $("#amount-" + id).val() );
+                        total += parseFloat($("#amount-" + id).val());
                     }
                 });
 
                 var p = Promise.resolve();
-                if ( total ) {
+                if (total) {
                     p = Promise.all(
-                        $('input[name="payment_method"]').map(function() {
-                            var self = this;
-                            return new Promise(function(resolve, reject) {
-                                var threshold = $(self).data('threshold');
-                                var help = $(self).parent().siblings('.help-block');
-                                if(!threshold || threshold == '' || threshold <= total) {
-                                    $(self).prop('disabled', false);
-                                    help.addClass('hide');
-                                } else {
-                                    $(self).prop('disabled', true);
-                                    help.html( _("Minimum amount needed by this service is %s").format(parseInt(threshold,10).toFixed(2)) ).removeClass('hide');
-                                }
-                                resolve();
+                        $('input[name="payment_method"]')
+                            .map(function () {
+                                var self = this;
+                                return new Promise(function (resolve, reject) {
+                                    var threshold = $(self).data("threshold");
+                                    var help = $(self).parent().siblings(".help-block");
+                                    if (!threshold || threshold == "" || threshold <= total) {
+                                        $(self).prop("disabled", false);
+                                        help.addClass("hide");
+                                    } else {
+                                        $(self).prop("disabled", true);
+                                        help.html(_("Minimum amount needed by this service is %s").format(parseInt(threshold, 10).toFixed(2))).removeClass("hide");
+                                    }
+                                    resolve();
+                                });
                             })
-                        }).toArray()
+                            .toArray()
                     );
 
-                    $("#amount-to-pay").html( total.toFixed(2) );
+                    $("#amount-to-pay").html(total.toFixed(2));
                     $("#amount-to-pay-label").show();
                 } else {
-                    $('input[name="payment_method"]').prop('disabled', false).parent().siblings('.help-block').addClass('hide');
+                    $('input[name="payment_method"]').prop("disabled", false).parent().siblings(".help-block").addClass("hide");
                     $("#amount-to-pay-label").hide();
                 }
-                p.then(function() {
-                    $("#submit-pay").prop("disabled", ! $(".checkbox-pay:checked").length || ! $('input[name="payment_method"]:checked:not(:disabled)').length);
-                })
+                p.then(function () {
+                    $("#submit-pay").prop("disabled", !$(".checkbox-pay:checked").length || !$('input[name="payment_method"]:checked:not(:disabled)').length);
+                });
             });
         });
     </script>

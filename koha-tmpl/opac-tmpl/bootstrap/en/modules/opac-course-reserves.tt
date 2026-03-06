@@ -89,9 +89,8 @@
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
         });
     </script>
-
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
             $("#course_reserves_table").kohaTable(
                 {
@@ -106,12 +105,10 @@
                         details: {
                             display: responsive_display,
                             type: "column",
-                            target: -1
+                            target: -1,
                         },
                     },
-                    cColumnDefs: [
-                        { className: "dtr-control", orderable: false, targets: -1 },
-                    ],
+                    cColumnDefs: [{ className: "dtr-control", orderable: false, targets: -1 }],
                 },
                 table_settings
             );

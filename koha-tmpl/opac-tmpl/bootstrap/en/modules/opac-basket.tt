@@ -446,13 +446,13 @@
     [% IF ( TagsInputEnabled && loggedinusername ) %]
         <script>
             function tagSelected() {
-                var bibs = document.getElementById('records').value;
+                var bibs = document.getElementById("records").value;
                 if (bibs) {
                     $("#tagsel_tag").hide();
                     $("#tag_hides").hide();
                     $("#tagsel_form").show();
                 } else {
-                    alert( _("No item was selected") );
+                    alert(_("No item was selected"));
                 }
             }
 
@@ -467,13 +467,13 @@
             function tagAdded() {
                 var checkedBoxes = $("input:checkbox:checked");
                 if (!$(checkedBoxes).size()) {
-                    alert( _("No item was selected") );
+                    alert(_("No item was selected"));
                     return false;
                 }
 
                 var tag = $("#tagsel_new").val();
-                if (!tag || (tag == "")) {
-                    alert( _("No tag was specified.") );
+                if (!tag || tag == "") {
+                    alert(_("No tag was specified."));
                     return false;
                 }
 
@@ -488,120 +488,118 @@
             }
         </script>
     [% END # / TagsInputEnabled && loggedinusername %]
-
     <script>
-        $(document).ready(function(){
-            $("a.bib_opener").on('click',function(){
+        $(document).ready(function () {
+            $("a.bib_opener").on("click", function () {
                 let link = this.dataset.link;
                 let biblionumber = this.dataset.biblionumber;
-                openBiblio(link,biblionumber)
+                openBiblio(link, biblionumber);
             });
 
-            $(".brief").click(function(e){
+            $(".brief").click(function (e) {
                 e.preventDefault();
                 showLess();
             });
 
-            $(".detail").click(function(e){
+            $(".detail").click(function (e) {
                 e.preventDefault();
                 showMore();
             });
 
-            $(".send").click(function(e){
+            $(".send").click(function (e) {
                 e.preventDefault();
                 sendBasket();
             });
 
-            $(".download-cart").on("click", function(e){
+            $(".download-cart").on("click", function (e) {
                 e.preventDefault();
                 var format = $(this).data("format");
-                $("#download_format").val( format );
+                $("#download_format").val(format);
                 $("#download_cart").submit();
             });
 
-            $(".empty").click(function(e){
+            $(".empty").click(function (e) {
                 e.preventDefault();
                 delBasket();
             });
 
-            $(".deleteshelf").click(function(e){
+            $(".deleteshelf").click(function (e) {
                 e.preventDefault();
                 delSelRecords();
             });
 
-            $(".newshelf").click(function(e){
+            $(".newshelf").click(function (e) {
                 e.preventDefault();
                 addSelToShelf();
             });
 
-            $(".hold").click(function(e){
+            $(".hold").click(function (e) {
                 e.preventDefault();
                 holdSel();
             });
 
-            $("#tagsel_tag").click(function(e){
+            $("#tagsel_tag").click(function (e) {
                 e.preventDefault();
                 tagSelected();
             });
 
-            $("#tagsel_button").click(function(e){
+            $("#tagsel_button").click(function (e) {
                 e.preventDefault();
                 tagAdded();
             });
 
-            $("#tagsel_cancel").click(function(e){
+            $("#tagsel_cancel").click(function (e) {
                 e.preventDefault();
                 tagCanceled();
             });
 
-            $("#CheckAll").click(function(e){
+            $("#CheckAll").click(function (e) {
                 e.preventDefault();
-                $(".cb").each(function(){
+                $(".cb").each(function () {
                     $(this).prop("checked", true);
                     selRecord(this.value, true);
                 });
                 enableCheckboxActions();
             });
 
-            $("#CheckNone").click(function(e){
+            $("#CheckNone").click(function (e) {
                 e.preventDefault();
-                $(".cb").each(function(){
+                $(".cb").each(function () {
                     $(this).prop("checked", false);
                     selRecord(this.value, false);
                 });
                 enableCheckboxActions();
             });
 
-            if( $("#itemst").length > 0 ){
+            if ($("#itemst").length > 0) {
                 var itemst = $("#itemst").kohaTable({
                     order: [[1, "asc"]],
                 });
 
                 var buttons = new $.fn.dataTable.Buttons(itemst, {
-                     buttons: [
-                        'print'
-                    ]
-                }).container().appendTo($('#toolbar'));
+                    buttons: ["print"],
+                })
+                    .container()
+                    .appendTo($("#toolbar"));
             }
 
-            $(".cb").change(function(){
-                selRecord( $(this).val(), $(this).prop("checked") );
+            $(".cb").change(function () {
+                selRecord($(this).val(), $(this).prop("checked"));
                 enableCheckboxActions();
                 return false;
             });
             enableCheckboxActions();
-
         });
 
-        function enableCheckboxActions(){
+        function enableCheckboxActions() {
             // Enable/disable controls if checkboxes are checked
             var checkedBoxes = $(".cb:checked");
-            if ( checkedBoxes.length ) {
-              $(".selections").html(_("With selected titles: "));
-              $(".selections-toolbar .links a").removeClass("disabled").attr("aria-disabled", "false");
+            if (checkedBoxes.length) {
+                $(".selections").html(_("With selected titles: "));
+                $(".selections-toolbar .links a").removeClass("disabled").attr("aria-disabled", "false");
             } else {
-              $(".selections").html(_("Select titles to: "));
-              $(".selections-toolbar .links a").addClass("disabled").attr("aria-disabled", "true");
+                $(".selections").html(_("Select titles to: "));
+                $(".selections-toolbar .links a").addClass("disabled").attr("aria-disabled", "true");
             }
         }
     </script>

@@ -234,46 +234,43 @@
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
         });
     </script>
-
     <script>
-        $(document).ready(function(){
-            if ( prefs.GoogleJackets ){
+        $(document).ready(function () {
+            if (prefs.GoogleJackets) {
                 KOHA.Google.GetCoverFromIsbn();
             }
-            $('#order').change(function() {
-                $('#sortform').submit();
+            $("#order").change(function () {
+                $("#sortform").submit();
             });
 
             var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
-            var table = $("#readingrec").kohaTable(
-                {
-                    dom: '<"top"<"table_entries"i><"table_controls"fB>>t',
-                    language: {
-                        search: "_INPUT_",
-                        searchPlaceholder: _("Search"),
-                    },
-                    responsive: {
-                        details: {
-                            display: responsive_display,
-                            type: "column",
-                            target: -1
-                        },
-                    },
-                    columnDefs: [
-                        { className: "dtr-control", orderable: false, targets: [-1] },
-                        { visible: false, targets: [0] },
-                    ],
+            var table = $("#readingrec").kohaTable({
+                dom: '<"top"<"table_entries"i><"table_controls"fB>>t',
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: _("Search"),
                 },
-            );
+                responsive: {
+                    details: {
+                        display: responsive_display,
+                        type: "column",
+                        target: -1,
+                    },
+                },
+                columnDefs: [
+                    { className: "dtr-control", orderable: false, targets: [-1] },
+                    { visible: false, targets: [0] },
+                ],
+            });
 
             let table_dt = table.DataTable();
 
             $("#tabs a[data-bs-toggle='tab']").on("shown.bs.tab", function (e) {
                 var id = e.target.id;
                 let pattern = "";
-                if ( id == "checkout-tab" ) {
+                if (id == "checkout-tab") {
                     pattern = "standard_checkout";
-                } else if ( id == "onsite_checkout-tab" ) {
+                } else if (id == "onsite_checkout-tab") {
                     pattern = "onsite_checkout";
                 }
                 table_dt.columns(0).search(pattern).draw();

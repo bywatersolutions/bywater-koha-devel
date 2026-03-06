@@ -422,102 +422,99 @@
             var metadata = "[% metadata | $raw %]";
         [% END %]
     </script>
-
     <script>
         function display_extended_attribute(row, type) {
-            var arr = $.grep(row.extended_attributes, ( x => x.type === type ));
+            var arr = $.grep(row.extended_attributes, x => x.type === type);
             if (arr.length > 0) {
                 return escape_str(arr[0].value);
             }
 
-            return '';
+            return "";
         }
 
         function display_request_status(row) {
-            let status       = row._strings.status.str;
-            let status_alias = row._strings.status_av ?
-                                    row._strings.status_av.str ?
-                                        row._strings.status_av.str :
-                                    row._strings.status_av.code :
-                               null;
+            let status = row._strings.status.str;
+            let status_alias = row._strings.status_av ? (row._strings.status_av.str ? row._strings.status_av.str : row._strings.status_av.code) : null;
 
-            let status_label = status + (status_alias ? " <i><strong>"+status_alias+"</strong></i>" : "");
+            let status_label = status + (status_alias ? " <i><strong>" + status_alias + "</strong></i>" : "");
 
             return status_label;
         }
         $("#illrequestlist").kohaTable({
-            order: [[ 0, "desc" ]],
+            order: [[0, "desc"]],
             dom: '<"dt-info"i><"top pager"<"table_entries"lp>t<"bottom pager"pi>',
             paging: true,
-            embed: ['+strings','extended_attributes'],
+            embed: ["+strings", "extended_attributes"],
             ajax: { url: `/api/v1/public/patrons/${logged_in_user_borrowernumber}/ill/requests` },
-            columnDefs: [ {
-                render: function (data, type, row, meta) {
-                    if ( data && type == 'display' ) {
-                        return data.escapeHtml();
-                    }
-                    return data;
-                }
-            } ],
+            columnDefs: [
+                {
+                    render: function (data, type, row, meta) {
+                        if (data && type == "display") {
+                            return data.escapeHtml();
+                        }
+                        return data;
+                    },
+                },
+            ],
             columns: [
                 {
-                    data: 'ill_request_id',
-                    sortable: true
+                    data: "ill_request_id",
+                    sortable: true,
                 },
                 {
-                    data: 'author',
+                    data: "author",
                     sortable: false,
                     render: (data, type, row, meta) => {
-                        return display_extended_attribute(row, 'author');
+                        return display_extended_attribute(row, "author");
                     },
                 },
                 {
-                    data: 'title',
+                    data: "title",
                     sortable: false,
                     render: (data, type, row, meta) => {
-                        return display_extended_attribute(row, 'title');
+                        return display_extended_attribute(row, "title");
                     },
                 },
                 {
-                    data: 'ill_backend_id',
-                    sortable: true
+                    data: "ill_backend_id",
+                    sortable: true,
                 },
                 {
-                    data: 'type',
+                    data: "type",
                     sortable: false,
                     render: (data, type, row, meta) => {
-                        return display_extended_attribute(row, 'type');
+                        return display_extended_attribute(row, "type");
                     },
                 },
                 {
-                    data: 'status',
+                    data: "status",
                     sortable: true,
                     render: (data, type, row, meta) => {
                         return display_request_status(row);
                     },
                 },
                 {
-                    data: 'requested_date',
+                    data: "requested_date",
                     sortable: true,
                     render: (data, type, row, meta) => {
                         return $date(data);
                     },
                 },
                 {
-                    data: 'timestamp',
+                    data: "timestamp",
                     sortable: true,
                     render: (data, type, row, meta) => {
                         return $date(data);
                     },
                 },
                 {
-                    data: '',
+                    data: "",
                     sortable: false,
                     render: (data, type, row, meta) => {
                         return `<a href="/cgi-bin/koha/opac-illrequests.pl?op=view&amp;illrequest_id=${row.ill_request_id}" class="btn btn-primary btn-sm">View</a>`;
                     },
-                }
-            ]
+                },
+            ],
         });
         $("#backend-dropdown-options").removeClass("nojs");
     </script>

@@ -1700,7 +1700,6 @@
 
         const defaulttab = "[% defaulttab | html %]";
     </script>
-
     <script>
         window.emojiPicker = new EmojiPicker({
         emojiable_selector: '[data-emojiable=true]',
@@ -2261,7 +2260,6 @@
 
         }
     </script>
-
     [% IF ( NovelistSelectProfile && ( normalized_isbn || normalized_upc ) ) %]
         <script>
             $(document).ready(function() {
@@ -2282,5 +2280,4 @@
             });
         </script>
     [% END %]
-
 [% END %]
