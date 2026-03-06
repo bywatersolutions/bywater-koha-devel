@@ -364,17 +364,17 @@
             });
             $(".export").on("click", function (e) {
                 e.preventDefault();
-                var label_id = $(this).data("label-id");
-                var batch_id = $(this).data("batch-id");
-                location.href = "/cgi-bin/koha/labels/label-print.pl?batch_id=" + batch_id + "&label_id=" + label_id;
+                var export_label_id = $(this).data("label-id");
+                var export_batch_id = $(this).data("batch-id");
+                location.href = "/cgi-bin/koha/labels/label-print.pl?batch_id=" + export_batch_id + "&label_id=" + export_label_id;
             });
             $("#savedesc").click(function (event) {
                 event.preventDefault(); // prevent form submission
                 var newdescription = $('input[name="description"]').val();
-                var batch_id = $(this).data("batch_id");
+                var save_batch_id = $(this).data("batch_id");
                 var ajaxData = {
                     newdescription: newdescription,
-                    batch_id: batch_id,
+                    batch_id: save_batch_id,
                     op: "cud-set_permission",
                     csrf_token: $('meta[name="csrf-token"]').attr("content"),
                 };
