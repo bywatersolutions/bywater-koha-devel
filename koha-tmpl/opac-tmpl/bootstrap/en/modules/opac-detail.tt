@@ -1934,6 +1934,7 @@
 
             switch (defaulttab){
                 case 'holdings':
+                case 'components':
                 case 'descriptions':
                 case 'subscriptions':
                 case 'serialcollection':
