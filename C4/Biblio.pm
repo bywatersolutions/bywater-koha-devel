@@ -310,7 +310,9 @@ sub AddBiblio {
         );
 
         _after_biblio_action_hooks( { action => 'create', biblio_id => $biblionumber } );
-        logaction( "CATALOGUING", "ADD", $biblionumber, "biblio" ) if C4::Context->preference("CataloguingLog");
+        if ( C4::Context->preference("CataloguingLog") ) {
+            logaction( "CATALOGUING", "ADD", $biblionumber, "biblio", undef, Koha::Biblios->find($biblionumber) );
+        }
 
         # We index now, after the transaction is committed
         unless ($skip_record_index) {
@@ -395,18 +397,9 @@ sub ModBiblio {
         return 0;
     }
 
+    my $original;
     if ( C4::Context->preference("CataloguingLog") ) {
-        my $biblio = Koha::Biblios->find($biblionumber);
-        my $record;
-        my $decoding_error = "";
-        eval { $record = $biblio->metadata->record };
-        if ($@) {
-            my $exception = $@;
-            $exception->rethrow unless ( $exception->isa('Koha::Exceptions::Metadata::Invalid') );
-            $decoding_error = "There was an error with this bibliographic record: " . $exception;
-            $record         = $biblio->metadata->record_strip_nonxml;
-        }
-        logaction( "CATALOGUING", "MODIFY", $biblionumber, "biblio $decoding_error BEFORE=>" . $record->as_formatted );
+        $original = Koha::Biblios->find($biblionumber)->unblessed;
     }
 
     if ( !$options->{disable_autolink} && C4::Context->preference('AutoLinkBiblios') ) {
@@ -468,6 +461,10 @@ sub ModBiblio {
     _koha_modify_biblioitem_nonmarc( $dbh, $oldbiblio );
 
     _after_biblio_action_hooks( { action => 'modify', biblio_id => $biblionumber } );
+
+    if ( C4::Context->preference("CataloguingLog") ) {
+        logaction( "CATALOGUING", "MODIFY", $biblionumber, Koha::Biblios->find($biblionumber), undef, $original );
+    }
 
     # update OAI-PMH sets
     if ( C4::Context->preference("OAI-PMH:AutoUpdateSets") ) {
@@ -588,7 +585,8 @@ sub DelBiblio {
 
     _after_biblio_action_hooks( { action => 'delete', biblio_id => $biblionumber } );
 
-    logaction( "CATALOGUING", "DELETE", $biblionumber, "biblio" ) if C4::Context->preference("CataloguingLog");
+    logaction( "CATALOGUING", "DELETE", $biblionumber, "biblio", undef, $biblio )
+        if C4::Context->preference("CataloguingLog");
 
     Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue->new->enqueue( { biblio_ids => [$biblionumber] } )
         unless $params->{skip_holds_queue}

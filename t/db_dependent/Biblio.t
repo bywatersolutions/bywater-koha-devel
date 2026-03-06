@@ -1205,28 +1205,23 @@ subtest 'GetFrameworkCode' => sub {
 };
 
 subtest 'ModBiblio on invalid record' => sub {
-    plan tests => 3;
+    plan tests => 2;
 
     t::lib::Mocks::mock_preference( "CataloguingLog", 1 );
 
-    # We create a record with an onvalid control character in the MARC
+    # We create a record with an invalid control character in the MARC
     my $record = MARC::Record->new();
-    my $field  = MARC::Field->new( '650', '', '', 'a' => '00aD000015937' );
+    my $field  = MARC::Field->new( '650', '', '', 'a' => "00aD000015937" );
     $record->append_fields($field);
 
     my ($biblionumber) = C4::Biblio::AddBiblio( $record, '' );
 
-    warning_like { C4::Biblio::ModBiblio( $record, $biblionumber, '' ); }
-    qr/parser error : PCDATA invalid Char value 31/,
-        'Modding the biblio warns about the encoding issues';
+    C4::Biblio::ModBiblio( $record, $biblionumber, '' );
     my $action_logs =
         Koha::ActionLogs->search( { object => $biblionumber, module => 'Cataloguing', action => 'MODIFY' } );
     is( $action_logs->count, 1, "Modification of biblio was successful and recorded" );
     my $action_log = $action_logs->next;
-    like(
-        $action_log->info, qr/parser error : PCDATA invalid Char value 31/,
-        "Metadata issue successfully logged in action logs"
-    );
+    like( $action_log->info, qr/biblionumber/, "Biblio data logged in action log info" );
 };
 
 subtest 'UpdateTotalIssues on Invalid record' => sub {
