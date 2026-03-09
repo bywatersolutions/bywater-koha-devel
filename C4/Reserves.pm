@@ -1730,7 +1730,7 @@ sub FixPriority {
     }
 
     # if this hold is marked lowest priority, we can only move it so far
-    if ( $hold && $hold->lowestPriority && $rank ne 'del' ) {
+    if ( $hold && $hold->lowestPriority && $rank ne 'del' && $rank > 0 ) {
         my $query = "
             SELECT max(priority)
             FROM reserves
