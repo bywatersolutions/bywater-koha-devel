@@ -311,7 +311,12 @@ sub AddBiblio {
 
         _after_biblio_action_hooks( { action => 'create', biblio_id => $biblionumber } );
         if ( C4::Context->preference("CataloguingLog") ) {
-            logaction( "CATALOGUING", "ADD", $biblionumber, "biblio", undef, Koha::Biblios->find($biblionumber) );
+            my $new_biblio   = Koha::Biblios->find($biblionumber);
+            my $marc_for_log = eval { $new_biblio->metadata->record_strip_nonxml };
+            logaction(
+                "CATALOGUING", "ADD", $biblionumber, "biblio", undef,
+                { %{ $new_biblio->unblessed }, _marc => _marc_record_to_diffable($marc_for_log) }
+            );
         }
 
         # We index now, after the transaction is committed
@@ -397,9 +402,11 @@ sub ModBiblio {
         return 0;
     }
 
-    my $original;
+    my ( $original, $original_marc );
     if ( C4::Context->preference("CataloguingLog") ) {
-        $original = Koha::Biblios->find($biblionumber)->unblessed;
+        my $pre_biblio = Koha::Biblios->find($biblionumber);
+        $original      = $pre_biblio->unblessed;
+        $original_marc = eval { $pre_biblio->metadata->record_strip_nonxml };
     }
 
     if ( !$options->{disable_autolink} && C4::Context->preference('AutoLinkBiblios') ) {
@@ -463,7 +470,14 @@ sub ModBiblio {
     _after_biblio_action_hooks( { action => 'modify', biblio_id => $biblionumber } );
 
     if ( C4::Context->preference("CataloguingLog") ) {
-        logaction( "CATALOGUING", "MODIFY", $biblionumber, Koha::Biblios->find($biblionumber), undef, $original );
+        my $updated_biblio   = Koha::Biblios->find($biblionumber);
+        my $updated_marc_log = eval { $updated_biblio->metadata->record_strip_nonxml };
+        logaction(
+            "CATALOGUING", "MODIFY", $biblionumber,
+            { %{ $updated_biblio->unblessed }, _marc => _marc_record_to_diffable($updated_marc_log) },
+            undef,
+            { %{$original}, _marc => _marc_record_to_diffable($original_marc) }
+        );
     }
 
     # update OAI-PMH sets
@@ -486,6 +500,27 @@ Utility routine to remove item tags from a
 MARC bib.
 
 =cut
+
+sub _marc_record_to_diffable {
+    my ($record) = @_;
+    return {} unless defined $record;
+    my %marc;
+    for my $field ( $record->fields ) {
+        my $tag = $field->tag;
+        if ( $field->is_control_field ) {
+            $marc{$tag} = $field->data;
+        } else {
+            my $ind1      = $field->indicator(1);
+            my $ind2      = $field->indicator(2);
+            my $formatted = "$ind1$ind2";
+            for my $subfield ( $field->subfields ) {
+                $formatted .= " \$$subfield->[0] $subfield->[1]";
+            }
+            push @{ $marc{$tag} }, $formatted;
+        }
+    }
+    return \%marc;
+}
 
 sub _strip_item_fields {
     my $record        = shift;
@@ -532,6 +567,11 @@ sub DelBiblio {
 
     my $dbh = C4::Context->dbh;
     my $error;                # for error handling
+
+    my $biblio_marc =
+        C4::Context->preference("CataloguingLog")
+        ? eval { $biblio->metadata->record_strip_nonxml }
+        : undef;
 
     # First make sure this biblio has no items attached
     my $sth = $dbh->prepare("SELECT itemnumber FROM items WHERE biblionumber=?");
@@ -585,8 +625,10 @@ sub DelBiblio {
 
     _after_biblio_action_hooks( { action => 'delete', biblio_id => $biblionumber } );
 
-    logaction( "CATALOGUING", "DELETE", $biblionumber, "biblio", undef, $biblio )
-        if C4::Context->preference("CataloguingLog");
+    logaction(
+        "CATALOGUING", "DELETE", $biblionumber, "biblio", undef,
+        { %{ $biblio->unblessed }, _marc => _marc_record_to_diffable($biblio_marc) }
+    ) if C4::Context->preference("CataloguingLog");
 
     Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue->new->enqueue( { biblio_ids => [$biblionumber] } )
         unless $params->{skip_holds_queue}

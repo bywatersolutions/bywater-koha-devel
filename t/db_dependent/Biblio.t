@@ -1205,7 +1205,7 @@ subtest 'GetFrameworkCode' => sub {
 };
 
 subtest 'ModBiblio on invalid record' => sub {
-    plan tests => 2;
+    plan tests => 4;
 
     t::lib::Mocks::mock_preference( "CataloguingLog", 1 );
 
@@ -1216,12 +1216,18 @@ subtest 'ModBiblio on invalid record' => sub {
 
     my ($biblionumber) = C4::Biblio::AddBiblio( $record, '' );
 
+    # Modify the record to add a title field so MARC changes are captured in the diff
+    my $title_field = MARC::Field->new( '245', '1', '0', 'a' => 'New Title' );
+    $record->append_fields($title_field);
+
     C4::Biblio::ModBiblio( $record, $biblionumber, '' );
     my $action_logs =
         Koha::ActionLogs->search( { object => $biblionumber, module => 'Cataloguing', action => 'MODIFY' } );
     is( $action_logs->count, 1, "Modification of biblio was successful and recorded" );
     my $action_log = $action_logs->next;
     like( $action_log->info, qr/biblionumber/, "Biblio data logged in action log info" );
+    ok( defined $action_log->diff, "Diff column is populated for MODIFY" );
+    like( $action_log->diff, qr/_marc/, "MARC field changes are captured in the diff column" );
 };
 
 subtest 'UpdateTotalIssues on Invalid record' => sub {

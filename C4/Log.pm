@@ -94,6 +94,10 @@ sub logaction {
         }
     } else {
         $updated = $infos;
+        if ( ref $infos eq 'HASH' ) {
+            local $Data::Dumper::Sortkeys = 1;
+            $infos = Dumper($updated);
+        }
     }
 
     my $script =
