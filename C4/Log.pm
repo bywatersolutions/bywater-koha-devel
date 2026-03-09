@@ -96,7 +96,11 @@ sub logaction {
         $updated = $infos;
         if ( ref $infos eq 'HASH' ) {
             local $Data::Dumper::Sortkeys = 1;
-            $infos = Dumper($updated);
+            if ( $modulename eq 'CATALOGUING' && $actionname eq 'MODIFY' ) {
+                $infos = "biblio " . Dumper( ref $original eq 'HASH' ? $original : {} );
+            } else {
+                $infos = Dumper($updated);
+            }
         }
     }
 
