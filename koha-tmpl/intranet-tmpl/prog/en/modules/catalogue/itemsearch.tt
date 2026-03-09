@@ -814,12 +814,12 @@
             });
 
             let shareable_params = params.map(p => {
-                if(p.name === 'format') {
-                    return { ...p, value: 'shareable' };
+                if (p.name === "format") {
+                    return { ...p, value: "shareable" };
                 }
                 return p;
             });
-            let shareable_url = window.location.origin + window.location.pathname + '?' + $.param(shareable_params);
+            let shareable_url = window.location.origin + window.location.pathname + "?" + $.param(shareable_params);
             history.replaceState(null, "", shareable_url);
         }
 
