@@ -692,7 +692,6 @@ sub AddAuthority {
         )->store();
         $authority->discard_changes();
         $authid = $authority->authid;
-        logaction( "AUTHORITIES", "ADD", $authid, "authority" ) if C4::Context->preference("AuthoritiesLog");
     } else {
         $action    = 'modify';
         $authority = Koha::Authorities->find($authid);
@@ -722,6 +721,15 @@ sub AddAuthority {
     }
 
     _after_authority_action_hooks( { action => $action, authority_id => $authid } );
+
+    if ( $action eq 'create' && C4::Context->preference("AuthoritiesLog") ) {
+        $authority->discard_changes;
+        logaction(
+            "AUTHORITIES", "ADD", $authid, "authority", undef,
+            _authority_log_data( $authority, $record )
+        );
+    }
+
     return ($authid);
 }
 
@@ -751,7 +759,13 @@ sub DelAuthority {
         Koha::Authority::MergeRequests->search($condition)->delete;
         merge( { mergefrom => $authid } ) if !$skip_merge;
 
-        my $authority = Koha::Authorities->find($authid);
+        my $authority    = Koha::Authorities->find($authid);
+        my $deleted_marc = eval { $authority->record } if C4::Context->preference("AuthoritiesLog");
+        my $deleted_data =
+            C4::Context->preference("AuthoritiesLog")
+            ? _authority_log_data( $authority, $deleted_marc )
+            : undef;
+
         $schema->txn_do(
             sub {
                 $authority->move_to_deleted;    #FIXME We should define 'move' ..
@@ -759,7 +773,8 @@ sub DelAuthority {
             }
         );
 
-        logaction( "AUTHORITIES", "DELETE", $authid, "authority" ) if C4::Context->preference("AuthoritiesLog");
+        logaction( "AUTHORITIES", "DELETE", $authid, "authority", undef, $deleted_data )
+            if C4::Context->preference("AuthoritiesLog");
         unless ($skip_record_index) {
             my $indexer = Koha::SearchEngine::Indexer->new( { index => $Koha::SearchEngine::AUTHORITIES_INDEX } );
             $indexer->index_records( $authid, "recordDelete", "authorityserver", undef );
@@ -791,13 +806,26 @@ sub ModAuthority {
     my $skip_record_index = $params->{skip_record_index} || 0;
 
     my $oldrecord = GetAuthority($authid);
+    my ( $original_data, $original_marc );
+    if ( C4::Context->preference("AuthoritiesLog") ) {
+        my $old_authority = Koha::Authorities->find($authid);
+        $original_data = _authority_log_data( $old_authority, $oldrecord );
+    }
 
     #Now rewrite the $record to table with an add
     $authid = AddAuthority( $record, $authid, $authtypecode, { skip_record_index => $skip_record_index } );
     merge( { mergefrom => $authid, MARCfrom => $oldrecord, mergeto => $authid, MARCto => $record } )
         if !$params->{skip_merge};
-    logaction( "AUTHORITIES", "MODIFY", $authid, "authority BEFORE=>" . $oldrecord->as_formatted )
-        if C4::Context->preference("AuthoritiesLog");
+
+    if ( C4::Context->preference("AuthoritiesLog") ) {
+        my $new_authority = Koha::Authorities->find($authid);
+        logaction(
+            "AUTHORITIES", "MODIFY", $authid,
+            _authority_log_data( $new_authority, $record ),
+            undef, $original_data
+        );
+    }
+
     return $authid;
 }
 
@@ -1500,6 +1528,35 @@ sub GenerateHierarchy {
 sub _get_authid_subfield {
     my ($field) = @_;
     return $field->subfield('9') || $field->subfield('3');
+}
+
+sub _marc_record_to_diffable {
+    my ($record) = @_;
+    return {} unless defined $record;
+    my %marc;
+    for my $field ( $record->fields ) {
+        my $tag = $field->tag;
+        if ( $field->is_control_field ) {
+            $marc{$tag} = $field->data;
+        } else {
+            my $ind1      = $field->indicator(1);
+            my $ind2      = $field->indicator(2);
+            my $formatted = "$ind1$ind2";
+            for my $subfield ( $field->subfields ) {
+                $formatted .= " \$$subfield->[0] $subfield->[1]";
+            }
+            push @{ $marc{$tag} }, $formatted;
+        }
+    }
+    return \%marc;
+}
+
+sub _authority_log_data {
+    my ( $authority, $marc_record ) = @_;
+    my %data = %{ $authority->unblessed };
+    delete $data{marcxml};
+    $data{_marc} = _marc_record_to_diffable($marc_record);
+    return \%data;
 }
 
 =head2 GetHeaderAuthority

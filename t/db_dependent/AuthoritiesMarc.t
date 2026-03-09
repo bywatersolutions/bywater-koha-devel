@@ -6,7 +6,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 14;
+use Test::More tests => 15;
 use Test::MockModule;
 use Test::Warn;
 use MARC::Field;
@@ -14,6 +14,7 @@ use MARC::Record;
 
 use t::lib::Mocks;
 use t::lib::TestBuilder;
+use Koha::ActionLogs;
 use Koha::Database;
 use Koha::Authority::Types;
 
@@ -395,6 +396,52 @@ subtest 'DelAuthority() tests' => sub {
 
     # Check if last delete got moved to deletedauth_header
     isnt( Koha::Database->new->schema->resultset('DeletedauthHeader')->find($auth_id), undef, 'Moved to deleted' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'Authority action logs include MARC diff' => sub {
+    plan tests => 12;
+
+    $schema->storage->txn_begin;
+
+    t::lib::Mocks::mock_preference( 'AuthoritiesLog', 1 );
+
+    my $auth_type = 'GEOGR_NAME';
+
+    # ADD
+    my $add_record = MARC::Record->new;
+    $add_record->add_fields( [ '151', ' ', ' ', a => 'France' ] );
+    my $auth_id = AddAuthority( $add_record, undef, $auth_type );
+
+    my $add_logs = Koha::ActionLogs->search( { object => $auth_id, module => 'AUTHORITIES', action => 'ADD' } );
+    is( $add_logs->count, 1, 'ADD action logged' );
+    my $add_log = $add_logs->next;
+    ok( defined $add_log->diff, 'ADD: diff column populated' );
+    like( $add_log->diff, qr/_marc/,  'ADD: diff contains MARC field data' );
+    like( $add_log->diff, qr/France/, 'ADD: diff contains heading content' );
+
+    # MODIFY - change the heading
+    my $mod_record = MARC::Record->new;
+    $mod_record->add_fields( [ '151', ' ', ' ', a => 'France (updated)' ] );
+    ModAuthority( $auth_id, $mod_record, $auth_type, { skip_merge => 1 } );
+
+    my $mod_logs = Koha::ActionLogs->search( { object => $auth_id, module => 'AUTHORITIES', action => 'MODIFY' } );
+    is( $mod_logs->count, 1, 'MODIFY action logged' );
+    my $mod_log = $mod_logs->next;
+    ok( defined $mod_log->diff, 'MODIFY: diff column populated' );
+    like( $mod_log->diff, qr/_marc/,            'MODIFY: diff contains MARC field data' );
+    like( $mod_log->diff, qr/France/,           'MODIFY: diff captures before value' );
+    like( $mod_log->diff, qr/France.*updated/s, 'MODIFY: diff captures after value' );
+
+    # DELETE
+    DelAuthority( { authid => $auth_id, skip_merge => 1 } );
+
+    my $del_logs = Koha::ActionLogs->search( { object => $auth_id, module => 'AUTHORITIES', action => 'DELETE' } );
+    is( $del_logs->count, 1, 'DELETE action logged' );
+    my $del_log = $del_logs->next;
+    ok( defined $del_log->diff, 'DELETE: diff column populated' );
+    like( $del_log->diff, qr/_marc/, 'DELETE: diff contains MARC field data' );
 
     $schema->storage->txn_rollback;
 };
