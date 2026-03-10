@@ -83,7 +83,7 @@ subtest 'test Content-Security-Policy header in a minimal environment' => sub {
         "Response contains Content-Security-Policy header with the expected value"
     );
     is(
-        $res->content, '<script nonce="' . $test_nonce . '">' . "\n" . '</script>' . "\n",
+        $res->content, "\n" . ' <script nonce="' . $test_nonce . '">' . "\n" . '</script>' . "\n",
         "Response contains generated nonce in the body"
     );
 
