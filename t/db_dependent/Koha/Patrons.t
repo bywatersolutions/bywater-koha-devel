@@ -502,8 +502,7 @@ subtest 'renew_account' => sub {
         );
         my $number_of_logs =
             $schema->resultset('ActionLog')
-            ->search( { module => 'MEMBERS', action => 'RENEW', object => $retrieved_patron->borrowernumber } )
-            ->count;
+            ->search( { module => 'MEMBERS', action => 'RENEW', object => $retrieved_patron->borrowernumber } )->count;
         is( $number_of_logs, 1, 'With BorrowersLog, Koha::Patron->renew_account should have logged' );
 
         t::lib::Mocks::mock_preference( 'BorrowerRenewalPeriodBase', 'now' );
@@ -519,8 +518,7 @@ subtest 'renew_account' => sub {
         is( dt_from_string($retrieved_expiry_date), $a_year_later, "today + 12 months must be $a_year_later" );
         $number_of_logs =
             $schema->resultset('ActionLog')
-            ->search( { module => 'MEMBERS', action => 'RENEW', object => $retrieved_patron->borrowernumber } )
-            ->count;
+            ->search( { module => 'MEMBERS', action => 'RENEW', object => $retrieved_patron->borrowernumber } )->count;
         is( $number_of_logs, 1, 'Without BorrowersLog, Koha::Patron->renew_account should not have logged' );
 
         t::lib::Mocks::mock_preference( 'BorrowerRenewalPeriodBase', 'combination' );
@@ -656,8 +654,7 @@ subtest "delete" => sub {
 
     my $number_of_logs =
         $schema->resultset('ActionLog')
-        ->search( { module => 'MEMBERS', action => 'DELETE', object => $patron->borrowernumber } )
-        ->count;
+        ->search( { module => 'MEMBERS', action => 'DELETE', object => $patron->borrowernumber } )->count;
     is( $number_of_logs, 1, 'With BorrowersLog, Koha::Patron->delete should have logged' );
 
     # Test deletion with designated fallback owner
@@ -730,8 +727,7 @@ subtest 'add_enrolment_fee_if_needed' => sub {
     foreach ( keys %{$enrolmentfees} ) {
         ( Koha::Patron::Categories->find($_)
                 // $builder->build_object( { class => 'Koha::Patron::Categories', value => { categorycode => $_ } } ) )
-            ->enrolmentfee( $enrolmentfees->{$_} )
-            ->store;
+            ->enrolmentfee( $enrolmentfees->{$_} )->store;
     }
     my $enrolmentfee_K  = $enrolmentfees->{K};
     my $enrolmentfee_J  = $enrolmentfees->{J};
@@ -2658,8 +2654,7 @@ subtest '->set_password' => sub {
 
     my $number_of_logs =
         $schema->resultset('ActionLog')
-        ->search( { module => 'MEMBERS', action => 'CHANGE PASS', object => $patron->borrowernumber } )
-        ->count;
+        ->search( { module => 'MEMBERS', action => 'CHANGE PASS', object => $patron->borrowernumber } )->count;
     is( $number_of_logs, 0, 'Without BorrowersLog, Koha::Patron->set_password doesn\'t log password changes' );
 
     # Enable logging password changes
@@ -3189,8 +3184,8 @@ subtest "search_patrons_to_update_category tests" => sub {
                 class => 'Koha::Patrons',
                 value => {
                     categorycode => $category_code,
-                    dateofbirth  => $current_dt->clone->subtract( years => $category->upperagelimit + 1 )
-                        ->subtract( days => 1 )
+                    dateofbirth  =>
+                        $current_dt->clone->subtract( years => $category->upperagelimit + 1 )->subtract( days => 1 )
                         ->ymd,
                 }
             }
@@ -3640,8 +3635,7 @@ subtest 'filter_by_have_permission' => sub {
     is_deeply(
         [
             Koha::Patrons->search( { branchcode => $library->branchcode } )
-                ->filter_by_have_permission('suggestions.suggestions_manage')
-                ->get_column('borrowernumber')
+                ->filter_by_have_permission('suggestions.suggestions_manage')->get_column('borrowernumber')
         ],
         [ $patron_1->borrowernumber, $patron_2->borrowernumber ],
         'Superlibrarian and patron with suggestions.suggestions_manage'
@@ -3650,8 +3644,7 @@ subtest 'filter_by_have_permission' => sub {
     is_deeply(
         [
             Koha::Patrons->search( { branchcode => $library->branchcode } )
-                ->filter_by_have_permission('acquisition.order_manage')
-                ->get_column('borrowernumber')
+                ->filter_by_have_permission('acquisition.order_manage')->get_column('borrowernumber')
         ],
         [ $patron_1->borrowernumber, $patron_3->borrowernumber ],
         'Superlibrarian and patron with acquisition.order_manage'
@@ -3660,8 +3653,7 @@ subtest 'filter_by_have_permission' => sub {
     is_deeply(
         [
             Koha::Patrons->search( { branchcode => $library->branchcode } )
-                ->filter_by_have_permission('parameters.manage_cities')
-                ->get_column('borrowernumber')
+                ->filter_by_have_permission('parameters.manage_cities')->get_column('borrowernumber')
         ],
         [ $patron_1->borrowernumber ],
         'Only Superlibrarian is returned'
@@ -3669,8 +3661,7 @@ subtest 'filter_by_have_permission' => sub {
 
     is_deeply(
         [
-            Koha::Patrons->search( { branchcode => $library->branchcode } )
-                ->filter_by_have_permission('suggestions')
+            Koha::Patrons->search( { branchcode => $library->branchcode } )->filter_by_have_permission('suggestions')
                 ->get_column('borrowernumber')
         ],
         [ $patron_1->borrowernumber, $patron_2->borrowernumber ],
