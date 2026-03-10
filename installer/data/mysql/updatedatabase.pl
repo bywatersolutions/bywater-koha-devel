@@ -44,7 +44,6 @@ use Koha;
 use Koha::DateUtils qw( dt_from_string output_pref );
 use Koha::Caches;
 use Koha::Installer::Output qw ( say_failure );
-use Koha::Plugins;
 
 use MARC::Record;
 use MARC::File::XML ( BinaryEncoding => 'utf8' );
@@ -2137,7 +2136,7 @@ VALUES
 ('EnhancedMessagingPreferences',0,'If ON, allows patrons to select to receive additional messages about items due or nearly due.','','YesNo')
 END_SQL
 
-    $dbh->do(<<'END_SQL');
+    $dbh->do( <<'END_SQL');
 INSERT INTO `letter`
 (module, code, name, title, content)
 VALUES
@@ -3683,7 +3682,7 @@ if ( C4::Context->preference("Version") < TransformToNum($DBversion) ) {
 
 $DBversion = '3.01.00.080';
 if ( C4::Context->preference("Version") < TransformToNum($DBversion) ) {
-    $dbh->do(<<BUDG_PERM);
+    $dbh->do(<<BUDG_PERM );
 INSERT INTO permissions (module_bit, code, description) VALUES
             (11, 'vendors_manage', 'Manage vendors'),
             (11, 'contracts_manage', 'Manage contracts'),
@@ -23036,6 +23035,7 @@ if ( CheckVersion($DBversion) ) {
         );
     }
 
+    require Koha::Plugins;
     Koha::Plugins->new( { enable_plugins => 1 } )->InstallPlugins;
 
     SetVersion($DBversion);
