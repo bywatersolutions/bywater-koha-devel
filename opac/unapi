@@ -115,13 +115,22 @@ my $format_info = {
 my $id     = $cgi->param('id');
 my $format = $cgi->param('format');
 
-if ( not defined $format ) {
-    emit_formats( $id, $format_to_stylesheet_map, $format_info, $cgi );
-} elsif ($id) {
+my $biblionumber;
+
+if ( $id && $id =~ /koha:biblionumber:(\d+)/ ) {
+    $biblionumber = $1;
+} else {
+    $id = undef;
+}
+
+unless ( $format && $format_info->{$format} ) {
+    $format = undef;
+}
+
+if ( $id && $format ) {
 
     # koha:biblionumber:0152018484
-    if ( $id =~ /koha:biblionumber:(\d+)/ ) {
-        my $biblionumber = $1;
+    if ($biblionumber) {
 
         my $content;
 
@@ -159,6 +168,9 @@ if ( not defined $format ) {
         print $cgi->header( -status => '404 record not found' );
         exit 0;
     }
+} elsif ( $id && not defined $format ) {
+    emit_formats( $id, $format_to_stylesheet_map, $format_info, $cgi );
+
 } else {
 
     # supplied a format but no id - caller is doing it wrong
