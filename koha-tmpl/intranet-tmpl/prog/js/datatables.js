@@ -1362,7 +1362,7 @@ function update_search_description(
 
                 column_searches.push(
                     "%s=%s".format(
-                        table_dt.column(i).header().innerHTML,
+                        table_dt.column(i).header().textContent,
                         search
                     )
                 );
@@ -1374,10 +1374,18 @@ function update_search_description(
 
     if (description.length) {
         let display = description.length ? "block" : "none";
-        let description_str = $(description_node)
-            .data("prefix")
-            .format(description.join("<br/>"));
-        $(description_node).html(description_str).show();
+        const search_desc_node = $(description_node);
+        search_desc_node.empty(); //Removing existing child nodes
+        const prefix = search_desc_node.data("prefix").format("");
+        search_desc_node.append(prefix);
+        const last_index = description.length - 1;
+        description.forEach((item, index) => {
+            search_desc_node.append(document.createTextNode(item));
+            if (index !== last_index) {
+                search_desc_node.append(document.createElement("br"));
+            }
+        });
+        $(description_node).show();
     } else {
         $(description_node).html("").hide();
     }
