@@ -155,8 +155,8 @@ sub process_file {
 }
 
 # Find and process all template files
-my $dev_files = Koha::Devel::Files->new;
-my @tt_files  = $dev_files->ls_tt_files;
+my $dev_files = Koha::Devel::Files->new( { context => 'nonce' } );
+my @tt_files  = $dev_files->ls_tt_files();
 for my $file (@tt_files) {
     process_file($file);
 }
