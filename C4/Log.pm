@@ -150,7 +150,7 @@ sub logaction {
 
     $infos = encode_json($infos) if ( ref $infos eq 'HASH' );
 
-    Koha::ActionLog->new(
+    my $action_log = Koha::ActionLog->new(
         {
             timestamp => \'NOW()',
             user      => $usernumber,
@@ -184,6 +184,8 @@ sub logaction {
             );
         }
     );
+
+    return $action_log;
 }
 
 =item cronlogaction
