@@ -66,6 +66,16 @@ return {
             WHERE variable IN (} . join( q{,}, map { q{?} } @sysprefs ) . q{)}, undef, @sysprefs
         );
 
+        my $updated_last = $dbh->do(
+            q{
+            UPDATE systempreferences
+            SET options=NULL, explanation=NULL, type=NULL
+            WHERE variable = 'marcflavour'
+            }
+        );
+
+        $updated = $updated + $updated_last;
+
         say $out sprintf "Updated %s system preferences", $updated;
     },
 };
