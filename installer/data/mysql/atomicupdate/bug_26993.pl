@@ -9,7 +9,14 @@ return {
         my ( $dbh, $out ) = @$args{qw(dbh out)};
 
         if ( index_exists( 'items_last_borrower', 'itemnumber' ) ) {
-            $dbh->do('SET FOREIGN_KEY_CHECKS=0');
+
+            # Drop existing foreign key
+            $dbh->do(
+                q{
+                ALTER TABLE items_last_borrower
+                DROP FOREIGN KEY items_last_borrower_ibfk_1
+                }
+            );
 
             # Drop the unique index
             $dbh->do(
@@ -17,7 +24,16 @@ return {
                 ALTER TABLE items_last_borrower DROP INDEX itemnumber
             }
             );
-            $dbh->do('SET FOREIGN_KEY_CHECKS=1');
+
+            # Recreate foreign key
+            $dbh->do(
+                q{
+                ALTER TABLE items_last_borrower
+                ADD CONSTRAINT items_last_borrower_ibfk_1
+                FOREIGN KEY (itemnumber) REFERENCES items (itemnumber)
+                ON DELETE CASCADE ON UPDATE CASCADE
+                }
+            );
 
             say_success( $out, "Adjusted foreign key constraints on items_last_borrower table" );
         }
