@@ -186,11 +186,11 @@
                                 <select name="message_type" id="message_type" class="form-select">
                                     <option value="L">Staff - Internal note</option>
                                     <option value="B">OPAC - [% patron.firstname | html %] [% patron.surname | html %]</option>
-                                    [% IF CAN_user_borrowers_send_messages_to_borrowers %]
+                                    [% IF CAN_user_borrowers_send_messages_to_borrowers_email %]
                                         <option value="E">Email - email addresses of patron</option>
-                                        [% IF Koha.Preference("SMSSendDriver") %]
-                                            <option value="SMS">SMS - sms number of patron</option>
-                                        [% END %]
+                                    [% END %]
+                                    [% IF Koha.Preference("SMSSendDriver") && CAN_user_borrowers_send_messages_to_borrowers_sms %]
+                                        <option value="SMS">SMS - sms number of patron</option>
                                     [% END %]
                                 </select>
                             </li>
