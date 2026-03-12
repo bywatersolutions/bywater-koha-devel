@@ -114,7 +114,7 @@
     [% Asset.js("js/acquisitions-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'calendar.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function updateRowsVisibility(show_only_renewed) {
             if (show_only_renewed) {
                 $("#srlt [data-reneweddate='']").hide();

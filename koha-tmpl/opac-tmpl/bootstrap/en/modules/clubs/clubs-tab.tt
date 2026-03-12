@@ -66,13 +66,13 @@
         </tbody>
     </table>
 [% END %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     const patron_id = "[% borrower.borrowernumber | html %]";
     addPrefs({
         OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
     });
 </script>
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     function loadEnrollmentForm(id) {
         $("body").css("cursor", "progress");
         $("#opac-user-clubs_panel").load("/cgi-bin/koha/clubs/enroll.pl?borrowernumber=" + patron_id + "&id=" + id, function () {

@@ -301,7 +301,7 @@
     [% Asset.js( "lib/codemirror/css-lint.min.js" ) | $raw %]
     [% Asset.js( "lib/codemirror/yaml-lint.min.js" ) | $raw %]
     [% Asset.js( "lib/sortable/Sortable.min.js" ) | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var themelang = "[% themelang | html %]";
         $(document).ready(function(){
             $("select[multiple='multiple']").multipleSelect( {

@@ -493,7 +493,7 @@
     [% INCLUDE 'wysiwyg-systempreferences.inc' %]
     [% IF else && loop %]
         [% INCLUDE 'datatables.inc' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $("#sysprefst").kohaTable({
                     dom: '<"top pager"ilf>t',
@@ -504,7 +504,7 @@
     [% END %]
 
     [% IF ( add_form ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $(".variabletype").css({ color: "#0000CC", cursor: "pointer" });
                 $(".variabletype").click(function () {
@@ -513,7 +513,7 @@
             });
         </script>
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         // FIXME: many of these js functions appear unused
         function isNotNull(f, noalert) {
             if (f.value.length == 0) {

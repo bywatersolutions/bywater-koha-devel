@@ -21,7 +21,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% Asset.css("css/humanmsg.css") | $raw %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         fieldset.rows label.viewlog {
             float: none;
             font-weight: normal;
@@ -471,7 +471,7 @@
         [% Asset.js("js/members-menu.js") | $raw %]
     [% END %]
     [% Asset.js("lib/jsdiff/jsdiff.min.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings('tools', 'logviewer', 'logst', 'json') | $raw %];
         var CAN_user_parameters_manage_sysprefs = "[% CAN_user_parameters_manage_sysprefs | html %]";
     </script>

@@ -216,7 +216,7 @@
     [% INCLUDE 'js-date-format.inc' %]
     [% Asset.js("js/cashup_modal.js") | $raw %]
     [% Asset.js("js/modal_printer.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             [%# js used here as we don't have access to these template variables where we need them #%]
             $("#bankable").text('[% bankable | $Price %]');
@@ -224,7 +224,7 @@
             $("#outgoing").text('[% dtotal | $Price %] ([% cdtotal | $Price %])');
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var registers_table = $("#registers").kohaTable({
                 searching: false,

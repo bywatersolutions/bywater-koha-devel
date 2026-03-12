@@ -115,7 +115,7 @@
         <input type="hidden" name="op" value="cud-create" />
     </form>
     [% BLOCK backend_jsinclude %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             // <![CDATA[]
             var core = [ [% whole.core | $raw %] ];
             [% INCLUDE "ill/backends/Standard/shared/shared.js" %]

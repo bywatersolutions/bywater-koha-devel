@@ -459,13 +459,13 @@
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% Asset.js("js/transport_status.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const i18n = {
             on: "[% tp("Active", "On") | html %]",
             passive: "[% tp('FTP connection mode', '(passive)') | html %]",
         };
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var file_transports_url = "/api/v1/config/file_transports";
             window.file_transports = $("#file_transports").kohaTable({

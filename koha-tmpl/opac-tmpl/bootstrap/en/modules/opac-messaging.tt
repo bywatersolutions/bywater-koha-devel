@@ -361,14 +361,14 @@
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         addPrefs({
             PhoneNotification: [% Koha.Preference('PhoneNotification') ? 1 : 0 | html %],
             TalkingTechItivaPhoneNotification: [% Koha.Preference('TalkingTechItivaPhoneNotification') ? 1 : 0 | html %],
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             function toggle_digest(id) {
                 let phone_checked = prefs.TalkingTechItivaPhoneNotification ? false : prefs.PhoneNotification ? $("#phone" + id).prop("checked") : false;

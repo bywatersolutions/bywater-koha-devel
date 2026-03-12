@@ -46,7 +46,7 @@
     </form>
 [% END %]
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#spinelabelprint").on("submit", function (e) {
                 e.preventDefault();

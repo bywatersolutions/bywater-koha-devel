@@ -16,7 +16,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     p {
         margin-top: 0;
     }
@@ -380,10 +380,10 @@
     [% INCLUDE 'select2.inc' %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/hold-group.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings('circ', 'view_holdsqueue', 'holds-table', 'json') | $raw %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             // Apply select2 to all select fields having a "multiple" attribute
             let selectFields = document.querySelectorAll("select[multiple]");

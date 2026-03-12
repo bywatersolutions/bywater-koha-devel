@@ -409,10 +409,10 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings( 'admin', 'edi_accounts', 'edi_accounts_table', 'json' ) | $raw %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#edi_accounts_table").kohaTable(
                 {

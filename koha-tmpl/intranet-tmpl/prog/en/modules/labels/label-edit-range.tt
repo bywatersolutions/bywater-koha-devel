@@ -55,7 +55,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function Xport() {
             var str = "";
             str += "from=" + document.getElementById("from-input").value + "&";

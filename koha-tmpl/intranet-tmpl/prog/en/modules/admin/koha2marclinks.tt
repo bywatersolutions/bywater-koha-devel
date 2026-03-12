@@ -81,7 +81,7 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/admin-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function AddFld(kohafield) {
             var fieldstr = prompt(
                 _("Adding a mapping for: %s.").format(kohafield) +

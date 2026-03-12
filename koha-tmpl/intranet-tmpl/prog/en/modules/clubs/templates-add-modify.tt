@@ -18,7 +18,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .club-field,
     .enrollment-field {
         border-top: 1px solid #ddd;
@@ -252,7 +252,7 @@
 </div>
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $("body").on("click", ".add_club_field", function (e) {
             e.preventDefault();
             $("#new-field-template").clone().attr("id", "").show().appendTo("#club-template-fields");

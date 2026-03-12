@@ -187,7 +187,7 @@
 [% END %]
 
 [% IF Koha.debug_flag %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         (function () {
             function getURLParams() {
                 const params = new URLSearchParams(window.location.search);

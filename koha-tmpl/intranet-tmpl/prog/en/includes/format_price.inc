@@ -1,6 +1,6 @@
 [% USE Koha %]
 <!-- format-price.inc -->
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     [%# This should use the Format template plugin, but not pushed yet %]
     [% IF Koha.Preference("CurrencyFormat") == 'FR' %]
         var default_value = {

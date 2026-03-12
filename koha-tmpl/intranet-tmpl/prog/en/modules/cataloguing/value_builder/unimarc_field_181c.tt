@@ -186,7 +186,7 @@
         </div>
     </nav>
 </form>
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     function submitMyForm() {
         var doc   = opener.document;
         var field = doc.getElementById("[% index | html %]");

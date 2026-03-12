@@ -174,7 +174,7 @@
     [% Asset.js("js/acq.js") | $raw %]
     [% Asset.js("js/additional-fields-entry.js") | $raw %]
     [% INCLUDE 'select2.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             function display_vendor(vendor) {
                 var $text;

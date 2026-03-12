@@ -83,10 +83,10 @@
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const ENABLE_OPAC_PAYMENTS = [% ENABLE_OPAC_PAYMENTS ? 1 : 0 | html %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var txtActivefilter = _("Filter paid transactions");
             var txtInactivefilter = _("Show all transactions");

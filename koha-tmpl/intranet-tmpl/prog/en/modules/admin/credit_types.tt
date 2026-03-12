@@ -254,7 +254,7 @@
     [% Asset.js("js/additional-fields-entry.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'select2.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var txtActivefilter = _("Filter system credit types");
             var txtInactivefilter = _("Show all credit types");

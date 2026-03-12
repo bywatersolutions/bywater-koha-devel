@@ -18,7 +18,7 @@
 [% INCLUDE 'calendar.inc' %]
 [% Asset.js( "lib/sortable/Sortable.min.js" ) | $raw %]
 [% INCLUDE 'select2.inc' %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     [% IF Koha.Preference('CreateAVFromCataloguing') && CAN_user_parameters_manage_auth_values %]
         var auth_values_creation = 1;
     [% ELSE %]
@@ -28,7 +28,7 @@
 </script>
 [% Asset.js("js/cataloging.js") | $raw %]
 [% Asset.js("js/browser.js") | $raw %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var browser = KOHA.browser('[% searchid | html %]', parseInt('[% biblionumber | html %]', 10));
         browser.show();
 
@@ -891,7 +891,7 @@
     [% END # /UNLESS number %]
     <!-- prettier-ignore-start -->
                 [% IF ( done ) %]
-                    <script>
+                    <script nonce="[% Koha.CSPNonce | $raw %]">
                         opener.document.forms['f'].biblionumber.value=[% biblionumber | html %];
                         opener.document.forms['f'].title.value='[% title | html %]';
                         window.close();

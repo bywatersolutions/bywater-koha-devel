@@ -16,7 +16,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% Asset.js("js/cataloging.js") | $raw %]
 [% INCLUDE 'calendar.inc' %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     //<![CDATA[
     $(document).ready(function () {
         $("#multi_receiving").on("show", function () {
@@ -89,7 +89,7 @@
     });
     //]]>
 </script>
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     #serials_edit fieldset.rows label,
     #serials_edit fieldset.rows span.label {
         font-size: 100%;

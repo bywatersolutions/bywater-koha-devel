@@ -21,7 +21,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         #itemfieldset label,
         #itemfieldset span.label {
             flex-basis: 25%;
@@ -54,7 +54,7 @@
 [% Asset.js("js/additional-fields-entry.js") | $raw %]
 [% INCLUDE 'calendar.inc' %]
 [% INCLUDE 'select2.inc' %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     actTotal = "";
 
     function Check(ff) {

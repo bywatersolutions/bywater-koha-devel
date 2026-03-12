@@ -131,10 +131,10 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'calendar.inc' %]
     [% IF suggestions.size %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             const logged_in_user = [% To.json(logged_in_user.unblessed) | $raw %];
         </script>
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 var suggestionst = $("#suggestionst").kohaTable({
                     columnDefs: [

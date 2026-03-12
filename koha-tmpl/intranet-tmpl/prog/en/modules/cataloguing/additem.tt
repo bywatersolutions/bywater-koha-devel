@@ -24,7 +24,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% Asset.css("css/addbiblio.css") | $raw %]
 [% INCLUDE 'datatables.inc' %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     [% IF Koha.Preference('CreateAVFromCataloguing') && CAN_user_parameters_manage_auth_values %]
         var auth_values_creation = 1;
     [% ELSE %]
@@ -37,10 +37,10 @@
 [% INCLUDE 'calendar.inc' %]
 [% INCLUDE 'str/cataloging_additem.inc' %]
 [% Asset.js("js/cataloging_additem.js") | $raw %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var has_item_groups = "[% item_groups.size | html %]";
 </script>
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .flatpickr_wrapper input {
         width: 100%;
     }

@@ -46,7 +46,7 @@
 [% END %]
 
 [% BLOCK 'modal-claims-js' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         // Verify if the syspref is defined
         var ClaimReturnedLostValue = "[% Koha.Preference('ClaimReturnedLostValue') | html %]";
 

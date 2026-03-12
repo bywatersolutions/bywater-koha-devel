@@ -1,5 +1,5 @@
 <!-- ill-list-table-strings.inc -->
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var ill_borrower_details = _("View patron details");
     var ill_manage = _("Manage request");
     var ill_manage_select_backend_first = _("Select a backend first");

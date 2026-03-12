@@ -168,7 +168,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var selectedUnit = $("#units option:selected").val();
             var unitfields = $("#page_height,#page_width,#card_width,#card_height,#top_margin,#left_margin,#col_gap,#row_gap");

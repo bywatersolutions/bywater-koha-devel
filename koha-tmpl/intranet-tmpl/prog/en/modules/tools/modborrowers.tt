@@ -481,7 +481,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% Asset.js("js/members-patron-selections.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_patron_modification', 'borrowerst', 'json' ) | $raw %];
         [% FOREACH attrh IN attributes_header %]
             table_settings["columns"].push({
@@ -513,7 +513,7 @@
             patron_attributes_values["[% pav.attribute_code | html %]"] = lib;
         [% END %]
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             if (has_patrons) {
                 let selections_column = table_settings.columns.find(c => c.columnname == "batch_patron_edit_selections");

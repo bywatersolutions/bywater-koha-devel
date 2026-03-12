@@ -207,10 +207,10 @@
     [% Asset.js("lib/jquery/plugins/treetable/jquery.treetable.js") | $raw %]
     [% Asset.js("js/acquisitions-menu.js") | $raw %]
     [% IF loop_budget %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             var table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'acq_acqui-home', 'accounts', 'json' ) | $raw %];
         </script>
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             dt_overwrite_html_sorting_localeCompare();
 
             $(document).ready(function () {

@@ -25,7 +25,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         #patron_checkout_search {
             display: flex;
             gap: 0.5rem;
@@ -1080,7 +1080,7 @@
     [% PROCESS 'modal-claims.inc' %]
     [% PROCESS 'modal-claims-js' %]
     [% INCLUDE 'js-date-format.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         /* Set some variable needed in circulation.js */
         const LoadCheckoutsTableDelay = [% Koha.Preference('LoadCheckoutsTableDelay') || 0 | html %];
         const AlwaysLoadCheckoutsTable = [% Koha.Preference('AlwaysLoadCheckoutsTable') | html %];
@@ -1115,7 +1115,7 @@
     [% Asset.js("js/combobox.js") | $raw %]
     [% INCLUDE 'js-biblio-format.inc' %]
     [% Asset.js("js/hold-group.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         table_settings_issues_table = [% TablesSettings.GetTableSettings( 'circ', 'circulation', 'issues-table', 'json' ) | $raw %]
         table_settings_relatives_issues_table = [% TablesSettings.GetTableSettings( 'circ', 'circulation', 'relatives-issues-table', 'json' ) | $raw %]
         table_settings_holds_table = [% TablesSettings.GetTableSettings( 'circ', 'circulation', 'holds-table', 'json' ) | $raw %]

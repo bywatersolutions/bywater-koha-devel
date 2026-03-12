@@ -210,10 +210,10 @@
     [% Asset.js("js/acquisitions-menu.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const vendor_id = [% vendor.id | html %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var issues_table_url = `/api/v1/acquisitions/vendors/${vendor_id}/issues?`;
 

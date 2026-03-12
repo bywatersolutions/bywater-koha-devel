@@ -71,7 +71,7 @@
 [% BLOCK js %]
     [% INCLUDE 'str/job_progress.inc' job_id=job.id %]
     [% INCLUDE 'str/import_from_kbart_file.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function(){
             let job_id = [% job.id | html %];
             updateProgress(job_id, {

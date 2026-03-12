@@ -263,10 +263,10 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const recordtype = "[% recordtype | html %]";
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var MSG_CANNOT_BE_DELETED = _("This record cannot be deleted, at least one item is currently checked out.");
         $(document).ready(function () {
             $("input[type='radio']").click(function () {

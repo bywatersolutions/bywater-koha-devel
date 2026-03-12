@@ -1517,7 +1517,7 @@
     [% INCLUDE 'calendar.inc' %]
     [% Asset.js("js/pages/circulation.js") | $raw %]
     [% Asset.js("js/modal_printer.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         /* Set a variable needed by resolve_claim_modal.js or add_catalog_concern.js */
         var logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
 
@@ -1542,7 +1542,7 @@
     [% IF ( Koha.Preference('CatalogConcerns') ) %]
         [% Asset.js("js/modals/add_catalog_concern.js") | $raw %]
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function Dopop(link) {
             var newin = window.open(link, "popup", "width=600,height=400,resizable=1,toolbar=0,scrollbars=1,top");
             $("#barcode").focus();

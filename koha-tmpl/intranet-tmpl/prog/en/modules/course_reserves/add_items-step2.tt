@@ -232,7 +232,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $(".field-toggle").change(function () {
                 if (this.checked) {

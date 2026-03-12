@@ -17,7 +17,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         #fileuploadstatus,
         #fileuploadfailed,
         #jobpanel,
@@ -310,7 +310,7 @@
     <!-- /.row -->
 [% END %]
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var interface = "[% interface | html %]";
         var theme = "[% theme | html %]";
         var biblionumber = "[% biblionumber | html %]";

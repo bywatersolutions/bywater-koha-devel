@@ -6,7 +6,7 @@
 [% USE Koha %]
 [%# Prevent XFS attacks -%]
 [% UNLESS popup %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         if (self === top) {
             var antiClickjack = document.getElementById("antiClickjack");
             antiClickjack.parentNode.removeChild(antiClickjack);
@@ -35,7 +35,7 @@
 [% INCLUDE 'validator-strings.inc' %]
 [% IF ( IntranetUserJS ) %]
     <!-- js_includes.inc: IntranetUserJS -->
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         [% IntranetUserJS | $raw %]
     </script>
     <!-- / js_includes.inc: IntranetUserJS -->
@@ -51,7 +51,7 @@
 [% END %]
 
 [% IF Koha.Preference('AudioAlerts') || AudioAlertsPage %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         // AudioAlerts
         var AUDIO_ALERT_PATH = '[% interface | html %]/[% theme | html %]/sound/';
         var AUDIO_ALERTS = JSON.parse( "[% To.json(AudioAlerts.AudioAlerts) | $raw %]" );
@@ -69,7 +69,7 @@
         });
     </script>
 [% END %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var defaultPatronSearchFields = "[% Koha.Preference('DefaultPatronSearchFields') || 'firstname|preferred_name|middle_name|surname|othernames|cardnumber|userid' | html %]";
     var defaultPatronSearchMethod = "[% Koha.Preference('DefaultPatronSearchMethod') || 'contains' | html %]";
     var extendedPatronAttributes = "[% Koha.Preference('ExtendedPatronAttributes') | html %]";
@@ -78,7 +78,7 @@
     var showPatronFirstnameIfDifferentThanPreferredname = [% Koha.Preference('ShowPatronFirstnameIfDifferentThanPreferredname') ? 1 : 0 | html %];
 </script>
 [% IF ( PatronAutoComplete ) %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         // PatronAutoComplete
         var loggedInClass = "";
         $(document).ready(function(){

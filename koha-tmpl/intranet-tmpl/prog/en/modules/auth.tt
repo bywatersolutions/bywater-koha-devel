@@ -292,7 +292,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/show-password-toggle.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready( function() {
             if ( document.location.hash ) {
                 const input = $('<input name="auth_forwarded_hash" type="hidden">')

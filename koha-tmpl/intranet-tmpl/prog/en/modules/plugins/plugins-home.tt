@@ -311,7 +311,7 @@
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $(".uninstall_plugin").on("click", function () {
                 $(".dropdown").removeClass("open");

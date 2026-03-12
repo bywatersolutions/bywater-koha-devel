@@ -263,7 +263,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'z3950_search.inc' %]
     [% Asset.js("js/z3950_search.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#resultst").kohaTable({
                 dom: "t",

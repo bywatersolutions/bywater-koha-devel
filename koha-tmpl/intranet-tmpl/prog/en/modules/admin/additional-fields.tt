@@ -315,7 +315,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE "datatables.inc" %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#selecttable").find(":submit").hide();
             $("#selecttable select").change(function () {

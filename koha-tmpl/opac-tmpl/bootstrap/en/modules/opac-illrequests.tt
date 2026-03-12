@@ -406,7 +406,7 @@
 
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
         [% IF services_json.length > 0 %]
             var services = [% services_json | $raw %];
@@ -422,7 +422,7 @@
             var metadata = "[% metadata | $raw %]";
         [% END %]
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function display_extended_attribute(row, type) {
             var arr = $.grep(row.extended_attributes, x => x.type === type);
             if (arr.length > 0) {
@@ -520,7 +520,7 @@
     </script>
     [% IF op == 'availability' %]
         [% Asset.js("js/ill-availability.js") | $raw %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 window.doSearch();
             });

@@ -15,7 +15,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     #tag-error {
         display: block;
         margin-top: 5px;
@@ -318,10 +318,10 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var categories = [% To.json( categories ) | $raw %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var validator = $("#marc-overlay-rules-form").validate({
                 ignore: ".ignore",

@@ -264,7 +264,7 @@
     [% INCLUDE 'calendar.inc' %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% Asset.js("/lib/leaflet/leaflet.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function positionMap() {
             var tbh = $("#mapid");
             var mapContainer = tbh.parent();

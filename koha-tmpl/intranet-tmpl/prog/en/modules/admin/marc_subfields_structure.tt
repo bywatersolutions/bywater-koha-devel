@@ -31,7 +31,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .constraints::after {
         content: " ";
         clear: both;
@@ -438,7 +438,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js( "lib/sortable/Sortable.min.js" ) | $raw %]
     [% Asset.js("js/admin-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const tagsubfield = [% IF tagsubfield %]"[% tagsubfield | html %]"[% ELSE %]null[% END %];
     </script>
     [% Asset.js("js/marc_subfields_structure.js") | $raw %]

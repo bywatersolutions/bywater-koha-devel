@@ -201,7 +201,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     caption {
         font-size: 115%;
     }
@@ -403,7 +403,7 @@
     [% Asset.js("js/admin-menu.js") | $raw %]
 
     [%- IF ( panel.defined ) -%]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready( function() {
                 $("#[% panel | uri %]_panel").collapse("show");
                 [%- IF page.defined -%]

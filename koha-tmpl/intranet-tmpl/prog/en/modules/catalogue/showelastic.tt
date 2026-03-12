@@ -11,7 +11,7 @@
 <pre id="main" style="direction: ltr;"> </pre>
 </body>
 <footer>
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         textarea {
             width: 100%;
             min-height: 40em;
@@ -19,7 +19,7 @@
             resize: none;
         }
     </style>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         display();
 
         function display() {

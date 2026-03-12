@@ -245,14 +245,14 @@
     [% INCLUDE 'select2.inc' %]
     [% INCLUDE 'js-biblio-format.inc' %]
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let hide_patron_name = [% IF Koha.Preference('HidePatronName') %]true[% ELSE %]false[% END %];
         let hold_ids = [% IF updated_holds %] [% updated_holds | $raw %] [% ELSE %] [] [% END %];
         let hold_ids_from_sql = [% IF reserve_ids_list  %] [% reserve_ids_list  | $raw %] [% ELSE %] [] [% END %];
         var holds_to_modify_table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_hold_modification', 'holds_to_modify', 'json' ) | $raw %];
         var modified_holds_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holds', 'modified_holds', 'json' ) | $raw %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             // Apply select2 to all select fields having a "multiple" attribute
             let selectFields = document.querySelectorAll("select[multiple]");

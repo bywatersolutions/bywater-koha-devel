@@ -337,7 +337,7 @@
         [% END %]
     </tbody>
 </table>
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     document.addEventListener("DOMContentLoaded", function () {
         const selectElement = document.querySelector('select[name="2-DAYS"]');
 

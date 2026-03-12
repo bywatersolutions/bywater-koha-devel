@@ -16,7 +16,7 @@
         &rsaquo; [% t("Circulation") | html %] &rsaquo; [% t("Koha") | html %]
     [% END %]</title
 >
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     #pickup-times {
         width: 50%;
     }
@@ -461,15 +461,15 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("lib/dayjs/plugin/isSameOrAfter.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         dayjs.extend(window.dayjs_plugin_isSameOrAfter);
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         dayjs.extend(window.dayjs_plugin_customParseFormat);
     </script>
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let pickups = [% To.json(curbside_pickups.unblessed) | $raw %];
         let policy = [% To.json(policy.unblessed) | $raw %];
         let opening_slots = [% To.json(policy.opening_slots.unblessed) | $raw %];
@@ -482,7 +482,7 @@
 
         const tab = "[% tab | html %]";
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let existingPickupMoments = [];
         pickups.forEach(function (pickup) {
             let scheduled_pickup_datetime = pickup.scheduled_pickup_datetime;

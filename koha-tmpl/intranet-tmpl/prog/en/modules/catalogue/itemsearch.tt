@@ -397,7 +397,7 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'select2.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var authorised_values = [% authorised_values_json | $raw %];
         var table_settings = [% TablesSettings.GetTableSettings( 'catalogue', 'itemsearch', 'results', 'json' ) | $raw %];
         addPermissions({
@@ -449,7 +449,7 @@
             return av;
         } );
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function showItemSelections(number) {
             let caret = ' <span class="caret">';
             if (number > 0) {

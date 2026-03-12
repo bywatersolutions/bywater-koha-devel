@@ -21,7 +21,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% BLOCK cssinclude %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         .section_library {
             margin-top: 1rem;
             margin-bottom: 1rem;

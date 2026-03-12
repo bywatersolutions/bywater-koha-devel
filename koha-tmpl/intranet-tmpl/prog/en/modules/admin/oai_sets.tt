@@ -164,7 +164,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function newDescField() {
             $("#adddescription").before(
                 "<li><label>" +

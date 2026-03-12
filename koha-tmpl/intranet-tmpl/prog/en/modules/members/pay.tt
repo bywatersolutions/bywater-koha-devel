@@ -233,7 +233,7 @@
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings('members', 'pay', 'pay-fines-table', 'json') | $raw %];
         const payment_id = "[% payment_id | html %]";
         const change_given = "[% change_given | html %]";
@@ -243,7 +243,7 @@
             FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function enableCheckboxActions() {
             // Enable/disable controls if checkboxes are checked
             var checkedBoxes = $("input.cb:checked");

@@ -163,7 +163,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% IF ( fillinput ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             function go() {
 
                 var index_start = "[% index | html %]";
@@ -251,7 +251,7 @@
             window.close();
         </script>
     [% ELSE %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             function report(value2report) {
                 if (document.f_pop.result.value.length == 0) {
                     document.f_pop.result.value = value2report;
@@ -268,7 +268,7 @@
             }
         </script>
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function jumpfull(page) {
             window.open(page, "", "width=100,height=100,toolbar=false,scrollbars=yes");
         }

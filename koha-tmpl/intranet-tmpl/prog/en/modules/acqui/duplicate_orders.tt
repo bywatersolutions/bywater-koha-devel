@@ -16,7 +16,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .picked_to_duplicate > td {
         background-color: #bcdb89 !important;
     }
@@ -314,11 +314,11 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/acq.js") | $raw %]
     [% Asset.js("js/funds_sorts.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const op = "[% op | html %]";
         const has_results = [% result_order_loop ? 1 : 0 | html %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function update_ordernumber_list() {
             var ordernumbers = [];
             $("input[name='ordernumber']")

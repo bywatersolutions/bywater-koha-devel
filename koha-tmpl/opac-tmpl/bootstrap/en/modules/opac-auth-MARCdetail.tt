@@ -95,7 +95,7 @@
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
     [% Asset.js("lib/jquery/plugins/jstree/jstree-3.3.12.min.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function() {
             [% IF ( displayhierarchy ) %]
                 $('#hierarchies').jstree({

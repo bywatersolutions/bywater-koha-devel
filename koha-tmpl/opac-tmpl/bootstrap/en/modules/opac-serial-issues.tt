@@ -16,7 +16,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% BLOCK cssinclude %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         .subscriptionline {
             border-bottom: 1px solid #eee;
             padding: 1em 0;

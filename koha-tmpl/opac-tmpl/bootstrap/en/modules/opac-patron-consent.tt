@@ -97,7 +97,7 @@
 
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             // Initially no choice is made or no change, so disable button
             $("#saveconsent").prop("disabled", true);

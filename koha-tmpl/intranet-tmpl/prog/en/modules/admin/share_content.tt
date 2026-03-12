@@ -155,7 +155,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#mana_token").submit(function () {
                 return confirm(_("This will delete the Mana KB token from Koha. Do you want to continue?"));

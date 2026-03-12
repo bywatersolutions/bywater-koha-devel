@@ -13,7 +13,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     td.locked {
         background-image: url("[% interface | html %]/[% theme | html %]/img/locked.png");
         padding-left: 20px;
@@ -320,7 +320,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/acq.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         jQuery.validator.addClassRules({ plan_entry: { pnumber: true } }); // require that input be a number in fields with the class 'plan_entry'
         jQuery.validator.addMethod("pnumber", $.validator.methods.number, _("Please enter a valid number.") );
         var zero_formatted = "[% 0 | $Price on_editing => 1 %]";

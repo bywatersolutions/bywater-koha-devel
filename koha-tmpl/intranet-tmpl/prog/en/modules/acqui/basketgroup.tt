@@ -396,11 +396,11 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let listclosed = [% listclosed ? 1 : 0 | html %];
         let grouping = [% grouping ? 1 : 0 | html %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function submitForm(form) {
             if (form.closedbg.checked == true) {
                 var input = document.createElement("input");

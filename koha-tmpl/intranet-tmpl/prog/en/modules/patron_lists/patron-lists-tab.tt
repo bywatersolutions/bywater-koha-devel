@@ -122,14 +122,14 @@
 [% ELSIF !in_lists && CAN_user_tools_manage_patron_lists %]
     <p>Patron is not on any list. <a href="/cgi-bin/koha/patron_lists/add-modify.pl">Create a new patron list</a>.</p>
 [% END %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var patron_id = "[% borrowernumber | html %]";
     var cardnumber = "[% cardnumber | html %]";
     addPermissions({
         CAN_user_tools_manage_patron_lists: [% CAN_user_tools_manage_patron_lists ? 1 : 0 | html %],
     });
 </script>
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var patron_lists_dt_params = {
         sPaginationType: "full",
     };

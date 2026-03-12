@@ -33,7 +33,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .sortmsg {
         font-size: 80%;
     }
@@ -1274,7 +1274,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/acq.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function updateColumnsVisibility(visible) {
             if ( visible ) {
                 $("table .tax_excluded, .tax_included").show();
@@ -1362,7 +1362,7 @@
         });
     </script>
     [% UNLESS ( closedate ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             function transfer_order_popup(ordernumber) {
                 var url = "/cgi-bin/koha/acqui/transferorder.pl?"
                     + "ordernumber=" + ordernumber
@@ -1391,7 +1391,7 @@
             });
         </script>
     [% ELSE %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function(){
                 $("#basketgroupid").change(function(){
                     if($(this).val() == "new"){
@@ -1403,7 +1403,7 @@
             });
         </script>
     [% END # /UNLESS (closedate) %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var orders_table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'basket', 'orders', 'json' ) | $raw %];
         let supplier_report_column = orders_table_settings.columns.find(c => c.columnname == 'supplier_report');
         [% IF !(Koha.Preference('EDIFACT') && ediaccount) %]
@@ -1432,7 +1432,7 @@
 
         let skip_confirm_reopen = [% skip_confirm_reopen ? 1 : 0 | html %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#orders").kohaTable(
                 {

@@ -20,7 +20,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     @media (min-width: 1200px) {
         #receive-modal,
         #receive-modal {
@@ -453,7 +453,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'js-date-format.inc' %]
     [% INCLUDE 'format_price.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var edit_mode = "[% edit | html %]";
         var invoiceincgst = "[% invoiceincgst | html %]";
         var active_currency = "[% active_currency.currency | html %]";
@@ -468,7 +468,7 @@
             CAN_user_acquisition: [% CAN_user_acquisition ? 1 : 0 | html %],
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function display_string(key, strings, fallback) {
             if (strings.hasOwnProperty(key)) {
                 return (strings[key].str && escape_str(strings[key].str)) || "";

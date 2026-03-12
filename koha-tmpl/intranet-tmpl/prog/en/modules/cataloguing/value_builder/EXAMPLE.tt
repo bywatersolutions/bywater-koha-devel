@@ -30,7 +30,7 @@
         </div>
     </nav>
 </form>
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     $(document).ready(function () {
         $('#return').focus();
     });

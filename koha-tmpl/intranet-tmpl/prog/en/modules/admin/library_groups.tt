@@ -305,7 +305,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("lib/jquery/plugins/treetable/jquery.treetable.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $(".library-groups").treetable({
                 expandable: true,

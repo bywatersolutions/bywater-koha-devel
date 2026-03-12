@@ -83,7 +83,7 @@
         <input type="hidden" name="backend" value="Standard" />
     </form>
     [% BLOCK backend_jsinclude %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             var core = [ [% whole.core | $raw %] ];
             // <![CDATA[]
             [% INCLUDE "ill/backends/Standard/shared/shared.js" %]

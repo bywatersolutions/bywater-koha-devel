@@ -32,7 +32,7 @@
         </fieldset>
     </form>
 </div>
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     function addEnrollment() {
         $("body").css("cursor", "progress");
         let data = $( "#patron-enrollment-form" ).serialize();

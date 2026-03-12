@@ -170,14 +170,14 @@
 
 [% MACRO jsinclude BLOCK %]
     [% IF transferred %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             opener.location.reload();
             window.close();
         </script>
     [% END %]
 
     [% IF ( bookselleridfrom ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $(".confirm_transfer").on("click", function () {
                     return confirm(_("Transfer order to this basket?"));

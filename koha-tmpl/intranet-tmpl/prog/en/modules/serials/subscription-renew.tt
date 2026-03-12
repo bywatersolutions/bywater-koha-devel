@@ -124,7 +124,7 @@
 
     [% MACRO jsinclude BLOCK %]
         [% INCLUDE 'calendar.inc' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $(".close").on("click", function (e) {
                     e.preventDefault();

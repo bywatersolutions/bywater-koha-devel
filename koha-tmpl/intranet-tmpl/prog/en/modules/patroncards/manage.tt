@@ -188,7 +188,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function DeleteConfirm() {
             var element_ids = selected_layouts("delete");
 

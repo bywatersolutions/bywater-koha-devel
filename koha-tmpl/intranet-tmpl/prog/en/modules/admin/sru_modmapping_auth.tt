@@ -87,7 +87,7 @@
 <!-- /.main.container-fluid -->
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#form01").submit(function (event) {
                 if (window.opener) {

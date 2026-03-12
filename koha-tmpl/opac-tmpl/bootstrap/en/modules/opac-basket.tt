@@ -19,7 +19,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% BLOCK cssinclude %]
     [% FILTER collapse %]
-        <style>
+        <style nonce="[% Koha.CSPNonce | $raw %]">
             .item-status,
             .dt-buttons {
                 display: inline;
@@ -444,7 +444,7 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     [% IF ( TagsInputEnabled && loggedinusername ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             function tagSelected() {
                 var bibs = document.getElementById("records").value;
                 if (bibs) {
@@ -488,7 +488,7 @@
             }
         </script>
     [% END # / TagsInputEnabled && loggedinusername %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("a.bib_opener").on("click", function () {
                 let link = this.dataset.link;

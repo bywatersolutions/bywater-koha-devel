@@ -15,7 +15,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .sql {
         display: none;
     }
@@ -397,7 +397,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'calendar.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             // Undo the selection that Branches.all made, since there may be no item with homebranch or holdingbranch
             $("#holdingbranch option").prop("selected", false);

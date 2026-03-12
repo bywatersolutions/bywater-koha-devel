@@ -831,14 +831,14 @@
     [% IF OpenLibraryCovers || OpenLibrarySearch %]
         [% Asset.js("js/openlibrary.js") | $raw %]
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const loggedinusername = [% ( loggedinusername ) ? 1 : 0 | html %];
         const opacbookbag = [% ( opacbookbag ) ? 1 : 0 | html %];
         const virtualshelves = [% ( virtualshelves ) ? 1 : 0 | html %];
     </script>
     [% Asset.js("js/results-list.js") | $raw %]
     [% Asset.js("js/cover_images.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let counter_wait = 0;
         function wait_for_images(cb){
 

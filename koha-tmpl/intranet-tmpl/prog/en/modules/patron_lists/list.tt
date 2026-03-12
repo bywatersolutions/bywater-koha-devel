@@ -14,7 +14,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     #add_patrons_by_search {
         display: none;
     }
@@ -234,10 +234,10 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings('members', 'patron-lists', 'patron-list-table', 'json') | $raw %]
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#patrons_to_add_fieldset").hide();
 

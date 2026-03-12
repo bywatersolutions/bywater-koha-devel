@@ -577,7 +577,7 @@
     [% INCLUDE 'format_price.inc' %]
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings('members', 'fines', 'account-fines', 'json') | $raw %];
         addPrefs({
             FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
@@ -585,7 +585,7 @@
         const change_given = "[% change_given | html %]";
         const payment_id = "[% payment_id | html %]";
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             if (payment_id && prefs.FinePaymentAutoPopup) {
                 window.open(`/cgi-bin/koha/members/printfeercpt.pl?action=print&change_given=${change_given}&accountlines_id=${payment_id}`, "_blank");

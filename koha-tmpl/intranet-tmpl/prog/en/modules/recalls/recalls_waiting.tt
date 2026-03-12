@@ -154,7 +154,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#recallswaiting-table, #recallsover-table").kohaTable({
                 autoWidth: false,

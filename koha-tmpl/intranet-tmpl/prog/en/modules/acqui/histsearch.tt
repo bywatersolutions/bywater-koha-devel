@@ -167,10 +167,10 @@
     [% Asset.js("js/acquisitions-menu.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'histsearch', 'histsearcht', 'json' ) | $raw %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#histsearcht").kohaTable(
                 {

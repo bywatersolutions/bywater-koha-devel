@@ -52,7 +52,7 @@
         </nav>
     </form>
 </div>
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     document.getElementById("form").addEventListener("submit", function (ev) {
         ev.preventDefault();
         const id = document.getElementById("id").value;

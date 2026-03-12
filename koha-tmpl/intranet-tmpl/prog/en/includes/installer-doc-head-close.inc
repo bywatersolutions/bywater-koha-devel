@@ -10,7 +10,7 @@
 [% ELSE %]
     [% Asset.css("css/installer.css") | $raw %]
 [% END %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var Koha = {};
 </script>
 [% IF lang && lang != 'en' %]
@@ -19,7 +19,7 @@
 [% Asset.js('js/Gettext.js') | $raw %]
 [% Asset.js('js/i18n.js') | $raw %]
 [% Asset.js('js/stores.js') | $raw %]
-<style id="antiClickjack">
+<style nonce="[% Koha.CSPNonce | $raw %]" id="antiClickjack">
     body {
         display: none !important;
     }

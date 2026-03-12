@@ -16,7 +16,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% BLOCK cssinclude %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         .navbar-expand {
             justify-content: space-between;
         }

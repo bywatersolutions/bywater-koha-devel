@@ -1283,18 +1283,18 @@
     [% PROCESS build_items_table_js biblio => biblio %]
 
     [% IF ( Koha.Preference('CatalogConcerns') ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             /* Set a variable needed by add_catalog_concern.js */
             var logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
         </script>
         [% Asset.js("js/modals/add_catalog_concern.js") | $raw %]
     [% END %]
     [% IF ( ( Koha.Preference('CatalogConcerns') || Koha.Preference('OpacCatalogConcerns') ) && CAN_user_editcatalogue_edit_catalogue ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             var table_settings = [% TablesSettings.GetTableSettings( 'catalogue', 'concerns', 'table_concerns', 'json' ) | $raw %];
             const biblio_id = "[% biblionumber | html %]";
         </script>
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $("#bibliodetails a:first").tab("show");
 
@@ -1475,7 +1475,7 @@
         </script>
         [% Asset.js("js/modals/display_ticket.js") | $raw %]
     [% END # /IF CatalogConcerns %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var interface = "[% interface | html %]";
         var theme = "[% theme | html %]";
         // http://www.oreillynet.com/pub/a/javascript/2003/10/21/amazonhacks.html
@@ -1749,10 +1749,10 @@
     [% INCLUDE 'js-date-format.inc' %]
     [% Asset.js("lib/dayjs/plugin/isSameOrAfter.js") | $raw %]
     [% Asset.js("lib/dayjs/plugin/isSameOrBefore.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         dayjs.extend(window.dayjs_plugin_isSameOrAfter);
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         dayjs.extend(window.dayjs_plugin_isSameOrBefore);
     </script>
     [% INCLUDE 'js-biblio-format.inc' %]
@@ -1761,7 +1761,7 @@
     [% IF Koha.Preference('EnableBooking') %]
         [% Asset.js("js/modals/place_booking.js") | $raw %]
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var browser;
         browser = KOHA.browser("[% searchid | html %]", parseInt(biblionumber, 10));
         browser.show();
@@ -1780,7 +1780,7 @@
             CAN_user_editcatalogue_manage_item_groups: [% CAN_user_editcatalogue_manage_item_groups ? 1 : 0 | html %],
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let items_tab_ids = ["holdings", "otherholdings"];
         items_tab_ids.forEach(function (tab_id, index) {
             // Early return if the tab is not shown (ie. no table)
@@ -2133,10 +2133,10 @@
         }
     </script>
     [% IF Koha.Preference('AcquisitionDetails') %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             var table_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail', 'acquisitiondetails-table', 'json') | $raw %];
         </script>
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 var acquisitiondetails_table = $("#orders").kohaTable(
                     {
@@ -2152,7 +2152,7 @@
     [% END %]
 
     [% IF suggestions.count %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $("#suggestions").kohaTable({
                     pagingType: "full",
@@ -2162,10 +2162,10 @@
     [% END %]
 
     [% IF ( reviews ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             var comment_table_settings = [% TablesSettings.GetTableSettings('catalogue', 'detail', 'comments-table', 'json') | $raw %];
         </script>
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 var comments_table = $("#comments_table").kohaTable(
                     {
@@ -2180,7 +2180,7 @@
     [% END %]
 
     [% IF found1 && Koha.Preference('RetainCatalogSearchTerms') %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 var search_index = localStorage.getItem("cat_search_pulldown_selection");
                 var search_value = localStorage.getItem("searchbox_value");
@@ -2195,7 +2195,7 @@
     [% END %]
 
     [% IF Koha.Preference('EnableItemGroups') %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 // Load item groups table
                 var itemGroupsTable = $("#items-group-table").kohaTable({
@@ -2437,7 +2437,7 @@
             });
         </script>
     [% END # /IF EnableItemGroups %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(".delete-comment").on("click", function () {
             return confirm(_("Are you sure you want to delete this comment?"));
         });

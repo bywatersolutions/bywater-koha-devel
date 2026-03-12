@@ -122,12 +122,12 @@
 </div>
 
 [% INCLUDE 'select2.inc' %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     $(document).ready(function () {
         $("#category").select2();
     });
 </script>
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     document.getElementById("form").addEventListener("submit", function (ev) {
         ev.preventDefault();
         const id = document.getElementById("id").value;

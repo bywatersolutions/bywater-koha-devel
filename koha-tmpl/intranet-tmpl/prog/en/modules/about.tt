@@ -13,7 +13,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .version-ellipsis {
         text-decoration: underline;
     }
@@ -93,7 +93,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             let perl_table = $("#perl_table").kohaTable({
                 autoWidth: false,

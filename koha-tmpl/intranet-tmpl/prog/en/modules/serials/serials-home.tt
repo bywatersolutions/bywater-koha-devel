@@ -45,7 +45,7 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'calendar.inc' %]
     [% Asset.js("js/serials-toolbar.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var subscriptionid = "[% subscriptionid | html %]";
     </script>
 [% END %]

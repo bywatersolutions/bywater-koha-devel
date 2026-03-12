@@ -108,7 +108,7 @@
 [% BLOCK js %]
     [% INCLUDE 'str/job_progress.inc' job_id=job.id %]
     [% INCLUDE 'str/erm_sushi_harvester.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function(){
             let job_id = [% job.id | $raw %];
             updateProgress(job_id, {

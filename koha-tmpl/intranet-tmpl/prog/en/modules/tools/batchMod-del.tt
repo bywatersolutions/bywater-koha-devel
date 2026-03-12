@@ -22,7 +22,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 <!--[if IE]>
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         #selections {
             display: none;
         }
@@ -236,7 +236,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/pages/batchMod.js") | $raw %]
     [% Asset.js("js/browser.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         [% IF searchid %]
             browser = KOHA.browser('[% searchid | html %]');
             browser.show_back_link();

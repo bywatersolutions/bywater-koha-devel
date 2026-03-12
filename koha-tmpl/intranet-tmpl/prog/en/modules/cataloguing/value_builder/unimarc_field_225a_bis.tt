@@ -36,7 +36,7 @@
 </div>
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function(){
             $("#findvalue").autocomplete({
                 source: "/cgi-bin/koha/cataloguing/ysearch.pl?table=biblioitems&field=collectiontitle",

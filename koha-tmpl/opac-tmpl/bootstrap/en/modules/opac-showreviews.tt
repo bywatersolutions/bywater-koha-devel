@@ -202,7 +202,7 @@
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
     [% IF ( GoogleJackets ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 KOHA.Google.GetCoverFromIsbn();
             });

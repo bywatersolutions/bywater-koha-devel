@@ -25,7 +25,7 @@
     </button>
 </fieldset>
 
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .custom-field-input {
         width: 25%;
         display: inline-block;

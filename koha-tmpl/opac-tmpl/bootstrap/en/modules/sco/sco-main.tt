@@ -35,22 +35,22 @@
 [% END %]
 [% IF ( Koha.Preference('OPACUserCSS') ) %]
     <!-- prettier-ignore-start -->
-    <style>[% Koha.Preference('OPACUserCSS') | $raw %]</style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">[% Koha.Preference('OPACUserCSS') | $raw %]</style>
     <!-- prettier-ignore-end -->
 [% END %]
 [% IF Branches.GetBranchSpecificCSS( Branches.GetLoggedInBranchcode() || default_branch) %]
     <!-- prettier-ignore-start -->
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         [% Branches.GetBranchSpecificCSS( Branches.GetLoggedInBranchcode() || default_branch) | $raw %]
     </style>
     <!-- prettier-ignore-end -->
 [% END %]
 [% IF ( Koha.Preference('SCOUserCSS') ) %]
     <!-- prettier-ignore-start -->
-    <style>[% Koha.Preference('SCOUserCSS') | $raw %]</style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">[% Koha.Preference('SCOUserCSS') | $raw %]</style>
     <!-- prettier-ignore-end -->
 [% END %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var Koha = {};
     function _(s) {
         return s;
@@ -413,7 +413,7 @@
     [% INCLUDE 'opac-bottom.inc' %]
     [% BLOCK jsinclude %]
         [% INCLUDE 'datatables.inc' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             addPrefs({
                 OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
                 SelfCheckTimeout: "[% Koha.Preference('SelfCheckTimeout') | html %]",
@@ -422,7 +422,7 @@
             const logged_in_user_cardnumber = "[% patronid | html %]";
         </script>
         [% IF Koha.Preference('AudioAlerts') %]
-            <script>
+            <script nonce="[% Koha.CSPNonce | $raw %]">
                 var AUDIO_ALERTS = JSON.parse( "[% To.json(AudioAlerts.AudioAlerts) | $raw %]" );
                 $( document ).ready(function() {
                     if ( AUDIO_ALERTS ) {
@@ -443,7 +443,7 @@
                 }
             </script>
         [% END %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             function mungeHistory() {
                 // prevent back button from allowing form resubmission
                 if (history && history.pushState) {
@@ -552,7 +552,7 @@
         </script>
         [% Asset.js("js/holds.js") | $raw %]
         [% IF ( Koha.Preference('SCOUserJS') ) %]
-            <script>
+            <script nonce="[% Koha.CSPNonce | $raw %]">
                 [% Koha.Preference('SCOUserJS') | $raw %]
             </script>
         [% END %]

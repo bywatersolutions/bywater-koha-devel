@@ -192,7 +192,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/browser.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var browser = KOHA.browser('[% searchid | html %]', parseInt('[% biblionumber | html %]', 10));
         browser.show();
     </script>

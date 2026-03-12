@@ -219,7 +219,7 @@
 <!-- /.page-section -->
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function report() {
             var doc   = opener.document;
             var field = doc.getElementById("[% index | html %]");

@@ -1389,7 +1389,7 @@
     [% INCLUDE 'validator-strings.inc' %]
     [% Asset.js("lib/jquery/plugins/jquery.validate.min.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function() {
                 [% IF op == 'edit' && !OPACPatronDetails %]
                     $("#memberentry-form :input").attr('readonly', true);

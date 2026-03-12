@@ -28,7 +28,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'js-date-format.inc' %]
     [% INCLUDE 'format_price.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const vendorTableSettings = [% TablesSettings.GetTableSettings( 'acqui', 'vendors', 'vendors', 'json' ) | $raw %];
     </script>
     [% Asset.js("js/vue/dist/acquisitions.js") | $raw %]

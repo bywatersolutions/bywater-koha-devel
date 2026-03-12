@@ -58,10 +58,10 @@
         </tbody>
     </table>
 [% END %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var clubs_borrowernumber = "[% borrowernumber | html %]";
 </script>
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var clubs_dt_params = {
         paging: true,
     };
@@ -69,7 +69,7 @@
     $("#table_clubenrollments").kohaTable(clubs_dt_params);
 </script>
 [% IF CAN_user_clubs_enroll %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function loadEnrollmentForm(id, enrollent_id = 0) {
             $("body").css("cursor", "progress");
             $("#clubs_panel").load(`/cgi-bin/koha/clubs/patron-enroll.pl?borrowernumber=${clubs_borrowernumber}&id=${id}&enrollent_id=${enrollent_id}`, function () {

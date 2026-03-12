@@ -13,7 +13,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% Asset.css("css/addbiblio.css") | $raw %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .usefor {
         padding: 0;
         margin: 0;
@@ -142,7 +142,7 @@
 [% INCLUDE 'authority-detail-modal.inc' %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var index = "[% index | html %]";
         var authtypecode = "[% authtypecode | html %]";
         const searchType = "[% marclist | html %]";
@@ -150,7 +150,7 @@
     </script>
     [% Asset.js("js/auth-finder-search.js") | $raw %]
     [% Asset.js("js/authorities-detail-modal.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function jumpfull(page){
             window.open(page,'','width=100,height=100,resizable=yes,toolbar=false,scrollbars=yes,top');
         }

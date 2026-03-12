@@ -100,7 +100,7 @@
 [% MACRO jsinclude BLOCK %]
     [% IF ( do_it ) %]
         [% INCLUDE 'datatables.inc' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $("#itemtypest").kohaTable({
                     dom: "t",

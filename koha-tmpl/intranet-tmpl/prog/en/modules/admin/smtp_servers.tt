@@ -319,12 +319,12 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const i18n = {
             on: "[% tp("Active", "On") | html %]"
         };
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var smtp_servers_url = "/api/v1/config/smtp_servers";
             window.smtp_servers = $("#smtp_servers").kohaTable({

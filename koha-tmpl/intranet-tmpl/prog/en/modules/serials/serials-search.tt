@@ -15,7 +15,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     input.dt-filter {
         width: 100%;
         font-size: 85%;
@@ -281,12 +281,12 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var subscriptionid = "[% subscriptionid | html %]";
         const edit_action_link = "[% edit_action_link | html %]";
     </script>
     [% Asset.js("js/serials-toolbar.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function itemSelectionBuildEditLink(tab) {
             var subscription_ids = new Array();
             $("input:checkbox." + tab + ":checked").each(function () {
@@ -364,7 +364,7 @@
         });
     </script>
     [% IF ( mana ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function() {
                 $(".local").hide();
                 [% FOR field IN additional_fields_for_subscription %]

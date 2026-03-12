@@ -16,7 +16,7 @@
     [% END %]
 </title>
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     #localization {
         margin-top: 1em;
     }
@@ -141,7 +141,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function show_message(params) {
             var type = params.type;
             var data = params.data;
@@ -323,7 +323,7 @@
             });
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var languages_select = $('<select name="lang" id="lang"></select>');
         [% FOR language IN languages %]
             [% FOR sublanguage IN language.sublanguages_loop %]

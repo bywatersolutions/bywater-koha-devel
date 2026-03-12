@@ -107,7 +107,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#CheckNone").click(function (e) {
                 e.preventDefault();

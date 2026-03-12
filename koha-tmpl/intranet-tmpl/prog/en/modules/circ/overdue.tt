@@ -21,7 +21,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         .sql {
             display: none;
         }
@@ -346,13 +346,13 @@
     [% INCLUDE 'select2.inc' %]
     [% INCLUDE 'js-date-format.inc' %]
     [% PROCESS 'modal-claims-js' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings( 'circ', 'overdues', 'circ-overdues', 'json' ) | $raw %];
         [% IF !Koha.Preference('ClaimReturnedLostValue') %]
             table_settings['columns'].splice(13, 1);
         [% END %]
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function clone_input(node, original_id) {
             var original = node;
             var clone = original.clone();

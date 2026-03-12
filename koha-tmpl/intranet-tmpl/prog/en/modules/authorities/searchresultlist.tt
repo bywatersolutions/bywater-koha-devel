@@ -13,7 +13,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% Asset.css("css/addbiblio.css") | $raw %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .usefor {
         padding: 0;
         margin: 0;
@@ -155,7 +155,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const searchType = "[% marclist | html %]";
         const template_path = "[% interface | html %]/[% theme | html %]";
     </script>

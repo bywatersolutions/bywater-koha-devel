@@ -18,7 +18,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% BLOCK cssinclude %]
     [% FILTER collapse %]
-        <style>
+        <style nonce="[% Koha.CSPNonce | $raw %]">
             div.tabsub {
                 clear: both;
             }
@@ -190,10 +190,10 @@
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const min_year = "[% yearmin | html %]";
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             showlayer(min_year);
             $("a.tabsubs:first").addClass("currentsubtab");

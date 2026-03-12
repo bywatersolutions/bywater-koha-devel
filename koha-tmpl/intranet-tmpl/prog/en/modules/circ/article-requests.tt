@@ -16,7 +16,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     p {
         margin-top: 0;
     }
@@ -523,7 +523,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let requested_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'article-requests', 'article-requests-requested-table', 'json' ) | $raw %]
         let pending_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'article-requests', 'article-requests-pending-table', 'json' ) | $raw %]
         let processing_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'article-requests', 'article-requests-processing-table', 'json' ) | $raw %]
@@ -531,7 +531,7 @@
         const interface = "[% interface | html %]";
         const theme = "[% theme | html %]";
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var active_tab = "#article-requests-requested_panel";
         var last_cancel_reason, requested_datatable, pending_datatable, processing_datatable, active_datatable, requested_dt, pending_dt, processing_dt;
         $(document).ready(function () {

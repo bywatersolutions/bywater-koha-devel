@@ -12,7 +12,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .disabled-transfer {
         background-color: #ff8888;
     }
@@ -126,7 +126,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function check_transport_cost(e) {
             var val = e.value;
             if (val && val != "" && !isNaN(parseFloat(val)) && val >= 0.0) {

@@ -217,11 +217,11 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings( "serials", "claims", "claimst", "json" ) | $raw %];
         const vendor_id = "[% supplierid | html %]";
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var sTable;
         $(document).ready(function () {
             enableSelectedActions();

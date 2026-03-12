@@ -92,7 +92,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let table_dt; //DataTable object
         $(document).ready(function () {
             $("#cancel_upload").on("click", function (e) {

@@ -350,12 +350,12 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/acquisitions-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         fieldset.action {
             margin-bottom: 20px;
         }
     </style>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         addPrefs({
             marcflavour: "[% Koha.Preference('marcflavour') | html %]",
         });
@@ -374,7 +374,7 @@
             order: "[%tp("noun", "Order") | html %]",
         };
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         dt_overwrite_html_sorting_localeCompare();
         var PENDING_MULTI_SELECTION = _("Receive selected (%s)");
         var columns_filter = {};

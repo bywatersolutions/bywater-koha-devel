@@ -169,7 +169,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var quotes_url = "/api/v1/quotes";
             var quotes = $("#quotes").kohaTable({

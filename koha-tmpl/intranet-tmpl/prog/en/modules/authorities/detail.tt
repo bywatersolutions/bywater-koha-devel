@@ -134,7 +134,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const authid = "[% authid | html %]";
         const searchType = "[% marclist | html %]";
     </script>
@@ -142,7 +142,7 @@
     [% IF ( displayhierarchy ) %]
         [% Asset.js("lib/jquery/plugins/jstree/jstree-3.3.12.min.js") | $raw %]
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function() {
            if( $("#authoritiestabs .tab-pane.active").length < 1 ){
                let tab_object = [];

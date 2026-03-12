@@ -1,5 +1,5 @@
 <!-- ill-batch-table-strings.inc -->
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var ill_batch_borrower_details = _("View borrower details");
     var ill_batch_edit = _("Edit");
     var ill_batch_delete = _("Delete");

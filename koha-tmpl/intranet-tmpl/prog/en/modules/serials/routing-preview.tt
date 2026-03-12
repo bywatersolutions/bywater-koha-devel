@@ -78,7 +78,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#save_and_preview_form").on("submit", function (e) {
                 var myurl = "routing-preview.pl?op=print&subscriptionid=" + $("#subscriptionid").val() + "&issue=" + $("#issue_escaped").val();

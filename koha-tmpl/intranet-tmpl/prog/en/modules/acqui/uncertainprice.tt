@@ -189,7 +189,7 @@
     [% Asset.js("js/acquisitions-menu.js") | $raw %]
     [% Asset.js("js/acq.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var uncertainpricet = $("#uncertainpricet").kohaTable({
                 pagingType: "full",

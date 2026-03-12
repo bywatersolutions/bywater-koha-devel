@@ -12,7 +12,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     div.record ul,
     div.record li {
         float: none;
@@ -140,12 +140,12 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const searchType = "";
     </script>
     [% Asset.js("js/authorities.js") | $raw %]
     [% Asset.js("js/merge-record.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         // When submiting the form
             function mergeformsubmit() {
                 $('#tabs').remove();

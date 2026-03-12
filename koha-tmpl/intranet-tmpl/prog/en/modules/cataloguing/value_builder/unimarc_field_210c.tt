@@ -108,7 +108,7 @@
 </div>
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function(){
             $(".choosebt").on("click",function(){
                 var toreport = $(this).siblings(".toreport").text();

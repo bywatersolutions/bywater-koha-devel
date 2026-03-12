@@ -175,7 +175,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var tab_map = { 0: _("First"), 1: _("Second"), 2: _("Third") };
         $(document).ready(function () {
             $("#selectlibrary").find("input:submit").hide();

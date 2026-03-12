@@ -70,7 +70,7 @@
     [% Asset.js("js/members-menu.js") | $raw %]
 
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#pending_updates table").kohaTable({
                 paging: false,

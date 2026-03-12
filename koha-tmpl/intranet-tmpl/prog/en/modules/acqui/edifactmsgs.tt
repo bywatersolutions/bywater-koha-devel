@@ -44,7 +44,7 @@
     [% Asset.js("js/acquisitions-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/modals/edifact-modal.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             let edi_msgs_table_url = "/api/v1/acquisitions/edifiles?";
 

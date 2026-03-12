@@ -144,7 +144,7 @@
         </div>
     </nav>
 </form>
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     $("#form").on('submit', submitMyForm);
     $("#f0").on('change', function() {
         document.f_pop.f1.disabled = false;

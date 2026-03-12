@@ -1057,7 +1057,7 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const tab = "[% tab | html %]";
         const logged_in_user_borrowernumber = "[% borrowernumber | html %]";
         addPrefs({
@@ -1070,7 +1070,7 @@
         const is_debarred = [% userdebarred ? 1 : 0 | html %];
         const current_article_requests_size = [% current_article_requests.size || 0 | html %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var AR_CAPTION_COUNT = _("(%s total)");
 
         function tableInit(tableId) {
@@ -1444,7 +1444,7 @@
     [% END %]
     [% IF OverDriveCirculation %]
         [% Asset.js("js/overdrive.js") | $raw %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             [%- IF Koha.Preference('OverDrivePasswordRequired') -%]
                 var OD_password_required = 1;
             [%- ELSE -%]

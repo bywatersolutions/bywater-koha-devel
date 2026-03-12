@@ -115,7 +115,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/acquisitions-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#invoice_files_details_table").kohaTable({
                 columnDefs: [{ targets: [-1, -2], orderable: false, searchable: false }],

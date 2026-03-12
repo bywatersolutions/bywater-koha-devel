@@ -563,10 +563,10 @@
     [% Asset.js("js/acq.js") | $raw %]
 
     [% IF close_form %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             const budget_period_description = "[% budget_period_description | html %]";
         </script>
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $("#budgeth").kohaTable({
                     dom: "t",
@@ -583,7 +583,7 @@
     [% END %]
 
     [% IF closed %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 var oTable = $("#closed_report").kohaTable({
                     // The following is a c/p from aqbudgets.tt and is a candidate for refactoring.
@@ -622,7 +622,7 @@
             });
         </script>
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             let dt_params = {
                 pagingType: "full",

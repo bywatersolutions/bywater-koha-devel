@@ -6,7 +6,7 @@
 [% Asset.js("lib/bootstrap/bootstrap.bundle.min.js") | $raw %]
 [% Asset.js("lib/jquery/plugins/jquery.validate.min.js") | $raw %]
 <!-- installer-intranet-bottom.inc -->
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     function _(s) { return s } // dummy function for gettext
     [%# Prevent XFS attacks -%]
     $(document).ready(function() {

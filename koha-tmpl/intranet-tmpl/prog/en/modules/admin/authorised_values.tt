@@ -35,7 +35,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         fieldset.rows div.toptabs li {
             clear: none;
             margin-right: 0.4em;
@@ -403,7 +403,7 @@
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'select2.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#categoriest").kohaTable({
                 order: [[0, "asc"]],

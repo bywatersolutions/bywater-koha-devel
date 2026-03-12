@@ -383,7 +383,7 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         // FIXME This does not work, we need to pass table settings, not the columns
         columns_settings = [% FILTER collapse %]
             [
@@ -410,7 +410,7 @@
             ];
         [% END %]
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function changeRemovedDateTrStatus() {
             var Cellvalue = $("input[name='Cellvalue']:checked").val();
             if (Cellvalue == "deleteditems") {

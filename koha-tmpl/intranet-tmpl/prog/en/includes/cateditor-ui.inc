@@ -9,7 +9,7 @@
 [% Asset.js("lib/koha/cateditor/marc-mode.js") | $raw %]
 [% Asset.js("lib/require.js") | $raw %]
 <!-- cateditor-ui.inc -->
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     [% FOREACH shortcut IN shortcuts -%]
         var [% shortcut.shortcut_name | html %] = "[% shortcut.shortcut_keys | html %]";
     [% END %]
@@ -35,11 +35,11 @@
 [% IF marcflavour == 'MARC21' %]
     [% PROCESS 'cateditor-widgets-marc21.inc' %]
 [% ELSE %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var editorWidgets = {};
     </script>
 [% END %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     require( [ 'koha-backend', 'search', 'macros', 'marc-editor', 'marc-record', 'preferences', 'resources', 'text-marc', 'widget' ], function( KohaBackend, Search, Macros, MARCEditor, MARC, Preferences, Resources, TextMARC, Widget ) {
         var z3950Servers = [
             {

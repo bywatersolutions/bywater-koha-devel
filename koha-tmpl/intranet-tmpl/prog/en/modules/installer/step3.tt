@@ -482,7 +482,7 @@
 
 [% IF ( selectframeworks ) %]
     [% MACRO jsinclude BLOCK %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $(".selectall,.deselectall").on("click", function (e) {
                     e.preventDefault();

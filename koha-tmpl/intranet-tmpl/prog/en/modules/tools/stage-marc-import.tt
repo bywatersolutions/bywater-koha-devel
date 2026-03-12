@@ -15,7 +15,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     #fileuploadstatus,
     #fileuploadfailed,
     #fileuploadcancel {
@@ -264,7 +264,7 @@
 
     [% INCLUDE 'str/job_progress.inc' job_id=job_id %]
     [% Asset.js("js/job_progress.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var xhr;
         var PROFILE_SAVE_MSG = _("Profile saved");
         var PROFILE_DEL_MSG = _("Profile deleted");

@@ -204,7 +204,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings( 'admin', 'cities', 'table_cities', 'json' ) | $raw %];
         var cities_table_url = '/api/v1/cities?';
 
@@ -217,7 +217,7 @@
             cities_table_url += 'q='+ encodeURIComponent(JSON.stringify(city_name_filter));
         [% END %]
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var cities_table = $("#table_cities").kohaTable(
                 {

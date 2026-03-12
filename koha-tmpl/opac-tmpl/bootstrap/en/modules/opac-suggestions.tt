@@ -576,11 +576,11 @@
         [% Asset.js("js/autofill.js") | $raw %]
     [% END %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const loggedinusername = [% ( loggedinusername ) ? 1 : 0 | html %];
     </script>
     [% IF ( loggedinusername ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             function enableCheckboxActions() {
                 // Enable/disable controls if checkboxes are checked
                 var checkedBoxes = $(".cb:checked");
@@ -596,7 +596,7 @@
     [% END %]
 
     [% IF Koha.Preference( 'OPACSuggestionAutoFill' ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(function () {
                 $("#isbn").autofill({
                     "volumeInfo.title": { target: "title", effect: "flash" },
@@ -615,7 +615,7 @@
             });
         </script>
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(function () {
             $("#suggestt").kohaTable({
                 order: [[1, "asc"]],

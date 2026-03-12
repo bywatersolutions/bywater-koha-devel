@@ -231,11 +231,11 @@
 [% BLOCK patron_search_js %]
 
     [% IF redirect_if_one_result && !redirect_url %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             console.log("Wrong call of patron_search_js - missing redirect_url");
         </script>
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var categories = [% To.json(Categories.all.unblessed) | $raw %].map(e => {
             e['_id'] = e.categorycode.toLowerCase();
             e['_str'] = e.description;
@@ -302,7 +302,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'js-patron-get-age.inc' %]
     [% INCLUDE 'js-patron-format-address.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         {
 
             function get_patron_search_form(){
@@ -1036,7 +1036,7 @@
         </div>
     </div>
     <div id="patron_preview_modal" class="basicModal"></div>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function() {
             let parent_block = $("#[% search_results_block_id | html %]");
             parent_block.find(".select_all").on("click",function(e){

@@ -11,7 +11,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     ins {
         background-color: #e6ffe6;
     }
@@ -95,7 +95,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% Asset.js("lib/jsdiff/jsdiff.min.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var diff1 = $("#col1 pre").text();
             var diff2 = $("#col2 pre").text();

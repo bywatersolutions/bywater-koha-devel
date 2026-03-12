@@ -51,7 +51,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'js-biblio-format.inc' %]
     [% INCLUDE 'calendar.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var prefilters = '[% prefilters | html %]';
         // Set column settings
         var table_settings = [% TablesSettings.GetTableSettings( 'illrequests', 'ill-requests', 'ill-requests', 'json' ) | $raw %];

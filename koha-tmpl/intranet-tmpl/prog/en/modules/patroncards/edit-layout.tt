@@ -482,7 +482,7 @@
 [% END %]
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var selectedUnit = $("#units option:selected").val();
             var unitfields = $("#font_size,#field_1_llx,#field_1_lly,#field_2_llx,#field_2_lly,#field_3_llx,#field_3_lly,#barcode_Tx,#barcode_Ty,#image_1_Dx,#image_1_Tx,#image_1_Ty,#image_2_Dx,#image_2_Tx,#image_2_Ty");

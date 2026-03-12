@@ -20,7 +20,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         .branchgridrow {
             display: flex;
             flex-wrap: wrap;
@@ -414,11 +414,11 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'calendar.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'inventory', 'inventoryt', 'json' ) | $raw %];
         const uploadedbarcodesflag = [% uploadedbarcodesflag ? 1 : 0 | html %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function checkForm() {
             if ($("#uploadbarcodes").val() && $("#barcodelist").val()) {
                 alert(_("You have uploaded a barcode file and scanned barcodes at the same time. Please choose one of the two options."));

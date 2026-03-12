@@ -119,7 +119,7 @@
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
     [% Asset.js("js/additional-fields-entry.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var type_fees = {};
         [% FOREACH debit_type IN debit_types %]
             type_fees['[% debit_type.code | html %]'] = "[% IF debit_type.default_amount %][% debit_type.default_amount | $Price on_editing => 1 %][% END %]";

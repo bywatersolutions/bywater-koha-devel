@@ -83,7 +83,7 @@
 [% WRAPPER 'main-container.inc' wide_centered => ( op == 'illlist' ? 0 : 1 ) aside = ( op == 'illlist' ? 'ill-filter' : '' ) %]
 
     [% IF op == 'illlist' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             var ill_table_actions = [% table_actions | $raw %];
         </script>
     [% END %]
@@ -1121,11 +1121,11 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'select2.inc' %]
     [% IF metadata_enrichment_services %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             var ill_check_availability_syspref = '[% Koha.Preference('ILLCheckAvailability') | html %]';
             var metadata_enrichment_services = [% metadata_enrichment_services | $raw %];
         </script>
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             [% IF batch_availability_services %]
             var batch_availability_services = [% batch_availability_services | $raw %];
             [% ELSE %]
@@ -1133,7 +1133,7 @@
             [% END %]
         </script>
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var prefilters = '[% prefilters | $raw %]';
         // Set column settings
         var table_settings = [% TablesSettings.GetTableSettings( 'illrequests', 'ill-requests', 'ill-requests', 'json' ) | $raw %];
@@ -1152,7 +1152,7 @@
         var metadata = "[% metadata | $raw %]";
         [% END %]
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $("#ill_checkout_inhouse_select").on("change", function () {
             if ($(this).val().length > 0) {
                 $(".ill_checkout_due_date").hide();
@@ -1184,7 +1184,7 @@
         [% Asset.js("js/ill-autobackend.js") | $raw %]
     [% END %]
     [% IF op == 'availability' && Koha.Preference('ILLCheckAvailability') %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 window.doSearch();
             });

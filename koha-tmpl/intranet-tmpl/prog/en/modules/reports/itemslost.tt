@@ -193,7 +193,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings( 'reports', 'lostitems', 'lostitems-table', 'json' ) | $raw %];
         [% IF csv_profiles.count %]
             // Add the first (checkbox) column if it is displayed
@@ -201,7 +201,7 @@
             table_settings['columns'].unshift({cannot_be_modified: 1, cannot_be_toggled: 1, columnname: 'itemnumber', is_hidden: 0});
         [% END %]
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var lostitems_table = $("#lostitems-table").kohaTable(
                 {

@@ -15,7 +15,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         ins {
             background-color: #e6ffe6;
         }
@@ -325,7 +325,7 @@
     [% Asset.js("js/members-menu.js") | $raw %]
     [% Asset.js("js/members-patron-selections.js") | $raw %]
     [% Asset.js("lib/jsdiff/jsdiff.min.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var controls = $("#merge-patrons, #compare_patrons");
             controls.prop("disabled", true);

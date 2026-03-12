@@ -85,7 +85,7 @@
     [% Asset.css("css/humanmsg.css") | $raw %]
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let filters_table;
         $(document).ready(function () {
             filters_table = $("#search_filters_table").kohaTable({

@@ -1,5 +1,5 @@
 <!-- validator-strings.inc -->
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     $(document).ready(function () {
         jQuery.extend(jQuery.validator.messages, {
             required: _("This field is required."),

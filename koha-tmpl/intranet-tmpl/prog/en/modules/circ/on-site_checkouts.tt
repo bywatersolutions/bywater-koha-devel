@@ -77,7 +77,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             if ($("#pending_onsite_checkout").length) {
                 $("#pending_onsite_checkout").kohaTable();

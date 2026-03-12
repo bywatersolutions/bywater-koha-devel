@@ -21,7 +21,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     input[type="checkbox"] {
         margin: 0 0.5em;
     }
@@ -296,7 +296,7 @@
     [% Asset.js("js/pages/batchMod.js") | $raw %]
     [% INCLUDE 'select2.inc' %]
     [% INCLUDE 'calendar.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         // Prepare array of all column headers, incrementing each index by
         // two to accommodate control and title columns
         var allColumns = new Array([% FOREACH item_header_loo IN item_header_loop %]'[% loop.count | html %]'[% UNLESS ( loop.last ) %],[% END %][% END %]);

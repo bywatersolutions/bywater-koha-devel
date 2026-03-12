@@ -115,7 +115,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/file-upload.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var xhr;
         $(document).ready(function () {
             $("#enqueuefile").hide();

@@ -355,7 +355,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function reloadPage(p) {
             var id = p.value;
             if (id != 0) {

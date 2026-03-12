@@ -135,7 +135,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $(".itemrank").on("change", function () {
                 var subscriptionid = $(this).data("subscriptionid");
@@ -170,7 +170,7 @@
     [% SET columns = ['cardnumber','name','category','branch','action'] %]
     [% PROCESS patron_search_modal columns => columns, modal_title => t("Add recipients") %]
     [% PROCESS patron_search_js columns => columns, actions => ["add"], preview_on_name_click => 1 %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).on(
             "hidden.bs.modal",
             "#patron_search_modal",

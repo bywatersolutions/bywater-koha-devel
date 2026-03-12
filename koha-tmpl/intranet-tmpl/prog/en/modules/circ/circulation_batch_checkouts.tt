@@ -244,7 +244,7 @@
                                     [% END %]
                                     [% IF checkout_info.HIGHHOLDS %]
                                         <!-- FIXME -->
-                                        <script>
+                                        <script nonce="[% Koha.CSPNonce | $raw %]">
                                             $(document).ready(function() {
                                                 $("input[name=duedatespec]:hidden").val('[% checkout_info.HIGHHOLDS.returndate | html %]');
                                             });
@@ -352,11 +352,11 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         // FIXME Why are we using a Perl variable here?
         const today_due_date_and_time = "[% today_due_date_and_time | $KohaDates dateformat => 'iso', with_hours => 1 %]";
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function() {
             if($('#barcodelist').length) {
                 $('#barcodelist').focus();

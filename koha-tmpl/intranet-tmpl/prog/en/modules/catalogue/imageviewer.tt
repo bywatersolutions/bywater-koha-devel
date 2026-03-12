@@ -11,7 +11,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     #largeCover {
         background: transparent url("[% interface | html %]/[% theme | html %]/img/spinner-small.gif") center center no-repeat;
     }
@@ -130,10 +130,10 @@
     [% Asset.js("lib/dayjs/dayjs.min.js") | $raw %]
     [% Asset.js("lib/dayjs/plugin/isSameOrAfter.js") | $raw %]
     [% Asset.js("lib/dayjs/plugin/isSameOrBefore.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         dayjs.extend(window.dayjs_plugin_isSameOrAfter);
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         dayjs.extend(window.dayjs_plugin_isSameOrBefore);
     </script>
     [% Asset.js("js/catalog.js") | $raw %]
@@ -145,13 +145,13 @@
     [% END %]
 
     [% IF ( Koha.Preference('CatalogConcerns') ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             /* Set a variable needed by add_catalog_concern.js */
             var logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
         </script>
         [% Asset.js("js/modals/add_catalog_concern.js") | $raw %]
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var interface = "[% interface | html %]";
         var theme = "[% theme | html %]";
         $(document).ready(function(){

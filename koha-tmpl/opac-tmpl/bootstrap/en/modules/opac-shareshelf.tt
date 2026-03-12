@@ -153,7 +153,7 @@
 
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#share_list").on("submit", function (e) {
                 var address = $("#invite_address").val();

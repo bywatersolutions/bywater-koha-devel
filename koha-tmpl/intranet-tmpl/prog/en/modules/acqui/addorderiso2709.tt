@@ -17,7 +17,7 @@
     [% END %]</title
 >
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         .biblio {
             padding: 0 0.5em;
             margin: 0;
@@ -45,7 +45,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% Asset.css("css/addbiblio.css") | $raw %]
 [%# As long as cataloging plugins rely on 'script' tags added inline, JS must be in the header %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     const template_path = "[% interface | html %]/[% theme | html %]";
 </script>
 [% Asset.js("js/acquisitions-menu.js") | $raw %]

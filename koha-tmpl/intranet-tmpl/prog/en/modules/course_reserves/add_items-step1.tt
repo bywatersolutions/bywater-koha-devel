@@ -78,7 +78,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("input[type='submit']").click(function (e) {
                 if ($("#biblionumber").val().length > 0 && $("#barcode").val().length > 0) {

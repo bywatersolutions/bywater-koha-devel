@@ -198,7 +198,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function confirmDelete() {
             return confirm(_("Are you sure you want to delete this subscription frequency?"));
         }

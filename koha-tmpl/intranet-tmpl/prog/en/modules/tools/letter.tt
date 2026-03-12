@@ -36,7 +36,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         #preview_template .modal-dialog {
             width: 80%;
         }
@@ -845,7 +845,7 @@
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("lib/jquery/plugins/jquery.insertatcaret.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var no_op_set = '[% no_op_set | html %]';
         var interface = '[% interface | html %]';
         var theme = '[% theme | html %]';

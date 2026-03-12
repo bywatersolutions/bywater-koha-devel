@@ -33,7 +33,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     #button_add,
     .split_regex,
     .split_callnumber {
@@ -437,7 +437,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function update_regex_block() {
             if ($("#split_routine option:selected").val() == "RegEx") {
                 $("#regex_block").show();

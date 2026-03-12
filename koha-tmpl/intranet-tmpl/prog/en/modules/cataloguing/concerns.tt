@@ -63,12 +63,12 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'js-date-format.inc' %]
     [% INCLUDE 'js-biblio-format.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         logged_in_user_borrowernumber = [% logged_in_user.borrowernumber | html %];
 
         var table_settings = [% TablesSettings.GetTableSettings('cataloguing', 'concerns', 'table_concerns', 'json') | $raw %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             let additional_filters = {
                 resolved_date: function () {
@@ -255,7 +255,7 @@
             adjust_filter_label();
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function() {
             [% FOR st IN status %]
             $('#[% st.authorised_value | html %]_filter').on("click", function() {

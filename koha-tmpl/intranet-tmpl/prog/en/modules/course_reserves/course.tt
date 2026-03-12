@@ -15,7 +15,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     #course_instructors {
         float: left;
     }
@@ -192,7 +192,7 @@
 
 [% IF ( departments ) %]
     [% MACRO jsinclude BLOCK %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 patron_autocomplete($("#find_instructor"), {
                     "on-select-add-to": { container: $("#instructors"), input_name: "instructors" },

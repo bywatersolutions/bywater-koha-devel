@@ -250,7 +250,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'select2.inc' %]
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#selectall").click(function (e) {
                 e.preventDefault();

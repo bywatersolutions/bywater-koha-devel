@@ -25,7 +25,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         #add_action {
             display: none;
         }
@@ -379,7 +379,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         table_settings = [% TablesSettings.GetTableSettings('tools', 'marc-modification-templates', 'templatest', 'json') | $raw %];
         [% IF ActionsLoop %]
             var mmtas = [% ActionsLoop.json | $raw %]

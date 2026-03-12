@@ -3,7 +3,7 @@
 [% USE raw %]
 <!-- calendar.inc -->
 [% FILTER collapse %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var debug    = "[% debug | html %]";
         var dateformat_pref = "[% Koha.Preference('dateformat') | html %]";
         var flatpickr_dateformat_string = "";
@@ -42,7 +42,7 @@
     [% Asset.js("lib/flatpickr/shortcut-buttons-flatpickr.min.js") | $raw %]
     [% Asset.js("lib/maskito/maskito.core.js") | $raw %]
     [% Asset.js("lib/maskito/maskito.kit.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         flatpickr.l10ns.default.weekdays       = flatpickr_weekdays;
         flatpickr.l10ns.default.months         = flatpickr_months;
         flatpickr.l10ns.default.rangeSeparator = flatpickr_rangeSeparator;

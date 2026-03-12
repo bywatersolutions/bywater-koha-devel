@@ -12,7 +12,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     a.add,
     a.delete {
         cursor: pointer;

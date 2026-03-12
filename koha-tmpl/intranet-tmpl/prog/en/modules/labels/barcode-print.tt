@@ -13,7 +13,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% Asset.css("css/humanmsg.css") | $raw %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         input[type="range"] {
             display: inline-block;
             width: auto;
@@ -126,7 +126,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var base_url = "[% Koha.Preference('staffClientBaseURL') | html %]";
 
         function showBarcodeText( path, dimensions ){

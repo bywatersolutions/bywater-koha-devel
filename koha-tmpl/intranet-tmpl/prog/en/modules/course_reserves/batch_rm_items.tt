@@ -86,7 +86,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#batch_rm_btn").click(function () {
                 return confirmDelete(_("Are you sure you want to remove these items from all courses?"));

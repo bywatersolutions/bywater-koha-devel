@@ -98,7 +98,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("tr.mybranch td").css("background-color", "#CFE7FF");
         });

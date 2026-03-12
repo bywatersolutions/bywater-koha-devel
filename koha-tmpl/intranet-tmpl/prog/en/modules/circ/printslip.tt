@@ -38,7 +38,7 @@
 [% FOR slip IN slips %]
     [% IF slip.style %]
         <!-- prettier-ignore-start -->
-    <style>[% slip.style.replace('([^\{\}]+?)\s*\{', '#slip_' _ slip.id _ ' $1 {') | $raw %]</style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">[% slip.style.replace('([^\{\}]+?)\s*\{', '#slip_' _ slip.id _ ' $1 {') | $raw %]</style>
     <!-- prettier-ignore-end -->
     [% END %]
 [% END %]

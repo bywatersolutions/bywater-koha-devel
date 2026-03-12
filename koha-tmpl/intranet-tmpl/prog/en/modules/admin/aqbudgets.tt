@@ -528,7 +528,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/acq.js") | $raw %]
     [% IF op == 'add_form' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             //<![CDATA[
 
             function select_user(borrowernumber, borrower) {
@@ -677,10 +677,10 @@
         [% INCLUDE 'datatables.inc' %]
         [% Asset.js("lib/jquery/plugins/treetable/jquery.treetable.js") | $raw %]
         [% IF budgets %]
-            <script>
+            <script nonce="[% Koha.CSPNonce | $raw %]">
                 const budget_period_id = [% budget_period_id || 'null' | html %];
             </script>
-            <script>
+            <script nonce="[% Koha.CSPNonce | $raw %]">
                 $(document).ready(function () {
                     var oTable = $("#budgeth").kohaTable({
                         drawCallback: function (oSettings) {
@@ -749,7 +749,7 @@
                 });
             </script>
         [% END %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $(".deletefund-disabled").on("click", function (e) {
                     e.preventDefault();

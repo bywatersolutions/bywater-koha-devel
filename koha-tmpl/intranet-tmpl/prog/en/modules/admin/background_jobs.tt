@@ -144,7 +144,7 @@
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'js-date-format.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const job_statuses = [
             {'_id': 'new',       '_str': _("New")},
             {'_id': 'cancelled', '_str': _("Cancelled")},
@@ -244,7 +244,7 @@
             type: "[% job.type | html %]",
         };
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function get_job_type(job_type) {
             let job_type_lib = job_types.find(t => t._id == job_type);
             if (job_type_lib) {

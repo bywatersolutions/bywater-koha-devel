@@ -269,7 +269,7 @@
     [% Asset.js("js/additional-fields-entry.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#parcelst").kohaTable({
                 paging: false,

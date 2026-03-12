@@ -16,7 +16,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     label.description {
         width: 20em;
     }
@@ -426,7 +426,7 @@
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function() {
             [%# Make date fields have the datepicker %]
             $("#dateenrolled, #dateexpiry, #dateofbirth").flatpickr({

@@ -185,7 +185,7 @@
         [% INCLUDE 'datatables.inc' %]
     [% END %]
     [% IF server %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             const server = {
                 dataformat: "[% server.dataformat | html %]",
                 recordtype: "[% server.recordtype | html %]",
@@ -193,7 +193,7 @@
         </script>
     [% END %]
     [% IF op == 'edit_form' || op == 'add_form' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 // Update selects for dataformat and recordtype
                 // FIXME Do not do this in JS!
@@ -221,7 +221,7 @@
             });
         </script>
     [% ELSE %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $("#serverst").kohaTable({
                     pagingType: "full",

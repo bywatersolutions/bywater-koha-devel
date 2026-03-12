@@ -130,7 +130,7 @@
 [% BLOCK jsinclude %]
     [% Asset.js("lib/jquery/plugins/jquery.validate.min.js") | $raw %]
     [% PROCESS 'password_check.inc' new_password => 'Newkey', minPasswordLength => logged_in_user.category.effective_min_password_length, RequireStrongPassword => logged_in_user.category.effective_require_strong_password %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#mainform").validate({
                 rules: {

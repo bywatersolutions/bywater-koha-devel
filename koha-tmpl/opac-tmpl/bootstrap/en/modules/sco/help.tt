@@ -23,22 +23,22 @@
 [% Asset.css("css/sco.css") | $raw %]
 [% IF ( Koha.Preference('OPACUserCSS') ) %]
     <!-- prettier-ignore-start -->
-    <style>[% Koha.Preference('OPACUserCSS') | $raw %]</style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">[% Koha.Preference('OPACUserCSS') | $raw %]</style>
     <!-- prettier-ignore-end -->
 [% END %]
 [% IF Branches.GetBranchSpecificCSS( Branches.GetLoggedInBranchcode() || default_branch) %]
     <!-- prettier-ignore-start -->
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         [% Branches.GetBranchSpecificCSS( Branches.GetLoggedInBranchcode() || default_branch) | $raw %]
     </style>
     <!-- prettier-ignore-end -->
 [% END %]
 [% IF ( SCOUserCSS ) %]
     <!-- prettier-ignore-start -->
-    <style>[% SCOUserCSS | $raw %]</style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">[% SCOUserCSS | $raw %]</style>
     <!-- prettier-ignore-end -->
 [% END %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var Koha = {};
     function _(s) {
         return s;
@@ -100,7 +100,7 @@
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
     [% IF ( SCOUserJS ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             [% SCOUserJS | $raw %]
         </script>
     [% END %]

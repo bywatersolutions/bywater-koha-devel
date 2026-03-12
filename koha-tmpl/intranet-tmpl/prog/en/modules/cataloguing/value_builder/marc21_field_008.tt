@@ -64,7 +64,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/xmlControlfield.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function(){
             $(".close_window").on("click", function(e){
                 e.preventDefault();

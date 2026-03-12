@@ -1,5 +1,5 @@
 <!-- ill-batch-table-strings.inc -->
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var ill_batch_add = _("Add new batch");
     var ill_batch_update = _("Update batch");
     var ill_batch_none = _("None");

@@ -18,7 +18,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         .biblio-level-info {
             background-color: #f3f3f3;
             border-radius: 5px;
@@ -360,7 +360,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var table_settings = [% TablesSettings.GetTableSettings( 'coursereserves', 'reserves', 'course_reserves_table', 'json' ) | $raw %];
         const course_reserves_size = [% course_reserves.size || 0 | html %];
         const i18n = {
@@ -368,7 +368,7 @@
             are_you_sure_no_item: "[% I18N.t('Are you sure you want to delete this course?') | html %]",
         };
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#rm_items_button").on("click", function (e) {
                 e.preventDefault();

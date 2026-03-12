@@ -173,7 +173,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $(".redirect_link").on("click", function (e) {
                 e.preventDefault();
@@ -187,7 +187,7 @@
         }
     </script>
     [% IF ( fillinput ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             function go() {
                 var index_start = "[% index | html %]";
                 var whichfield;

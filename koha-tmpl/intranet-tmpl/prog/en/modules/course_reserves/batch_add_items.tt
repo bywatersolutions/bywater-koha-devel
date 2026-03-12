@@ -213,7 +213,7 @@
 [% END %]
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         //<![CDATA[
         $(document).ready(function () {
             $(".field-toggle").change(function () {

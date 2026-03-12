@@ -14,7 +14,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% BLOCK cssinclude %]
     [% FILTER collapse %]
-        <style>
+        <style nonce="[% Koha.CSPNonce | $raw %]">
             .adv-search-grid {
                 display: grid;
                 gap: 0.5rem;
@@ -525,7 +525,7 @@
 
 [% BLOCK jsinclude %]
     [% Asset.js("lib/jquery/plugins/jquery.deserialize.min.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         window.addEventListener('pageshow', function( e ){
             $('.form-control:visible').prop('disabled' , false );
         });

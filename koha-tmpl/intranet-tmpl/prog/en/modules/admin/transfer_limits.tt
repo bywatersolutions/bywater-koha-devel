@@ -15,7 +15,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     td {
         text-align: center;
     }
@@ -146,7 +146,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const branchTransferLimitsType = "[% BranchTransferLimitsType | html %]";
         const val_type = branchTransferLimitsType == "itemtype" ? "item_type" : "collection_code";
         const branches = [% To.json(branches) | $raw %];

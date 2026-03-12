@@ -445,13 +445,13 @@
     [% Asset.js("js/cashup_modal.js") | $raw %]
     [% Asset.js("js/modal_printer.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const register = {
             id: "[% register.id | html %]",
             description: "[% register.description | html %]",
         };
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var sales_table = $("#sales").kohaTable({
             orderFixed: [0, "asc"],
             ordering: false,

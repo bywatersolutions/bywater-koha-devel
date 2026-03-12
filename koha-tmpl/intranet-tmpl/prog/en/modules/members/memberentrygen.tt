@@ -1614,7 +1614,7 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function update_cardnumber_warning(size){
             var max_len = [% maxlength_cardnumber | html %];
             if ( size >= max_len ) {

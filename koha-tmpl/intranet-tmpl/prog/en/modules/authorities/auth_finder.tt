@@ -20,7 +20,7 @@
 <!-- /.main.container-fluid -->
 
 [% MACRO jsinclude BLOCK %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var index = "[% index | html %]";
         var authtypecode = "[% authtypecode | html %]";
     </script>

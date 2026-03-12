@@ -248,7 +248,7 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'format_price.inc' %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var items_table_settings = [% TablesSettings.GetTableSettings('pos', 'pay', 'invoices', 'json') | $raw %];
         var zero_formatted = "[% 0 | $Price %]";
         const payment_id = "[% payment_id | html %]";
@@ -258,7 +258,7 @@
             FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function moneyFormat(textObj) {
             var newValue = textObj.value;
             var decAmount = "";

@@ -305,7 +305,7 @@
 
 [% INCLUDE 'opac-bottom.inc' %]
 [% BLOCK jsinclude %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         // Hide circular 'Log in to Your Account' link in opac-auth.pl
         $(document).ready(function () {
             if ($("#auth")) {

@@ -20,7 +20,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% USE Koha %]
 
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     tr.selected {
         background-color: #ffffcc;
     }
@@ -332,7 +332,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'z3950_search.inc' %]
     [% Asset.js("js/z3950_search.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var resultst = $("#resultst").kohaTable({
                 columnDefs: [{ targets: [1], type: "nsb-nse" }],

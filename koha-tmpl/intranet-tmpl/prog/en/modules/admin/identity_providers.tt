@@ -406,7 +406,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             var identity_providers_url = "/api/v1/auth/identity_providers";
             window.identity_providers = $("#identity_providers").kohaTable({

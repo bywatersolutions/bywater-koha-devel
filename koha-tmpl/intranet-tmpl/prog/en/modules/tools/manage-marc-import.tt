@@ -21,7 +21,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% Asset.css("css/humanmsg.css") | $raw %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     span.change-status {
         font-style: italic;
         color: #666;
@@ -457,7 +457,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const interface = "[% interface | html %]";
         const theme = "[% theme | html %]";
         const import_batch_id = "[% import_batch_id | html %]";
@@ -466,7 +466,7 @@
             CAN_user_editcatalogue_edit_catalogue: [% CAN_user_editcatalogue_edit_catalogue ? 1 : 0 | html %],
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#staged-record-matching-rules select").change(function () {
                 var str = $(this).attr("id");
@@ -669,7 +669,7 @@
         });
     </script>
     [% IF job_enqueued %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 setTimeout(
                     function () {

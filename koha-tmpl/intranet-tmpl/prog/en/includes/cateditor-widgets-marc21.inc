@@ -76,7 +76,7 @@
     </div>
 </div>
 <!-- cateditor-widgets-marc21.inc -->
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     /**
      * Each widget should provide one to three methods:
      *   init( text ): Returns the DOM node for this widget.

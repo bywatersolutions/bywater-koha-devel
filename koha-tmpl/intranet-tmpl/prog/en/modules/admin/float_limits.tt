@@ -13,7 +13,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .disabled-transfer {
         background-color: #ff8888;
     }
@@ -108,7 +108,7 @@
 
     [% MACRO jsinclude BLOCK %]
         [% Asset.js("js/admin-menu.js") | $raw %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 jQuery.validator.addClassRules("float_limit", {
                     digits: true,

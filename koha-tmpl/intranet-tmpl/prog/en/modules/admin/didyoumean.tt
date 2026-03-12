@@ -79,7 +79,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% Asset.js( "lib/sortable/Sortable.min.js" ) | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $(".pluginlist").each((i, e) => {
                 Sortable.create(e, {

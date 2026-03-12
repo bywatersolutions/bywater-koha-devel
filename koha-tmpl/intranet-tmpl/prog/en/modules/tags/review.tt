@@ -23,7 +23,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         .setlabel {
             background-color: #e8e8e8;
             font-family: courier;

@@ -341,11 +341,11 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var subscriptionid = "[% subscriptionid | html %]";
     </script>
     [% Asset.js("js/serials-toolbar.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function deleteIssues(subscriptionid) {
             var serialschecked = $("form[name='edition'] input[name='serialid']:checked");
             if (serialschecked.length > 0) {
@@ -416,7 +416,7 @@
             });
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function() {
             $(".delete-issues").on("click", function(e){
                 e.preventDefault();

@@ -272,7 +272,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/automatic_item_modification_by_age.js") | $raw %]
     [% IF op == 'edit_form' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function() {
                   [% IF rules.size > 0 %]
                       $("#norules").hide();

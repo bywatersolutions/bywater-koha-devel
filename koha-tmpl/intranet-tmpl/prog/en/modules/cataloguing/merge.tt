@@ -12,7 +12,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     div.record ul,
     div.record li {
         float: none;
@@ -216,7 +216,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/merge-record.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         [% UNLESS (result) %]
           [% IF (choosereference) %]
             function changeFramework(fw) {

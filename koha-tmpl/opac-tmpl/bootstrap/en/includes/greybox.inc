@@ -1,6 +1,6 @@
 [% USE raw %]
 [% USE Asset %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var GB_ROOT_DIR = "[% interface | html %]/lib/greybox/";
 </script>
 [% Asset.js("lib/greybox/AJS.js") | $raw %]

@@ -31,7 +31,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% IF op == 'else' %]
     [% FILTER collapse %]
-        <style>
+        <style nonce="[% Koha.CSPNonce | $raw %]">
             h4.local_collapse a {
                 font-size: 80%;
                 text-decoration: none;
@@ -1251,12 +1251,12 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'calendar.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
         const managedby_patron_borrowernumber = "[% suggestion.manager.borrowernumber | html %]";
         const op = "[% op | html %]";
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function select_manager(borrowernumber, borrower) {
             let tab = $("#suggestiontabs .active table").data("tab-name");
             if (tab) {
@@ -1326,7 +1326,7 @@
         });
     </script>
     [% IF ( op == 'show' || op == 'else' ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $(".deletesuggestion").on("click", function () {
                     return confirm(_("Are you sure you want to delete this suggestion?"));
@@ -1335,7 +1335,7 @@
         </script>
     [% END %]
     [% IF op == 'else' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             const has_suggestions = [% suggestions.size ? 1 : 0 | html %];
             let suggestionData = [% To.json(suggestions || []) | $raw %];
             var suggestions_table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'suggestions', 'suggestions', 'json' ) | $raw %]
@@ -1345,7 +1345,7 @@
             });
         </script>
         [% INCLUDE 'datatables.inc' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 if (has_suggestions) {
                     function loadDatatable(tabName) {
@@ -1670,7 +1670,7 @@
         </script>
     [% END %]
     [% IF op == 'save' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function(){
                 calcNewsuggTotal();
                 $("#quantity,#price,#currency").on("change",function(){

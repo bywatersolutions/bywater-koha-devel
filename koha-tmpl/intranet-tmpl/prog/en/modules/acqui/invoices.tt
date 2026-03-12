@@ -478,7 +478,7 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'select2.inc' %]
     [% INCLUDE 'js-date-format.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $('[id^="CheckAll"]').click(function () {
                 var table_id = "#" + $(this).attr("data-cb") + "resultst";

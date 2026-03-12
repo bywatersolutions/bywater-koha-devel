@@ -58,7 +58,7 @@
     [% SET editmode = "text" %]
     [% Asset.css("lib/codemirror/codemirror.css") | $raw %]
     [% Asset.css("lib/codemirror/lint.min.css") | $raw %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         .CodeMirror {
             resize: vertical;
             z-index: 0;
@@ -68,7 +68,7 @@
 [% IF category == 'record_display' %]
     [% editmode = "text" %]
 [% END %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     .syspref-link::before {
         content: " | ";
     }
@@ -597,7 +597,7 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'select2.inc' %]
     [% Asset.js("js/tools-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $("#saveandcontinue").on("click", function (e) {
             e.preventDefault();
             $("#redirect").val("just_save");
@@ -606,7 +606,7 @@
     </script>
     [% IF additional_contents.count %]
         [% INCLUDE 'datatables.inc' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(".preview_news").click(function () {
                 modalNumber = $(this).attr("data-number");
                 $('.modal[data-number="' + modalNumber + '"]').modal("show");
@@ -684,7 +684,7 @@
             });
         </script>
     [% ELSE %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             function showLocationNotes( location ){
                 $(".customization_note").hide();
                 $( "#" + location + "_notes" ).show();
@@ -736,7 +736,7 @@
         [% Asset.js( "lib/codemirror/lint.min.js" ) | $raw %]
         [% Asset.js( "lib/linters/htmlhint.min.js" ) | $raw %]
         [% Asset.js( "lib/codemirror/html-lint.min.js" ) | $raw %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             let editors = new Object(); /* Keeps track of initialized CodeMirror instances */
             $(document).ready(function () {
                 if ($("#tabs .tab-pane.active").length < 1) {
@@ -775,7 +775,7 @@
     [% ELSE %]
         [% Asset.js("lib/tiny_mce/tinymce.min.js") | $raw %]
         [% INCLUDE 'str/tinymce_i18n.inc' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function(){
                 if( $("#tabs").length > 0 && $("#tabs .tab-pane.active").length < 1 ){
                     /* Activate first tab and initialize its tinyMCE instance */

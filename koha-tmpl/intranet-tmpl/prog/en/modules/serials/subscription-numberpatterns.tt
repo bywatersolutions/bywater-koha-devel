@@ -331,7 +331,7 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
     [% IF (new or modify) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             function testPattern() {
                 var frequencyid = $("#frequency").val();
                 var firstacquidate = $("#firstacquidate").val();
@@ -401,7 +401,7 @@
             }
         </script>
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function show_blocking_subs() {
             $("#blocking_subs").show();
         }

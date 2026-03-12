@@ -319,11 +319,11 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const interface = "[% interface | html %]";
         const theme = "[% theme | html %]";
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function update_tab_display() {
             let selected_type = $('input[name="recordtype"]:checked').val();
             if (selected_type == "authority") {

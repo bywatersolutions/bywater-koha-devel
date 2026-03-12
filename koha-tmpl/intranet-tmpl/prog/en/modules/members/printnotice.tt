@@ -20,7 +20,7 @@
     <link rel="stylesheet" type="text/css" href="[% Koha.Preference('SlipCSS') | $raw %]" />
 [% END %]
 <!-- prettier-ignore-start -->
-[% IF style %]<style>[% style | $raw %]</style>[% END %]
+[% IF style %]<style nonce="[% Koha.CSPNonce | $raw %]">[% style | $raw %]</style>[% END %]
 <!-- prettier-ignore-end -->
 </head>
 

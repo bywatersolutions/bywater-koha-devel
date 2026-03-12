@@ -65,7 +65,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#files").kohaTable({
                 columnDefs: [{ targets: [-1], orderSequence: ["desc", "asc"], searchable: false }],

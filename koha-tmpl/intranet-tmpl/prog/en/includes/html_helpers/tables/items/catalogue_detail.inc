@@ -93,7 +93,7 @@
 [% END %][%# end of block items_table %]
 
 [% BLOCK build_items_table_js %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let hide_patron_name = [% IF Koha.Preference('HidePatronName') %]true[% ELSE %]false[% END %];
         const all_libraries = [% To.json(Branches.all) | $raw %].map(e => {
                     e["_id"] = e["branchcode"];
@@ -163,7 +163,7 @@
             otherholdings: "[% PROCESS 'build_table' tab="otherholdings" | collapse | $tojson %]",
         };
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let items_selection = {};
 
         function _itemSelectionBuildLink(tab_id, link_class) {

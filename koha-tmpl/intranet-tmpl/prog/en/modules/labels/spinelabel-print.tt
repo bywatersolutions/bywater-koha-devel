@@ -12,7 +12,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' popup => 1 %]
 [% Asset.css("css/spinelabel.css") | $raw %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     @media print {
         .noprint {
             display: none;
@@ -20,7 +20,7 @@
     }
 </style>
 <!-- prettier-ignore-start -->
-[% IF ( IntranetUserCSS ) %]<style>[% IntranetUserCSS | $raw %]</style>[% END %]
+[% IF ( IntranetUserCSS ) %]<style nonce="[% Koha.CSPNonce | $raw %]">[% IntranetUserCSS | $raw %]</style>[% END %]
 <!-- prettier-ignore-end -->
 </head>
 
@@ -64,7 +64,7 @@
 [% IF ( autoprint ) %]
     [% INCLUDE 'slip-print.inc' #printThenClose %]
 [% END %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     $(document).ready(function () {
         $(".print-label").on("click", function (e) {
             e.preventDefault();

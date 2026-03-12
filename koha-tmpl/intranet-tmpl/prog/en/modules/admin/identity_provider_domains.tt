@@ -327,7 +327,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var identity_provider_domains_url = '/api/v1/auth/identity_providers/[%- identity_provider_id | html -%]/domains';
         [% SET categories = Categories.all() %]
         var categories = {
@@ -344,7 +344,7 @@
 
         const identity_provider_id = "[%- identity_provider_id | html -%]";
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             window.identity_provider_domains = $("#identity_provider_domains").kohaTable({
                 ajax: {

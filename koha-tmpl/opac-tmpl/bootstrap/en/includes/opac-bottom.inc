@@ -98,7 +98,7 @@
 [% Asset.js("lib/bootstrap/js/bootstrap.bundle.min.js") | $raw %]
 [% Asset.js("lib/fontfaceobserver/fontfaceobserver.min.js") | $raw %]
 [% Asset.js("lib/enquire/enquire.min.js") | $raw %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     let logged_in_user_id = "[% logged_in_user.borrowernumber | html %]";
 </script>
 [% Asset.js("js/global.js") | $raw %]
@@ -106,7 +106,7 @@
 [% IF ( OPACAmazonCoverImages || SyndeticsCoverImages ) %]
     [% Asset.js("js/amazonimages.js") | $raw %]
 [% END %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var query_desc = "[% query_desc | html %]";
     var querystring = "[% querystring | html %]";
     var query_cgi = "[% query_cgi | html %]";
@@ -140,7 +140,7 @@
 [% ELSIF ( Koha.Preference( 'virtualshelves' ) == 1 ) %]
     [% Asset.js("js/basket.js") | $raw %]
 [% ELSE %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var readCookie;
     </script>
 [% END %]
@@ -159,7 +159,7 @@
 
 [% IF ( BakerTaylorEnabled ) %]
     [% Asset.js("js/bakertaylorimages.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(window).load(function () {
             bt_verify_images();
         });
@@ -167,7 +167,7 @@
 [% END %]
 
 [% IF Koha.Preference( 'OpacNewsLibrarySelect' ) %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $("#news-branch-select").change(function () {
             $("#news-branch-select").submit();
         });
@@ -176,7 +176,7 @@
 
 [% Asset.js("lib/js-cookie/js.cookie-3.0.1.min.js") | $raw %]
 [% Asset.js("js/show-password-toggle.js") | $raw %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     $(document).ready(function () {
         if ($("#searchsubmit").length) {
             $(document).on("click", "#searchsubmit", function (e) {
@@ -191,19 +191,19 @@
 [% INCLUDE 'js-biblio-format.inc' %]
 [% PROCESS jsinclude %]
 [% IF ( Koha.Preference('OPACUserJS') ) %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         [% Koha.Preference('OPACUserJS') | $raw %]
     </script>
 [% END %]
 [% IF Branches.GetBranchSpecificJS( Branches.GetLoggedInBranchcode() || default_branch) %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         [% Branches.GetBranchSpecificJS( Branches.GetLoggedInBranchcode() || default_branch) | $raw %]
     </script>
 [% END %]
 [% IF SCO_login %]
     [% SET SCOUserJS = Koha.Preference('SCOUserJS') %]
     [% IF ( SCOUserJS ) %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             [% SCOUserJS | $raw %]
         </script>
     [% END %]

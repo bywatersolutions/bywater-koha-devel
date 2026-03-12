@@ -79,7 +79,7 @@
 [% INCLUDE 'doc-head-close.inc' %]
 [% Asset.css("lib/codemirror/codemirror.min.css") | $raw %]
 [% FILTER collapse %]
-    <style>
+    <style nonce="[% Koha.CSPNonce | $raw %]">
         .CodeMirror {
             resize: vertical;
         }
@@ -1776,7 +1776,7 @@
     [% Asset.js( "js/mana.js" ) | $raw %]
     [% Asset.js( "js/throttledButton.js" ) | $raw %]
     [% INCLUDE 'select2.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let op = "";
         [% IF create %]
             op = "create";
@@ -1814,7 +1814,7 @@
 
         const tables = [% To.json(tables || []) | $raw %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         //  if the report param form has multiselects override default form submission
         if ($("#report_param_form").find("select[multiple]").length) {
             $("#report_param_form").on("submit", function (e) {

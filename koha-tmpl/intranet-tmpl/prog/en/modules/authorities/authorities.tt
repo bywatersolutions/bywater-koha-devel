@@ -16,7 +16,7 @@
 >
 [% INCLUDE 'doc-head-close.inc' %]
 [% INCLUDE 'select2.inc' %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     [% IF Koha.Preference('CreateAVFromCataloguing') && CAN_user_parameters_manage_auth_values %]
         var auth_values_creation = 1;
     [% ELSE %]
@@ -26,7 +26,7 @@
 </script>
 [% Asset.js( "lib/sortable/Sortable.min.js" ) | $raw %]
 [% Asset.js("js/cataloging.js") | $raw %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     $(window).load(function(){
         $("#loading").hide();
     });
@@ -384,7 +384,7 @@
     });
 </script>
 [% Asset.css("css/addbiblio.css") | $raw %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     #auloadpreview {
         font-family: monospace;
     }

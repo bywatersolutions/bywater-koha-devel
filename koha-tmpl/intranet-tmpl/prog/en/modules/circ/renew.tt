@@ -240,7 +240,7 @@
     [% Asset.js("js/pages/circulation.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
     [% IF error %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 removeFocus();
             });

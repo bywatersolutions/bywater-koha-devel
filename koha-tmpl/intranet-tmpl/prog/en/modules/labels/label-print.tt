@@ -9,7 +9,7 @@
     [% END %]
 </title>
 [% INCLUDE 'doc-head-close.inc' popup => 1 %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     table {
         border-collapse: separate;
         border-spacing: 0;

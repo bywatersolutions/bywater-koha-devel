@@ -1,7 +1,7 @@
 [% USE Asset %]
 [% USE Koha %]
 [% USE raw %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     var flatpickr_weekdays = {
         shorthand: [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
         longhand: [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" ]
@@ -60,7 +60,7 @@
 [% Asset.js("lib/flatpickr/flatpickr.min.js") | $raw %]
 [% Asset.js("lib/maskito/maskito.core.js") | $raw %]
 [% Asset.js("lib/maskito/maskito.kit.js") | $raw %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     flatpickr.l10ns.default.weekdays = flatpickr_weekdays;
     flatpickr.l10ns.default.months = flatpickr_months;
     flatpickr.setDefaults({

@@ -481,14 +481,14 @@
     [% END %]
     [% Asset.js("lib/Chocolat/js/chocolat.js") | $raw %]
     [% CoverImagePlugins | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         const loggedinusername = [% ( loggedinusername ) ? 1 : 0 | html %];
         const opacbookbag = [% ( opacbookbag ) ? 1 : 0 | html %];
         const virtualshelves = [% ( virtualshelves ) ? 1 : 0 | html %];
     </script>
     [% Asset.js("js/results-list.js") | $raw %]
     [% Asset.js("js/cover_images.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         [% IF ( OpacHighlightedWords ) %]
             var q_array = new Array();  // holds search terms if available
 

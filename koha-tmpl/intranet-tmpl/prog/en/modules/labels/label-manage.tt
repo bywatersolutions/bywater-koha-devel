@@ -157,7 +157,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function Xport() {
             batches = new Array();
             if (document.layouts.action.length > 0) {

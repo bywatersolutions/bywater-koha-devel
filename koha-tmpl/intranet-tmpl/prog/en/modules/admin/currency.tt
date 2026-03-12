@@ -266,10 +266,10 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let table_settings = [% TablesSettings.GetTableSettings( 'admin', 'currency', 'currencies-table', 'json' ) | $raw %]
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function check_currency(val) {
             if (val == 1.0) {
                 $("#active").prop("disabled", false);

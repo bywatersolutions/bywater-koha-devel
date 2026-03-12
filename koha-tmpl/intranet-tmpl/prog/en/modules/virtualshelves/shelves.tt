@@ -27,7 +27,7 @@
     [% END %]</title
 >
 [% INCLUDE 'doc-head-close.inc' %]
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     textarea {
         width: 100%;
     }
@@ -626,7 +626,7 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     [% IF print %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 window.print();
                 window.onafterprint = function () {
@@ -638,17 +638,17 @@
             });
         </script>
     [% END #/print %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var MSG_NO_ITEM_SELECTED = _("Nothing is selected.");
         var MSG_REMOVE_FROM_LIST = _("Are you sure you want to remove these records from the list?");
         var MSG_CONFIRM_DELETE_LIST = _("Are you sure you want to remove this list?");
     </script>
     [% IF op == 'list' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             var public = [% public | html %];
             const allow_transfer = [% allow_transfer ? 1 : 0 | html %];
         </script>
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 let sorton = ["vs.shelfname", "count", "vs.public", "vs.owner", "vs.sortfield", "vs.created_on", "vs.lastmodified"];
 
@@ -717,7 +717,7 @@
     [% END # /IF op == 'list' %]
 
     [% IF shelf AND op == 'view' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             addPrefs({
                 intranetbookbag: [% Koha.Preference("intranetbookbag") ? 1 : 0 | html %],
                 virtualshelves: [% Koha.Preference("virtualshelves") ? 1 : 0 | html %],
@@ -762,7 +762,7 @@
                 return param1;
             }
         </script>
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $("span.clearall").html('<a id="CheckNone" href="/cgi-bin/koha/shelves.pl"><i class="fa fa-times"></i>' + _(" Clear all") + "<\/a>");
                 $("span.checkall").html('<a id="CheckAll" href="/cgi-bin/koha/shelves.pl"><i class="fa fa-check"></i>' + _(" Select all") + "<\/a>");
@@ -821,13 +821,13 @@
     [% END # /IF shelf AND op == 'view' %]
 
     [% IF shelf AND op == 'edit_form' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 AdjustRemark();
             });
         </script>
     [% END %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         /**
          * This function checks if the adequate number of records are checked for merging
          */
@@ -954,7 +954,7 @@
         }
     </script>
     [% IF op == 'view' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             function sendList(){
                openWindow( CGIBIN + 'virtualshelves/sendshelf.pl?shelfid=[% shelf.shelfnumber | html %]' );
             }
@@ -969,7 +969,7 @@
     [% END %]
 
     [% IF op == 'transfer' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 patron_autocomplete($("#find_patron"), {
                     "on-select-add-to": {

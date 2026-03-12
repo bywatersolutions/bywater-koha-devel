@@ -274,7 +274,7 @@
     [% END %]
 
     [% IF server %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             const server = {
                 syntax: "[% server.syntax | html %]",
                 encoding: "[% server.encoding | html %]",
@@ -284,7 +284,7 @@
     [% END %]
 
     [% IF op == 'edit_form' || op == 'add_form' %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 // Update selects for syntax, encoding and recordtype
                 if (typeof server !== "undefined") {
@@ -329,7 +329,7 @@
             }
         </script>
     [% ELSE %]
-        <script>
+        <script nonce="[% Koha.CSPNonce | $raw %]">
             $(document).ready(function () {
                 $("#serverst").kohaTable({
                     pagingType: "full",

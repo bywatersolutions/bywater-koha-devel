@@ -115,7 +115,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'js-biblio-format.inc' %]
     [% INCLUDE 'js-date-format.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         let table_settings = [% TablesSettings.GetTableSettings( 'circ', 'bookings', 'bookings-to-collect', 'json' ) | $raw %];
 
         let all_libraries  = [% To.json(Branches.all) | $raw %].map(e => {
@@ -124,7 +124,7 @@
             return e;
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var coded_values = {
             library: new Map(all_libraries.map(l => [l.branchname, l.branchcode])),
         };

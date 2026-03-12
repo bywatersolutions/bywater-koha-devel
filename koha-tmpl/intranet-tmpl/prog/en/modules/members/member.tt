@@ -184,7 +184,7 @@
     [% Asset.js("js/members-menu.js") | $raw %]
     [% Asset.js("js/members-patron-selections.js") | $raw %]
     [% INCLUDE 'select2.inc' %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#merge-patrons, #batch-mod-patrons").prop("disabled", true);
             $("#memberresultst").on("change", "input.selection", function () {
@@ -344,7 +344,7 @@
             }
         });
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         // Apply DataTables on the results table
         var table_settings = [% TablesSettings.GetTableSettings( 'members', 'member', 'memberresultst', 'json' ) | $raw %];
         [% UNLESS CAN_user_borrowers_edit_borrowers OR CAN_user_tools_manage_patron_lists %]

@@ -66,7 +66,7 @@
     </select>
 [% END %]
 
-<style>
+<style nonce="[% Koha.CSPNonce | $raw %]">
     fieldset.rows fieldset.rows {
         border-width: 0;
     }
@@ -731,7 +731,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/admin-menu.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         var maxMatchPoint = [% max_matchpoint | html %];
         var maxMatchCheck = [% max_matchcheck | html %];
 

@@ -576,14 +576,14 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/modals/edifact-modal.js") | $raw %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         addPrefs({
             AcqEnableFiles: [% Koha.Preference('AcqEnableFiles') ? 1 : 0 | html %],
         });
         const invoiceincgst = [% invoiceincgst ? 1 : 0 | html %];
         const has_files = [% files ? 1 : 0 | html %];
     </script>
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         function updateColumnsVisibility(visible) {
             if (visible) {
                 $("table .tax_excluded, .tax_included").show();

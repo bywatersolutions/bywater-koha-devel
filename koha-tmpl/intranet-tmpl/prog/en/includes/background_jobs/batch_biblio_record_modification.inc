@@ -50,7 +50,7 @@
 [% END %]
 
 [% BLOCK js %]
-    <script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
         $("#add_bibs_to_list").change(function(){
             var selected = $("#add_bibs_to_list").find("option:selected");
             if ( selected.attr("class") == "shelf" ){

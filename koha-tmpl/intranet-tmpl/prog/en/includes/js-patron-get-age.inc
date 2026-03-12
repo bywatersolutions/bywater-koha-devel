@@ -1,6 +1,6 @@
 <!-- js-patron-get-age.inc -->
 [% USE KohaDates %]
-<script>
+<script nonce="[% Koha.CSPNonce | $raw %]">
     (function() {
 
         const tz = '[% KohaDates.tz | html %]';
