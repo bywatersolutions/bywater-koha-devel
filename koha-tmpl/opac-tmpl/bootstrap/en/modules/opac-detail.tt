@@ -1700,14 +1700,14 @@
     [% END %]
     <script>
         window.emojiPicker = new EmojiPicker({
-        emojiable_selector: '[data-emojiable=true]',
-        assetsPath: `${interface}/lib/emoji-picker/img/`,
-        popupButtonClasses: 'fa-solid fa-face-smile'
+            emojiable_selector: "[data-emojiable=true]",
+            assetsPath: `${interface}/lib/emoji-picker/img/`,
+            popupButtonClasses: "fa-solid fa-face-smile",
         });
         window.emojiPicker.discover();
 
-        if (prefs.OpacHighlightedWords){
-            var q_array = new Array();  // holds search terms if available
+        if (prefs.OpacHighlightedWords) {
+            var q_array = new Array(); // holds search terms if available
 
             function highlightOff() {
                 $("#catalogue_detail_biblio").removeHighlight();
@@ -1716,11 +1716,11 @@
             function highlightOn() {
                 var x;
                 for (x in q_array) {
-                    if ( q_array[x].length > 0 ) {
+                    if (q_array[x].length > 0) {
                         q_array[x] = q_array[x].replace(/\w*:([\w])/, "$1");
                         q_array[x] = q_array[x].toLowerCase();
-                        var myStopwords = prefs.NotHighlightedWords.toLowerCase().split('|');
-                        if( $.inArray(q_array[x], myStopwords) == -1 ) {
+                        var myStopwords = prefs.NotHighlightedWords.toLowerCase().split("|");
+                        if ($.inArray(q_array[x], myStopwords) == -1) {
                             $("#marcnotes").highlight(q_array[x]);
                             $(".title").highlight(q_array[x]);
                             $(".author").highlight(q_array[x]);
@@ -1734,115 +1734,118 @@
 
         function verify_cover_images() {
             // Loop over each container in the template which contains covers
-            $(".cover-slider").each(function( index ){
+            $(".cover-slider").each(function (index) {
                 var lightbox_descriptions = [];
                 var first_shown = 0;
-                $(this).find(".cover-image").each( function( index ){
-                    var div = $(this);
-                    // Find the image in the container
-                    var img = div.find("img")[0];
-                    if( img && $(img).length > 0 ){
-                        var description = "";
-                        if( img.naturalHeight == 0 && div.attr("id") != "googlejacket-coverimg" && div.hasClass('coce-coverimg') ){
-                            // No image loaded in the container. Remove the slide
-                            div.remove();
-                        } else {
-                            // All slides start hidden. If this is the first one, show it.
-                            if( first_shown == 0 ){
-                                div.show();
-                                first_shown = 1;
-                            }
-                            // Check if Amazon image is present
-                            if ( div.attr("id") == "amazon-bookcoverimg"  ) {
-                                w = img.width;
-                                h = img.height;
-                                if ((w == 1) || (h == 1)) {
-                                    // Amazon returned single-pixel placeholder
-                                    // Remove the container
-                                    div.remove();
-                                } else {
-                                    lightbox_descriptions.push(_("Amazon cover image (<a href='%s'>see the original image</a>)").format($(img).data('link')));
-                                }
-                            } else if( div.attr("id") == "custom-coverimg" ){
-                                if ( (img.complete != null) && (!img.complete) || img.naturalHeight == 0 ) {
-                                    // No image was loaded via the CustomCoverImages system preference
-                                    // Remove the container
-                                    div.remove();
-                                } else {
-                                    lightbox_descriptions.push(_("Custom cover image"));
-                                }
-                            } else if( div.attr("id") == "syndetics-coverimg" ){
-                                lightbox_descriptions.push(_("Image from Syndetics"))
-                            } else if( div.attr("id") == "googlejacket-coverimg" ){
-                                lightbox_descriptions.push(_("Image from Google Books (<a href='%s'>see the original image</a>)").format($(img).data('link')));
-                            } else if( div.attr("id") == "openlibrary-coverimg" ){
-                                lightbox_descriptions.push(_("Image from OpenLibrary (<a href='%s'>see the original image</a>)").format($(img).data('link')));
-                            } else if( div.hasClass("coce-coverimg" ) ){
-                                // Identify which service's image is being loaded by Coce
-                                var coce_description;
-                                if( $(img).attr("src").indexOf('amazon.com') >= 0 ){
-                                    coce_description = _("Coce image from Amazon.com");
-                                } else if( $(img).attr("src").indexOf('google.com') >= 0 ){
-                                    coce_description = _("Coce image from Google Books");
-                                } else if( $(img).attr("src").indexOf('openlibrary.org') >= 0 ){
-                                    coce_description = _("Coce image from Open Library");
-                                }
-                                div.find(".hint").html(coce_description);
-                                lightbox_descriptions.push(coce_description);
-                            } else if ( div.attr("id") == "bakertaylor-coverimg" ){
-                                lightbox_descriptions.push(_("Image from Baker &amp; Taylor"));
-                            } else if ( div.attr("class") == "cover-image local-coverimg" ) {
-                                lightbox_descriptions.push(_("Local cover image"));
+                $(this)
+                    .find(".cover-image")
+                    .each(function (index) {
+                        var div = $(this);
+                        // Find the image in the container
+                        var img = div.find("img")[0];
+                        if (img && $(img).length > 0) {
+                            var description = "";
+                            if (img.naturalHeight == 0 && div.attr("id") != "googlejacket-coverimg" && div.hasClass("coce-coverimg")) {
+                                // No image loaded in the container. Remove the slide
+                                div.remove();
                             } else {
-                                lightbox_descriptions.push(_("Cover image source unknown"));
+                                // All slides start hidden. If this is the first one, show it.
+                                if (first_shown == 0) {
+                                    div.show();
+                                    first_shown = 1;
+                                }
+                                // Check if Amazon image is present
+                                if (div.attr("id") == "amazon-bookcoverimg") {
+                                    w = img.width;
+                                    h = img.height;
+                                    if (w == 1 || h == 1) {
+                                        // Amazon returned single-pixel placeholder
+                                        // Remove the container
+                                        div.remove();
+                                    } else {
+                                        lightbox_descriptions.push(_("Amazon cover image (<a href='%s'>see the original image</a>)").format($(img).data("link")));
+                                    }
+                                } else if (div.attr("id") == "custom-coverimg") {
+                                    if ((img.complete != null && !img.complete) || img.naturalHeight == 0) {
+                                        // No image was loaded via the CustomCoverImages system preference
+                                        // Remove the container
+                                        div.remove();
+                                    } else {
+                                        lightbox_descriptions.push(_("Custom cover image"));
+                                    }
+                                } else if (div.attr("id") == "syndetics-coverimg") {
+                                    lightbox_descriptions.push(_("Image from Syndetics"));
+                                } else if (div.attr("id") == "googlejacket-coverimg") {
+                                    lightbox_descriptions.push(_("Image from Google Books (<a href='%s'>see the original image</a>)").format($(img).data("link")));
+                                } else if (div.attr("id") == "openlibrary-coverimg") {
+                                    lightbox_descriptions.push(_("Image from OpenLibrary (<a href='%s'>see the original image</a>)").format($(img).data("link")));
+                                } else if (div.hasClass("coce-coverimg")) {
+                                    // Identify which service's image is being loaded by Coce
+                                    var coce_description;
+                                    if ($(img).attr("src").indexOf("amazon.com") >= 0) {
+                                        coce_description = _("Coce image from Amazon.com");
+                                    } else if ($(img).attr("src").indexOf("google.com") >= 0) {
+                                        coce_description = _("Coce image from Google Books");
+                                    } else if ($(img).attr("src").indexOf("openlibrary.org") >= 0) {
+                                        coce_description = _("Coce image from Open Library");
+                                    }
+                                    div.find(".hint").html(coce_description);
+                                    lightbox_descriptions.push(coce_description);
+                                } else if (div.attr("id") == "bakertaylor-coverimg") {
+                                    lightbox_descriptions.push(_("Image from Baker &amp; Taylor"));
+                                } else if (div.attr("class") == "cover-image local-coverimg") {
+                                    lightbox_descriptions.push(_("Local cover image"));
+                                } else {
+                                    lightbox_descriptions.push(_("Cover image source unknown"));
+                                }
                             }
+                        } else {
+                            div.remove();
                         }
-                    } else {
-                        div.remove();
-                    }
-                });
+                    });
 
                 // Lightbox for cover images
-                Chocolat(this.querySelectorAll('.cover-image a'), {
-                    description: function(){
+                Chocolat(this.querySelectorAll(".cover-image a"), {
+                    description: function () {
                         return lightbox_descriptions[this.settings.currentImageIndex];
-                    }
+                    },
                 });
-
             });
 
-            $(".cover-slider").each(function(){
+            $(".cover-slider").each(function () {
                 var coverSlide = this;
                 var coverImages = $(this).find(".cover-image");
-                if( coverImages.length > 1 ){
-                    coverImages.each(function( index ){
+                if (coverImages.length > 1) {
+                    coverImages.each(function (index) {
                         // If more that one image is present, add a navigation link
                         // for activating the slide
-                        var covernav = $("<a href=\"#\" data-num=\"" + index + "\" class=\"cover-nav\"></a>");
-                        if( index == 0 ){
+                        var covernav = $('<a href="#" data-num="' + index + '" class="cover-nav"></a>');
+                        if (index == 0) {
                             // Set the first navigation link as active
                             $(covernav).addClass("nav-active");
                         }
-                        $(covernav).html("<i class=\"fa fa-circle\"></i>");
-                        $(coverSlide).append( covernav );
+                        $(covernav).html('<i class="fa fa-circle"></i>');
+                        $(coverSlide).append(covernav);
                     });
                 }
 
-                if( $(coverSlide).find(".cover-image:visible").length < 1 ){
+                if ($(coverSlide).find(".cover-image:visible").length < 1) {
                     $(coverSlide).remove();
                 } else {
                     // This is a suboptimal workaround; we should do this via load, but
                     // the image code is scattered all over now. We come here now after
                     // window load and wait_for_images (so load completed).
                     var check_complete = 1;
-                    $(coverSlide).find("img").each( function() {
-                        if( !this.complete || this.naturalHeight == 0 ) check_complete = 0;
-                    });
-                    if( check_complete ) $(coverSlide).removeClass('cover-slides');
+                    $(coverSlide)
+                        .find("img")
+                        .each(function () {
+                            if (!this.complete || this.naturalHeight == 0) check_complete = 0;
+                        });
+                    if (check_complete) $(coverSlide).removeClass("cover-slides");
                 }
             });
 
-            $(".cover-slider").on("click",".cover-nav", function(e){
+            $(".cover-slider").on("click", ".cover-nav", function (e) {
                 e.preventDefault();
                 var cover_slider = $(this).parent();
                 // Adding click handler for cover image navigation links
@@ -1850,64 +1853,64 @@
                 $(cover_slider).find(".cover-nav").removeClass("nav-active");
                 $(this).addClass("nav-active");
                 $(cover_slider).find(".cover-image").hide();
-                $(cover_slider).find(".cover-image").eq( num ).show();
+                $(cover_slider).find(".cover-image").eq(num).show();
             });
 
-            $("#editions img").each(function(i){
-                if ( this.src.indexOf('amazon.com') >= 0 ) {
+            $("#editions img").each(function (i) {
+                if (this.src.indexOf("amazon.com") >= 0) {
                     w = this.width;
                     h = this.height;
-                    if ((w == 1) || (h == 1)) {
-                        this.src = 'https://images-na.ssl-images-amazon.com/images/G/01/x-site/icons/no-img-sm.gif';
-                    } else if ( (this.complete != null) && (!this.complete) || this.naturalHeight == 0 ) {
-                        this.src = 'https://images-na.ssl-images-amazon.com/images/G/01/x-site/icons/no-img-sm.gif';
+                    if (w == 1 || h == 1) {
+                        this.src = "https://images-na.ssl-images-amazon.com/images/G/01/x-site/icons/no-img-sm.gif";
+                    } else if ((this.complete != null && !this.complete) || this.naturalHeight == 0) {
+                        this.src = "https://images-na.ssl-images-amazon.com/images/G/01/x-site/icons/no-img-sm.gif";
                     }
                 }
             });
         } /* /verify_images */
 
         let counter_wait = 0;
-        function wait_for_images(cb){
-
+        function wait_for_images(cb) {
             var loaded = 1;
             counter_wait++;
 
-            if (prefs.GoogleJackets){
-                if ( loaded ) {
+            if (prefs.GoogleJackets) {
+                if (loaded) {
                     loaded = KOHA.Google.done;
                 }
             }
 
-            if (prefs.OpenLibraryCovers){
-                if ( loaded ) {
+            if (prefs.OpenLibraryCovers) {
+                if (loaded) {
                     loaded = KOHA.OpenLibrary.done;
                 }
             }
 
-            if (prefs.OpacCoce && prefs.CoceProviders){
-                if ( loaded ) {
+            if (prefs.OpacCoce && prefs.CoceProviders) {
+                if (loaded) {
                     loaded = KOHA.coce.done;
                 }
             }
 
-            if (!loaded && counter_wait < 50) {// Do not wait more than 5 seconds
-                window.setTimeout(function(){wait_for_images(cb);}, 100);
+            if (!loaded && counter_wait < 50) {
+                // Do not wait more than 5 seconds
+                window.setTimeout(function () {
+                    wait_for_images(cb);
+                }, 100);
             } else {
-                if (counter_wait >= 50 ) {
-                    console.log("Could not retrieve the images")
+                if (counter_wait >= 50) {
+                    console.log("Could not retrieve the images");
                 }
                 cb();
             }
         }
 
-        $(window).load(function() {
+        $(window).load(function () {
             wait_for_images(verify_cover_images);
         });
 
-        $(document).ready(function() {
-
-            if (prefs.OPACDetailQRCode){
-
+        $(document).ready(function () {
+            if (prefs.OPACDetailQRCode) {
                 var link_canonical = document.querySelector("link[rel=canonical]");
 
                 var qrcode = kjua({
@@ -1918,13 +1921,13 @@
                     text: link_canonical ? link_canonical.href : location.href,
                 });
                 if (qrcode) {
-                    document.getElementById("qrcode").appendChild( qrcode );
+                    document.getElementById("qrcode").appendChild(qrcode);
                 }
 
-                $(".show_qrcode").on("click", function(e){
+                $(".show_qrcode").on("click", function (e) {
                     e.preventDefault();
                     var qrcodeImg = $("#qrcode");
-                    if( qrcodeImg.hasClass("d-none") ){
+                    if (qrcodeImg.hasClass("d-none")) {
                         qrcodeImg.removeClass("d-none");
                     } else {
                         qrcodeImg.addClass("d-none");
@@ -1932,15 +1935,15 @@
                 });
             }
 
-            switch (defaulttab){
-                case 'holdings':
-                case 'components':
-                case 'descriptions':
-                case 'subscriptions':
-                case 'serialcollection':
+            switch (defaulttab) {
+                case "holdings":
+                case "components":
+                case "descriptions":
+                case "subscriptions":
+                case "serialcollection":
                     showBsTab("bibliodescriptions", defaulttab);
                     break;
-                case 'media':
+                case "media":
                     showBsTab("bibliodescriptions", "html5media");
                     break;
                 default:
@@ -1948,21 +1951,21 @@
             }
 
             let urlParams = new URLSearchParams(window.location.search);
-            if ( urlParams.has('tab') ) {
-                let tab = urlParams.get('tab');
-                if ( tab == 'comment' ) {
+            if (urlParams.has("tab")) {
+                let tab = urlParams.get("tab");
+                if (tab == "comment") {
                     showBsTab("bibliodescriptions", "comments");
                 }
             }
 
-            if (prefs.OpacBrowseResults && busc){
+            if (prefs.OpacBrowseResults && busc) {
                 $(".l_Results").show();
-                $("#a_listResults").on("click", function(e){
+                $("#a_listResults").on("click", function (e) {
                     e.preventDefault();
                     $(".results-pagination, .close_pagination, .pg_menu").toggle();
                 });
 
-                $(".close_pagination").on("click", function(e){
+                $(".close_pagination").on("click", function (e) {
                     e.preventDefault();
                     $(".results-pagination, .close_pagination, .pg_menu").toggle();
                 });
@@ -1978,11 +1981,11 @@
                         details: {
                             display: responsive_display,
                             type: "column",
-                            target: -1
+                            target: -1,
                         },
                     },
                 },
-                holdingst_table_settings,
+                holdingst_table_settings
             );
             $("#otherholdingst").kohaTable(
                 {
@@ -1992,11 +1995,11 @@
                         details: {
                             display: responsive_display,
                             type: "column",
-                            target: -1
+                            target: -1,
                         },
                     },
                 },
-                otherholdingst_table_settings,
+                otherholdingst_table_settings
             );
 
             $(".subscriptionst").kohaTable(
@@ -2008,7 +2011,7 @@
                         details: {
                             display: responsive_display,
                             type: "column",
-                            target: -1
+                            target: -1,
                         },
                     },
                 },
@@ -2016,173 +2019,192 @@
             );
 
             var dTables = $("#holdingst,.subscriptionst,#otherholdingst");
-            $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (event) {
+            $('a[data-bs-toggle="tab"]').on("shown.bs.tab", function (event) {
                 dTables.DataTable().responsive.recalc();
-            } );
+            });
 
-            if (prefs.TagsInputEnabled && loggedinusername){
-                    $(".tag_add").click(function(){
-                        var thisid = $(this).attr("id");
-                        thisid = thisid.replace("tag_add","");
-                        $(this).hide();
-                        $("#tagform"+thisid).show();
-                        $("#newtag"+thisid).focus();
-                        $("#newtag"+thisid+"_status").empty().hide();
+            if (prefs.TagsInputEnabled && loggedinusername) {
+                $(".tag_add").click(function () {
+                    var thisid = $(this).attr("id");
+                    thisid = thisid.replace("tag_add", "");
+                    $(this).hide();
+                    $("#tagform" + thisid).show();
+                    $("#newtag" + thisid).focus();
+                    $("#newtag" + thisid + "_status")
+                        .empty()
+                        .hide();
+                    return false;
+                });
+                $(".cancel_tag_add").click(function () {
+                    var thisid = $(this).attr("id");
+                    thisid = thisid.replace("cancel", "");
+                    $("#tagform" + thisid).hide();
+                    $("#tag_add" + thisid).show();
+                    $("#newtag" + thisid).val("");
+                    $("#newtag" + thisid + "_status")
+                        .empty()
+                        .hide();
+                    return false;
+                });
+                $(".tagbutton").click(function () {
+                    var thisid = $(this).attr("title");
+                    var tag = $("#newtag" + thisid).val();
+                    if (!tag || tag == "") {
+                        alert(_("No tag was specified."));
                         return false;
-                    });
-                    $(".cancel_tag_add").click(function(){
-                        var thisid = $(this).attr("id");
-                        thisid = thisid.replace("cancel","");
-                        $("#tagform"+thisid).hide();
-                        $("#tag_add"+thisid).show();
-                        $("#newtag"+thisid).val("");
-                        $("#newtag"+thisid+"_status").empty().hide();
-                        return false;
-                    });
-                    $(".tagbutton").click(function(){
-                        var thisid = $(this).attr("title");
-                        var tag = $("#newtag"+thisid).val();
-                        if (!tag || (tag == "")) {
-                            alert( _("No tag was specified.") );
-                            return false;
-                        }
-                        KOHA.Tags.add_tag_button(thisid, tag);
-                        return false;
-                    });
+                    }
+                    KOHA.Tags.add_tag_button(thisid, tag);
+                    return false;
+                });
             }
 
-            if (query_desc !==""){
-                if (prefs.OpacHighlightedWords){
-                    var query_desc_replaced = query_desc.replace("'", "\'").replace('\n', '\\n').replace('\r', '\\r');
+            if (query_desc !== "") {
+                if (prefs.OpacHighlightedWords) {
+                    var query_desc_replaced = query_desc.replace("'", "\'").replace("\n", "\\n").replace("\r", "\\r");
                     q_array = query_desc_replaced.split(" ");
-                    q_array = q_array.filter(function(n){ return n }); // Remove empty strings
+                    q_array = q_array.filter(function (n) {
+                        return n;
+                    }); // Remove empty strings
                     highlightOn();
-                    $("#highlight_toggle_on" ).hide().click(function() {highlightOn() ; return false;});
-                    $("#highlight_toggle_off").show().click(function() {highlightOff(); return false;});
+                    $("#highlight_toggle_on")
+                        .hide()
+                        .click(function () {
+                            highlightOn();
+                            return false;
+                        });
+                    $("#highlight_toggle_off")
+                        .show()
+                        .click(function () {
+                            highlightOff();
+                            return false;
+                        });
                 }
             }
 
-            if (prefs.GoogleJackets){
+            if (prefs.GoogleJackets) {
                 KOHA.Google.GetCoverFromIsbn(prefs.OPACURLOpenInNewWindow);
             }
 
-            if (prefs.OpacCoce && prefs.CoceProviders){
-                KOHA.coce.getURL(prefs.CoceHost, prefs.CoceProviders, $('#biblio-cover-slider') );
+            if (prefs.OpacCoce && prefs.CoceProviders) {
+                KOHA.coce.getURL(prefs.CoceHost, prefs.CoceProviders, $("#biblio-cover-slider"));
             }
 
-            if (prefs.OpenLibraryCovers){
+            if (prefs.OpenLibraryCovers) {
                 KOHA.OpenLibrary.GetCoverFromIsbn();
             }
 
-            if (prefs.OPACShelfBrowser){
+            if (prefs.OPACShelfBrowser) {
                 // Focus on shelf browser if present
                 var shelfbrowser = $("#shelfbrowser");
                 if (shelfbrowser.length > 0) {
-                    $('html,body').animate({
-                        scrollTop: shelfbrowser.first().offset().top
-                    },
-                    'slow');
-                    shelfbrowser.first().find(':focusable').eq(0).focus();
+                    $("html,body").animate(
+                        {
+                            scrollTop: shelfbrowser.first().offset().top,
+                        },
+                        "slow"
+                    );
+                    shelfbrowser.first().find(":focusable").eq(0).focus();
                 }
 
-                (function prepareShelfBrowser(){
-
-                    $(".main").on("click",".close_shelf",function(e){
+                (function prepareShelfBrowser() {
+                    $(".main").on("click", ".close_shelf", function (e) {
                         e.preventDefault();
                         $("#shelfbrowser").toggle();
                     });
-                    $(".main").on("click", "#browser_previous a", function(e){
+                    $(".main").on("click", "#browser_previous a", function (e) {
                         e.preventDefault();
                         $.ajax({
                             url: "/cgi-bin/koha/svc/shelfbrowser.pl",
                             data: {
-                                "shelfbrowse_itemnumber": $("#browser_previous a").data( "prev-itemnumber" )
+                                shelfbrowse_itemnumber: $("#browser_previous a").data("prev-itemnumber"),
                             },
-                            success: function(data){
+                            success: function (data) {
                                 $("#shelfbrowser").replaceWith(data);
-                                if (prefs.GoogleJackets){
+                                if (prefs.GoogleJackets) {
                                     KOHA.Google.GetCoverFromIsbn(prefs.OPACURLOpenInNewWindow);
                                 }
-                                if (prefs.OpacCoce && prefs.CoceProviders){
+                                if (prefs.OpacCoce && prefs.CoceProviders) {
                                     KOHA.coce.getURL(prefs.CoceHost, prefs.CoceProviders, $("#bibliodescriptions"));
                                 }
-                                if (prefs.OpenLibraryCovers){
+                                if (prefs.OpenLibraryCovers) {
                                     KOHA.OpenLibrary.GetCoverFromIsbn();
                                 }
-                                if (prefs.OPACLocalCoverImages){
+                                if (prefs.OPACLocalCoverImages) {
                                     KOHA.LocalCover.GetCoverFromBibnumber(true);
                                 }
-                            }
+                            },
                         });
                     });
 
-                    $(".main").on("click", "#browser_next a", function(e){
+                    $(".main").on("click", "#browser_next a", function (e) {
                         e.preventDefault();
                         $.ajax({
                             url: "/cgi-bin/koha/svc/shelfbrowser.pl",
                             data: {
-                                "shelfbrowse_itemnumber": $("#browser_next a").data( "next-itemnumber" )
+                                shelfbrowse_itemnumber: $("#browser_next a").data("next-itemnumber"),
                             },
-                            success: function(data){
+                            success: function (data) {
                                 $("#shelfbrowser").replaceWith(data);
-                                if (prefs.GoogleJackets){
+                                if (prefs.GoogleJackets) {
                                     KOHA.Google.GetCoverFromIsbn(prefs.OPACURLOpenInNewWindow);
                                 }
-                                if (prefs.OpacCoce && prefs.CoceProviders){
+                                if (prefs.OpacCoce && prefs.CoceProviders) {
                                     KOHA.coce.getURL(prefs.CoceHost, prefs.CoceProviders, $("#bibliodescriptions"));
                                 }
-                                if (prefs.OpenLibraryCovers){
+                                if (prefs.OpenLibraryCovers) {
                                     KOHA.OpenLibrary.GetCoverFromIsbn();
                                 }
-                                if (prefs.OPACLocalCoverImages){
+                                if (prefs.OPACLocalCoverImages) {
                                     KOHA.LocalCover.GetCoverFromBibnumber(true);
                                 }
-                            }
+                            },
                         });
                     });
-            }());
-        }
+                })();
+            }
 
-            $(".edit_comment").on("click", function(e){
+            $(".edit_comment").on("click", function (e) {
                 e.preventDefault();
-                Dopop( this.href );
+                Dopop(this.href);
             });
         });
 
-        $(document).ready(function() {
-            if( prefs.OPACPopupAuthorsSearch ){
+        $(document).ready(function () {
+            if (prefs.OPACPopupAuthorsSearch) {
                 var terms = {
-                    contributors : {
-                        "label" : "author",
-                        "keyword_search" : "au:",
+                    contributors: {
+                        label: "author",
+                        keyword_search: "au:",
                     },
-                    subject : {
-                        "label" : "subject",
-                        "keyword_search" : "su:",
-                    }
-                }
-                $(".contributors,.subject").on("click", function(e){
+                    subject: {
+                        label: "subject",
+                        keyword_search: "su:",
+                    },
+                };
+                $(".contributors,.subject").on("click", function (e) {
                     e.preventDefault();
                     var term = $(this).attr("class");
                     var selected_term = $(this).text();
-                    var term_links = $("." + term );
-                    if( term_links.length > 1 ){
-                        term_links.each(function( index ){
+                    var term_links = $("." + term);
+                    if (term_links.length > 1) {
+                        term_links.each(function (index) {
                             var authid = "";
                             var preselected = false;
                             var search_label = $(this).text().trim();
-                            if( $(this).text() == selected_term ){ preselected = true }
-                            if( $(this).hasClass("authority_link") ){
+                            if ($(this).text() == selected_term) {
+                                preselected = true;
+                            }
+                            if ($(this).hasClass("authority_link")) {
                                 authid = $(this).data("authid");
                                 search_string = "an:" + authid;
                             } else {
-                                search_string = terms[term]["keyword_search"] + '"' + encodeURIComponent( search_label ) + '"';
+                                search_string = terms[term]["keyword_search"] + '"' + encodeURIComponent(search_label) + '"';
                             }
                             var termLink = $("<li>")
-                                .append( $("<input>", { type: "checkbox", class: "select_term", value: search_string, id: terms[term]["label"] + index } ).prop("checked", preselected ) )
+                                .append($("<input>", { type: "checkbox", class: "select_term", value: search_string, id: terms[term]["label"] + index }).prop("checked", preselected))
                                 .append("&nbsp;")
-                                .append( $("<label>", { for: terms[term]["label"] + index, text: search_label } ) )
-                            $("#termsList").append( termLink );
+                                .append($("<label>", { for: terms[term]["label"] + index, text: search_label }));
+                            $("#termsList").append(termLink);
                             $("#multiSearch").modal("show");
                         });
                     } else {
@@ -2190,73 +2212,72 @@
                     }
                 });
 
-                $("#multiSearch").on("hide.bs.modal", function(){
+                $("#multiSearch").on("hide.bs.modal", function () {
                     $("#termsList").html("");
                 });
 
-                $(".check_all").on("click", function(e){
+                $(".check_all").on("click", function (e) {
                     e.preventDefault();
-                    $(".select_term").each(function(){
-                        $(this).prop("checked", true );
+                    $(".select_term").each(function () {
+                        $(this).prop("checked", true);
                     });
                 });
 
-                $(".check_none").on("click", function(e){
+                $(".check_none").on("click", function (e) {
                     e.preventDefault();
-                    $(".select_term").each(function(){
-                        $(this).prop("checked", false );
+                    $(".select_term").each(function () {
+                        $(this).prop("checked", false);
                     });
                 });
 
-                $("#validMultiSearch").on("click", function(e){
+                $("#validMultiSearch").on("click", function (e) {
                     e.preventDefault();
                     multiSearchRequest();
                 });
             }
 
-            $(".library_info").on("click", function(e){
+            $(".library_info").on("click", function (e) {
                 e.preventDefault();
                 var library_name = $(this).data("name");
                 var index = $(this).data("index");
                 var url = $(this).attr("href");
                 let library_info = $("#library_info_" + index).html();
-                $("#libraryInfoModalLabel").html( library_name );
-                $("#libraryInfo").html( library_info );
-                if( url ){
-                    $("#libraryInfoLink").attr("href", url );
+                $("#libraryInfoModalLabel").html(library_name);
+                $("#libraryInfo").html(library_info);
+                if (url) {
+                    $("#libraryInfoLink").attr("href", url);
                     $("#libraryInfoLink").show();
                 } else {
                     $("#libraryInfoLink").hide();
                 }
                 $("#libraryInfoModal").modal("show");
             });
-            $("#libraryInfoModal").on("hide.bs.modal", function(){
+            $("#libraryInfoModal").on("hide.bs.modal", function () {
                 $("#libraryInfoModalLabel, #libraryInfo").html("");
                 $("#libraryInfoLink").attr("href", "");
             });
         });
 
-        function showBsTab( container, panelid ){
-            if( $( "#" + panelid + "_panel" ).length == 1 ){
+        function showBsTab(container, panelid) {
+            if ($("#" + panelid + "_panel").length == 1) {
                 $("#" + container + " a[href='#" + panelid + "_panel']").tab("show");
             } else {
                 $("#" + container + " a:first").tab("show");
             }
         }
 
-        function multiSearchRequest(){
+        function multiSearchRequest() {
             var values = [];
-            $(".select_term").each(function(){
-                if( $(this).prop("checked") ){
-                    values.push( $(this).val() );
+            $(".select_term").each(function () {
+                if ($(this).prop("checked")) {
+                    values.push($(this).val());
                 }
             });
 
             if (values.length > 0) {
-                var request = "/cgi-bin/koha/opac-search.pl?q=" + values.join(' and ');
+                var request = "/cgi-bin/koha/opac-search.pl?q=" + values.join(" and ");
                 location.href = request;
             }
-
         }
     </script>
     [% IF ( NovelistSelectProfile && ( normalized_isbn || normalized_upc ) ) %]
