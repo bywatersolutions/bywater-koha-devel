@@ -138,23 +138,23 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        addPrefs({
+            OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
+        });
+    </script>
+    <script>
         $(document).ready(function () {
             $(".cancel_recall").click(function () {
                 return confirmDelete(_("Are you sure you want to remove this recall?"));
             });
 
-            [% IF ( Koha.Preference('OPACTableColExpandedByDefault') ) %]
-                var responsive_display = DataTable.Responsive.display.childRowImmediate;
-            [% ELSE %]
-                var responsive_display = DataTable.Responsive.display.childRow;
-            [% END %]
-
+            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
             $("#recalls-table").kohaTable({
                 responsive: {
                     details: {
                         display: responsive_display,
                         type: "column",
-                        target: -1
+                        target: -1,
                     },
                 },
                 columnDefs: [{ className: "dtr-control", orderable: false, targets: -1 }],

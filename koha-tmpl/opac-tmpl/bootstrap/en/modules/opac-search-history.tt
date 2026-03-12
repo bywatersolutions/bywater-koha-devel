@@ -306,16 +306,16 @@
 [% BLOCK jsinclude %]
     [% INCLUDE 'datatables.inc' %]
     <script>
+        addPrefs({
+            OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
+        });
+    </script>
+    <script>
         $(document).ready(function () {
             // We show table ordered by descending dates by default
             // (so that the more recent query is shown first)
 
-            [% IF ( Koha.Preference('OPACTableColExpandedByDefault') ) %]
-                var responsive_display = DataTable.Responsive.display.childRowImmediate;
-            [% ELSE %]
-                var responsive_display = DataTable.Responsive.display.childRow;
-            [% END %]
-
+            var responsive_display = prefs.OPACTableColExpandedByDefault ? DataTable.Responsive.display.childRowImmediate : DataTable.Responsive.display.childRow;
             let history_tables = $(".historyt").kohaTable({
                 order: [[1, "desc"]],
                 dom: '<"top"<"table_entries"><"table_controls"fB>>t',
@@ -328,7 +328,7 @@
                     details: {
                         display: responsive_display,
                         type: "column",
-                        target: -1
+                        target: -1,
                     },
                 },
             });
