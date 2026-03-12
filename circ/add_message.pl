@@ -66,7 +66,14 @@ if ( $op eq 'cud-edit_message' && $message_id ) {
     if ( $message_type eq 'E' or $message_type eq 'SMS' ) {
         my $message_transport_type = $message_type eq 'SMS' ? 'sms' : 'email';
         my $logged_in_patron       = Koha::Patrons->find($loggedinuser);
-        if ( !$logged_in_patron->has_permission( { borrowers => 'send_messages_to_borrowers' } ) ) {
+        if ( $message_transport_type eq 'email'
+            && !$logged_in_patron->has_permission( { borrowers => 'send_messages_to_borrowers_email' } ) )
+        {
+            C4::Output::output_and_exit( $input, $cookie, $template, 'insufficient_permission' );
+        }
+        if ( $message_transport_type eq 'sms'
+            && !$logged_in_patron->has_permission( { borrowers => 'send_messages_to_borrowers_sms' } ) )
+        {
             C4::Output::output_and_exit( $input, $cookie, $template, 'insufficient_permission' );
         }
 
