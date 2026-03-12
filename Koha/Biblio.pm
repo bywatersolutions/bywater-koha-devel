@@ -20,6 +20,7 @@ package Koha::Biblio;
 use Modern::Perl;
 
 use List::MoreUtils qw( any );
+use Scalar::Util    qw( blessed );
 use URI;
 use URI::Escape qw( uri_escape_utf8 );
 use Try::Tiny;
@@ -2401,6 +2402,29 @@ sub merge_with {
 }
 
 =head2 Internal methods
+
+=head3 _unblessed_for_log
+
+Returns a plain hashref of biblio column values safe for JSON serialisation
+and action log diffing. Timestamp is excluded as it changes on every write,
+and undef/empty-string fields are removed so that genuinely unset columns
+do not produce noise in diffs.
+
+=cut
+
+sub _unblessed_for_log {
+    my ($self) = @_;
+    my $data = $self->unblessed;
+    delete $data->{timestamp};
+    for my $key ( keys %$data ) {
+        if ( defined $data->{$key} && $data->{$key} ne '' ) {
+            $data->{$key} = "$data->{$key}" if blessed( $data->{$key} );
+        } else {
+            delete $data->{$key};
+        }
+    }
+    return $data;
+}
 
 =head3 type
 

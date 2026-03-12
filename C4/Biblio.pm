@@ -315,7 +315,7 @@ sub AddBiblio {
             my $marc_for_log = eval { $new_biblio->metadata->record_strip_nonxml };
             logaction(
                 "CATALOGUING", "ADD", $biblionumber, "biblio", undef,
-                { %{ $new_biblio->unblessed }, _marc => _marc_record_to_diffable($marc_for_log) }
+                { %{ $new_biblio->_unblessed_for_log }, _marc => _marc_record_to_diffable($marc_for_log) }
             );
         }
 
@@ -405,7 +405,7 @@ sub ModBiblio {
     my ( $original, $original_marc );
     if ( C4::Context->preference("CataloguingLog") ) {
         my $pre_biblio = Koha::Biblios->find($biblionumber);
-        $original      = $pre_biblio->unblessed;
+        $original      = $pre_biblio->_unblessed_for_log;
         $original_marc = eval { $pre_biblio->metadata->record_strip_nonxml };
     }
 
@@ -474,7 +474,7 @@ sub ModBiblio {
         my $updated_marc_log = eval { $updated_biblio->metadata->record_strip_nonxml };
         logaction(
             "CATALOGUING", "MODIFY", $biblionumber,
-            { %{ $updated_biblio->unblessed }, _marc => _marc_record_to_diffable($updated_marc_log) },
+            { %{ $updated_biblio->_unblessed_for_log }, _marc => _marc_record_to_diffable($updated_marc_log) },
             undef,
             { %{$original}, _marc => _marc_record_to_diffable($original_marc) }
         );
@@ -627,7 +627,7 @@ sub DelBiblio {
 
     logaction(
         "CATALOGUING", "DELETE", $biblionumber, "biblio", undef,
-        { %{ $biblio->unblessed }, _marc => _marc_record_to_diffable($biblio_marc) }
+        { %{ $biblio->_unblessed_for_log }, _marc => _marc_record_to_diffable($biblio_marc) }
     ) if C4::Context->preference("CataloguingLog");
 
     Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue->new->enqueue( { biblio_ids => [$biblionumber] } )
