@@ -461,7 +461,8 @@
     [% INCLUDE 'datatables.inc' %]
     <script>
         const i18n = {
-            on: "[% tp("Active", "On") | html %]"
+            on: "[% tp("Active", "On") | html %]",
+            passive: "[% tp('FTP connection mode', '(passive)') | html %]",
         };
     </script>
     <script>
@@ -506,11 +507,11 @@
                         orderable: false,
                     },
                     {
-                        "data": "transport",
-                        "render": function(data, type, row, meta) {
+                        data: "transport",
+                        render: function (data, type, row, meta) {
                             var transport = data.toUpperCase();
                             if (data == "ftp" && row.passive == 1) {
-                                transport += " [% tp('FTP connection mode', '(passive)') | html %]";
+                                transport += i18n.passive;
                             }
                             return transport;
                         },
