@@ -18,11 +18,11 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 41;
+use Test::More tests => 42;
 use Test::Exception;
 use Test::Warn;
 
-use C4::Biblio      qw( AddBiblio ModBiblio ModBiblioMarc );
+use C4::Biblio      qw( AddBiblio DelBiblio ModBiblio ModBiblioMarc );
 use C4::Circulation qw( AddIssue AddReturn );
 use C4::Reserves    qw( AddReserve );
 
@@ -34,7 +34,10 @@ use Koha::Acquisition::Orders;
 use Koha::AuthorisedValueCategories;
 use Koha::AuthorisedValues;
 use Koha::MarcSubfieldStructures;
+use Koha::ActionLogs;
 use Koha::Exception;
+
+use JSON qw( decode_json );
 
 use MARC::Field;
 use MARC::Record;
@@ -2438,6 +2441,48 @@ subtest 'check_booking tests' => sub {
             "Checkout on bookable item correctly reduces availability"
         );
     };
+
+    $schema->storage->txn_rollback;
+};
+
+subtest '_unblessed_for_log() tests' => sub {
+
+    plan tests => 10;
+
+    $schema->storage->txn_begin;
+
+    # Build a biblio where several nullable columns are undef
+    my $biblio = $builder->build_sample_biblio( { author => 'Test Author', title => 'Test Title' } );
+
+    # Force some nullable columns to undef/empty
+    $biblio->set( { abstract => undef, notes => '', seriestitle => undef } )->store;
+    $biblio->discard_changes;
+
+    my $data = $biblio->_unblessed_for_log;
+
+    ok( ref $data eq 'HASH',          '_unblessed_for_log returns a hashref' );
+    ok( exists $data->{biblionumber}, 'biblionumber is present' );
+    ok( exists $data->{title},        'title (set value) is present' );
+    ok( exists $data->{author},       'author (set value) is present' );
+    ok( !exists $data->{timestamp},   'timestamp is excluded' );
+    ok( !exists $data->{abstract},    'undef field (abstract) is excluded' );
+    ok( !exists $data->{notes},       'empty-string field (notes) is excluded' );
+    ok( !exists $data->{seriestitle}, 'undef field (seriestitle) is excluded' );
+
+    t::lib::Mocks::mock_preference( 'CataloguingLog', 1 );
+
+    # ADD log: diff should not contain timestamp
+    my $record = MARC::Record->new();
+    $record->append_fields( MARC::Field->new( '245', '1', '0', 'a' => 'Log Test Title' ) );
+    my ($new_biblionumber) = AddBiblio( $record, '' );
+
+    my $add_log =
+        Koha::ActionLogs->search( { object => $new_biblionumber, module => 'Cataloguing', action => 'ADD' } )->next;
+    ok( defined $add_log->diff, 'ADD log populates the diff column' );
+
+    my $add_diff  = decode_json( $add_log->diff );
+    my $diff_keys = exists $add_diff->{D} ? $add_diff->{D} : {};
+    ok( !exists $diff_keys->{timestamp}, 'timestamp not present in ADD diff' );
 
     $schema->storage->txn_rollback;
 };
