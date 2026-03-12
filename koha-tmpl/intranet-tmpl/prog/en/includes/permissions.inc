@@ -251,8 +251,11 @@
     [%- CASE 'api_validate_password' -%]
         <span class="sub_permission api_validate_password_subpermission">Validate patron passwords using the API</span>
         <span class="permissioncode">([% name | html %])</span>
-    [%- CASE 'send_messages_to_borrowers' -%]
-        <span class="sub_permission send_messages_to_borrowers_subpermission"> Send messages to patrons </span>
+    [%- CASE 'send_messages_to_borrowers_email' -%]
+        <span class="sub_permission send_messages_to_borrowers_email_subpermission"> Send messages to patrons via email</span>
+        <span class="permissioncode">([% name | html %])</span>
+    [%- CASE 'send_messages_to_borrowers_sms' -%]
+        <span class="sub_permission send_messages_to_borrowers_sms_subpermission"> Send messages to patrons via sms</span>
         <span class="permissioncode">([% name | html %])</span>
     [%- CASE 'modify_holds_priority' -%]
         <span class="sub_permission modify_holds_priority_subpermission"> Modify holds priority </span>
