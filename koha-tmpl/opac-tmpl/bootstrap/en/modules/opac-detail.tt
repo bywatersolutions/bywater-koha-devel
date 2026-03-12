@@ -1824,7 +1824,7 @@
                             // Set the first navigation link as active
                             $(covernav).addClass("nav-active");
                         }
-                        $(covernav).html('<i class="fa fa-circle"></i>');
+                        $(covernav).html('<i class="fa fa-circle" aria-hidden="true"></i>');
                         $(coverSlide).append(covernav);
                     });
                 }
