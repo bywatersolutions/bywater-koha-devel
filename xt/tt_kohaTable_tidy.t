@@ -35,7 +35,10 @@ for my $file (@tt_files) {
     my ( $in_script, $has_tt_tags, $has_kohaTable );
     for my $line (@lines) {
 
-        $in_script ||= $line =~ m{<script};
+        if ( $line =~ m{<script} ) {
+            $in_script = 1;
+            next;
+        }
 
         if ( $line =~ m{<\/script>} ) {
             if ( $has_kohaTable && $has_tt_tags ) {
