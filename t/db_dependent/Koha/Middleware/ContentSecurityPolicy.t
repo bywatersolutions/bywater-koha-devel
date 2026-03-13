@@ -26,6 +26,7 @@ use HTTP::Request::Common;
 use Plack::App::CGIBin;
 use Plack::Builder;
 use Plack::Test;
+use File::Basename;
 
 use Koha::Database;
 
@@ -116,7 +117,7 @@ subtest 'test CSP in OPAC' => sub {
     );
 
     my $env  = {};
-    my $home = $ENV{KOHA_HOME};
+    my $home = dirname(__FILE__) . '/../../../..';
     my $app  = Plack::App::CGIBin->new( root => $ENV{GIT_INSTALL} ? "$home/opac" : "$home/opac/cgi-bin/opac" )->to_app;
 
     $app = builder {
@@ -175,7 +176,7 @@ subtest 'test CSP in staff client' => sub {
     );
 
     my $env  = {};
-    my $home = $ENV{KOHA_HOME};
+    my $home = dirname(__FILE__) . '/../../../..';
     my $app  = Plack::App::CGIBin->new( root => $ENV{GIT_INSTALL} ? $home : "$home/intranet/cgi-bin/" )->to_app;
 
     $app = builder {
@@ -250,7 +251,7 @@ subtest 'test Reporting-Endpoints for CSP violation reports' => sub {
     Koha::ContentSecurityPolicy->new->set_nonce($test_nonce);
 
     my $env  = {};
-    my $home = $ENV{KOHA_HOME};
+    my $home = dirname(__FILE__) . '/../../../..';
     my $app  = Plack::App::CGIBin->new( root => $ENV{GIT_INSTALL} ? "$home/opac" : "$home/opac/cgi-bin/opac" )->to_app;
 
     $app = builder {
