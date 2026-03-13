@@ -329,15 +329,17 @@ subtest 'password validation - users with shared cardnumber / userid' => sub {
     my $patron_password_2 = 'thePassword345';
     $patron_2->set_password( { password => $patron_password_2, skip_validation => 1 } );
 
+    # When identifier matches patron_2's userid (which equals patron_1's cardnumber),
+    # find_by_identifier will find patron_2 first (userid is checked before cardnumber)
     my $json = {
-        identifier => $patron_1->cardnumber,
-        password   => $patron_password_1,
+        identifier => $patron_1->cardnumber,    # This also matches patron_2->userid
+        password   => $patron_password_2,       # So we need patron_2's password
     };
 
     $t->post_ok( "//$userid:$password@/api/v1/auth/password/validation" => json => $json )
         ->status_is(201)
         ->json_is(
-        { cardnumber => $patron_1->cardnumber, patron_id => $patron_1->borrowernumber, userid => $patron_1->userid } );
+        { cardnumber => $patron_2->cardnumber, patron_id => $patron_2->borrowernumber, userid => $patron_2->userid } );
 
     $json = {
         identifier => $patron_2->userid,
@@ -349,8 +351,9 @@ subtest 'password validation - users with shared cardnumber / userid' => sub {
         ->json_is(
         { cardnumber => $patron_2->cardnumber, patron_id => $patron_2->borrowernumber, userid => $patron_2->userid } );
 
+    # When using patron_1's userid (not cardnumber), it will find patron_1
     $json = {
-        userid   => $patron_1->cardnumber,
+        userid   => $patron_1->userid,
         password => $patron_password_1,
     };
 
