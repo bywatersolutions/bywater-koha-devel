@@ -208,7 +208,7 @@
                                 </li>
                             [% END %]
 
-                            [% patron_letters = NoticeTemplates.GetByModule( 'add_message' ) %]
+                            [% patron_letters = NoticeTemplates.GetByModuleForLibrary( 'add_message' ) %]
                             [% IF patron_letters %]
                                 <li class="form-group form-row">
                                     <label for="select_patron_notice" class="col-form-lable" style="display:none;">Patron notice: </label>

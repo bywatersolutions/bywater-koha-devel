@@ -90,6 +90,7 @@ if ( $op eq 'cud-edit_message' && $message_id ) {
                 letter_code            => $letter_code,
                 lang                   => $patron->lang,
                 message_transport_type => $message_transport_type,
+                branchcode             => $branchcode,
                 tables                 => {
                     'borrowers' => $borrowernumber,
                     'branches'  => $branchcode,
