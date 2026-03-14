@@ -23,12 +23,32 @@ use Template::Plugin;
 use base qw( Template::Plugin );
 
 use Koha::Notice::Templates;
+use C4::Context;
+use C4::Letters qw( GetLettersAvailableForALibrary );
 
 sub GetByModule {
     my ( $self, $module ) = @_;
 
     return Koha::Notice::Templates->search(
         { module => $module },
+        {
+            group_by => [ 'code', 'name' ],
+            columns  => [ 'code', 'name' ],
+            order_by => ['name']
+        }
+    );
+}
+
+sub GetByModuleForLibrary {
+    my ( $self, $module ) = @_;
+    my $userenv    = C4::Context->userenv;
+    my $branchcode = $userenv->{'branch'} // '';
+
+    return C4::Letters::GetLettersAvailableForALibrary(
+        {
+            branchcode => $branchcode,
+            module     => $module,
+        },
         {
             group_by => [ 'code', 'name' ],
             columns  => [ 'code', 'name' ],
