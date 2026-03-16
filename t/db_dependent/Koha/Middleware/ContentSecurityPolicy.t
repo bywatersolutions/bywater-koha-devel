@@ -52,7 +52,6 @@ subtest 'test Content-Security-Policy header in a minimal environment' => sub {
     my $original_opachtdocs = C4::Context->config('opachtdocs');
     t::lib::Mocks::mock_config( 'opachtdocs', C4::Context->config('intranetdir') . '/t/mock_templates/opac-tmpl' );
 
-    my $env = {};
     my $app = sub {
         require Koha::Plugins;    # this should probably be "use Koha::Plugins;" in C4::Templates instead
         my $template = C4::Templates::gettemplate( 'opac-csp.tt', 'opac' );
@@ -116,9 +115,8 @@ subtest 'test CSP in OPAC' => sub {
         { opac => { csp_mode => 'enabled', csp_header_value => $csp_header_value } }
     );
 
-    my $env  = {};
     my $home = dirname(__FILE__) . '/../../../..';
-    my $app  = Plack::App::CGIBin->new( root => $ENV{GIT_INSTALL} ? "$home/opac" : "$home/opac/cgi-bin/opac" )->to_app;
+    my $app  = Plack::App::CGIBin->new( root => "$home/opac" )->to_app;
 
     $app = builder {
         mount '/opac' => builder {
@@ -175,9 +173,8 @@ subtest 'test CSP in staff client' => sub {
         { opac => { csp_mode => 'enabled', csp_header_value => $csp_header_value } }
     );
 
-    my $env  = {};
     my $home = dirname(__FILE__) . '/../../../..';
-    my $app  = Plack::App::CGIBin->new( root => $ENV{GIT_INSTALL} ? $home : "$home/intranet/cgi-bin/" )->to_app;
+    my $app  = Plack::App::CGIBin->new( root => $home )->to_app;
 
     $app = builder {
         mount '/intranet' => builder {
@@ -250,9 +247,8 @@ subtest 'test Reporting-Endpoints for CSP violation reports' => sub {
     # Set nonce
     Koha::ContentSecurityPolicy->new->set_nonce($test_nonce);
 
-    my $env  = {};
     my $home = dirname(__FILE__) . '/../../../..';
-    my $app  = Plack::App::CGIBin->new( root => $ENV{GIT_INSTALL} ? "$home/opac" : "$home/opac/cgi-bin/opac" )->to_app;
+    my $app  = Plack::App::CGIBin->new( root => "$home/opac" )->to_app;
 
     $app = builder {
         mount '/opac' => builder {
