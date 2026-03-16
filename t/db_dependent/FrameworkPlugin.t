@@ -16,6 +16,7 @@ use C4::Output qw( output_html_with_http_headers );
 use Koha::Database;
 use Koha::FrameworkPlugin;
 use Koha::Util::FrameworkPlugin qw( biblio_008 );
+use Koha::ContentSecurityPolicy;
 
 our @includes;
 GetOptions( 'include=s{,}' => \@includes );    #not used by default !
@@ -23,6 +24,7 @@ GetOptions( 'include=s{,}' => \@includes );    #not used by default !
 # Because of CGI::Session being buggy (see bug 17427) and a use of get_session somewhere here
 t::lib::Mocks::mock_preference( 'SessionStorage', 'tmp' );
 
+Koha::ContentSecurityPolicy->new->set_nonce;
 my $schema = Koha::Database->new->schema;
 $schema->storage->txn_begin;
 our $dbh     = C4::Context->dbh;
@@ -121,9 +123,10 @@ sub test02 {
     # now test marc21_leader
     $plugin = Koha::FrameworkPlugin->new( { name => 'marc21_leader.pl' } );
     $pars   = { dbh => $dbh, id => '123456' };
+    my $nonce = Koha::ContentSecurityPolicy->new->get_nonce;
     is( $plugin->build($pars), 1, 'Build marc21_leader successful' );
     is(
-        $plugin->javascript =~ /<script.*function.*\<\/script\>/s, 1,
+        $plugin->javascript =~ /<script nonce="$nonce".*function.*\<\/script\>/s, 1,
         'Javascript looks ok'
     );
     is( $plugin->noclick, '', 'marc21_leader should have a popup' );

@@ -24,7 +24,6 @@ use File::Basename;
 use C4::Context;
 
 use Koha::FrameworkPlugin;
-use Koha::ContentSecurityPolicy;
 
 use t::lib::Mocks;
 use t::lib::TestBuilder;
@@ -39,9 +38,6 @@ BEGIN {
     use_ok('Koha::Plugin::Test');
     use_ok('Koha::Plugin::TestValuebuilder');
 }
-
-my $csp = Koha::ContentSecurityPolicy->new;
-$csp->set_nonce();
 
 my $schema  = Koha::Database->new->schema;
 my $builder = t::lib::TestBuilder->new;

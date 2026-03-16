@@ -213,7 +213,7 @@ subtest 'generate_subfield_form framework plugin' => sub {
     is( $subfield->{marc_value}->{type},    'text_complex' );
     is( $subfield->{marc_value}->{plugin},  'barcode.pl' );
     is( $subfield->{marc_value}->{noclick}, 1 );
-    like( $subfield->{marc_value}->{javascript}, qr,<script>.*</script>,s );
+    like( $subfield->{marc_value}->{javascript}, qr,<script nonce=.*</script>,s );
 };
 
 subtest 'generate_subfield_form default value' => sub {

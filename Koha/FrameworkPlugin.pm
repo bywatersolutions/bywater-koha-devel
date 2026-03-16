@@ -361,7 +361,7 @@ sub _generate_js {
 sub _process_javascript {
     my ( $self, $params, $script ) = @_;
 
-    my $csp_nonce = $self->{csp_nonce};
+    my $csp_nonce = $self->{csp_nonce} || '';
 
     #remove the script tags; we add them again later
     $script =~ s/\<script[^>]*\>\s*(\/\/\<!\[CDATA\[)?\s*//s;
