@@ -26,6 +26,27 @@ use Koha::Notice::Templates;
 use C4::Context;
 use C4::Letters qw( GetLettersAvailableForALibrary );
 
+=head1 NAME
+
+Koha::Template::Plugin::NoticeTemplates - TT Plugin for notice templates
+
+=head1 SYNOPSIS
+
+[% USE NoticeTemplates %]
+
+[% NoticeTemplates.GetByModule('members') %]
+
+[% NoticeTemplates.GetByModuleForLibrary('members') %]
+
+=head1 ROUTINES
+
+=head2 GetByModule
+
+In a template, you can get notice templates by module with
+[% letters = NoticeTemplates.GetByModule( 'members' ) %]
+
+=cut
+
 sub GetByModule {
     my ( $self, $module ) = @_;
 
@@ -38,6 +59,13 @@ sub GetByModule {
         }
     );
 }
+
+=head2 GetByModuleForLibrary
+
+In a template, you can get notice templates by module, limited to only templates for all librries or for the user's logged-in branch, with
+[% letters = NoticeTemplates.GetByModuleForLibrary( 'members' ) %]
+
+=cut
 
 sub GetByModuleForLibrary {
     my ( $self, $module ) = @_;
@@ -56,23 +84,6 @@ sub GetByModuleForLibrary {
         }
     );
 }
-
-=head1 NAME
-
-Koha::Template::Plugin::NoticeTemplates - TT Plugin for notice templates
-
-=head1 SYNOPSIS
-
-[% USE NoticeTemplates %]
-
-[% NoticeTemplates.GetByModule('members') %]
-
-=head1 ROUTINES
-
-=head2 GetByModule
-
-In a template, you can get notice templates by module with
-[% letters = NoticeTemplates.GetByModule( 'members' ) %]
 
 =head1 AUTHOR
 
