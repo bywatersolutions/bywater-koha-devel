@@ -1,1 +1,1 @@
-__webpack_nonce__ = window.__CSP_NONCE__;
+__webpack_nonce__ = globalThis.__CSP_NONCE__;
