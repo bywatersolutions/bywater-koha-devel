@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 <!-- z3950_search.inc -->
 <script nonce="[% Koha.CSPNonce | $raw %]">
     var interface = "[% interface | html %]";

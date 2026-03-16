@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 [% USE KohaDates %]
 
 [% IF enrollments %]

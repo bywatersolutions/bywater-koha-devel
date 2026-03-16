@@ -1,4 +1,5 @@
 [% USE Koha %]
+[% USE raw %]
 <!-- password_check.inc -->
 <script nonce="[% Koha.CSPNonce | $raw %]">
     var pwd_title = "";

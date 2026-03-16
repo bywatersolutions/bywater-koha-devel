@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 <!-- ill-list-table-strings.inc -->
 <script nonce="[% Koha.CSPNonce | $raw %]">
     var ill_borrower_details = _("View patron details");

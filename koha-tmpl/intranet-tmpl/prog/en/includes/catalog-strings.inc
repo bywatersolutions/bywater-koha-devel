@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 <!-- catalog-strings.inc -->
 <script nonce="[% Koha.CSPNonce | $raw %]">
     /* Some required variables from the template */

@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 <!-- installer-strings.inc -->
 <script nonce="[% Koha.CSPNonce | $raw %]">
     var MSG_LETTERS_ONLY = _("Please only enter letters.");

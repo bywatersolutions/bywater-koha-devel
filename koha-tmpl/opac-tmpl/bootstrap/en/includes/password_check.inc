@@ -1,4 +1,5 @@
 [% USE Koha %]
+[% USE raw %]
 <script nonce="[% Koha.CSPNonce | $raw %]">
     var pwd_title = "";
     var pattern_title = "";

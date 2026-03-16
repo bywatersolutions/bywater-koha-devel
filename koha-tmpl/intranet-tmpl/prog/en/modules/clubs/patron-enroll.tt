@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 [% USE AuthorisedValues %]
 
 <h1 id="heading"> Enroll in <em>[% club.name | html %]</em> </h1>

@@ -1,4 +1,5 @@
 [% USE Koha %]
+[% USE raw %]
 <!-- snippet for form to set borrower and patron category messaging preferences -->
 
 <input type="hidden" name="modify" value="yes" />

@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 <!-- validator-strings.inc -->
 <script nonce="[% Koha.CSPNonce | $raw %]">
     $(document).ready(function () {

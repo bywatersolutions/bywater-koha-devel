@@ -1,4 +1,5 @@
-
+[% USE Koha %]
+[% USE raw %]
 <script nonce="[% Koha.CSPNonce | $raw %]">
     (function () {
         /**

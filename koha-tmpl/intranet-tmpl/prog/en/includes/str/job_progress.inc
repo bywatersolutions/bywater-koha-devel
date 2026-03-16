@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 <!-- str/job_progress.inc -->
 <script nonce="[% Koha.CSPNonce | $raw %]">
     var JOB_PROGRESS_NOT_STARTED = _("Not started");

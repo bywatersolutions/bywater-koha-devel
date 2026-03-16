@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 <!-- str/tinymce_i18n.inc -->
 <script nonce="[% Koha.CSPNonce | $raw %]">
     /* tinymce considers 'en' to be the default translation.

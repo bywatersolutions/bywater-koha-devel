@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 <!-- js-patron-get-age.inc -->
 [% USE KohaDates %]
 <script nonce="[% Koha.CSPNonce | $raw %]">

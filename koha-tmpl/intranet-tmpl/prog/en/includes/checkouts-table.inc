@@ -1,4 +1,5 @@
 [% USE Koha %]
+[% USE raw %]
 [% PROCESS 'modal-claims.inc' %]
 [% INCLUDE 'format_price.inc' %]
 

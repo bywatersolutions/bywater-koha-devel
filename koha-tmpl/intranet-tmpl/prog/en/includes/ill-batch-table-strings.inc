@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 <!-- ill-batch-table-strings.inc -->
 <script nonce="[% Koha.CSPNonce | $raw %]">
     var ill_batch_borrower_details = _("View borrower details");

@@ -1,3 +1,5 @@
+[% USE Koha %]
+[% USE raw %]
 <fieldset class="rows">
     <legend>Custom fields</legend>
     <ol id="standard-fields">
