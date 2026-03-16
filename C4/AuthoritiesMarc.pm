@@ -759,8 +759,9 @@ sub DelAuthority {
         Koha::Authority::MergeRequests->search($condition)->delete;
         merge( { mergefrom => $authid } ) if !$skip_merge;
 
-        my $authority    = Koha::Authorities->find($authid);
-        my $deleted_marc = eval { $authority->record } if C4::Context->preference("AuthoritiesLog");
+        my $authority = Koha::Authorities->find($authid);
+        my $deleted_marc;
+        $deleted_marc = eval { $authority->record } if C4::Context->preference("AuthoritiesLog");
         my $deleted_data =
             C4::Context->preference("AuthoritiesLog")
             ? _authority_log_data( $authority, $deleted_marc )
@@ -806,7 +807,7 @@ sub ModAuthority {
     my $skip_record_index = $params->{skip_record_index} || 0;
 
     my $oldrecord = GetAuthority($authid);
-    my ( $original_data, $original_marc );
+    my $original_data;
     if ( C4::Context->preference("AuthoritiesLog") ) {
         my $old_authority = Koha::Authorities->find($authid);
         $original_data = _authority_log_data( $old_authority, $oldrecord );
@@ -1555,6 +1556,9 @@ sub _authority_log_data {
     my ( $authority, $marc_record ) = @_;
     my %data = %{ $authority->unblessed };
     delete $data{marcxml};
+    for my $key ( keys %data ) {
+        delete $data{$key} unless defined $data{$key} && $data{$key} ne '';
+    }
     $data{_marc} = _marc_record_to_diffable($marc_record);
     return \%data;
 }
