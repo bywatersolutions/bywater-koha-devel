@@ -1931,7 +1931,7 @@ cy.getVendor = () => {
         postal: "567 Main St. PO Box 25 Springfield, MA 44224",
         subscriptions: [],
         subscriptions_count: 0,
-        tax_rate: 0.1965,
+        tax_rate: 0,
         type: "Print books",
         url: "https://koha-community.org/",
     };
