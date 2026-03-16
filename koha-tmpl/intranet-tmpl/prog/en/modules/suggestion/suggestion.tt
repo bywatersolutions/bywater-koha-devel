@@ -1337,7 +1337,7 @@
     [% IF op == 'else' %]
         <script>
             const has_suggestions = [% suggestions.size ? 1 : 0 | html %];
-            let suggestionData = [% To.json(suggestions) | $raw %];
+            let suggestionData = [% To.json(suggestions || []) | $raw %];
             var suggestions_table_settings = [% TablesSettings.GetTableSettings( 'acqui', 'suggestions', 'suggestions', 'json' ) | $raw %]
             addPermissions({
                 CAN_user_suggestions_suggestions_manage: [% CAN_user_suggestions_suggestions_manage ? 1 : 0 | html %],
