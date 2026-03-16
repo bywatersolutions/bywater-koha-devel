@@ -3810,7 +3810,7 @@ sub set_permissions {
     );
 
     if ( C4::Context->preference('BorrowersLog') ) {
-        my $after   = $self->get_from_storage->permissions();
+        my $after   = $self->permissions();
         my $changed = diff( $before, $after, noU => 1 );
         if ( keys %$changed ) {
             logaction(
