@@ -123,14 +123,21 @@ describe("Accounts", () => {
         cy.intercept("GET", "/api/v1/sip2/accounts**", {
             statusCode: 200,
             body: [],
-        });
+        }).as("getAccounts");
 
         cy.intercept("GET", "/api/v1/sip2/institutions*", institutions).as(
             "getSIP2Institutions"
         );
 
+        //TODO: intercept http://localhost:8081/api/v1/item_types?_per_page=-1
+        cy.intercept("GET", "/api/v1/item_types*", {
+            statusCode: 200,
+            body: cy.getItemTypes(),
+        }).as("getItemTypes");
+
         // Click the button in the toolbar
         cy.visit("/cgi-bin/koha/sip2/accounts");
+        cy.wait("@getAccounts");
         cy.contains("New account").click();
         cy.get("#accounts_add h2").contains("New account");
         cy.left_menu_active_item_is("Accounts");
@@ -143,7 +150,7 @@ describe("Accounts", () => {
         );
         cy.get("#login_id").type(account.login_id);
 
-        cy.wait("@getSIP2Institutions");
+        cy.wait(["@getSIP2Institutions", "@getItemTypes"]);
         cy.get("#sip_institution_id .vs__search").type(
             institutions[0].name + "{enter}",
             {
@@ -172,11 +179,6 @@ describe("Accounts", () => {
             "CG"
         );
 
-        //TODO: intercept http://localhost:8081/api/v1/item_types?_per_page=-1
-        cy.intercept("GET", "/api/v1/item_types*", {
-            statusCode: 200,
-            body: cy.getItemTypes(),
-        });
         // blocked_item_types
         cy.get("#blocked_item_types .vs__search").click();
         cy.get("#blocked_item_types [id*=__option-0]").contains("Books");
