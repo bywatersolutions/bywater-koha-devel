@@ -8,6 +8,14 @@ describe("Vendor CRUD operations", () => {
         cy.visit("/cgi-bin/koha/acqui/acqui-home.pl");
 
         cy.intercept("GET", "/api/v1/acquisitions/vendors\?*", []);
+        cy.intercept(
+            "GET",
+            "/api/v1/acquisitions/vendors/extended_attribute_types*",
+            {
+                body: [],
+                statusCode: 200,
+            }
+        );
         cy.visit("/cgi-bin/koha/acquisition/vendors");
         cy.get("#vendors_list").contains("There are no vendors defined");
 
