@@ -189,13 +189,21 @@ describe("Vendor CRUD operations", () => {
                 "X-Total-Count": "1",
             },
         }).as("get-vendors");
-        cy.visit("/cgi-bin/koha/acquisition/vendors");
-        cy.wait("@get-vendors");
         cy.intercept(
             "GET",
             new RegExp("/api/v1/acquisitions/vendors/(?!config$).+"),
             vendor
         ).as("get-vendor");
+        cy.intercept(
+            "GET",
+            "/api/v1/acquisitions/vendors/extended_attribute_types*",
+            {
+                body: [],
+                statusCode: 200,
+            }
+        );
+        cy.visit("/cgi-bin/koha/acquisition/vendors");
+        cy.wait("@get-vendors");
 
         const name_link = cy.get(
             "#vendors_list table tbody tr:first td:first a"
