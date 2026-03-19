@@ -1,0 +1,180 @@
+name: Stress Test
+on:
+    push:
+        branches:
+            - "**"
+        tags-ignore:
+            - "**"
+    workflow_dispatch:
+
+jobs:
+    stress-test:
+        name: OPAC Stress Test
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Extract Koha version
+              id: koha_version
+              run: |
+                  FULL_VERSION="$(grep '$VERSION =' Koha.pm)" && FULL_VERSION=${FULL_VERSION%\"*} && FULL_VERSION=${FULL_VERSION##*\"}
+                  IFS='.' read -ra VER_PARTS <<< "$FULL_VERSION"
+                  KOHA_MAJOR=${VER_PARTS[0]}
+                  KOHA_MINOR=${VER_PARTS[1]}
+                  KOHA_IMAGE="${KOHA_MAJOR}.${KOHA_MINOR}"
+                  echo "KOHA_IMAGE=$KOHA_IMAGE" >> $GITHUB_OUTPUT
+                  echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_OUTPUT
+                  echo "Koha version: $FULL_VERSION (image: $KOHA_IMAGE)"
+
+            - name: Set up koha-testing-docker
+              env:
+                  KOHA_IMAGE: ${{ steps.koha_version.outputs.KOHA_IMAGE }}
+              run: |
+                  export LOCAL_USER_ID="$(id -u)"
+                  export SYNC_REPO=.
+                  sudo sysctl -w vm.max_map_count=262144
+                  wget -O docker-compose.yml https://gitlab.com/koha-community/koha-testing-docker/raw/${KOHA_IMAGE}/docker-compose.yml
+                  mkdir -p env
+                  wget -O env/defaults.env https://gitlab.com/koha-community/koha-testing-docker/raw/${KOHA_IMAGE}/env/defaults.env
+                  cp env/defaults.env .env
+                  echo "LOCAL_USER_ID=$LOCAL_USER_ID" >> .env
+                  echo "SYNC_REPO=$SYNC_REPO" >> .env
+                  echo "KOHA_IMAGE=$KOHA_IMAGE" >> .env
+                  docker compose pull
+                  docker compose -f docker-compose.yml -p koha up --detach
+
+            - name: Wait for Koha to be ready
+              run: |
+                  echo "Waiting for Koha to start (up to 5 minutes)..."
+                  for i in $(seq 1 300); do
+                    if ! docker ps -q -f name=koha-koha-1 | grep -q .; then
+                      echo "ERROR: Container has stopped"
+                      docker logs koha-koha-1 2>&1 || true
+                      exit 1
+                    fi
+                    if docker exec koha-koha-1 bash -c '[ -e /ktd_ready ]' 2>/dev/null; then
+                      echo "Koha is ready after ${i} seconds!"
+                      exit 0
+                    fi
+                    if (( i % 30 == 0 )); then
+                      echo "Still waiting... ${i}s elapsed"
+                    fi
+                    sleep 1
+                  done
+                  echo "ERROR: Koha did not become ready within 300 seconds"
+                  docker logs koha-koha-1 2>&1 || true
+                  exit 1
+
+            - name: Install k6
+              run: |
+                  curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+                  echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+                  sudo apt-get update
+                  sudo apt-get install -y k6
+
+            - name: Clone bywater-stress-testers
+              run: |
+                git clone https://${{ secrets.BWS_FORGEJO_KEY }}:${{ secrets.BWS_FORGEJO_KEY }}@git.tools.bywatersolutions.com/ByWaterSolutions/bywater-stress-testers.git /tmp/bywater-stress-testers
+                cd /tmp/bywater-stress-testers
+                git checkout -b origin/gha
+                cd -
+
+            - name: Get Koha container IP
+              id: koha_ip
+              run: |
+                  KOHA_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' koha-koha-1)
+                  echo "KOHA_IP=$KOHA_IP"
+                  echo "KOHA_IP=$KOHA_IP" >> $GITHUB_OUTPUT
+
+            - name: Warm up Plack workers
+              env:
+                  OPAC_URL: "http://${{ steps.koha_ip.outputs.KOHA_IP }}:8080"
+                  OPAC_HOST_HEADER: ""
+                  MAX_VUS: "1"
+                  VU_STEP: "1"
+                  RAMP_TIME: "0s"
+                  HOLD_TIME: "15s"
+                  KOHA_OPAC_ABORT_MS: "8000"
+                  THRESHOLD_PERCENTILE: "98"
+                  KOHA_OPAC_MAX_FAIL_CON_RATE: "0.05"
+                  KOHA_OPAC_REQUEST_TIMEOUT: "15s"
+                  HOLD_ON_FAIL: "30s"
+                  KOHA_OPAC_SLOW_LOG_MS: "3000"
+                  RESULTS_TO_CLICK: "3"
+                  NO_CONNECTION_REUSE: ""
+                  THINK_TIME: "1"
+              run: |
+                  echo "Warming up (15s with 1 VU)..."
+                  k6 run /tmp/bywater-stress-testers/benchmarks/koha_opac_http.js --quiet 2>/dev/null || true
+                  echo "Warmup complete."
+
+            - name: Run OPAC stress test
+              env:
+                  OPAC_URL: "http://${{ steps.koha_ip.outputs.KOHA_IP }}:8080"
+                  OPAC_HOST_HEADER: ""
+                  MAX_VUS: "5"
+                  VU_STEP: "5"
+                  RAMP_TIME: "10s"
+                  HOLD_TIME: "60s"
+                  KOHA_OPAC_ABORT_MS: "8000"
+                  THRESHOLD_PERCENTILE: "98"
+                  KOHA_OPAC_MAX_FAIL_CON_RATE: "0.05"
+                  KOHA_OPAC_REQUEST_TIMEOUT: "15s"
+                  HOLD_ON_FAIL: "30s"
+                  KOHA_OPAC_SLOW_LOG_MS: "3000"
+                  RESULTS_TO_CLICK: "3"
+                  NO_CONNECTION_REUSE: ""
+                  THINK_TIME: "1"
+              run: |
+                  K6_SCRIPT="/tmp/bywater-stress-testers/benchmarks/koha_opac_http.js"
+                  VERSION_LABEL="${{ github.ref_name }}"
+                  RUNS=3
+                  RESULTS_DIR="/tmp/stress-results"
+                  mkdir -p "${RESULTS_DIR}"
+
+                  for i in $(seq 1 "${RUNS}"); do
+                    OUTPUT_FILE="${RESULTS_DIR}/${VERSION_LABEL}-run${i}.json"
+                    echo "========================================"
+                    echo "Run ${i}/${RUNS} -> ${OUTPUT_FILE}"
+                    echo "========================================"
+                    OUTPUT_FILE="${OUTPUT_FILE}" \
+                      k6 run "${K6_SCRIPT}"
+                  done
+
+                  echo "========================================"
+                  echo "All ${RUNS} runs complete for ${VERSION_LABEL}"
+                  echo "========================================"
+
+            - name: Push stress test results
+              if: always()
+              run: |
+                  git clone https://x-access-token:${{ secrets.GHA_WORKFLOW_TOKEN }}@github.com/bywatersolutions/koha-stress-test-results.git /tmp/koha-stress-test-results
+                  cp /tmp/stress-results/*.json /tmp/koha-stress-test-results/
+                  cd /tmp/koha-stress-test-results
+                  git config user.name "Kyle M Hall"
+                  git config user.email "kyle@bywatersolutions.com"
+                  git add *.json
+                  git diff --cached --quiet || (git commit -m "Add/update stress test results from ${{ github.ref_name }}" && git push)
+
+            - name: Post test cleanup
+              if: always()
+              run: |
+                  docker compose down || true
+                  docker volume prune -f || true
+                  docker image prune -f || true
+                  rm -f docker-compose.yml
+                  rm -rf env .env
+
+            - name: Notify Slack
+              if: always()
+              uses: slackapi/slack-github-action@v3
+              with:
+                  webhook: ${{ secrets.SLACK_WEBHOOK_URL_DEVOPS }}
+                  webhook-type: incoming-webhook
+                  payload: |
+                      text: "Stress Test *${{ job.status }}*: ${{ github.ref_name }} — ${{ github.workflow }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
+                      blocks:
+                        - type: "section"
+                          text:
+                            type: "mrkdwn"
+                            text: "Stress Test *${{ job.status }}*\n*Ref:* `${{ github.ref_name }}`\n*Workflow:* ${{ github.workflow }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
