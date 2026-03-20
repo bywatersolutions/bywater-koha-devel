@@ -196,6 +196,7 @@ module.exports = [
         output: {
             filename: "[name].js",
             path: path.resolve(__dirname, "t/cypress/plugins/dist/"),
+            clean: true,
             library: {
                 type: "commonjs",
             },
