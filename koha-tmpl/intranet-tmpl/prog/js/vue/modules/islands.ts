@@ -1,5 +1,6 @@
 import { Component, defineCustomElement, h } from "vue";
 export { h };
+export * from "vue";
 import { createPinia } from "pinia";
 import { $__ } from "../i18n";
 import { useMainStore } from "../stores/main";
@@ -167,9 +168,19 @@ export function hydrate(): void {
                 return;
             }
 
-            const component = await importFn();
+            let component = await importFn();
             if (customElements.get(name)) {
                 return;
+            }
+
+            // ES module default exports may be frozen — create a mutable
+            // shallow clone preserving all property descriptors so that
+            // defineCustomElement can set internal properties like `name`.
+            if (!Object.isExtensible(component)) {
+                component = Object.create(
+                    Object.getPrototypeOf(component),
+                    Object.getOwnPropertyDescriptors(component)
+                );
             }
 
             customElements.define(

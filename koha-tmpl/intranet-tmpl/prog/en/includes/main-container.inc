@@ -84,7 +84,10 @@
     </div>
 </div>
 [% SET islands = Asset.js("js/vue/dist/islands.esm.js").match('(src="([^"]+)")').1 %]
- <script src="[% islands | $raw %]" type="module">
+<script type="importmap">
+    { "imports": { "vue": "[% islands | $raw %]" } }
+</script>
+<script src="[% islands | $raw %]" type="module">
 </script>
 <script nonce="[% Koha.CSPNonce | $raw %]" type="module">
     import { hydrate } from "[% islands | $raw %]";
