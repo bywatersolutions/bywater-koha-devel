@@ -124,6 +124,13 @@ export function registerIsland(
     name: string,
     entry: WebComponentDynamicImport
 ): void {
+    if (!/^[a-z][a-z0-9]*-[a-z0-9-]*$/.test(name)) {
+        console.warn(
+            `[islands] Invalid custom element name "${name}". ` +
+                `Must be lowercase, contain a hyphen, and start with a letter.`
+        );
+        return;
+    }
     if (componentRegistry.has(name)) {
         console.warn(
             `[islands] Component "${name}" is already registered, skipping.`
