@@ -398,12 +398,18 @@ sub set_preference {
     $variable = lc $variable;
 
     my $syspref = Koha::Config::SysPrefs->find($variable);
-    $type =
-          $type    ? $type
-        : $syspref ? $syspref->type
-        :            undef;
 
-    $value = 0 if ( $type && $type eq 'YesNo' && $value eq '' );
+    # Deal with Boolean syspref, set to 0 if passed an empty string
+    if ( $value eq '' ) {
+        my $yaml_prefs = Koha::Config::SysPrefs->get_all_from_yml;
+        my $yaml_pref  = $yaml_prefs->{$variable_case};
+        if ( $yaml_pref && $yaml_pref->{type} eq 'select' && ref( $yaml_pref->{choices} ) ) {
+            my @choices = sort keys %{ $yaml_pref->{choices} };
+            if ( scalar(@choices) == 2 && $choices[0] eq "0" && $choices[1] eq "1" ) {
+                $value = 0;
+            }
+        }
+    }
 
     # force explicit protocol on OPACBaseURL
     if ( $variable eq 'opacbaseurl' && $value && substr( $value, 0, 4 ) !~ /http/ ) {
