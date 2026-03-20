@@ -12,7 +12,7 @@ import { useVendorStore } from "../stores/vendors";
  * @property {Object} [config] - An optional configuration object for the web component.
  * @property {Array<string>} [config.stores] - An optional array of strings representing store names associated with the component.
  */
-type WebComponentDynamicImport = {
+export type WebComponentDynamicImport = {
     importFn: () => Promise<Component>;
     config?: Record<"stores", Array<string>>;
 };
@@ -101,6 +101,37 @@ export const componentRegistry: Map<string, WebComponentDynamicImport> =
             },
         ],
     ]);
+
+/**
+ * Registers an island component for hydration.
+ *
+ * This allows Koha plugins to provide Vue micro frontends as custom elements.
+ * Plugins should call this function from their intranet_js hook before hydrate()
+ * runs (which is deferred via requestIdleCallback).
+ *
+ * @param {string} name - The custom element tag name (must contain a hyphen per web component spec).
+ * @param {WebComponentDynamicImport} entry - The component import function and optional store configuration.
+ *
+ * @example
+ * // In a plugin's intranet_js output:
+ * import { registerIsland } from "/path/to/islands.esm.js";
+ * registerIsland("plugin-notes-panel", {
+ *     importFn: () => import("/api/v1/contrib/myplugin/static/dist/NotesPanel.js"),
+ *     config: { stores: [] },
+ * });
+ */
+export function registerIsland(
+    name: string,
+    entry: WebComponentDynamicImport
+): void {
+    if (componentRegistry.has(name)) {
+        console.warn(
+            `[islands] Component "${name}" is already registered, skipping.`
+        );
+        return;
+    }
+    componentRegistry.set(name, entry);
+}
 
 /**
  * Hydrates custom elements by scanning the document and loading only necessary components.
