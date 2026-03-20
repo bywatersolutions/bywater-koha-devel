@@ -1,4 +1,5 @@
-import { Component, defineCustomElement } from "vue";
+import { Component, defineCustomElement, h } from "vue";
+export { h };
 import { createPinia } from "pinia";
 import { $__ } from "../i18n";
 import { useMainStore } from "../stores/main";
