@@ -176,7 +176,7 @@ describe("ILL Batches", () => {
             }
         });
         cy.title().should("eq", "Koha staff interface");
-        cy.get("a.icon_administration").contains("Koha administration").click();
+        cy.get("a.icon_administration").contains("Administration").click();
         cy.get("a").contains("Manage plugins").click();
         cy.get("a#upload_plugin").contains("Upload plugin").click();
 
