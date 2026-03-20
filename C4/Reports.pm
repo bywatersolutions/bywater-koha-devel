@@ -49,18 +49,10 @@ This will return a list of all the available delimiters.
 =cut
 
 sub GetDelimiterChoices {
-    my $dbh = C4::Context->dbh;
+    my $default = C4::Context->preference('CSVDelimiter');
 
-    my $sth = $dbh->prepare( "
-      SELECT options, value
-      FROM systempreferences
-      WHERE variable = 'CSVDelimiter'
-    " );
-
-    $sth->execute();
-
-    my ( $choices, $default ) = $sth->fetchrow;
-    my @dels = split /\|/, $choices;
+    # NOTE: The below list should match the corresponding options in the .pref file
+    my @dels = ( ';', 'tabulation', ',', '/', '\\', '#' );
 
     return {
         values  => \@dels,
