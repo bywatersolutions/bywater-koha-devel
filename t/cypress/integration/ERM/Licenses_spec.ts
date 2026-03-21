@@ -32,8 +32,7 @@ describe("License CRUD operations", () => {
         cy.intercept("GET", "/api/v1/erm/licenses*", {
             statusCode: 500,
         });
-        cy.visit("/cgi-bin/koha/erm/erm.pl");
-        cy.get(".sidebar_menu").contains("Licenses").click();
+        cy.visit("/cgi-bin/koha/erm/licenses");
         cy.get("main div[class='alert alert-warning']").contains(
             "Something went wrong: Error: Internal Server Error"
         );
