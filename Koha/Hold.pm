@@ -1232,6 +1232,16 @@ sub store {
     $self = $self->SUPER::store;
 }
 
+=head3 _set_default_expirationdate
+
+    $hold->_set_default_expirationdate;
+
+Internal method to set the default expiration date based on
+C<DefaultHoldExpirationdatePeriod> and C<DefaultHoldExpirationdateUnitOfTime>
+system preferences.
+
+=cut
+
 sub _set_default_expirationdate {
     my $self = shift;
 
