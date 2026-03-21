@@ -581,6 +581,7 @@
         var table_settings = [% TablesSettings.GetTableSettings('members', 'fines', 'account-fines', 'json') | $raw %];
         addPrefs({
             FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],
+            UseCashRegisters: [% Koha.Preference('UseCashRegisters') ? 1 : 0 | html %],
         });
         const change_given = "[% change_given | html %]";
         const payment_id = "[% payment_id | html %]";
@@ -647,14 +648,14 @@
             });
 
             // Validate cash register requirement for refunds
-            [% IF Koha.Preference('UseCashRegisters') %]
-                $("#refund_form").on("submit", function(e) {
+            if (prefs.UseCashRegisters) {
+                $("#refund_form").on("submit", function (e) {
                     var refund_type = $("#refund_type").val();
                     var register = $("#refund_registerid").val();
 
                     // Only require register for non-AC refunds with CASH or SIP00 payment types
-                    if (refund_type && refund_type !== 'AC' && (refund_type === 'CASH' || refund_type.match(/^SIP\d{2}$/))) {
-                        if (!register || register === '') {
+                    if (refund_type && refund_type !== "AC" && (refund_type === "CASH" || refund_type.match(/^SIP\d{2}$/))) {
+                        if (!register || register === "") {
                             e.preventDefault();
                             alert(_("Cash register is required for cash refunds"));
                             $("#refund_registerid").focus();
@@ -663,7 +664,7 @@
                     }
                     return true;
                 });
-            [% END %]
+            }
 
             $("#applyDiscountModal").on("shown.bs.modal", function (e) {
                 var button = $(e.relatedTarget);
