@@ -194,6 +194,10 @@ sub _shared_preferences {
         RefundLostOnReturnControl
         WhenLostChargeReplacementFee
         WhenLostForgiveFine
+        FineNoRenewals
+        FineNoRenewalsBlockAutoRenew
+        FineNoRenewalsBlockSelfCheckRenew
+        FineNoRenewalsIncludeCredits
         AllowHoldDateInFuture
         OPACAllowHoldDateInFuture
         ConfirmFutureHolds
