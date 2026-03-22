@@ -631,6 +631,41 @@ sub TooMany {
     return;
 }
 
+=head2 _check_max_qty
+
+  my $error = _check_max_qty($params);
+
+Internal helper used by CanBookBeIssued to determine whether the patron has
+reached the maximum number of allowed checkouts (overall or on-site).
+
+C<$params> is a hashref with the following keys:
+
+=over 4
+
+=item C<checkout_count> - total number of current checkouts for the patron/item-type/branch combination
+
+=item C<onsite_checkout_count> - number of those that are on-site checkouts
+
+=item C<onsite_checkout> - boolean; true if the current checkout is an on-site checkout
+
+=item C<max_checkouts_allowed> - maximum normal checkouts permitted by the circulation rule
+
+=item C<max_onsite_checkouts_allowed> - maximum on-site checkouts permitted by the circulation rule
+
+=item C<switch_onsite_checkout> - boolean; true if this checkout is switching an existing on-site checkout
+
+=item C<circulation_rule> - the Koha::CirculationRule object that set C<max_checkouts_allowed>
+
+=item C<onsite_circulation_rule> - the Koha::CirculationRule object that set C<max_onsite_checkouts_allowed>
+
+=back
+
+Returns a hashref with keys C<reason> (C<TOO_MANY_CHECKOUTS> or
+C<TOO_MANY_ONSITE_CHECKOUTS>), C<count>, C<max_allowed>, and
+C<circulation_rule> if the limit is exceeded; returns undef otherwise.
+
+=cut
+
 sub _check_max_qty {
     my $params                       = shift;
     my $checkout_count               = $params->{checkout_count};
@@ -2918,6 +2953,37 @@ to ease testing.
 
 =cut
 
+=head2 _calculate_new_debar_dt
+
+  my $new_debar_dt = _calculate_new_debar_dt( $patron, $item, $dt_due, $return_date );
+
+Internal helper that calculates the new patron debarment (suspension) expiry
+date based on how overdue the item was.
+
+=over 4
+
+=item C<$patron> - a Koha::Patron object
+
+=item C<$item> - a Koha::Item object
+
+=item C<$dt_due> - a DateTime object representing the due date
+
+=item C<$return_date> - a DateTime object representing the actual return date
+
+=back
+
+Looks up the applicable circulation rules (C<finedays>, C<lengthunit>,
+C<firstremind>, C<maxsuspensiondays>, C<suspension_chargeperiod>) and computes
+the number of suspension days proportional to the overdue period.  Respects
+C<CumulativeRestrictionPeriods> (extends an existing suspension) and
+C<SuspensionsCalendar> (skips closed days when enabled).
+
+Returns a DateTime object representing the end date of the suspension, or
+undef if no suspension applies (e.g. C<finedays> is not set or the item is
+within the grace period).
+
+=cut
+
 sub _calculate_new_debar_dt {
     my ( $patron, $item, $dt_due, $return_date ) = @_;
 
@@ -4945,6 +5011,34 @@ sub GetTopIssues {
 
 =head2 Internal methods
 
+These methods are not part of the public API and should not be called directly.
+
+=head2 _CalculateAndUpdateFine
+
+  _CalculateAndUpdateFine({ borrower => $borrower, item => $item, issue => $issue, return_date => $return_date });
+
+Internal helper called by AddReturn to calculate the overdue fine for a
+checkout and persist it via C<C4::Overdues::UpdateFine>.
+
+C<$params> is a hashref with the following keys:
+
+=over 4
+
+=item C<borrower> - a hashref of borrower data (required)
+
+=item C<item> - a hashref of item data (required)
+
+=item C<issue> - a Koha::Checkout object (required)
+
+=item C<return_date> - an optional DateTime object; defaults to now.  When
+provided (e.g. for backdated returns) any existing fine that would be reduced
+to zero is explicitly set to 0.
+
+=back
+
+Only writes fines when the C<finesMode> system preference is set to
+C<production>.  Returns nothing.
+
 =cut
 
 sub _CalculateAndUpdateFine {
@@ -5003,6 +5097,47 @@ sub _CalculateAndUpdateFine {
         }
     }
 }
+
+=head2 _CanBookBeAutoRenewed
+
+  my ($result, $soonest) = _CanBookBeAutoRenewed({ patron => $patron, item => $item, branchcode => $branchcode, issue => $issue });
+
+Internal helper called by CanBookBeRenewed to determine whether a checkout
+that has C<auto_renew> set is eligible to be automatically renewed.
+
+C<$params> is a hashref with the following keys:
+
+=over 4
+
+=item C<patron> - a Koha::Patron object
+
+=item C<item> - a Koha::Item object
+
+=item C<branchcode> - the branch used to look up circulation rules
+
+=item C<issue> - a Koha::Checkout object
+
+=back
+
+Returns one of the following string values:
+
+=over 4
+
+=item C<"ok"> - the item may be auto-renewed
+
+=item C<"no"> - auto-renewal is disabled on the issue or blocked for the patron
+
+=item C<"auto_too_late"> - past the C<no_auto_renewal_after> or C<no_auto_renewal_after_hard_limit> date
+
+=item C<"auto_too_soon"> - too early to renew; a second return value contains the earliest renewal DateTime
+
+=item C<"auto_account_expired"> - patron account is expired and the category blocks renewals for expired patrons
+
+=item C<"auto_too_much_owing"> - patron has outstanding charges above the C<FineNoRenewals> threshold
+
+=back
+
+=cut
 
 sub _CanBookBeAutoRenewed {
     my ($params)   = @_;
