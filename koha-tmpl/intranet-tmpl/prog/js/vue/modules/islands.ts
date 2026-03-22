@@ -169,7 +169,7 @@ export function hydrate(): void {
             }
 
             let component = await importFn();
-            if (customElements.get(name)) {
+            if (!component || customElements.get(name)) {
                 return;
             }
 
