@@ -94,13 +94,9 @@ sub logaction {
         }
     } else {
         $updated = $infos;
-        if ( ref $infos eq 'HASH' ) {
+        if ( ref $infos eq 'HASH' && $modulename eq 'CATALOGUING' && $actionname eq 'MODIFY' ) {
             local $Data::Dumper::Sortkeys = 1;
-            if ( $modulename eq 'CATALOGUING' && $actionname eq 'MODIFY' ) {
-                $infos = "biblio " . Dumper( ref $original eq 'HASH' ? $original : {} );
-            } else {
-                $infos = Dumper($updated);
-            }
+            $infos = "biblio " . Dumper( ref $original eq 'HASH' ? $original : {} );
         }
     }
 
