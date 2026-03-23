@@ -1,0 +1,45 @@
+---
+/config/search_mappings:
+  get:
+    x-mojo-to: Config::SearchMappings#get
+    operationId: getSearchMappings
+    tags:
+      - search_mappings
+    summary: Get search field mappings
+    produces:
+      - application/json
+      - application/yaml
+    parameters:
+      - name: type
+        in: query
+        description: MARC type filter
+        required: false
+        type: string
+        enum:
+          - marc21
+          - unimarc
+    responses:
+      "200":
+        description: Search field mappings
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        parameters: manage_search_engine_config

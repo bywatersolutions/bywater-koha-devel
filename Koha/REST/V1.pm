@@ -82,6 +82,9 @@ sub startup {
     $self->types->type( mij     => 'application/marc-in-json' );
     $self->types->type( marc    => 'application/marc' );
 
+    # YAML type
+    $self->types->type( yaml => 'application/yaml' );
+
     my $secret_passphrase = C4::Context->config('api_secret_passphrase');
     if ($secret_passphrase) {
         $self->secrets( [$secret_passphrase] );
