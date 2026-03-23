@@ -2426,7 +2426,7 @@ sub _unblessed_for_log {
     return $data;
 }
 
-=head3 type
+=head3 _type
 
 =cut
 
