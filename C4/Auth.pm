@@ -804,8 +804,8 @@ sub _version_check {
   my $timeout = _timeout_syspref();
 
 Reads the C<timeout> system preference and returns the session timeout value in
-seconds. Understands plain integer values (already seconds), C<Nd> (days), and
-C<Nh> (hours) suffixes. Falls back to 600 seconds if the preference is unset or
+seconds. Understands plain integer values (already seconds), C<d> (days), and
+C<h> (hours) suffixes. Falls back to 600 seconds if the preference is unset or
 contains an unrecognised value.
 
 =cut
