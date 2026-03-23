@@ -165,6 +165,7 @@ sub _shared_preferences {
         BlockReturnOfWithdrawnItems
         CalculateFinesOnReturn
         AgeRestrictionOverride
+        PatronAgeRestriction
         AllFinesNeedOverride
         AllowFineOverride
         AllowItemsOnHoldCheckoutSIP
