@@ -741,6 +741,18 @@ has authenticated.
 
 =cut
 
+=head2 _version_check
+
+  _version_check( $type, $query );
+
+Checks whether the database version matches the code version. If the C<Version>
+system preference is missing (fresh install) or outdated, redirects to the web
+installer (staff) or the maintenance page (OPAC) and exits.
+
+C<$type> is C<"opac"> or C<"intranet">. C<$query> is the current CGI object.
+
+=cut
+
 sub _version_check {
     my $type  = shift;
     my $query = shift;
@@ -786,6 +798,17 @@ sub _version_check {
         safe_exit;
     }
 }
+
+=head2 _timeout_syspref
+
+  my $timeout = _timeout_syspref();
+
+Reads the C<timeout> system preference and returns the session timeout value in
+seconds. Understands plain integer values (already seconds), C<Nd> (days), and
+C<Nh> (hours) suffixes. Falls back to 600 seconds if the preference is unset or
+contains an unrecognised value.
+
+=cut
 
 sub _timeout_syspref {
     my $default_timeout = 600;
@@ -1943,6 +1966,16 @@ will be created.
 
 =cut
 
+=head2 _get_session_params
+
+  my $params = _get_session_params();
+
+Returns a hashref of parameters used to initialise a CGI::Session object
+(driver, datasource, and related options). Delegates to
+C<Koha::Session-E<gt>_get_session_params>. Kept for backwards compatibility.
+
+=cut
+
 #NOTE: We're keeping this for backwards compatibility
 sub _get_session_params {
     return Koha::Session->_get_session_params();
@@ -2325,6 +2358,17 @@ The main logic of this method is that things in arrays are OR'ed, and things
 in hashes are AND'ed. The `*` character can be used, at any depth, to denote `ANY`
 
 Returns member's flags or 0 if a permission is not met.
+
+=cut
+
+=head2 _dispatch
+
+  my $ok = _dispatch( $required, $flags );
+
+Recursively evaluates a permission requirement structure against the flags held
+by a patron. C<$required> may be a scalar permission name, an arrayref (OR
+semantics), or a hashref (AND semantics). C<'*'> matches any non-false value.
+Returns 1 if the requirement is satisfied, 0 otherwise.
 
 =cut
 
