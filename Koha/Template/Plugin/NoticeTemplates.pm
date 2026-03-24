@@ -62,25 +62,19 @@ sub GetByModule {
 
 =head2 GetByModuleForLibrary
 
-In a template, you can get notice templates by module, limited to only templates for all librries or for the user's logged-in branch, with
-[% letters = NoticeTemplates.GetByModuleForLibrary( 'members' ) %]
+In a template, you can get notice templates by module, limited to only templates for all libraries or for the user's logged-in branch, with
+[% letters = NoticeTemplates.GetByModuleForLibrary( 'add_message' ) %]
 
 =cut
 
 sub GetByModuleForLibrary {
     my ( $self, $module ) = @_;
-    my $userenv    = C4::Context->userenv;
-    my $branchcode = $userenv->{'branch'} // '';
+    my $branchcode = C4::Context->userenv ? C4::Context->userenv->{'branch'} // '' : '';
 
     return C4::Letters::GetLettersAvailableForALibrary(
         {
             branchcode => $branchcode,
             module     => $module,
-        },
-        {
-            group_by => [ 'code', 'name' ],
-            columns  => [ 'code', 'name' ],
-            order_by => ['name']
         }
     );
 }
