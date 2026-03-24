@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('1PageOrderPDFText', 'Order number must appear on all related correspondence, shipping papers and invoices. Notify us immediately if \n you are unable to supply item(s).'),
 ('AccessControlAllowOrigin', ''),
