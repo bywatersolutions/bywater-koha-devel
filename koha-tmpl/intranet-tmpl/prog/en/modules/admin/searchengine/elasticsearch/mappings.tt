@@ -18,9 +18,9 @@
         cursor: pointer;
     }
 </style>
-</head>
+<!--</head>-->
 
-<body id="admin_searchengine_mappings" class="admin">
+<!--<body id="admin_searchengine_mappings" class="admin">-->
 [% WRAPPER 'header.inc' %]
     [% INCLUDE 'prefs-admin-search.inc' %]
 [% END %]
@@ -590,6 +590,7 @@
     <form method="get">
         <fieldset class="action">
             <button class="btn btn-default" type="submit" name="op" value="reset_confirm"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Reset mappings</button>
+            <a id="export_mappings" class="btn btn-default"><i class="fa-solid fa-download" aria-hidden="true"></i> Export mappings</a>
         </fieldset>
     </form>
 [% END %]
@@ -597,6 +598,31 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/elasticsearch-mappings.js") | $raw %]
+    <script nonce="[% Koha.CSPNonce | $raw %]">
+        $("#export_mappings").on("click", function (e) {
+            e.preventDefault();
+            fetch("/api/v1/config/search_mappings", {
+                headers: { Accept: "application/yaml" },
+            })
+                .then(function (response) {
+                    if (!response.ok) throw new Error("Export failed");
+                    return response.blob();
+                })
+                .then(function (blob) {
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement("a");
+                    a.href = url;
+                    a.download = "search_mappings.yaml";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                })
+                .catch(function () {
+                    alert(_("Failed to export mappings."));
+                });
+        });
+    </script>
 [% END %]
 
 [% INCLUDE 'intranet-bottom.inc' %]
