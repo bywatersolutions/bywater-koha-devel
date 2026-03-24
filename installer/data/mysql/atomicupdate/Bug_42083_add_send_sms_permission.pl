@@ -9,12 +9,12 @@ return {
         my ( $dbh, $out ) = @$args{qw(dbh out)};
 
         $dbh->do(
-            q{INSERT IGNORE permissions (module_bit, code, description) VALUES (4, 'send_messages_to_borrowers_email', 'Send messages to patrons via email')}
+            q{INSERT IGNORE INTO permissions (module_bit, code, description) VALUES (4, 'send_messages_to_borrowers_email', 'Send messages to patrons via email')}
         );
         say_success( $out, "Added new permission 'send_messages_to_borrowers_email'" );
 
         $dbh->do(
-            q{INSERT IGNORE permissions (module_bit, code, description) VALUES (4, 'send_messages_to_borrowers_sms', 'Send messages to patrons via sms')}
+            q{INSERT IGNORE INTO permissions (module_bit, code, description) VALUES (4, 'send_messages_to_borrowers_sms', 'Send messages to patrons via sms')}
         );
         say_success( $out, "Added new permission 'send_messages_to_borrowers_sms'" );
 
@@ -25,12 +25,8 @@ return {
             $dbh->prepare("SELECT borrowernumber FROM user_permissions WHERE code = 'send_messages_to_borrowers'");
         $sth->execute();
 
-        my @borrowernumbers;
         while ( my ($borrowernumber) = $sth->fetchrow_array() ) {
-            push @borrowernumbers, $borrowernumber;
-
-            my @rows_to_insert = ( map { [ $_, 4, "send_messages_to_borrowers_email" ] } @borrowernumbers );
-            foreach my $row (@rows_to_insert) { $insert_sth->execute( @{$row} ); }
+            $insert_sth->execute( $borrowernumber, 4, 'send_messages_to_borrowers_email' );
         }
 
         say_success( $out, "send_messages_to_borrowers_email added to all borrowers with send_messages_to_borrowers" );
