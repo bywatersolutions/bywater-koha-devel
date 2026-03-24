@@ -17,11 +17,12 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 use Koha::Database;
 use Koha::Notice::Templates;
 
+use t::lib::Mocks;
 use t::lib::TestBuilder;
 
 BEGIN {
@@ -74,5 +75,32 @@ is( $notices->count, 2, 'returns 2 defined members letters' );
 
 $notices = $plugin->GetByModule('reserves');
 is( $notices->count, 1, 'returns 2 defined reserves letters' );
+
+subtest 'GetByModuleForLibrary' => sub {
+    plan tests => 3;
+
+    my $branch1 = $builder->build( { source => 'Branch' } )->{branchcode};
+    my $branch2 = $builder->build( { source => 'Branch' } )->{branchcode};
+
+    # All-libraries notice (branchcode = '')
+    $builder->build(
+        { source => 'Letter', value => { module => 'add_message', code => 'MSG_ALL', branchcode => '' } } );
+
+    # Branch1-specific notice only (no default version)
+    $builder->build(
+        { source => 'Letter', value => { module => 'add_message', code => 'MSG_BRANCH1', branchcode => $branch1 } } );
+
+    t::lib::Mocks::mock_userenv( { branch => $branch1 } );
+    $notices = $plugin->GetByModuleForLibrary('add_message');
+    is( scalar @$notices, 2, 'user at branch1 sees all-libraries and branch-specific notices' );
+
+    t::lib::Mocks::mock_userenv( { branch => $branch2 } );
+    $notices = $plugin->GetByModuleForLibrary('add_message');
+    is( scalar @$notices, 1, 'user at branch2 sees only all-libraries notices' );
+
+    t::lib::Mocks::mock_userenv( { branch => '' } );
+    $notices = $plugin->GetByModuleForLibrary('add_message');
+    is( scalar @$notices, 1, 'user with no branch sees only all-libraries notices' );
+};
 
 $schema->storage->txn_rollback;
