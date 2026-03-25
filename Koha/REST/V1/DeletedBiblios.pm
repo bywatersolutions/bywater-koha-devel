@@ -59,7 +59,7 @@ sub get {
         if ( $c->req->headers->accept =~ m/application\/json/ ) {
             return $c->render(
                 status => 200,
-                json   => $biblio->to_api
+                json   => $c->objects->to_api($biblio),
             );
         } else {
             my $metadata = $biblio->metadata;

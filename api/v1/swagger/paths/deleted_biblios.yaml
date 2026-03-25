@@ -81,6 +81,16 @@
     summary: Get deleted biblio
     parameters:
       - $ref: "../swagger.yaml#/parameters/biblio_id_pp"
+      - name: x-koha-embed
+        in: header
+        required: false
+        description: Embed list sent as a request header
+        type: array
+        items:
+          type: string
+          enum:
+            - items
+        collectionFormat: csv
     produces:
       - application/json
       - application/marcxml+xml

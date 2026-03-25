@@ -576,6 +576,7 @@
                     url: "/api/v1/deleted/biblios/" + biblio_id,
                     type: "GET",
                     headers: {
+                        "Accept": "application/json",
                         "x-koha-embed": "items",
                     },
                     success: function (biblio) {
