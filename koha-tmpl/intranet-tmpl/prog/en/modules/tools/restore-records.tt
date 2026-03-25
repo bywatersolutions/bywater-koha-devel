@@ -279,7 +279,7 @@
                     },
                     {
                         data: "deleted_on",
-                        searchable: false,
+                        searchable: true,
                         orderable: true,
                         render: function (data, type, row) {
                             if (type === "display" && data) {
@@ -363,7 +363,7 @@
                     },
                     {
                         data: "deleted_on",
-                        searchable: false,
+                        searchable: true,
                         orderable: true,
                         render: function (data, type, row) {
                             if (type === "display" && data) {
