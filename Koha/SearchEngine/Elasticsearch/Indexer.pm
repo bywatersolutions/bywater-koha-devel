@@ -307,7 +307,7 @@ If $records parameter is provided the records will be used as-is, this is only u
 at the moment.
 
 The other variables are used for parity with Zebra indexing calls. Currently the calls are passed through
-to Zebra as well.
+to Zebra if syspref C<ElasticsearchEnableZebraQueue> is enabled.
 
 Will obey the chunk_size defined in koha-conf for amount of records to send during a single reindex, or default
 to 5000.
@@ -337,8 +337,9 @@ sub index_records {
         $self->delete_index_background($record_numbers);
     }
 
-    #FIXME Current behaviour is to index Zebra when using ES, at some point we should stop
-    Koha::SearchEngine::Zebra::Indexer::index_records( $self, $record_numbers, $op, $server, undef );
+    if ( C4::Context->preference('ElasticsearchEnableZebraQueue') ) {
+        Koha::SearchEngine::Zebra::Indexer::index_records( $self, $record_numbers, $op, $server, undef );
+    }
 }
 
 sub _get_record {

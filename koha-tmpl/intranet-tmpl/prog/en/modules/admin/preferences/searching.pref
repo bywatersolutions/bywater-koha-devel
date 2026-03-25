@@ -117,6 +117,13 @@ Searching:
             - pref: ElasticsearchPreventAutoTruncate
               class: long
         -
+            - pref: ElasticsearchEnableZebraQueue
+              default: 0
+              choices:
+                  1: Enable
+                  0: Disable
+            - "adding items to the Zebra queue after indexing it in Elasticsearch. This preference should probably be set to 'Disable' unless you want Koha to act as a Z39.50 or SRU server."
+        -
             - pref: SearchCancelledAndInvalidISBNandISSN
               default: 0
               choices:

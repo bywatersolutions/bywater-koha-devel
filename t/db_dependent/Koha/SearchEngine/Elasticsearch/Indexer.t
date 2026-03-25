@@ -20,7 +20,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 5;
+use Test::More tests => 6;
 use Test::MockModule;
 use Test::Warn;
 use t::lib::Mocks;
@@ -34,7 +34,6 @@ use Koha::Biblios;
 my $schema = Koha::Database->schema();
 
 use_ok('Koha::SearchEngine::Elasticsearch::Indexer');
-
 SKIP: {
 
     eval { Koha::SearchEngine::Elasticsearch->get_elasticsearch_params; };
@@ -180,6 +179,64 @@ SKIP: {
         "", "update_index called with deleted biblionumber should not crash";
 
         $schema->storage->txn_rollback;
+    };
+
+    subtest 'syspref ElasticsearchEnableZebraQueue' => sub {
+        plan tests => 5;
+        my $mock_index = Test::MockModule->new("Koha::SearchEngine::Elasticsearch::Indexer");
+        $mock_index->mock( update_index => sub { } );
+        my $auth_indexer   = Koha::SearchEngine::Elasticsearch::Indexer->new( { 'index' => 'authorities' } );
+        my $biblio_indexer = Koha::SearchEngine::Elasticsearch::Indexer->new( { 'index' => 'biblios' } );
+
+        my $auth = MARC::Record->new();
+        $auth->append_fields(
+            MARC::Field->new( '001', '1234567' ),
+            MARC::Field->new( '100', '', '', 'a' => 'Rosenstock, Jeff' ),
+        );
+
+        my $dbh = $schema->storage->dbh;
+
+        # clean zebra queue and check it is empty
+        $dbh->do("delete from zebraqueue");
+        my $sth_zebraqueue_count = $dbh->prepare("select count(*) from zebraqueue");
+        $sth_zebraqueue_count->execute;
+        my ($starting_count) = $sth_zebraqueue_count->fetchrow_array;
+        is( $starting_count, 0, "We start with an empty zebra queue" );
+
+        # index auth with ElasticsearchEnableZebraQueue = enabled, should increase zebraqueue count
+        t::lib::Mocks::mock_preference( 'ElasticsearchEnableZebraQueue', 1 );
+
+        $auth_indexer->index_records( [43], 'specialUpdate', 'authorityserver', [$auth] );
+
+        $sth_zebraqueue_count->execute;
+        my ($current_count) = $sth_zebraqueue_count->fetchrow_array;
+        is( $current_count, $starting_count + 1, "new entry in zebraqueue for auth" );
+
+        # same for biblio, we need to pass a "fake" biblioid because Zebra won't add the same biblio/auth twice
+        $biblio_indexer->index_records( [99942], 'specialUpdate', 'biblioserver', [$biblio] );
+
+        $sth_zebraqueue_count->execute;
+        ($current_count) = $sth_zebraqueue_count->fetchrow_array;
+        is( $current_count, $starting_count + 2, "new entry in zebraqueue for biblio" );
+
+        # nuke zebra queue again
+        $dbh->do("delete from zebraqueue");
+
+        # now disable ElasticsearchEnableZebraQueue, indexing should NOT increase zebra count
+        t::lib::Mocks::mock_preference( 'ElasticsearchEnableZebraQueue', 0 );
+
+        $auth_indexer->index_records( [43], 'specialUpdate', 'authorityserver', [$auth] );
+
+        $sth_zebraqueue_count->execute;
+        ($current_count) = $sth_zebraqueue_count->fetchrow_array;
+        is( $current_count, $starting_count, "no new entry in zebraqueue for auth" );
+
+        $biblio_indexer->index_records( [99942], 'specialUpdate', 'biblioserver', [$biblio] );
+
+        $sth_zebraqueue_count->execute;
+        ($current_count) = $sth_zebraqueue_count->fetchrow_array;
+        is( $current_count, $starting_count, "no new entry in zebraqueue for biblio" );
+
     };
 
 }

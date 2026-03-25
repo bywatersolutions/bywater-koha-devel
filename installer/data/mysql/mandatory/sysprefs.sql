@@ -242,6 +242,7 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('ElasticsearchBoostFieldMatch', '0'),
 ('ElasticsearchBoostFieldMatchAmount', '0'),
 ('ElasticsearchCrossFields', '1'),
+('ElasticsearchEnableZebraQueue', '0'),
 ('ElasticsearchEscapeCharacters', ''),
 ('ElasticsearchIndexStatus_authorities', '0'),
 ('ElasticsearchIndexStatus_biblios', '0'),
