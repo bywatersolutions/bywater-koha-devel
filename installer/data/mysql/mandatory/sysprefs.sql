@@ -682,7 +682,6 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('RenewAccruingItemInOpac','0',NULL,'If enabled, when the fines on an item accruing is paid off in the OPAC via a payment plugin, attempt to renew that item. If the syspref "RenewalPeriodBase" is set to "due date", renewed items may still be overdue','YesNo'),
 ('RenewAccruingItemWhenPaid','0',NULL,'If enabled, when the fines on an item accruing is paid off, attempt to renew that item. If the syspref "RenewalPeriodBase" is set to "due date", renewed items may still be overdue','YesNo'),
 ('RenewalLog','0',NULL,'If ON, log information about renewals','YesNo'),
-('RenewalPeriodBase','date_due','date_due|now','Set whether the renewal date should be counted from the date_due or from the moment the Patron asks for renewal ','Choice'),
 ('RenewalSendNotice','0',NULL,NULL,'YesNo'),
 ('RenewSerialAddsSuggestion','0',NULL,'If ON, adds a new suggestion at serial subscription renewal','YesNo'),
 ('RentalFeesCheckoutConfirmation', '0', NULL, 'Allow user to confirm when checking out an item with rental fees.', 'YesNo'),
