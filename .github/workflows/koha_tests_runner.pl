@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with jenkins-helper-scripts; if not, see <https://www.gnu.org/licenses>.
 
+use Modern::Perl;
+
 # Auto-install required modules if missing
 BEGIN {
     my @required = qw(Modern::Perl IPC::Cmd);
@@ -32,8 +34,6 @@ BEGIN {
         exec( $^X, $0, @ARGV );    # Re-exec script with new modules
     }
 }
-
-use Modern::Perl;
 
 use File::Temp qw(tempdir);
 use Getopt::Long;
