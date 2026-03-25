@@ -346,6 +346,9 @@ sub get_chargeable_units {
 
     my $charge_units = 0;
     my $charge_duration;
+
+    $unit //= 'days';
+
     if ( $unit eq 'hours' ) {
         if ( C4::Context->preference('finesCalendar') eq 'noFinesWhenClosed' ) {
             my $calendar = Koha::Calendar->new( branchcode => $branchcode );
