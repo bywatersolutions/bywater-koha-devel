@@ -1772,7 +1772,7 @@
 
         Koha.addPrefs({
             AlwaysShowHoldingsTableFilters: [% Koha.Preference('AlwaysShowHoldingsTableFilters') ? 1 : 0 | html %],
-            bundlesEnabled: [% Koha.Preference('bundlesEnabled') ? 1 : 0 | html %],
+            bundlesEnabled: [% bundlesEnabled ? 1 : 0 | html %],
             BundleLostValue: "[% Koha.Preference('BundleLostValue') | html %]",
         });
 
