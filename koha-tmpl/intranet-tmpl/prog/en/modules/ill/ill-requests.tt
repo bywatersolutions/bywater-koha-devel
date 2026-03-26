@@ -1124,12 +1124,7 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'select2.inc' %]
     [% IF op == 'edit_action' %]
-        [%
-            INCLUDE 'select_manager.inc'
-            add_modal => 1
-            manager => request.manager
-            filter => 'ill_users'
-        %]
+        [% INCLUDE 'select_manager.inc' add_modal => 1, manager => request.manager, filter => 'ill_users' %]
     [% END %]
     [% IF metadata_enrichment_services %]
         <script nonce="[% Koha.CSPNonce | $raw %]">
