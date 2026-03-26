@@ -601,6 +601,26 @@
                             [% END %]
                         [% END %]
                     [% END %]
+                    [% WRAPPER accordion_item %]
+                        [% WRAPPER accordion_heading panel_id="print_slip_css" %]
+                            Print Slip CSS
+                        [% END %]
+                        [% WRAPPER accordion_panel panel_id="print_slip_css" %]
+                            <p class="alert alert-info">CSS to be applied to print slips in addition to that already in "All Notice CSS"</p>
+                            [%- IF Koha.Preference('PrintSlipCSS') -%]
+                                <div class="card">
+                                    <div class="card-body bg-light">
+                                        <pre><code>[%- Koha.Preference('PrintSlipCSS') | html -%]</code></pre>
+                                    </div>
+                                </div>
+                            [%- ELSE -%]
+                                <p class="alert alert-warning">None defined</p>
+                            [%- END -%]
+                            [% IF ( CAN_user_parameters_manage_sysprefs ) %]
+                                <a class="syspref-link" href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=PrintSlipCSS">Edit</a>
+                            [% END %]
+                        [% END %]
+                    [% END %]
                 [% END %]
             </fieldset>
 

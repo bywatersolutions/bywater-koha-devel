@@ -20,6 +20,12 @@
 [% IF ( stylesheet ) %]
     <link rel="stylesheet" type="text/css" href="[% stylesheet | url %]" />
 [% END %]
+[% IF ( all_notice_css ) %]
+    <style nonce="[% Koha.CSPNonce | $raw %]">[% all_notice_css | $raw %]</style>
+[% END %]
+[% IF ( print_notice_css ) %]
+    <style nonce="[% Koha.CSPNonce | $raw %]">[% print_notice_css | $raw %]</style>
+[% END %]
 </head>
 <body id="batch_print-notices" class="batch">
 [% FOREACH message IN messages %]

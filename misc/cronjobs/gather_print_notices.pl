@@ -228,9 +228,11 @@ sub generate_html {
     }
 
     $template->param(
-        stylesheet => C4::Context->preference("NoticeCSS"),
-        today      => $today_syspref,
-        messages   => $messages,
+        stylesheet       => C4::Context->preference("NoticeCSS"),
+        all_notice_css   => C4::Context->preference("AllNoticeCSS"),
+        print_notice_css => C4::Context->preference("PrintNoticeCSS"),
+        today            => $today_syspref,
+        messages         => $messages,
     );
 
     open my $OUTPUT, '>encoding(utf-8)', $filepath
