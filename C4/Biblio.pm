@@ -75,6 +75,7 @@ use Try::Tiny qw( catch try );
 use Encode;
 use List::MoreUtils qw( uniq );
 use MARC::Record;
+use MARC::Record::MiJ;
 use MARC::File::USMARC;
 use MARC::File::XML;
 use POSIX                     qw( strftime );
@@ -316,7 +317,10 @@ sub AddBiblio {
             my $marc_for_log = eval { $new_biblio->metadata->record_strip_nonxml };
             logaction(
                 "CATALOGUING", "ADD", $biblionumber, "biblio", undef,
-                { %{ $new_biblio->_unblessed_for_log }, _marc => _marc_record_to_diffable($marc_for_log) }
+                {
+                    %{ $new_biblio->_unblessed_for_log },
+                    _marc => ( $marc_for_log ? $marc_for_log->to_mij_structure : {} )
+                }
             );
         }
 
@@ -475,9 +479,12 @@ sub ModBiblio {
         my $updated_marc_log = eval { $updated_biblio->metadata->record_strip_nonxml };
         logaction(
             "CATALOGUING", "MODIFY", $biblionumber,
-            { %{ $updated_biblio->_unblessed_for_log }, _marc => _marc_record_to_diffable($updated_marc_log) },
+            {
+                %{ $updated_biblio->_unblessed_for_log },
+                _marc => ( $updated_marc_log ? $updated_marc_log->to_mij_structure : {} )
+            },
             undef,
-            { %{$original}, _marc => _marc_record_to_diffable($original_marc) }
+            { %{$original}, _marc => ( $original_marc ? $original_marc->to_mij_structure : {} ) }
         );
     }
 
@@ -501,37 +508,6 @@ Utility routine to remove item tags from a
 MARC bib.
 
 =cut
-
-=head2 _marc_record_to_diffable
-
-  my $hashref = _marc_record_to_diffable($record);
-
-Converts a MARC::Record object into a plain hashref suitable for structural
-diffing. Control fields are stored as scalar values; data fields are stored
-as arrays of formatted strings containing indicators and subfields.
-
-=cut
-
-sub _marc_record_to_diffable {
-    my ($record) = @_;
-    return {} unless defined $record;
-    my %marc;
-    for my $field ( $record->fields ) {
-        my $tag = $field->tag;
-        if ( $field->is_control_field ) {
-            $marc{$tag} = $field->data;
-        } else {
-            my $ind1      = $field->indicator(1);
-            my $ind2      = $field->indicator(2);
-            my $formatted = "$ind1$ind2";
-            for my $subfield ( $field->subfields ) {
-                $formatted .= " \$$subfield->[0] $subfield->[1]";
-            }
-            push @{ $marc{$tag} }, $formatted;
-        }
-    }
-    return \%marc;
-}
 
 sub _strip_item_fields {
     my $record        = shift;
@@ -638,7 +614,7 @@ sub DelBiblio {
 
     logaction(
         "CATALOGUING", "DELETE", $biblionumber, "biblio", undef,
-        { %{ $biblio->_unblessed_for_log }, _marc => _marc_record_to_diffable($biblio_marc) }
+        { %{ $biblio->_unblessed_for_log }, _marc => ( $biblio_marc ? $biblio_marc->to_mij_structure : {} ) }
     ) if C4::Context->preference("CataloguingLog");
 
     Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue->new->enqueue( { biblio_ids => [$biblionumber] } )

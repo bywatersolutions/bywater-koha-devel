@@ -2405,25 +2405,31 @@ sub merge_with {
 
 =head3 _unblessed_for_log
 
-Returns a plain hashref of biblio column values safe for JSON serialisation
-and action log diffing. Timestamp is excluded as it changes on every write,
-and undef/empty-string fields are removed so that genuinely unset columns
-do not produce noise in diffs.
+Returns a plain hashref of biblio column values that are not derived from
+the attached MARC record, for use in action log diffing.
+
+Fields such as C<author>, C<title>, C<subtitle> etc. are omitted because
+they are denormalised copies of MARC data and would duplicate what is
+already captured in the C<_marc> key of the log entry. Only fields that
+carry independent Koha metadata are retained: C<frameworkcode>,
+C<opac_suppressed>, and C<serial>. The C<timestamp> and C<datecreated>
+columns are also excluded as they are system-managed and add no signal.
 
 =cut
 
+# Biblio table columns that exist independently of the MARC record.
+my @_LOG_FIELDS = qw( frameworkcode opac_suppressed serial );
+
 sub _unblessed_for_log {
     my ($self) = @_;
-    my $data = $self->unblessed;
-    delete $data->{timestamp};
-    for my $key ( keys %$data ) {
-        if ( defined $data->{$key} && $data->{$key} ne '' ) {
-            $data->{$key} = "$data->{$key}" if blessed( $data->{$key} );
-        } else {
-            delete $data->{$key};
-        }
+    my $full = $self->unblessed;
+    my %data;
+    for my $key (@_LOG_FIELDS) {
+        next unless exists $full->{$key};
+        next unless defined $full->{$key} && $full->{$key} ne '';
+        $data{$key} = blessed( $full->{$key} ) ? "$full->{$key}" : $full->{$key};
     }
-    return $data;
+    return \%data;
 }
 
 =head3 _type

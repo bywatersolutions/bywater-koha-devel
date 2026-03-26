@@ -43,6 +43,14 @@ function renderStructDiff(raw) {
     function fmt(v) {
         if (v === undefined || v === null) return "";
         if (typeof v !== "object") return $("<span>").text(String(v)).html();
+        if (Array.isArray(v)) {
+            var items = v
+                .map(function (item) {
+                    return "<li>" + fmt(item) + "</li>";
+                })
+                .join("");
+            return '<ul class="diff-obj">' + items + "</ul>";
+        }
         var items = Object.keys(v)
             .map(function (k) {
                 return (
