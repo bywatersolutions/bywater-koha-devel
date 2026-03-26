@@ -10,12 +10,12 @@ return {
         # Do you stuffs here
         $dbh->do(
             q{
-            INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type) VALUES
-            ('AllNoticeStylesheet', '', NULL, 'Enter the address for a stylesheet for all notices', 'free'),
-            ('AllNoticeCSS','',NULL,'CSS to include in each html notice regardless of messate transport type','free'),
-            ('EmailNoticeCSS','',NULL,'CSS to include in each html email notice','free'),
-            ('PrintNoticeCSS','',NULL,'CSS to include in each html print notice','free'),
-            ('PrintSlipCSS','',NULL,'CSS to include in each html print notice','free')
+            INSERT IGNORE INTO systempreferences (variable, value) VALUES
+            ('AllNoticeStylesheet', ''),
+            ('AllNoticeCSS',''),
+            ('EmailNoticeCSS',''),
+            ('PrintNoticeCSS',''),
+            ('PrintSlipCSS','')
         }
         );
         say $out "Added new system preference 'AllNoticeStylesheet'";
