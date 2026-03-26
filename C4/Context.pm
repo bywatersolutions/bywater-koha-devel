@@ -634,26 +634,6 @@ sub dbh {
     return Koha::Database->schema( { new => 1 } )->storage->dbh;
 }
 
-=head2 new_dbh
-
-  $dbh = C4::Context->new_dbh;
-
-Creates a new connection to the Koha database for the current context,
-and returns the database handle (a C<DBI::db> object).
-
-The handle is not saved anywhere: this method is strictly a
-convenience function; the point is that it knows which database to
-connect to so that the caller doesn't have to know.
-
-=cut
-
-#'
-sub new_dbh {
-    my $self = shift;
-
-    return &dbh( { new => 1 } );
-}
-
 =head2 userenv
 
   C4::Context->userenv;
