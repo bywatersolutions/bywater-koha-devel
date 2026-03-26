@@ -613,15 +613,6 @@ sub _new_Zconn {
     return $Zconn;
 }
 
-# _new_dbh
-# Internal helper function (not a method!). This creates a new
-# database connection from the data given in the current context, and
-# returns it.
-sub _new_dbh {
-
-    Koha::Database->schema( { new => 1 } )->storage->dbh;
-}
-
 =head2 dbh
 
   $dbh = C4::Context->dbh;

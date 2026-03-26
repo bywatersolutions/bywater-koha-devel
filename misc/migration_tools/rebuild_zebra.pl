@@ -524,7 +524,7 @@ sub select_all_authorities {
     $strsth .= qq{ LIMIT $offset,$length } if ( $length && $offset );
 
     # If we are forking, we use a new db handle to prevent a potential deadlock
-    my $sth = $forks ? C4::Context::_new_dbh->prepare($strsth) : $dbh->prepare($strsth);
+    my $sth = $forks ? C4::Context->dbh( { new => 1 } )->prepare($strsth) : $dbh->prepare($strsth);
     $sth->execute();
     return $sth;
 }
@@ -538,7 +538,7 @@ sub select_all_biblios {
     $strsth .= qq{ LIMIT $offset,$length } if ($offset);
 
     # If we are forking, we use a new db handle to prevent a potential deadlock
-    my $sth = $forks ? C4::Context::_new_dbh->prepare($strsth) : $dbh->prepare($strsth);
+    my $sth = $forks ? C4::Context->dbh( { new => 1 } )->prepare($strsth) : $dbh->prepare($strsth);
     $sth->execute();
     return $sth;
 }
