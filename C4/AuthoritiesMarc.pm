@@ -1526,10 +1526,22 @@ sub GenerateHierarchy {
     return \@loophierarchies;
 }
 
+=head2 _get_authid_subfield
+
+Return the subfield that includes the authority id.
+
+=cut
+
 sub _get_authid_subfield {
     my ($field) = @_;
     return $field->subfield('9') || $field->subfield('3');
 }
+
+=head2 _marc_record_to_diffable
+
+Return the required fields for the action logs to store a diff
+
+=cut
 
 sub _marc_record_to_diffable {
     my ($record) = @_;
@@ -1551,6 +1563,12 @@ sub _marc_record_to_diffable {
     }
     return \%marc;
 }
+
+=head2 _authority_log_data
+
+Return the data needed by _marc_record_to_diffable
+
+=cut
 
 sub _authority_log_data {
     my ( $authority, $marc_record ) = @_;
@@ -1869,6 +1887,12 @@ sub merge {
     }
     return $counteditedbiblio;
 }
+
+=head2 _merge_newtag
+
+Returns subfields for merging when changing authtypecode.
+
+=cut
 
 sub _merge_newtag {
 
