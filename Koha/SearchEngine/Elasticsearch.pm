@@ -934,8 +934,6 @@ The target elasticsearch document.
 A boolean value indicating whether an alternate script presentation is being
 processed.
 
-=back
-
 =item C<$exclude_target_fields_regexp>
 
 An optional regexp for excluding target fields in mappings.
