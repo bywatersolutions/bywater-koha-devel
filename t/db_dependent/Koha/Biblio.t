@@ -18,7 +18,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 42;
+use Test::More tests => 43;
 use Test::Exception;
 use Test::Warn;
 
@@ -37,7 +37,7 @@ use Koha::MarcSubfieldStructures;
 use Koha::ActionLogs;
 use Koha::Exception;
 
-use JSON qw( decode_json );
+use JSON qw( decode_json from_json );
 
 use MARC::Field;
 use MARC::Record;
@@ -2447,42 +2447,93 @@ subtest 'check_booking tests' => sub {
 
 subtest '_unblessed_for_log() tests' => sub {
 
-    plan tests => 10;
+    plan tests => 8;
 
     $schema->storage->txn_begin;
 
-    # Build a biblio where several nullable columns are undef
     my $biblio = $builder->build_sample_biblio( { author => 'Test Author', title => 'Test Title' } );
-
-    # Force some nullable columns to undef/empty
-    $biblio->set( { abstract => undef, notes => '', seriestitle => undef } )->store;
-    $biblio->discard_changes;
 
     my $data = $biblio->_unblessed_for_log;
 
-    ok( ref $data eq 'HASH',          '_unblessed_for_log returns a hashref' );
-    ok( exists $data->{biblionumber}, 'biblionumber is present' );
-    ok( exists $data->{title},        'title (set value) is present' );
-    ok( exists $data->{author},       'author (set value) is present' );
-    ok( !exists $data->{timestamp},   'timestamp is excluded' );
-    ok( !exists $data->{abstract},    'undef field (abstract) is excluded' );
-    ok( !exists $data->{notes},       'empty-string field (notes) is excluded' );
-    ok( !exists $data->{seriestitle}, 'undef field (seriestitle) is excluded' );
+    ok( ref $data eq 'HASH', '_unblessed_for_log returns a hashref' );
+
+    # Only non-MARC-derived Koha metadata fields should be present
+    ok( exists $data->{frameworkcode},  'frameworkcode (Koha metadata) is present' );
+    ok( !exists $data->{biblionumber},  'biblionumber is excluded (internal ID)' );
+    ok( !exists $data->{title},         'title is excluded (MARC-derived)' );
+    ok( !exists $data->{author},        'author is excluded (MARC-derived)' );
+    ok( !exists $data->{timestamp},     'timestamp is excluded' );
+    ok( !exists $data->{copyrightdate}, 'copyrightdate is excluded (MARC-derived)' );
+    ok( !exists $data->{abstract},      'abstract is excluded (MARC-derived)' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'CataloguingLog MARC-in-JSON diff tests' => sub {
+
+    plan tests => 18;
+
+    $schema->storage->txn_begin;
 
     t::lib::Mocks::mock_preference( 'CataloguingLog', 1 );
 
-    # ADD log: diff should not contain timestamp
+    # --- ADD ---
     my $record = MARC::Record->new();
-    $record->append_fields( MARC::Field->new( '245', '1', '0', 'a' => 'Log Test Title' ) );
-    my ($new_biblionumber) = AddBiblio( $record, '' );
+    $record->leader('00000cam a2200000 a 4500');
+    $record->append_fields(
+        MARC::Field->new( '245', '1', '0', a => 'Test Title', b => 'A Subtitle' ),
+        MARC::Field->new( '100', '1', ' ', a => 'Test Author' ),
+    );
+    my ($biblionumber) = AddBiblio( $record, '' );
 
     my $add_log =
-        Koha::ActionLogs->search( { object => $new_biblionumber, module => 'Cataloguing', action => 'ADD' } )->next;
+        Koha::ActionLogs->search( { object => $biblionumber, module => 'Cataloguing', action => 'ADD' } )->next;
     ok( defined $add_log->diff, 'ADD log populates the diff column' );
 
-    my $add_diff  = decode_json( $add_log->diff );
-    my $diff_keys = exists $add_diff->{D} ? $add_diff->{D} : {};
-    ok( !exists $diff_keys->{timestamp}, 'timestamp not present in ADD diff' );
+    my $add_diff  = from_json( $add_log->diff );
+    my $add_added = $add_diff->{D}{_marc}{A};
+    ok( defined $add_added,                  'ADD diff contains _marc key' );
+    ok( exists $add_added->{leader},         '_marc has leader' );
+    ok( ref $add_added->{fields} eq 'ARRAY', '_marc.fields is an array' );
+
+    my ($f245) = grep { exists $_->{'245'} } @{ $add_added->{fields} };
+    ok( defined $f245, '245 field present in _marc.fields' );
+    is( $f245->{'245'}{ind1},            '1',          '245 ind1 correct' );
+    is( $f245->{'245'}{subfields}[0]{a}, 'Test Title', '245 $a correct' );
+
+    my ($f100) = grep { exists $_->{'100'} } @{ $add_added->{fields} };
+    ok( defined $f100, '100 field present in _marc.fields' );
+
+    ok( !exists $add_diff->{D}{title},  'MARC-derived title column absent from diff' );
+    ok( !exists $add_diff->{D}{author}, 'MARC-derived author column absent from diff' );
+
+    # --- MODIFY ---
+    my $mod_record = MARC::Record->new();
+    $mod_record->leader('00000cam a2200000 a 4500');
+    $mod_record->append_fields( MARC::Field->new( '245', '1', '0', a => 'Changed Title' ) );
+    ModBiblio( $mod_record, $biblionumber, '' );
+
+    my $mod_log =
+        Koha::ActionLogs->search( { object => $biblionumber, module => 'Cataloguing', action => 'MODIFY' } )->next;
+    ok( defined $mod_log->diff, 'MODIFY log populates the diff column' );
+
+    my $mod_diff = from_json( $mod_log->diff );
+    ok( exists $mod_diff->{D}{_marc},   'MODIFY diff contains _marc key' );
+    ok( !exists $mod_diff->{D}{title},  'MARC-derived title column absent from MODIFY diff' );
+    ok( !exists $mod_diff->{D}{author}, 'MARC-derived author column absent from MODIFY diff' );
+
+    # --- DELETE ---
+    DelBiblio( $biblionumber, { skip_record_index => 1 } );
+
+    my $del_log =
+        Koha::ActionLogs->search( { object => $biblionumber, module => 'Cataloguing', action => 'DELETE' } )->next;
+    ok( defined $del_log->diff, 'DELETE log populates the diff column' );
+
+    my $del_diff    = from_json( $del_log->diff );
+    my $del_removed = $del_diff->{D}{_marc}{R};
+    ok( defined $del_removed,                  'DELETE diff contains _marc key' );
+    ok( exists $del_removed->{leader},         '_marc has leader in DELETE diff' );
+    ok( ref $del_removed->{fields} eq 'ARRAY', '_marc.fields is an array in DELETE diff' );
 
     $schema->storage->txn_rollback;
 };

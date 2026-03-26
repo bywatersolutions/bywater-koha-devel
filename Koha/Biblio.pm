@@ -2425,8 +2425,7 @@ sub _unblessed_for_log {
     my $full = $self->unblessed;
     my %data;
     for my $key (@_LOG_FIELDS) {
-        next unless exists $full->{$key};
-        next unless defined $full->{$key} && $full->{$key} ne '';
+        next unless exists $full->{$key} && defined $full->{$key};
         $data{$key} = blessed( $full->{$key} ) ? "$full->{$key}" : $full->{$key};
     }
     return \%data;
