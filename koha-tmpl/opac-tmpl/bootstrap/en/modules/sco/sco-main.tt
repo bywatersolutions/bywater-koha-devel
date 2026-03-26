@@ -416,7 +416,7 @@
         <script nonce="[% Koha.CSPNonce | $raw %]">
             addPrefs({
                 OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
-                SelfCheckTimeout: "[% Koha.Preference('SelfCheckTimeout') | html %]",
+                SelfCheckTimeout: "[% Koha.Preference('SelfCheckTimeout') * 1000 | html %]",
                 SelfCheckReceiptPrompt: [% Koha.Preference('SelfCheckReceiptPrompt') ? 1 : 0 | html %],
             });
             const logged_in_user_cardnumber = "[% patronid | html %]";
