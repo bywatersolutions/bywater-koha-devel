@@ -90,15 +90,15 @@ subtest 'GetByModuleForLibrary' => sub {
     $builder->build(
         { source => 'Letter', value => { module => 'add_message', code => 'MSG_BRANCH1', branchcode => $branch1 } } );
 
-    t::lib::Mocks::mock_userenv( { branch => $branch1 } );
+    t::lib::Mocks::mock_userenv( { branchcode => $branch1 } );
     $notices = $plugin->GetByModuleForLibrary('add_message');
     is( scalar @$notices, 2, 'user at branch1 sees all-libraries and branch-specific notices' );
 
-    t::lib::Mocks::mock_userenv( { branch => $branch2 } );
+    t::lib::Mocks::mock_userenv( { branchcode => $branch2 } );
     $notices = $plugin->GetByModuleForLibrary('add_message');
     is( scalar @$notices, 1, 'user at branch2 sees only all-libraries notices' );
 
-    t::lib::Mocks::mock_userenv( { branch => '' } );
+    t::lib::Mocks::mock_userenv( { branchcode => $branch2 } );
     $notices = $plugin->GetByModuleForLibrary('add_message');
     is( scalar @$notices, 1, 'user with no branch sees only all-libraries notices' );
 };
