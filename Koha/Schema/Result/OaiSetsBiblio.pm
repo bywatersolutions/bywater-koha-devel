@@ -88,4 +88,14 @@ sub koha_object_class {
     return 'Koha::OAI::Set::Biblio';
 }
 
+=head2 koha_objects_class
+
+Missing POD for koha_objects_class.
+
+=cut
+
+sub koha_objects_class {
+    'Koha::OAI::Set::Biblios';
+}
+
 1;
