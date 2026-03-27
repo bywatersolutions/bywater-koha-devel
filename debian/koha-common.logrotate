@@ -1,6 +1,8 @@
 # Rotate log files for all Koha instances.
 
-/var/log/koha/*/sip*.log {
+# Rotate sip*.log files (high-frequency, keep longer)
+/var/log/koha/*/sip-error.log
+/var/log/koha/*/sip-output.log {
     rotate 31
     daily
     missingok
@@ -8,9 +10,32 @@
     compress
     delaycompress
     notifempty
+    nosharedscripts
 }
 
-/var/log/koha/*/*.log {
+# Use separate patterns for known types (exclude sip)
+/var/log/koha/*/api-error.log
+/var/log/koha/*/connexion_client_service.log
+/var/log/koha/*/editrace.log
+/var/log/koha/*/indexer-error.log
+/var/log/koha/*/indexer-output.log
+/var/log/koha/*/intranet-access.log
+/var/log/koha/*/intranet-error.log
+/var/log/koha/*/offlinecirc.log
+/var/log/koha/*/opac-access.log
+/var/log/koha/*/opac-error.log
+/var/log/koha/*/plack-api-error.log
+/var/log/koha/*/plack-error.log
+/var/log/koha/*/plack-intranet-error.log
+/var/log/koha/*/plack-log
+/var/log/koha/*/plack-opac-error.log
+/var/log/koha/*/worker-error.log
+/var/log/koha/*/worker-output.log
+/var/log/koha/*/z3950-error.log
+/var/log/koha/*/z3950.log
+/var/log/koha/*/zebra-error.log
+/var/log/koha/*/zebra-output.log
+{
     rotate 5
     weekly
     size 500M
