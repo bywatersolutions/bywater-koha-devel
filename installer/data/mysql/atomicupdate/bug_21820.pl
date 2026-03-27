@@ -2,7 +2,7 @@ use Modern::Perl;
 use Koha::Installer::Output qw(say_warning say_success say_info);
 
 return {
-    bug_number  => "40853",
+    bug_number  => "21820",
     description =>
         "Add ElasticsearchEnableZebraQueue to disable / enable adding items to the zebra queue when using Elasticsearch",
     up => sub {
