@@ -21,7 +21,7 @@
 use strict;
 use warnings;
 use Test::NoWarnings;
-use Test::More tests => 12;
+use Test::More tests => 15;
 use Test::Warn;
 
 use t::lib::Mocks;
@@ -145,6 +145,87 @@ subtest "Client IP is properly processed even if it is in koha_trusted_proxies" 
         "The X-Forwarded-For value matches the koha_trusted_proxies, but there is no proxy specified"
     );
     done_testing(1);
+};
+
+subtest "enable_trusted_proxy_for_headers disabled" => sub {
+    plan tests => 1;
+    $remote_address         = "2.2.2.2";
+    $x_forwarded_for_header = "1.1.1.1";
+    t::lib::Mocks::mock_config( 'koha_trusted_proxies',             '2.2.2.2' );
+    t::lib::Mocks::mock_config( 'enable_trusted_proxy_for_headers', 0 );
+    $address = Koha::Middleware::RealIP::get_real_ip( $remote_address, $x_forwarded_for_header );
+    is(
+        $address, '2.2.2.2',
+        "When enable_trusted_proxy_for_headers is 0, the remote address is returned without processing the header"
+    );
+};
+
+subtest "enable_trusted_proxy_for_headers enabled (default)" => sub {
+    plan tests => 1;
+    $remote_address         = "2.2.2.2";
+    $x_forwarded_for_header = "1.1.1.1";
+    t::lib::Mocks::mock_config( 'koha_trusted_proxies',             '2.2.2.2' );
+    t::lib::Mocks::mock_config( 'enable_trusted_proxy_for_headers', 1 );
+    $address = Koha::Middleware::RealIP::get_real_ip( $remote_address, $x_forwarded_for_header );
+    is(
+        $address, '1.1.1.1',
+        "When enable_trusted_proxy_for_headers is 1, trusted proxy processing works normally"
+    );
+};
+
+subtest "reverse_proxy_ip_header custom header in middleware" => sub {
+    plan tests => 3;
+    t::lib::Mocks::mock_config( 'koha_trusted_proxies',             '2.2.2.2' );
+    t::lib::Mocks::mock_config( 'enable_trusted_proxy_for_headers', 1 );
+
+    my $captured_env;
+    my $inner_app = sub {
+        my $env = shift;
+        $captured_env = $env;
+        return [ 200, [ 'Content-Type' => 'text/plain' ], ['OK'] ];
+    };
+
+    # Test with custom header (e.g. CF-Connecting-IP from CloudFlare)
+    t::lib::Mocks::mock_config( 'reverse_proxy_ip_header', 'HTTP_CF_CONNECTING_IP' );
+    my $wrapped = Koha::Middleware::RealIP->wrap($inner_app);
+    $wrapped->(
+        {
+            REMOTE_ADDR           => '2.2.2.2',
+            HTTP_CF_CONNECTING_IP => '1.1.1.1',
+        }
+    );
+    is(
+        $captured_env->{REMOTE_ADDR}, '1.1.1.1',
+        "Custom reverse_proxy_ip_header (HTTP_CF_CONNECTING_IP) is used to determine the real IP"
+    );
+
+    # Test fallback to HTTP_X_FORWARDED_FOR when custom header is not present in request
+    $captured_env = undef;
+    $wrapped->(
+        {
+            REMOTE_ADDR          => '2.2.2.2',
+            HTTP_X_FORWARDED_FOR => '3.3.3.3',
+        }
+    );
+    is(
+        $captured_env->{REMOTE_ADDR}, '3.3.3.3',
+        "Falls back to HTTP_X_FORWARDED_FOR when custom header is not present in the request"
+    );
+
+    # Test with no custom header configured
+    t::lib::Mocks::mock_config( 'reverse_proxy_ip_header', undef );
+    $captured_env = undef;
+    $wrapped      = Koha::Middleware::RealIP->wrap($inner_app);
+    $wrapped->(
+        {
+            REMOTE_ADDR          => '2.2.2.2',
+            HTTP_X_FORWARDED_FOR => '4.4.4.4',
+        }
+    );
+    is(
+        $captured_env->{REMOTE_ADDR}, '4.4.4.4',
+        "Without reverse_proxy_ip_header configured, defaults to HTTP_X_FORWARDED_FOR"
+    );
 };
 
 subtest "IPv6 support" => sub {
