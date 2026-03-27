@@ -1813,6 +1813,9 @@
         var table_settings = [% TablesSettings.GetTableSettings( 'reports', 'saved-sql', 'table_reports', 'json' ) | $raw %];
 
         const tables = [% To.json(tables || []) | $raw %];
+
+        const open_in_dt = [% dt ? 1 : 0 | html %];
+        const execute = [% execute ? 1 : 0 | html %];
     </script>
     <script nonce="[% Koha.CSPNonce | $raw %]">
         //  if the report param form has multiselects override default form submission
@@ -2242,6 +2245,18 @@
                 delColumn();
             });
 
+            if (open_in_dt && execute && !has_errors) {
+                let columns = [];
+                $.each(header_row, function (index, value) {
+                    columns.push({
+                        cannot_be_modified: 0,
+                        cannot_be_toggled: 0,
+                        is_hidden: 0,
+                    });
+                });
+                let report_table_settings = { columns };
+                $("#report_results").kohaTable({}, report_table_settings);
+            }
             if (saved1) {
                 var rtable = $("#table_reports").kohaTable(
                     {

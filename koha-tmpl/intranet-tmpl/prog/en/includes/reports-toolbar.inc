@@ -178,6 +178,11 @@
                     >
                 [% END %]
             </div>
+            <div class="btn-group">
+                <a class="btn btn-default fetch_dt_data" href="/cgi-bin/koha/reports/guided_reports.pl?id=[% id | html %]&amp;op=run&amp;reportname=[% name |uri %][% PROCESS params %]&amp;limit=100000&amp;dt=1"
+                    ><i class="fa fa-table"></i> Open in DataTables</a
+                >
+            </div>
         [% END %]
     [% END %]
 </div>
