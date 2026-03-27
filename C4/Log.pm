@@ -94,9 +94,9 @@ sub logaction {
         }
     } else {
         $updated = $infos;
-        if ( ref $infos eq 'HASH' && $modulename eq 'CATALOGUING' && $actionname eq 'MODIFY' ) {
-            local $Data::Dumper::Sortkeys = 1;
-            $infos = "biblio " . Dumper( ref $original eq 'HASH' ? $original : {} );
+        if ( $modulename eq 'CATALOGUING' && ref $original eq 'HASH' ) {
+            my $prefix = ref $infos eq 'HASH' ? 'biblio' : $infos;
+            $infos = "$prefix " . to_json( $original, { utf8 => 1, pretty => 1 } );
         }
     }
 
