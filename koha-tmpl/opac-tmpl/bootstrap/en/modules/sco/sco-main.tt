@@ -416,7 +416,7 @@
         <script nonce="[% Koha.CSPNonce | $raw %]">
             addPrefs({
                 OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
-                SelfCheckTimeout: "[% Koha.Preference('SelfCheckTimeout') * 1000 | html %]",
+                SelfCheckTimeout: "[% Koha.Preference('SelfCheckTimeout') || 120 | html %]",
                 SelfCheckReceiptPrompt: [% Koha.Preference('SelfCheckReceiptPrompt') ? 1 : 0 | html %],
             });
             const logged_in_user_cardnumber = "[% patronid | html %]";
@@ -454,7 +454,7 @@
             function sco_init() {
                 mainTimeout = setTimeout(function () {
                     location.href = "/cgi-bin/koha/sco/sco-main.pl?op=logout";
-                }, prefs.SelfCheckTimeout);
+                }, prefs.SelfCheckTimeout * 1000);
             }
             function dofocus() {
                 // named function req'd for body onload event by some FF and IE7 security models
