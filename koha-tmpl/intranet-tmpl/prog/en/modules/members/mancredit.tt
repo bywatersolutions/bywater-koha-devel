@@ -121,7 +121,7 @@
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
     [% Asset.js("js/additional-fields-entry.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         $(document).ready(function(){
             $('#mancredit').preventDoubleFormSubmit();
             $("fieldset.rows input, fieldset.rows select").addClass("noEnterSubmit");

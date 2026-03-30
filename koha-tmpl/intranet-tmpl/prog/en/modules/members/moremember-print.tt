@@ -172,7 +172,7 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'slip-print.inc' #printThenClose %]
     [% INCLUDE 'datatables.inc' %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var checkouts_columns = [% TablesSettings.GetTableSettings( 'circ', 'print_summary', 'print-summary-checkouts', 'json' ) | $raw %];
         var holds_columns = [% TablesSettings.GetTableSettings( 'circ', 'print_summary', 'print-summary-holds', 'json' ) | $raw %];
         var fines_columns = [% TablesSettings.GetTableSettings( 'circ', 'print_summary', 'print-summary-fines', 'json' ) | $raw %];

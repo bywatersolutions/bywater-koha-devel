@@ -233,7 +233,7 @@
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var table_settings = [% TablesSettings.GetTableSettings('members', 'pay', 'pay-fines-table', 'json') | $raw %];
         const payment_id = "[% payment_id | html %]";
         const change_given = "[% change_given | html %]";

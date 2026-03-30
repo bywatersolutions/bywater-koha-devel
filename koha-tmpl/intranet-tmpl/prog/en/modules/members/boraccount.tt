@@ -587,7 +587,7 @@
     [% INCLUDE 'format_price.inc' %]
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var table_settings = [% TablesSettings.GetTableSettings('members', 'fines', 'account-fines', 'json') | $raw %];
         Koha.addPrefs({
             FinePaymentAutoPopup: [% Koha.Preference('FinePaymentAutoPopup') ? 1 : 0 | html %],

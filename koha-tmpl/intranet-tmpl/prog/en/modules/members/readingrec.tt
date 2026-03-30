@@ -163,7 +163,7 @@
     [% INCLUDE 'modals/checkout_renewals.inc' %]
     [% INCLUDE 'js-date-format.inc' %]
     [% Asset.js("js/checkout_renewals_modal.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         // FIXME This cannot work without bKohaColumnsUseNames
         var column_sort = [% Koha.Preference('RecordStaffUserOnCheckout') ? 11 : 10 | html %];
 

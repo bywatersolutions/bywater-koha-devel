@@ -158,7 +158,7 @@
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
     [% INCLUDE 'js-biblio-format.inc' %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         const all_libraries = [% To.json(Branches.all) | $raw %].map(e => {
                     e["_id"] = e["branchcode"];
                     e["_str"] = e["branchname"];

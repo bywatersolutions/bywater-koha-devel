@@ -125,7 +125,7 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         $(document).ready(function() {
 
             [% IF disable_superlibrarian_privs && patron.is_superlibrarian %]

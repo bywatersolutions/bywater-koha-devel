@@ -811,7 +811,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'select2.inc' %]
     [% PROCESS 'modal-claims-js' %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         /* Set some variable needed in circulation.js */
         var logged_in_user_borrowernumber = "[% logged_in_user.borrowernumber | html %]";
         var ClaimReturnedLostValue = "[% Koha.Preference('ClaimReturnedLostValue') | html %]";
@@ -834,6 +834,20 @@
         [% END %]
         var SuspendHoldsIntranet = [% ( Koha.Preference('SuspendHoldsIntranet') ) ? 1 : 0 | html %];
         var DisplayAddHoldGroups = [% ( Koha.Preference('DisplayAddHoldGroups') ) ? 1 : 0 | html %];
+
+        const LoadCheckoutsTableDelay = 0;
+        const AlwaysLoadCheckoutsTable = [% Koha.Preference('AlwaysLoadCheckoutsTable') | html %];
+
+        table_settings_issues_table = [% TablesSettings.GetTableSettings( 'members', 'moremember', 'issues-table', 'json' ) | $raw %]
+        table_settings_relatives_issues_table = [% TablesSettings.GetTableSettings( 'members', 'moremember', 'relatives-issues-table', 'json' ) | $raw %]
+        table_settings_holds_table = [% TablesSettings.GetTableSettings( 'members', 'moremember', 'holds-table', 'json' ) | $raw %]
+        table_settings_bookings_table = [% TablesSettings.GetTableSettings( 'members', 'moremember', 'bookings-table', 'json' ) | $raw %]
+        CAN_user_circulate_manage_bookings = [% CAN_user_circulate_manage_bookings | $raw %]
+        patron_borrowernumber = [% patron.borrowernumber | $raw %]
+
+        var amountlimit = "[% Koha.Preference('FineNoRenewals') | html %]";
+        var fines = "[% fines | $Price %]";
+
     </script>
     [% Asset.js("js/pages/circulation.js") | $raw %]
     [% IF Koha.Preference('ClaimReturnedLostValue') || Koha.Preference('BundleLostValue') %]
@@ -853,18 +867,6 @@
     [% Asset.js("js/throttledButton.js") | $raw %]
     [% Asset.js("js/hold-group.js") | $raw %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
-        const LoadCheckoutsTableDelay = 0;
-        const AlwaysLoadCheckoutsTable = [% Koha.Preference('AlwaysLoadCheckoutsTable') | html %];
-
-        table_settings_issues_table = [% TablesSettings.GetTableSettings( 'members', 'moremember', 'issues-table', 'json' ) | $raw %]
-        table_settings_relatives_issues_table = [% TablesSettings.GetTableSettings( 'members', 'moremember', 'relatives-issues-table', 'json' ) | $raw %]
-        table_settings_holds_table = [% TablesSettings.GetTableSettings( 'members', 'moremember', 'holds-table', 'json' ) | $raw %]
-        table_settings_bookings_table = [% TablesSettings.GetTableSettings( 'members', 'moremember', 'bookings-table', 'json' ) | $raw %]
-        CAN_user_circulate_manage_bookings = [% CAN_user_circulate_manage_bookings | $raw %]
-        patron_borrowernumber = [% patron.borrowernumber | $raw %]
-
-        var amountlimit = "[% Koha.Preference('FineNoRenewals') | html %]";
-        var fines = "[% fines | $Price %]";
         var MSG_CONFIRM_RENEW = _("The patron has a debt of %s").format(fines);
         MSG_CONFIRM_RENEW += _("Are you sure you want to renew checkout(s)?");
 
