@@ -597,6 +597,14 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'select2.inc' %]
     [% Asset.js("js/tools-menu.js") | $raw %]
+
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
+        const category = "[% category | html %]";
+        const wysiwyg = [% wysiwyg ? 1 : 0 | html %];
+        const interface = "[% interface | html %]";
+        const theme = "[% theme | html %]";
+    </script>
+
     <script nonce="[% Koha.CSPNonce | $raw %]">
         $("#saveandcontinue").on("click", function (e) {
             e.preventDefault();
@@ -691,7 +699,7 @@
             }
 
             $(document).ready(function() {
-                [% IF category == 'news' %]
+                if ( category == 'news' ){
                 $("#add_additional_content").validate({
                     submitHandler: function(form){
                         if ( ! $("#title_default").val().length > 0 ) {
@@ -699,11 +707,11 @@
                             return false;
                         }
                         else {
-                            [% UNLESS wysiwyg %]
+                            if (!wysiwyg){
                                 let content = $('#content_default').siblings(".CodeMirror")[0].CodeMirror.getValue();
-                            [% ELSE %]
+                            } else {
                                 let content = tinyMCE.get('content_default').getContent();
-                            [% END %]
+                            }
 
                             if ( ! content.length > 0 ) {
                                 alert(_("Please specify a content for 'Default'"));
@@ -714,7 +722,7 @@
                         form.submit();
                     }
                 });
-                [% END %]
+                }
 
                 showLocationNotes( $("#location").val() );
 
@@ -797,7 +805,7 @@
                 let editor = tinyMCE.init({
                     branding : false,
                     block_unsupported_drop : false,
-                    content_css : "[% interface | html %]/[% theme | html %]/css/tinymce.css",
+                    content_css : `${interface}/${theme}/css/tinymce.css`,
                     convert_urls : false,
                     custom_elements:"style,link,~link",
                     extended_valid_elements:"style,link[href|rel]",

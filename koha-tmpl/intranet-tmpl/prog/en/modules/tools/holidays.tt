@@ -425,7 +425,7 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/tools-menu.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var weekdays = new Array(_("Sundays"),_("Mondays"),_("Tuesdays"),_("Wednesdays"),_("Thursdays"),_("Fridays"),_("Saturdays"));
 
         /* Creates all the structures to deal with all different kinds of holidays */

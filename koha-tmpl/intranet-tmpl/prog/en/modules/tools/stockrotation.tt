@@ -719,7 +719,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js( "lib/sortable/Sortable.min.js" ) | $raw %]
     [% Asset.js("js/pages/stockrotation.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var stock_rotation_items_table_settings = [% TablesSettings.GetTableSettings( 'tools', 'stockrotation', 'stock_rotation_manage_items', 'json' ) | $raw %];
         var stock_rotation_table_settings = [% TablesSettings.GetTableSettings( 'tools', 'stockrotation', 'stock_rotation', 'json' ) | $raw %];
         $("#addStageModal, #addItemsModal").on("shown.bs.modal", function(){

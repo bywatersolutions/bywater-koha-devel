@@ -264,6 +264,10 @@
 
     [% INCLUDE 'str/job_progress.inc' job_id=job_id %]
     [% Asset.js("js/job_progress.js") | $raw %]
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
+        var job_enqueued = [% job_enqueued ? 1 : 0 | html %];
+        var job_id = [% job_id || 0 | html %];
+    </script>
     <script nonce="[% Koha.CSPNonce | $raw %]">
         var xhr;
         var PROFILE_SAVE_MSG = _("Profile saved");
@@ -427,10 +431,10 @@
                     alert(_("An error occurred")+"\n\n"+((error.responseJSON && error.responseJSON.error) || error.responseText || error.statusText));
                 })
             });
-            [% IF job_enqueued %]
-                updateProgress([% job_id | html %], {
+            if (job_enqueued){
+                updateProgress(job_id, {
                     finish_callback : function(){
-                        $.getJSON('/api/v1/jobs/[% job_id | html %]', function(job){
+                        $.getJSON(`/api/v1/jobs/${job_id}`, function(job){
                             let import_batch_id = job.data.report.import_batch_id;
                             $('<p><a href="/cgi-bin/koha/tools/manage-marc-import.pl?import_batch_id=%s">%s</a></p>'.format(import_batch_id, _("View batch"))).appendTo("#job_callback");
                             let basket_id = job.data.report.basket_id;
@@ -441,7 +445,7 @@
                         });
                     }
                 });
-            [% END %]
+            }
         });
 
         function StartUpload() {

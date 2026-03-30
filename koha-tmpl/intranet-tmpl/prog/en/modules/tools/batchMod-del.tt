@@ -236,7 +236,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/pages/batchMod.js") | $raw %]
     [% Asset.js("js/browser.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         [% IF searchid %]
             browser = KOHA.browser('[% searchid | html %]');
             browser.show_back_link();

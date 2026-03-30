@@ -296,7 +296,7 @@
     [% Asset.js("js/pages/batchMod.js") | $raw %]
     [% INCLUDE 'select2.inc' %]
     [% INCLUDE 'calendar.inc' %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         // Prepare array of all column headers, incrementing each index by
         // two to accommodate control and title columns
         var allColumns = new Array([% FOREACH item_header_loo IN item_header_loop %]'[% loop.count | html %]'[% UNLESS ( loop.last ) %],[% END %][% END %]);

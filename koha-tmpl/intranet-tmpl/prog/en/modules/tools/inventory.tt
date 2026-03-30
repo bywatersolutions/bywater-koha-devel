@@ -414,7 +414,7 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'calendar.inc' %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'inventory', 'inventoryt', 'json' ) | $raw %];
         const uploadedbarcodesflag = [% uploadedbarcodesflag ? 1 : 0 | html %];
     </script>

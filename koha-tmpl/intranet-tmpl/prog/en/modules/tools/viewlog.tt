@@ -506,7 +506,7 @@
         [% Asset.js("js/members-menu.js") | $raw %]
     [% END %]
     [% Asset.js("lib/jsdiff/jsdiff.min.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var table_settings = [% TablesSettings.GetTableSettings('tools', 'logviewer', 'logst', 'json') | $raw %];
         var CAN_user_parameters_manage_sysprefs = "[% CAN_user_parameters_manage_sysprefs | html %]";
     </script>

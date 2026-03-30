@@ -263,7 +263,7 @@
 [% MACRO jsinclude BLOCK %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'calendar.inc' %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         $(document).ready(function(){
             $("#delete_patrons_form").on("submit",function(){
                 return checkForm( this );

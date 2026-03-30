@@ -319,7 +319,7 @@
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         const interface = "[% interface | html %]";
         const theme = "[% theme | html %]";
     </script>

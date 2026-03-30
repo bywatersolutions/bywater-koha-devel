@@ -312,7 +312,7 @@
     <!-- /.row -->
 [% END %]
 [% MACRO jsinclude BLOCK %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var interface = "[% interface | html %]";
         var theme = "[% theme | html %]";
         var biblionumber = "[% biblionumber | html %]";

@@ -245,7 +245,7 @@
     [% INCLUDE 'select2.inc' %]
     [% INCLUDE 'js-biblio-format.inc' %]
     [% Asset.js("lib/jquery/plugins/humanmsg.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         let hide_patron_name = [% IF Koha.Preference('HidePatronName') %]true[% ELSE %]false[% END %];
         let hold_ids = [% IF updated_holds %] [% updated_holds | $raw %] [% ELSE %] [] [% END %];
         let hold_ids_from_sql = [% IF reserve_ids_list  %] [% reserve_ids_list  | $raw %] [% ELSE %] [] [% END %];

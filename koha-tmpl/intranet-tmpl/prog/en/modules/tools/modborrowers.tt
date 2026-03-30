@@ -481,7 +481,7 @@
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% Asset.js("js/members-patron-selections.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_patron_modification', 'borrowerst', 'json' ) | $raw %];
         [% FOREACH attrh IN attributes_header %]
             table_settings["columns"].push({

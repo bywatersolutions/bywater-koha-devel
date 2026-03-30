@@ -360,7 +360,7 @@
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'datatables.inc' %]
     [% Asset.js("js/file-upload.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var plugin = [% plugin ? 1 : 0 | html %];
         var plugin_index = "[% index | html %]";
 
