@@ -357,11 +357,11 @@
         const today_due_date_and_time = "[% today_due_date_and_time | $KohaDates dateformat => 'iso', with_hours => 1 %]";
     </script>
     <script nonce="[% Koha.CSPNonce | $raw %]">
-        $(document).ready(function() {
-            if($('#barcodelist').length) {
-                $('#barcodelist').focus();
-            } else if ($('#checkoutrenew').length) {
-                $('#checkoutrenew').focus();
+        $(document).ready(function () {
+            if ($("#barcodelist").length) {
+                $("#barcodelist").focus();
+            } else if ($("#checkoutrenew").length) {
+                $("#checkoutrenew").focus();
             }
             $("#checkout_infos").kohaTable({
                 dom: "t",
@@ -370,14 +370,14 @@
             });
         });
         // On-site batch checkout
-        function toggle_onsite_checkout(){
-            if ( $("#onsite_checkout").prop('checked') ) {
+        function toggle_onsite_checkout() {
+            if ($("#onsite_checkout").prop("checked")) {
                 const duedatespec_fp = document.querySelector("#duedatespec")._flatpickr;
-                duedatespec_fp.setDate("today_due_date_and_time);
-            };
-        };
+                duedatespec_fp.setDate(today_due_date_and_time);
+            }
+        }
 
-        $("#onsite_checkout").click(function(){
+        $("#onsite_checkout").click(function () {
             toggle_onsite_checkout();
         });
     </script>
