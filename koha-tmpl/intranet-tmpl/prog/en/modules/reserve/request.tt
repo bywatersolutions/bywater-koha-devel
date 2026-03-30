@@ -1539,17 +1539,13 @@
     [% INCLUDE 'datatables.inc' %]
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'select2.inc' %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
-        hold_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holds', 'patron_holds_table', 'json' ) | $raw %];
-    </script>
-    [% Asset.js("js/holds.js") | $raw %]
-    [% Asset.js("js/hold-group.js") | $raw %]
 
     [% SET url_biblio_params = "biblionumber=" _ biblionumbers.join("&amp;biblionumber=") %]
     [% IF multi_hold %]
         [% SET url_biblio_params = url_biblio_params _ "&amp;multi_hold=1" %]
     [% END %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var biblionumbers = [[% biblionumbers.join(', ') | $raw %]];
         var hold_branches = {[% FOREACH biblio_info IN biblioloop %] [% biblio_info.biblionumber | html %]: ["[% biblio_info.hold_branches.join('", "') | $raw %]"], [% END %]};
         var hold_itemtypes = {[% FOREACH biblio_info IN biblioloop %] [% biblio_info.biblionumber | html %]: ["[% biblio_info.hold_itemtypes.join('", "') | $raw %]"], [% END %]};
@@ -1580,7 +1576,12 @@
 
         const apply_patron_autocomplete = [% !( patron || patron.borrowernumber || borrowers || noitems || nobiblio ) && PatronAutoComplete ? 1 : 0 | html %];
         const url_biblio_params = '[% url_biblio_params | url %]';
+
+        hold_table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holds', 'patron_holds_table', 'json' ) | $raw %];
+        table_settings = [% TablesSettings.GetTableSettings( 'circ', 'circulation', 'table_borrowers', 'json' ) | $raw %];
     </script>
+    [% Asset.js("js/holds.js") | $raw %]
+    [% Asset.js("js/hold-group.js") | $raw %]
     <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
             $("#patron_holds_table").kohaTable(
@@ -2000,9 +2001,7 @@
             }
         });
     </script>
-    <script nonce="[% Koha.CSPNonce | $raw %]">
-        table_settings = [% TablesSettings.GetTableSettings( 'circ', 'circulation', 'table_borrowers', 'json' ) | $raw %];
-    </script>
+
     [% UNLESS patron %]
         [% SET search_results_block_id = 'holds_patronsearch_pane_panel' %]
         [%# adjusting variable for patron-search.inc %]
