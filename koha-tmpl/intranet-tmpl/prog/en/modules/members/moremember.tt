@@ -847,7 +847,6 @@
 
         var amountlimit = "[% Koha.Preference('FineNoRenewals') | html %]";
         var fines = "[% fines | $Price %]";
-
     </script>
     [% Asset.js("js/pages/circulation.js") | $raw %]
     [% IF Koha.Preference('ClaimReturnedLostValue') || Koha.Preference('BundleLostValue') %]
@@ -870,59 +869,53 @@
         var MSG_CONFIRM_RENEW = _("The patron has a debt of %s").format(fines);
         MSG_CONFIRM_RENEW += _("Are you sure you want to renew checkout(s)?");
 
-        function uncheck_sibling(me){
-            nodename=me.getAttribute("name");
-            if (nodename =="barcodes[]"){
-                var Node=me.parentNode.previousSibling;
-                while (Node.nodeName!="TD"){Node=Node.previousSibling}
-                var Nodes=Node.childNodes;
-                for (var i=0;i < Nodes.length;i++){
-                    if (Nodes[i].nodeName=="INPUT" && Nodes[i].getAttribute("type")=="checkbox"){
-                        Nodes[i].checked=false;
+        function uncheck_sibling(me) {
+            nodename = me.getAttribute("name");
+            if (nodename == "barcodes[]") {
+                var Node = me.parentNode.previousSibling;
+                while (Node.nodeName != "TD") {
+                    Node = Node.previousSibling;
+                }
+                var Nodes = Node.childNodes;
+                for (var i = 0; i < Nodes.length; i++) {
+                    if (Nodes[i].nodeName == "INPUT" && Nodes[i].getAttribute("type") == "checkbox") {
+                        Nodes[i].checked = false;
                     }
                 }
             } else {
-                var Node=me.parentNode.nextSibling;
-                while (Node.nodeName!="TD"){Node=Node.nextSibling}
-                var Nodes=Node.childNodes;
-                for (var i=0;i<Nodes.length;i++){
-                    if (Nodes[i].nodeName=="INPUT" && Nodes[i].getAttribute("type")=="checkbox"){
-                      Nodes[i].checked=false;
+                var Node = me.parentNode.nextSibling;
+                while (Node.nodeName != "TD") {
+                    Node = Node.nextSibling;
+                }
+                var Nodes = Node.childNodes;
+                for (var i = 0; i < Nodes.length; i++) {
+                    if (Nodes[i].nodeName == "INPUT" && Nodes[i].getAttribute("type") == "checkbox") {
+                        Nodes[i].checked = false;
                     }
-               }
+                }
             }
         }
 
         $(document).ready(function () {
-            $("#finesholdsissues a[data-bs-toggle='tab']").on(
-                "shown.bs.tab",
-                function (e) {
-                    var oTable = $(
-                        "div.dt-container > table",
-                        $(e.target.hash)
-                    ).DataTable();
-                    if (oTable.length > 0) {
-                        oTable.columns().adjust();
-                    }
+            $("#finesholdsissues a[data-bs-toggle='tab']").on("shown.bs.tab", function (e) {
+                var oTable = $("div.dt-container > table", $(e.target.hash)).DataTable();
+                if (oTable.length > 0) {
+                    oTable.columns().adjust();
                 }
-            );
+            });
 
             $("#view_restrictions").on("click", function () {
                 $("#reldebarments-tab").click();
             });
 
             $("#view_guarantees_finesandcharges").on("click", function () {
-                bootstrap.Tab
-                    .getOrCreateInstance(
-                        document.getElementById("guarantees_finesandcharges-tab")
-                    )
-                    .show();
+                bootstrap.Tab.getOrCreateInstance(document.getElementById("guarantees_finesandcharges-tab")).show();
             });
 
             $("#cancellation-reason").comboBox({
-                displayProperty: 'name',
+                displayProperty: "name",
                 placeholder: _("Select or type a reason"),
-                context: 'modal',
+                context: "modal",
             });
         });
     </script>

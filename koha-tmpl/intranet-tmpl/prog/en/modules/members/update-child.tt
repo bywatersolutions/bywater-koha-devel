@@ -84,7 +84,7 @@
     </script>
     [% IF ( SUCCESS ) %]
         <script nonce="[% Koha.CSPNonce | $raw %]">
-            self.opener.location.href=`/cgi-bin/koha/members/moremember.pl?borrowernumber=${patron_id}`;
+            self.opener.location.href = `/cgi-bin/koha/members/moremember.pl?borrowernumber=${patron_id}`;
             window.close();
         </script>
     [% END %]
