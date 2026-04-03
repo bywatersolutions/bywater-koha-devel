@@ -1636,13 +1636,13 @@
             OPACPopupAuthorsSearch: [% Koha.Preference('OPACPopupAuthorsSearch') ? 1 : 0 | html %],
             OPACDetailQRCode: [% Koha.Preference('OPACDetailQRCode') ? 1 : 0 | html %],
             OpacBrowseResults: [% Koha.Preference('OpacBrowseResults') ? 1 : 0 | html %],
-            TagsInputEnabled: [% Koha.Preference('TagsInputEnabled') ? 1 : 0 | html %],
             OPACURLOpenInNewWindow: [% Koha.Preference('OPACURLOpenInNewWindow') ? 1 : 0 | html %],
             OPACShelfBrowser: [% Koha.Preference('OPACShelfBrowser') ? 1 : 0 | html %],
             OPACTableColExpandedByDefault: [% Koha.Preference('OPACTableColExpandedByDefault') ? 1 : 0 | html %],
         });
         const busc = "[% busc | html %]";
         const loggedinusername = "[% loggedinusername | html %]";
+        const TagsInputEnabled = [% TagsInputEnabled ? 1 : 0 | html %];
 
         var holdingst_table_settings = [% TablesSettings.GetTableSettings( 'opac', 'biblio-detail', 'holdingst', 'json' ) | $raw %];
         [% IF ( !item_level_itypes || Koha.Preference('BiblioItemtypeInfo') ) %]
@@ -2000,7 +2000,7 @@
                 dTables.DataTable().responsive.recalc();
             });
 
-            if (prefs.TagsInputEnabled && loggedinusername) {
+            if (TagsInputEnabled && loggedinusername) {
                 $(".tag_add").click(function () {
                     var thisid = $(this).attr("id");
                     thisid = thisid.replace("tag_add", "");
