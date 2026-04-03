@@ -1544,7 +1544,6 @@
     [% IF multi_hold %]
         [% SET url_biblio_params = url_biblio_params _ "&amp;multi_hold=1" %]
     [% END %]
-
     <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         var biblionumbers = [[% biblionumbers.join(', ') | $raw %]];
         var hold_branches = {[% FOREACH biblio_info IN biblioloop %] [% biblio_info.biblionumber | html %]: ["[% biblio_info.hold_branches.join('", "') | $raw %]"], [% END %]};
@@ -2001,7 +2000,6 @@
             }
         });
     </script>
-
     [% UNLESS patron %]
         [% SET search_results_block_id = 'holds_patronsearch_pane_panel' %]
         [%# adjusting variable for patron-search.inc %]
