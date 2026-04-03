@@ -795,9 +795,9 @@ if ( $op eq 'run' ) {
     }
 
     $template->param(
-        'limit' => $limit,
-        'id'    => $report_id,
-        dt      => scalar $input->param('dt'),
+        limit      => $limit,
+        id         => $report_id,
+        open_in_dt => scalar $input->param('open_in_dt'),
     );
 
     my ( $sql, $original_sql, $type, $name, $notes );
