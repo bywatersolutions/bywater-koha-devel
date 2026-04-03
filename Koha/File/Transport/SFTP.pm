@@ -23,6 +23,7 @@ use File::Spec;
 use IO::File;
 use Net::SFTP::Foreign;
 use Try::Tiny;
+use JSON qw( decode_json encode_json );
 
 use base qw(Koha::File::Transport);
 
@@ -51,7 +52,7 @@ sub connect {
         host     => $self->host,
         port     => $self->port,
         user     => $self->user_name,
-        password => $self->plain_text_password,
+        password => scalar $self->plain_text_password,
         $self->_locate_key_file ? ( key_path => $self->_locate_key_file ) : (),
         timeout   => $self->DEFAULT_TIMEOUT,
         stderr_fh => $stderr_fh,
