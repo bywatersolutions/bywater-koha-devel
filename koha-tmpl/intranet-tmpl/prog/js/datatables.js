@@ -951,7 +951,13 @@ function _dt_buttons(params) {
         });
     }
 
-    if (table_settings && CAN_user_parameters_manage_column_config) {
+    if (
+        table_settings &&
+        table_settings.module &&
+        table_settings.page &&
+        table_settings.table &&
+        CAN_user_parameters_manage_column_config
+    ) {
         let href =
             "/cgi-bin/koha/admin/columns_settings.pl?module=%s&page=%s&table=%s".format(
                 table_settings.module,
