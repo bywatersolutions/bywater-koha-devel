@@ -597,14 +597,12 @@
     [% INCLUDE 'calendar.inc' %]
     [% INCLUDE 'select2.inc' %]
     [% Asset.js("js/tools-menu.js") | $raw %]
-
     <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         const category = "[% category | html %]";
         const wysiwyg = [% wysiwyg ? 1 : 0 | html %];
         const interface = "[% interface | html %]";
         const theme = "[% theme | html %]";
     </script>
-
     <script nonce="[% Koha.CSPNonce | $raw %]">
         $("#saveandcontinue").on("click", function (e) {
             e.preventDefault();
@@ -693,48 +691,47 @@
         </script>
     [% ELSE %]
         <script nonce="[% Koha.CSPNonce | $raw %]">
-            function showLocationNotes( location ){
+            function showLocationNotes(location) {
                 $(".customization_note").hide();
-                $( "#" + location + "_notes" ).show();
+                $("#" + location + "_notes").show();
             }
 
-            $(document).ready(function() {
-                if ( category == 'news' ){
-                $("#add_additional_content").validate({
-                    submitHandler: function(form){
-                        if ( ! $("#title_default").val().length > 0 ) {
-                            alert(_("Please specify a title for 'Default'"));
-                            return false;
-                        }
-                        else {
-                            if (!wysiwyg){
-                                let content = $('#content_default').siblings(".CodeMirror")[0].CodeMirror.getValue();
-                            } else {
-                                let content = tinyMCE.get('content_default').getContent();
-                            }
-
-                            if ( ! content.length > 0 ) {
-                                alert(_("Please specify a content for 'Default'"));
+            $(document).ready(function () {
+                if (category == "news") {
+                    $("#add_additional_content").validate({
+                        submitHandler: function (form) {
+                            if (!$("#title_default").val().length > 0) {
+                                alert(_("Please specify a title for 'Default'"));
                                 return false;
-                            }
-                        }
+                            } else {
+                                if (!wysiwyg) {
+                                    let content = $("#content_default").siblings(".CodeMirror")[0].CodeMirror.getValue();
+                                } else {
+                                    let content = tinyMCE.get("content_default").getContent();
+                                }
 
-                        form.submit();
-                    }
-                });
+                                if (!content.length > 0) {
+                                    alert(_("Please specify a content for 'Default'"));
+                                    return false;
+                                }
+                            }
+
+                            form.submit();
+                        },
+                    });
                 }
 
-                showLocationNotes( $("#location").val() );
+                showLocationNotes($("#location").val());
 
-                $("#location").on("change", function(){
-                    showLocationNotes( $(this).val() );
+                $("#location").on("change", function () {
+                    showLocationNotes($(this).val());
                 });
 
-                $("#submit_form").on("click",function(){
+                $("#submit_form").on("click", function () {
                     $("#add_additional_content").submit();
                 });
 
-                $("#location").select2({ width: '50%' });
+                $("#location").select2({ width: "50%" });
             });
         </script>
     [% END %]
@@ -784,43 +781,43 @@
         [% Asset.js("lib/tiny_mce/tinymce.min.js") | $raw %]
         [% INCLUDE 'str/tinymce_i18n.inc' %]
         <script nonce="[% Koha.CSPNonce | $raw %]">
-            $(document).ready(function(){
-                if( $("#tabs").length > 0 && $("#tabs .tab-pane.active").length < 1 ){
+            $(document).ready(function () {
+                if ($("#tabs").length > 0 && $("#tabs .tab-pane.active").length < 1) {
                     /* Activate first tab and initialize its tinyMCE instance */
                     let firstTab = $("#tabs a:first");
                     firstTab.tab("show");
-                    initTinyMce( firstTab[0].hash );
+                    initTinyMce(firstTab[0].hash);
                 }
 
                 $("#tabs a[data-bs-toggle='tab']").on("shown.bs.tab", function (e) {
                     /* Try to initialize tinyMCE instance when tab opens */
-                    initTinyMce( e.target.hash );
+                    initTinyMce(e.target.hash);
                 });
             });
 
-            function initTinyMce( container ){
-                let textarea = $( container ).find("textarea[name^='content_']");
+            function initTinyMce(container) {
+                let textarea = $(container).find("textarea[name^='content_']");
                 /* TinyMCE seems to do its own check to prevent double-initialization
                    so We don't need to keep track of it */
                 let editor = tinyMCE.init({
-                    branding : false,
-                    block_unsupported_drop : false,
-                    content_css : `${interface}/${theme}/css/tinymce.css`,
-                    convert_urls : false,
-                    custom_elements:"style,link,~link",
-                    extended_valid_elements:"style,link[href|rel]",
-                    force_br_newlines : false,
-                    force_p_newlines : false,
-                    forced_root_block : '',
-                    menubar : "file edit view insert format tools table",
-                    plugins : "autoresize table hr link image charmap lists code emoticons",
+                    branding: false,
+                    block_unsupported_drop: false,
+                    content_css: `${interface}/${theme}/css/tinymce.css`,
+                    convert_urls: false,
+                    custom_elements: "style,link,~link",
+                    extended_valid_elements: "style,link[href|rel]",
+                    force_br_newlines: false,
+                    force_p_newlines: false,
+                    forced_root_block: "",
+                    menubar: "file edit view insert format tools table",
+                    plugins: "autoresize table hr link image charmap lists code emoticons",
                     autoresize_bottom_margin: 60,
-                    relative_urls : false,
+                    relative_urls: false,
                     selector: "#" + textarea[0].id,
                     verify_html: false,
-                    toolbar : [
+                    toolbar: [
                         "formatselect | bold italic | cut copy paste | alignleft aligncenter alignright | outdent indent | image link unlink anchor cleanup hr",
-                        "table | bullist numlist | undo redo | removeformat | emoticons charmap | forecolor backcolor | code"
+                        "table | bullist numlist | undo redo | removeformat | emoticons charmap | forecolor backcolor | code",
                     ],
                 });
                 return editor;
