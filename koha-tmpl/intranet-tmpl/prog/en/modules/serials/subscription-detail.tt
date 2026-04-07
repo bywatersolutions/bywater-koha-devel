@@ -515,7 +515,7 @@
                 });
             }
 
-            let table_dt = table.DataTable();
+            let table_dt = table?.DataTable();
             $("#hide_received_orders").click(function (e) {
                 e.preventDefault();
                 table_dt.columns(4).search("^$", { regex: true }).draw(); // Not empty "Receive date" columns
