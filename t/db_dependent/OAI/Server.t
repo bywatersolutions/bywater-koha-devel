@@ -24,8 +24,6 @@ use Test::MockTime qw/set_fixed_time set_relative_time restore_time/;
 use Test::NoWarnings;
 use Test::More tests => 36;
 use DateTime;
-use File::Basename;
-use File::Spec;
 use Test::MockModule;
 use Test::Warn;
 use XML::Simple;
@@ -161,7 +159,7 @@ my $syspref = {
     'LibraryName'           => 'My Library',
     'OAI::PMH'              => 1,
     'OAI-PMH:archiveID'     => 'TEST',
-    'OAI-PMH:ConfFile'      => '',
+    'OAI-PMH:ExtendedMode'  => '',
     'OAI-PMH:MaxCount'      => 3,
     'OAI-PMH:DeletedRecord' => 'persistent',
 };
@@ -436,7 +434,17 @@ test_query(
 );
 
 #  List records, but now transformed by XSLT
-t::lib::Mocks::mock_preference( "OAI-PMH:ConfFile" => File::Spec->rel2abs( dirname(__FILE__) ) . "/oaiconf.yaml" );
+t::lib::Mocks::mock_preference(
+    "OAI-PMH:ExtendedMode" => q{
+format:
+    marcxml:
+      metadataPrefix: marxml
+      metadataNamespace: https://www.loc.gov/MARC21/slim https://www.loc.gov/standards/marcxml/schema/MARC21slim
+      schema: https://www.loc.gov/MARC21/slim https://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd
+      xsl_file: koha-tmpl/intranet-tmpl/prog/en/xslt/Del952.xsl
+      include_items: 0
+}
+);
 test_query(
     'ListRecords marcxml with xsl transformation',
     { verb => 'ListRecords', metadataPrefix => 'marcxml' },
@@ -450,7 +458,7 @@ test_query(
         },
     }
 );
-t::lib::Mocks::mock_preference( "OAI-PMH:ConfFile" => '' );
+t::lib::Mocks::mock_preference( "OAI-PMH:ExtendedMode" => '' );
 
 restore_time();
 
@@ -597,7 +605,20 @@ subtest 'Tests for OpacHiddenItems' => sub {
     t::lib::Mocks::mock_preference( 'OAI::PMH'         => 1 );
     t::lib::Mocks::mock_preference( 'OAI-PMH:MaxCount' => 3 );
     t::lib::Mocks::mock_preference(
-        'OAI-PMH:ConfFile' => File::Spec->rel2abs( dirname(__FILE__) ) . '/oaiconf_items.yaml' );
+        'OAI-PMH:ExtendedMode' => q{
+format:
+    marcxml:
+      metadataPrefix: marcxml
+      metadataNamespace: https://www.loc.gov/MARC21/slim https://www.loc.gov/standards/marcxml/schema/MARC21slim
+      schema: https://www.loc.gov/MARC21/slim https://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd
+      include_items: 0
+    marc21:
+      metadataPrefix: marc21
+      metadataNamespace: https://www.loc.gov/MARC21/slim https://www.loc.gov/standards/marcxml/schema/MARC21slim
+      schema: https://www.loc.gov/MARC21/slim https://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd
+      include_items: 1
+    }
+    );
     $schema->storage->txn_begin;
     my $builder = t::lib::TestBuilder->new;
     my $item    = $builder->build_sample_item();
@@ -677,7 +698,20 @@ subtest 'Tests for timestamp handling' => sub {
     t::lib::Mocks::mock_preference( 'OAI::PMH'         => 1 );
     t::lib::Mocks::mock_preference( 'OAI-PMH:MaxCount' => 3 );
     t::lib::Mocks::mock_preference(
-        'OAI-PMH:ConfFile' => File::Spec->rel2abs( dirname(__FILE__) ) . '/oaiconf_items.yaml' );
+        'OAI-PMH:ExtendedMode' => q{
+format:
+    marcxml:
+      metadataPrefix: marcxml
+      metadataNamespace: https://www.loc.gov/MARC21/slim https://www.loc.gov/standards/marcxml/schema/MARC21slim
+      schema: https://www.loc.gov/MARC21/slim https://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd
+      include_items: 0
+    marc21:
+      metadataPrefix: marc21
+      metadataNamespace: https://www.loc.gov/MARC21/slim https://www.loc.gov/standards/marcxml/schema/MARC21slim
+      schema: https://www.loc.gov/MARC21/slim https://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd
+      include_items: 1
+    }
+    );
 
     $schema->storage->txn_begin;
 

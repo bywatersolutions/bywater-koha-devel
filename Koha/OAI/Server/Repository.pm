@@ -33,7 +33,6 @@ use Koha::OAI::Server::GetRecord;
 use Koha::OAI::Server::ListRecords;
 use Koha::OAI::Server::ListIdentifiers;
 use XML::SAX::Writer;
-use YAML::XS;
 use CGI qw/:standard -oldstyle_urls/;
 use C4::Context;
 use C4::Biblio  qw( GetFrameworkCode );
@@ -69,10 +68,10 @@ respectively MARC21slim2OAIDC.xsl for MARC21 and  MARC21slim2OAIDC.xsl for
 UNIMARC.
 
 In extended mode, it's possible to parameter other format than marcxml or
-Dublin Core. A new syspref OAI-PMH:ConfFile specify a YAML configuration file
-which list available metadata formats and XSL file used to create them from
+Dublin Core. The syspref OAI-PMH:ExtendedMode contains YAML configuration
+which lists available metadata formats and XSL file used to create them from
 marcxml records. If this syspref isn't set, Koha OAI server works in simple
-mode. A configuration file koha-oai.conf can look like that:
+mode. The YAML configuration can look like that:
 
   ---
   format:
@@ -117,9 +116,9 @@ sub new {
     $self->{koha_metadata_format} = [ 'oai_dc', 'marc21', 'marcxml' ];
     $self->{xslt_engine}          = Koha::XSLT::Base->new;
 
-    # Load configuration file if defined in OAI-PMH:ConfFile syspref
-    if ( my $file = C4::Context->preference("OAI-PMH:ConfFile") ) {
-        $self->{conf} = YAML::XS::LoadFile($file);
+    # Load configuration from OAI-PMH:ExtendedMode syspref
+    if ( my $conf = C4::Context->yaml_preference("OAI-PMH:ExtendedMode") ) {
+        $self->{conf} = $conf;
         my @formats = keys %{ $self->{conf}->{format} };
         $self->{koha_metadata_format} = \@formats;
     }

@@ -51,10 +51,20 @@ subtest 'get_biblio_marcxml() expanded_avs tests' => sub {
     $schema->storage->txn_begin;
 
     # disable config, we are gonna force it
-    t::lib::Mocks::mock_preference( 'marcflavour',      'MARC21' );
-    t::lib::Mocks::mock_preference( 'OAI-PMH:ConfFile', 1 );          # so it loads the mocked one
     t::lib::Mocks::mock_preference( 'OpacHiddenItems',  '' );
     t::lib::Mocks::mock_preference( 'OpacSuppression',  0 );
+    t::lib::Mocks::mock_preference( 'marcflavour', 'MARC21' );
+    t::lib::Mocks::mock_preference(
+        'OAI-PMH:ExtendedMode' => q{
+format:
+    not_expanded:
+        include_items: 1
+        expanded_avs: 0
+    expanded:
+        include_items: 1
+        expanded_avs: 1
+    }
+    );
 
     my $library =
         $builder->build_object( { class => 'Koha::Libraries', value => { branchname => q{Nick's Library} } } );
@@ -70,24 +80,6 @@ subtest 'get_biblio_marcxml() expanded_avs tests' => sub {
 
     my $cgi = Test::MockModule->new('CGI');
     $cgi->mock( 'Vars', sub { ( 'verb', 'Identify' ); } );
-    my $yaml = Test::MockModule->new('YAML::XS');
-    $yaml->mock(
-        'LoadFile',
-        sub {
-            return {
-                format => {
-                    not_expanded => {
-                        include_items => 1,
-                        expanded_avs  => 0,
-                    },
-                    expanded => {
-                        include_items => 1,
-                        expanded_avs  => 1,
-                    }
-                }
-            };
-        }
-    );
 
     my $repository = _build_repository();
 

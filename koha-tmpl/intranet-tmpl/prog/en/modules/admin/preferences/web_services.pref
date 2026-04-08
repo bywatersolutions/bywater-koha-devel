@@ -66,10 +66,11 @@ Web services:
               class: integer
             - records at a time in response to a ListRecords or ListIdentifiers query.
         -
-            - "YAML OAI Koha server configuration file:"
-            - pref: "OAI-PMH:ConfFile"
-              class: file
-            - . If empty, Koha OAI Server operates in normal mode, otherwise it operates in extended mode. In extended mode, it's possible to parameter other formats than marcxml or Dublin Core. <a href="/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=OAI-PMH:ConfFile">OAI-PMH:ConfFile</a> specify a YAML configuration file which list available metadata formats and XSL file used to create them from marcxml records.
+            - "YAML OAI Koha server configuration for extended mode:"
+            - pref: "OAI-PMH:ExtendedMode"
+              type: textarea
+              syntax: text/x-yaml
+            - If empty, Koha OAI Server operates in normal mode, otherwise it operates in extended mode. In extended mode, it's possible to configure other formats than marcxml or Dublin Core. The YAML configuration lists available metadata formats and XSL files used to create them from marcxml records.
         -
             - pref: "OAI-PMH:AutoUpdateSets"
               choices:
