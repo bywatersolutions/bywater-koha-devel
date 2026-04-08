@@ -1185,7 +1185,7 @@ subtest "CanBookBeRenewed tests" => sub {
         );
 
         my $ten_days_before = dt_from_string->add( days => -10 );
-        my $ten_days_ahead  = dt_from_string->add( days => 10 );
+        my $ten_days_ahead  = dt_from_string->add( days =>  10 );
         my $issue           = AddIssue(
             $renewing_borrower_obj, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before,
             undef, { auto_renew => 1 }
@@ -1335,7 +1335,7 @@ subtest "CanBookBeRenewed tests" => sub {
         );
 
         my $ten_days_before = dt_from_string->add( days => -10 );
-        my $ten_days_ahead  = dt_from_string->add( days => 10 );
+        my $ten_days_ahead  = dt_from_string->add( days =>  10 );
         my $issue           = AddIssue(
             $renewing_borrower_obj, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before,
             undef, { auto_renew => 1 }
@@ -1445,7 +1445,7 @@ subtest "CanBookBeRenewed tests" => sub {
         );
 
         my $ten_days_before = dt_from_string->add( days => -10 );
-        my $ten_days_ahead  = dt_from_string->add( days => 10 );
+        my $ten_days_ahead  = dt_from_string->add( days =>  10 );
 
         # Patron is expired and BlockExpiredPatronOpacActions=''
         # => auto renew is allowed
@@ -1497,7 +1497,7 @@ subtest "CanBookBeRenewed tests" => sub {
         );
 
         my $ten_days_before = dt_from_string->add( days => -10 );
-        my $ten_days_ahead  = dt_from_string->add( days => 10 );
+        my $ten_days_ahead  = dt_from_string->add( days =>  10 );
         my $issue           = AddIssue(
             $renewing_borrower_obj, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before,
             undef, { auto_renew => 1 }
@@ -1618,7 +1618,7 @@ subtest "CanBookBeRenewed tests" => sub {
         );
 
         my $ten_days_before = dt_from_string->add( days => -10 );
-        my $ten_days_ahead  = dt_from_string->add( days => 10 );
+        my $ten_days_ahead  = dt_from_string->add( days =>  10 );
         my $issue           = AddIssue(
             $renewing_borrower_obj, $item_to_auto_renew->barcode, $ten_days_ahead, undef, $ten_days_before,
             undef, { auto_renew => 1 }
@@ -1969,7 +1969,7 @@ subtest "GetUpcomingDueIssues" => sub {
     my $a_borrower                = Koha::Patrons->find($a_borrower_borrowernumber);
 
     my $yesterday      = DateTime->today( time_zone => C4::Context->tz() )->add( days => -1 );
-    my $two_days_ahead = DateTime->today( time_zone => C4::Context->tz() )->add( days => 2 );
+    my $two_days_ahead = DateTime->today( time_zone => C4::Context->tz() )->add( days =>  2 );
     my $today          = DateTime->today( time_zone => C4::Context->tz() );
 
     my $issue    = AddIssue( $a_borrower, $item_1->barcode, $yesterday );
@@ -3881,7 +3881,7 @@ subtest 'AddReturn | is_overdue' => sub {
         is( $line->status,                'RETURNED', "Overdue fine is fixed" );
         $line = $lines->next;
         is( $line->amount + 0,            -2, "Original payment amount remains as 2" );
-        is( $line->amountoutstanding + 0, 0,  "Original payment remains applied" );
+        is( $line->amountoutstanding + 0,  0, "Original payment remains applied" );
         $line = $lines->next;
         is( $line->amount + 0,            -1, "Refund amount correctly set to 1" );
         is( $line->amountoutstanding + 0, -1, "Refund amount outstanding unspent" );
@@ -4835,7 +4835,7 @@ subtest '_FixOverduesOnReturn' => sub {
     my $credit = $offset->credit;
     is( ref $credit,                    "Koha::Account::Line", "Found matching credit for fine forgiveness" );
     is( $credit->amount + 0,            -99,                   "Credit amount is set correctly" );
-    is( $credit->amountoutstanding + 0, 0,                     "Credit amountoutstanding is correctly set to 0" );
+    is( $credit->amountoutstanding + 0,  0,                    "Credit amountoutstanding is correctly set to 0" );
 
     # Bug 25417 - Only forgive fines where there is an amount outstanding to forgive
     $accountline->set(
@@ -7586,7 +7586,7 @@ subtest 'NoRefundOnLostFinesPaidAge' => sub {
         {
             borrowernumber    => $patron->id,
             date              => '1970-01-01 14:00:01',
-            amountoutstanding => 0,
+            amountoutstanding =>  0,
             amount            => -5,
             interface         => 'commandline',
             credit_type_code  => 'PAYMENT'
@@ -7642,7 +7642,7 @@ subtest 'NoRefundOnLostFinesPaidAge' => sub {
             borrowernumber    => $patron2->id,
             date              => '1970-01-01 14:00:01',
             amount            => -5,
-            amountoutstanding => 0,
+            amountoutstanding =>  0,
             interface         => 'commandline',
             credit_type_code  => 'PAYMENT'
         }

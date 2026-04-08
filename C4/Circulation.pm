@@ -3307,7 +3307,7 @@ sub CanBookBeRenewed {
                         unless CanItemBeReserved(
                         $patron_with_reserve, $other_item, undef,
                         { ignore_hold_counts => 1 }
-                    )->{status} eq 'OK';
+                        )->{status} eq 'OK';
 
                     # NOTE: At checkin we call 'CheckReserves' which checks hold 'policy'
                     # CanItemBeReserved checks 'rules' and 'policies' which means
