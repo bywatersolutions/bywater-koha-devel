@@ -1511,6 +1511,7 @@ function update_search_description(
         var default_column_defs = [
             { targets: ["string-sort"], type: "string" },
             { targets: ["anti-the"], type: "anti-the" },
+            { targets: ["num-html"], type: "num-html" },
             { targets: ["no-sort"], orderable: false, searchable: false },
         ];
         if (settings["columnDefs"] === undefined) {
