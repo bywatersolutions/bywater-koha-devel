@@ -1339,7 +1339,7 @@
                                                 [%- IF header_row.$place.cell == 'itemnumber' || header_types.item(header_row.$place.cell) == 'itemnumber' %]
                                                     <td class="batch-op itemnumber" data-number="itemnumber">
                                                         <span class="data-plain">[% cells.cell | $raw %]</span>
-                                                        <div id="itemnumber_autolink" class="btn-group dropup autolink"
+                                                        <div id="itemnumber_autolink" class="btn-group dropup autolink no-export"
                                                             ><a class="btn btn-link dropdown-toggle" role="button" data-bs-toggle="dropdown" href="#">[% cells.cell | $raw %] </a>
                                                             <ul class="dropdown-menu" role="menu">
                                                                 <li
@@ -1358,7 +1358,7 @@
                                                 [% ELSIF header_row.$place.cell == 'biblionumber' || header_types.item(header_row.$place.cell) == 'biblionumber' %]
                                                     <td class="batch-op biblionumber" data-number="biblionumber">
                                                         <span class="data-plain">[% cells.cell | $raw %]</span>
-                                                        <div id="biblionumber_autolink" class="btn-group dropup autolink"
+                                                        <div id="biblionumber_autolink" class="btn-group dropup autolink no-export"
                                                             ><a class="btn btn-link dropdown-toggle" role="button" data-bs-toggle="dropdown" href="#">[% cells.cell | $raw %] </a>
                                                             <ul class="dropdown-menu" role="menu">
                                                                 <li
@@ -1377,7 +1377,7 @@
                                                 [% ELSIF header_row.$place.cell == 'borrowernumber' || header_types.item(header_row.$place.cell) == 'borrowernumber' %]
                                                     <td class="batch-op borrowernumber" data-number="borrowernumber">
                                                         <span class="data-plain">[% cells.cell | $raw %]</span>
-                                                        <div id="borrowernumber_autolink" class="btn-group dropup autolink"
+                                                        <div id="borrowernumber_autolink" class="btn-group dropup autolink no-export"
                                                             ><a class="btn btn-link dropdown-toggle" role="button" data-bs-toggle="dropdown" href="#">[% cells.cell | $raw %] </a>
                                                             <ul class="dropdown-menu" role="menu">
                                                                 <li
@@ -1401,7 +1401,7 @@
                                                 [% ELSIF header_row.$place.cell == 'cardnumber' || header_types.item(header_row.$place.cell) == 'cardnumber' %]
                                                     <td class="batch-op cardnumber" data-number="cardnumber">
                                                         <span class="data-plain">[% cells.cell | $raw %]</span>
-                                                        <div id="cardnumber_autolink" class="btn-group dropup autolink"
+                                                        <div id="cardnumber_autolink" class="btn-group dropup autolink no-export"
                                                             ><a class="btn btn-link dropdown-toggle" role="button" data-bs-toggle="dropdown" href="#">[% cells.cell | $raw %] </a>
                                                             <ul class="dropdown-menu" role="menu">
                                                                 <li
