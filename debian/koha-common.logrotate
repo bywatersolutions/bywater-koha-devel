@@ -19,6 +19,8 @@
 /var/log/koha/*/editrace.log
 /var/log/koha/*/indexer-error.log
 /var/log/koha/*/indexer-output.log
+/var/log/koha/*/es-indexer-error.log
+/var/log/koha/*/es-indexer-output.log
 /var/log/koha/*/intranet-access.log
 /var/log/koha/*/intranet-error.log
 /var/log/koha/*/offlinecirc.log
