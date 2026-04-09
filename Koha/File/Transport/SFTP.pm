@@ -52,6 +52,7 @@ sub connect {
     # Use key-based auth if available, otherwise password auth
     my $key_file = $self->_locate_key_file;
     $self->{connection} = Net::SFTP::Foreign->new(
+        host => $self->host,
         port => $self->port,
         user => $self->user_name,
         $key_file ? ( key_path => $key_file ) : ( password => scalar $self->plain_text_password ),
