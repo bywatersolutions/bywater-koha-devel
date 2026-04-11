@@ -71,16 +71,6 @@ my @fields = qw(
     userid
 );
 
-my %data;
-
-for my $field (@fields) {
-    my $val = $cgi->param($field);
-
-    if ( defined $val ) {
-        $data{$field} = $val;
-    }
-}
-
 if ( $op eq 'show' ) {
     my $patrons = Koha::Patrons->search( { borrowernumber => { -in => \@ids } } );
     $template->param( patrons => $patrons );
@@ -98,6 +88,17 @@ if ( $op eq 'show' ) {
                 results => $results
             );
             if ( $copy && $results ) {
+                my ($id)   = keys %{ $results->{merged} };
+                my $merged = $results->{merged}{$id};
+                my $source = $merged->{patron};
+                my %data;
+
+                for my $field (@fields) {
+                    if ( defined $cgi->param($field) ) {
+                        my $val = $source->{$field};
+                        $data{$field} = $val;
+                    }
+                }
                 $keeper->set( \%data )->store();
             }
         } catch {
