@@ -4000,6 +4000,7 @@ CREATE TABLE `import_record_matches` (
   `import_record_id` int(11) NOT NULL COMMENT 'the id given to the imported bib record (import_records.import_record_id)',
   `candidate_match_id` int(11) NOT NULL COMMENT 'the biblio the imported record matches (biblio.biblionumber)',
   `score` int(11) NOT NULL DEFAULT 0 COMMENT 'the match score',
+  `composite_scores` longtext DEFAULT NULL COMMENT 'JSON object mapping search_index to contributed score',
   `chosen` tinyint(1) DEFAULT NULL COMMENT 'whether this match has been allowed or denied',
   PRIMARY KEY (`import_record_id`,`candidate_match_id`),
   KEY `record_score` (`import_record_id`,`score`),
