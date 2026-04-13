@@ -1719,6 +1719,16 @@ sub RecordsFromMarcPlugin {
 
 # internal functions
 
+=head2 _create_import_record
+
+  my $import_record_id = _create_import_record($batch_id, $record_sequence,
+                             $marc_record, $record_type, $encoding, $marc_type);
+
+Inserts a new row into C<import_records> for the given MARC record and returns
+the new C<import_record_id>.
+
+=cut
+
 sub _create_import_record {
     my ( $batch_id, $record_sequence, $marc_record, $record_type, $encoding, $marc_type ) = @_;
 
@@ -1737,6 +1747,15 @@ sub _create_import_record {
     return $import_record_id;
 }
 
+=head2 _add_auth_fields
+
+  _add_auth_fields($import_record_id, $marc_record);
+
+Extracts authority-specific fields from C<$marc_record> and stores them
+in C<import_auths>.
+
+=cut
+
 sub _add_auth_fields {
     my ( $import_record_id, $marc_record ) = @_;
 
@@ -1752,6 +1771,15 @@ sub _add_auth_fields {
     $sth->finish();
 }
 
+=head2 _add_biblio_fields
+
+  _add_biblio_fields($import_record_id, $marc_record);
+
+Extracts bibliographic fields (title, author, ISBN) from C<$marc_record> and
+inserts them into C<import_biblios>.
+
+=cut
+
 sub _add_biblio_fields {
     my ( $import_record_id, $marc_record ) = @_;
 
@@ -1766,6 +1794,15 @@ sub _add_biblio_fields {
     $sth->finish();
 
 }
+
+=head2 _update_biblio_fields
+
+  _update_biblio_fields($import_record_id, $marc_record);
+
+Updates the C<import_biblios> row for an already-staged bibliographic record
+with freshly parsed field values.
+
+=cut
 
 sub _update_biblio_fields {
     my ( $import_record_id, $marc_record ) = @_;
@@ -1786,6 +1823,16 @@ sub _update_biblio_fields {
     $sth->finish();
 }
 
+=head2 _parse_biblio_fields
+
+  my ($title, $author, $isbn, $issn, $lccn, $biblionumber) =
+      _parse_biblio_fields($marc_record);
+
+Extracts key bibliographic fields from a MARC::Record object and returns
+them as a list.
+
+=cut
+
 sub _parse_biblio_fields {
     my ($marc_record) = @_;
 
@@ -1799,6 +1846,15 @@ sub _parse_biblio_fields {
     return ( $bibliofields->{'title'}, $bibliofields->{'author'}, $bibliofields->{'isbn'}, $bibliofields->{'issn'} );
 
 }
+
+=head2 _update_batch_record_counts
+
+  _update_batch_record_counts($batch_id);
+
+Recalculates and updates the record-count summary columns on the
+C<import_batches> row for C<$batch_id>.
+
+=cut
 
 sub _update_batch_record_counts {
     my ($batch_id) = @_;
@@ -1827,6 +1883,18 @@ sub _update_batch_record_counts {
         $batch_id,
     );
 }
+
+=head2 _get_commit_action
+
+  my ($biblio_action, $item_action, $match_id) =
+      _get_commit_action($overlay_action, $nomatch_action, $item_action,
+                         $overlay_status, $import_record_id, $record_type);
+
+Determines the appropriate commit action (C<create_new>, C<replace>,
+C<ignore>) for a record based on the batch overlay/nomatch settings and
+the record's current overlay status.
+
+=cut
 
 sub _get_commit_action {
     my ( $overlay_action, $nomatch_action, $item_action, $overlay_status, $import_record_id, $record_type ) = @_;
@@ -1867,6 +1935,16 @@ sub _get_commit_action {
 
     }
 }
+
+=head2 _get_revert_action
+
+  my ($bib_result, $item_result) =
+      _get_revert_action($overlay_action, $overlay_status, $status);
+
+Determines the appropriate revert action for a record based on the batch
+overlay action and the record's current overlay/import status.
+
+=cut
 
 sub _get_revert_action {
     my ( $overlay_action, $overlay_status, $status ) = @_;

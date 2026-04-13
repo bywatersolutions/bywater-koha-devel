@@ -206,7 +206,10 @@ sub fetch {
 
 =head3 _fetch_matchpoint
 
-helper function that retrieves a matchpoint and its components from the DB
+  my $matchpoint = $self->_fetch_matchpoint($matchpoint_id);
+
+Loads a matchpoint and its components from the database and returns a
+hashref with C<index>, C<score>, and C<components>.
 
 =cut
 
@@ -279,8 +282,10 @@ sub store {
 
 =head3 _del_matcher_components
 
-helper function that deletes matchpoints and matchchecks for a matcher;
-used to clear existing values before saving new ones
+  $self->_del_matcher_components();
+
+Deletes all matchpoint component and norm rows for the current matcher
+from the database (used before re-saving).
 
 =cut
 
@@ -300,7 +305,9 @@ sub _del_matcher_components {
 
 =head3 _update_marc_matchers
 
-helper function that updates a MARC matcher DB entry
+  $self->_update_marc_matchers();
+
+Updates the C<marc_matchers> row for the current matcher object.
 
 =cut
 
@@ -324,7 +331,9 @@ sub _update_marc_matchers {
 
 =head3 _new_marc_matchers
 
-helper function that inserts a new MARC matcher entry
+  $self->_new_marc_matchers();
+
+Inserts a new row into C<marc_matchers> and sets C<$self-E<gt>{'id'}>.
 
 =cut
 
@@ -343,7 +352,9 @@ sub _new_marc_matchers {
 
 =head3 _store_matcher_components
 
-helper function that stores the values for matchpoints and matchchecks for a matcher
+  $self->_store_matcher_components($matchpoint_id, \@components);
+
+Persists the component and norm rows for a matchpoint to the database.
 
 =cut
 
@@ -376,7 +387,9 @@ sub _store_matcher_components {
 
 =head3 _store_matchpoint
 
-helper function that stores a matchpoint and its components
+  my $matchpoint_id = $self->_store_matchpoint($matchpoint);
+
+Inserts a matchpoint record into the database and returns its new ID.
 
 =cut
 
@@ -893,7 +906,10 @@ sub dump {
 
 =head3 _passes_required_checks
 
-helper function that checks the match keys for all matched records
+  my $ok = _passes_required_checks($source_record, $target_record, \@matchchecks);
+
+Returns true if the candidate C<$target_record> passes all required field
+equality checks against C<$source_record>.
 
 =cut
 
@@ -913,7 +929,10 @@ sub _passes_required_checks {
 
 =head3 _get_match_keys
 
-helper function that retrieves the values of the match fields from a source record
+  my @keys = _get_match_keys($source_record, $matchpoint);
+
+Extracts and normalises the set of match key strings from C<$source_record>
+for the given C<$matchpoint> definition.
 
 =cut
 
@@ -1009,7 +1028,10 @@ sub _get_match_keys {
 
 =head3 _parse_match_component
 
-helper function to transform a match component into the expected form
+  my $component = _parse_match_component($input_component);
+
+Parses a matchpoint component definition hashref and returns a normalised
+component structure including tag, subfields, offset, length, and norms.
 
 =cut
 
