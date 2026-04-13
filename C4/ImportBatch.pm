@@ -73,6 +73,7 @@ BEGIN {
 
 use C4::Context;
 use C4::Koha   qw( GetNormalizedISBN );
+use JSON       qw( encode_json decode_json );
 use C4::Biblio qw(
     AddBiblio
     DelBiblio
@@ -1547,7 +1548,7 @@ sub GetImportRecordMatches {
     # FIXME currently biblio only
     my $sth = $dbh->prepare_cached(
         "SELECT title, author, biblionumber,
-                                    candidate_match_id, score, record_type,
+                                    candidate_match_id, score, composite_scores, record_type,
                                     chosen
                                     FROM import_records
                                     JOIN import_record_matches USING (import_record_id)
@@ -1563,6 +1564,10 @@ sub GetImportRecordMatches {
             $row->{'authorized_heading'} = GetAuthorizedHeading( { authid => $row->{'candidate_match_id'} } );
         }
         next if ( $row->{'record_type'} eq 'biblio' && not $row->{'biblionumber'} );
+        $row->{'composite_scores'} =
+            $row->{'composite_scores'}
+            ? decode_json( $row->{'composite_scores'} )
+            : {};
         push @$results, $row;
         last if $best_only;
     }
@@ -1588,12 +1593,16 @@ sub SetImportRecordMatches {
     $delsth->finish();
 
     my $sth = $dbh->prepare(
-        "INSERT INTO import_record_matches (import_record_id, candidate_match_id, score, chosen)
-                                    VALUES (?, ?, ?, ?)"
+        "INSERT INTO import_record_matches (import_record_id, candidate_match_id, score, composite_scores, chosen)
+                                    VALUES (?, ?, ?, ?, ?)"
     );
     my $chosen = 1;    #The first match is defaulted to be chosen
     foreach my $match (@matches) {
-        $sth->execute( $import_record_id, $match->{'record_id'}, $match->{'score'}, $chosen );
+        my $composite_json =
+            $match->{'composite_scores'}
+            ? encode_json( $match->{'composite_scores'} )
+            : undef;
+        $sth->execute( $import_record_id, $match->{'record_id'}, $match->{'score'}, $composite_json, $chosen );
         $chosen = 0;    #After the first we do not default to other matches
     }
 }

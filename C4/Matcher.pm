@@ -759,6 +759,7 @@ sub get_matches {
                         ? $target_record->field($biblionumber_tag)->subfield($biblionumber_subfield)
                         : $target_record->field($biblionumber_tag)->data();
                     $matches->{$id}->{score} += $matchpoint->{score};
+                    $matches->{$id}->{composite_scores}{ $matchpoint->{'index'} } += $matchpoint->{'score'};
                     $matches->{$id}->{record} = $target_record;
                 }
             }
@@ -801,6 +802,7 @@ sub get_matches {
                 }
                 next unless $target_record;
                 $matches->{$id}->{score} += $matchpoint->{'score'};
+                $matches->{$id}->{composite_scores}{ $matchpoint->{'index'} } += $matchpoint->{'score'};
                 $matches->{$id}->{record} = $target_record;
             }
         }
@@ -825,8 +827,9 @@ sub get_matches {
 
         foreach my $id ( keys %$matches ) {
             push @results, {
-                record_id => $id,
-                score     => $matches->{$id}->{score}
+                record_id        => $id,
+                score            => $matches->{$id}->{score},
+                composite_scores => $matches->{$id}->{composite_scores},
             };
         }
     } elsif ( $self->{'record_type'} eq 'authority' ) {
@@ -843,8 +846,9 @@ sub get_matches {
 
         foreach my $id ( keys %$matches ) {
             push @results, {
-                record_id => $id,
-                score     => $matches->{$id}->{score}
+                record_id        => $id,
+                score            => $matches->{$id}->{score},
+                composite_scores => $matches->{$id}->{composite_scores},
             };
         }
     }
