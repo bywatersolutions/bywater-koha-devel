@@ -2,6 +2,7 @@
 [% USE Koha %]
 [% USE Asset %]
 [% USE KohaDates %]
+[% USE TablesSettings %]
 [% PROCESS 'i18n.inc' %]
 [% SET footerjs = 1 %]
 [% INCLUDE 'doc-head-open.inc' %]
@@ -423,13 +424,14 @@
             <table id="records-table">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Citation</th>
-                        <th>Status</th>
-                        <th>Match type</th>
-                        <th>Match details</th>
-                        <th><abbr title="Differences between the original bibliographic record and the imported">Diff</abbr></th>
-                        <th>Record</th>
+                        <th data-colname="import_record_id">#</th>
+                        <th data-colname="citation">Citation</th>
+                        <th data-colname="status">Status</th>
+                        <th data-colname="overlay_status">Match type</th>
+                        <th data-colname="match_details">Match details</th>
+                        <th data-colname="match_score_breakdown">Score breakdown</th>
+                        <th data-colname="diff"><abbr title="Differences between the original bibliographic record and the imported">Diff</abbr></th>
+                        <th data-colname="matched">Record</th>
                     </tr>
                 </thead>
             </table>
@@ -482,6 +484,7 @@
             });
 
             if (import_batch_id) {
+                var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'manage-marc-import', 'records-table', 'json' ) | $raw %];
                 $("#records-table").kohaTable({
                     autoWidth: false,
                     searching: false,
@@ -497,7 +500,7 @@
                     bKohaAjaxSVC: true,
                     pagingType: "full_numbers",
                     dom: '<"top pager"iflp>rt<"bottom pager"flp><"clear">',
-                    columns: [{ data: "import_record_id" }, { data: "citation" }, { data: "status" }, { data: "overlay_status" }, { data: null, defaultContent: "" }, { data: null, defaultContent: "" }, { data: "matched" }],
+                    columns: [{ data: "import_record_id" }, { data: "citation" }, { data: "status" }, { data: "overlay_status" }, { data: null, defaultContent: "" }, { data: null, defaultContent: "" }, { data: null, defaultContent: "" }, { data: "matched" }],
                     rowCallback: function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                         var record_details_url = record_type == "auth" ? "/cgi-bin/koha/authorities/detail.pl?authid=" : "/cgi-bin/koha/catalogue/detail.pl?biblionumber=";
                         var record_edit_url = record_type == "auth" ? "/cgi-bin/koha/authorities/authorities.pl?authid=" : "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=";
@@ -539,6 +542,7 @@
                             var any_checked = 0;
                             $("td:eq(4)", nRow).html('<ul class="matches"></ul>');
                             $("td:eq(5)", nRow).html('<ul class="matches"></ul>');
+                            $("td:eq(6)", nRow).html('<ul class="matches"></ul>');
                             var checked = "";
                             var disabled = "";
                             if (aData["status"] == "imported" || aData["status"] == "ignored") {
@@ -588,7 +592,16 @@
                                         match_option +
                                         matching_msg.format(item.candidate_match_id, item.score, '<a target="_blank" href="' + record_details_url + item.candidate_match_id + '">' + match_citation + "</a></label></li>")
                                 );
-                                $("td:eq(5) ul", nRow).append('<li><a href="' + diff_url.format(import_batch_id, aData["import_record_id"], item.candidate_match_id, item.record_type) + '">' + _("View") + "</a></li>");
+                                var score_breakdown = "";
+                                if (item.composite_scores && Object.keys(item.composite_scores).length > 0) {
+                                    score_breakdown = Object.entries(item.composite_scores)
+                                        .map(function (e) {
+                                            return e[0] + ":" + e[1];
+                                        })
+                                        .join(", ");
+                                }
+                                $("td:eq(5) ul", nRow).append("<li>" + (score_breakdown || item.score) + "</li>");
+                                $("td:eq(6) ul", nRow).append('<li><a href="' + diff_url.format(import_batch_id, aData["import_record_id"], item.candidate_match_id, item.record_type) + '">' + _("View") + "</a></li>");
                                 checked = "";
                             });
                             if (!any_checked) {
@@ -607,19 +620,20 @@
                                     "</label></li>"
                             );
                             $("td:eq(5) ul", nRow).prepend("<li>&nbsp;</li>");
+                            $("td:eq(6) ul", nRow).prepend("<li>&nbsp;</li>");
                         }
                         if (aData["diff_url"]) {
-                            $("td:eq(5)", nRow).html('<a href="' + aData["diff_url"] + '">' + _("View") + "</a>");
+                            $("td:eq(6)", nRow).html('<a href="' + aData["diff_url"] + '">' + _("View") + "</a>");
                         }
                         if (aData["matched"]) {
                             let buttons = '<a class="btn btn-default btn-xs" target="_blank" href="' + record_details_url + aData["matched"] + '"><i class="fa-solid fa-eye"></i> ' + _("View") + "</a> ";
                             if (Koha.permissions.CAN_user_editcatalogue_edit_catalogue) {
                                 buttons += '<a class="btn btn-default btn-xs" target="_blank" href="' + record_edit_url + aData["matched"] + '"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' + _("Edit") + "</a>";
                             }
-                            $("td:eq(6)", nRow).html(buttons);
+                            $("td:eq(7)", nRow).html(buttons);
                         }
                     },
-                });
+                }, table_settings);
                 $("#revert_batch_form").on("submit", function () {
                     return confirm(_("Are you sure you want to undo the import of this batch into the catalog?"));
                 });

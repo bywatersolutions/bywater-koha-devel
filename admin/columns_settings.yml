@@ -2593,6 +2593,28 @@ modules:
               columnname: spent
 
   tools:
+    manage-marc-import:
+      records-table:
+        columns:
+            -
+              columnname: import_record_id
+            -
+              columnname: citation
+            -
+              columnname: status
+            -
+              columnname: overlay_status
+            -
+              columnname: match_details
+              cannot_be_toggled: 1
+              cannot_be_modified: 1
+            -
+              columnname: match_score_breakdown
+              is_hidden: 1
+            -
+              columnname: diff
+            -
+              columnname: matched
     batch_patron_modification:
       borrowerst:
         columns:
