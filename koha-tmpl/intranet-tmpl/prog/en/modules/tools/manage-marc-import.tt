@@ -500,7 +500,59 @@
                     bKohaAjaxSVC: true,
                     pagingType: "full_numbers",
                     dom: '<"top pager"iflp>rt<"bottom pager"flp><"clear">',
-                    columns: [{ data: "import_record_id" }, { data: "citation" }, { data: "status" }, { data: "overlay_status" }, { data: null, defaultContent: "" }, { data: null, defaultContent: "" }, { data: null, defaultContent: "" }, { data: "matched" }],
+                    columns: [
+                        {
+                            data: "import_record_id",
+                            createdCell: function (td) {
+                                $(td).attr("data-colname", "import_record_id");
+                            },
+                        },
+                        {
+                            data: "citation",
+                            createdCell: function (td) {
+                                $(td).attr("data-colname", "citation");
+                            },
+                        },
+                        {
+                            data: "status",
+                            createdCell: function (td) {
+                                $(td).attr("data-colname", "status");
+                            },
+                        },
+                        {
+                            data: "overlay_status",
+                            createdCell: function (td) {
+                                $(td).attr("data-colname", "overlay_status");
+                            },
+                        },
+                        {
+                            data: null,
+                            defaultContent: "",
+                            createdCell: function (td) {
+                                $(td).attr("data-colname", "match_details");
+                            },
+                        },
+                        {
+                            data: null,
+                            defaultContent: "",
+                            createdCell: function (td) {
+                                $(td).attr("data-colname", "match_score_breakdown");
+                            },
+                        },
+                        {
+                            data: null,
+                            defaultContent: "",
+                            createdCell: function (td) {
+                                $(td).attr("data-colname", "diff");
+                            },
+                        },
+                        {
+                            data: "matched",
+                            createdCell: function (td) {
+                                $(td).attr("data-colname", "matched");
+                            },
+                        },
+                    ],
                     rowCallback: function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                         var record_details_url = record_type == "auth" ? "/cgi-bin/koha/authorities/detail.pl?authid=" : "/cgi-bin/koha/catalogue/detail.pl?biblionumber=";
                         var record_edit_url = record_type == "auth" ? "/cgi-bin/koha/authorities/authorities.pl?authid=" : "/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=";
@@ -518,9 +570,9 @@
                             additional_details += " (" + escape_str(aData["issn"]) + ") ";
                         }
 
-                        $("td:eq(1)", nRow).html('<a href="/cgi-bin/koha/catalogue/showmarc.pl?importid=' + aData["import_record_id"] + '&viewas=html" class="previewMARC">' + escape_str(aData["citation"]) + "</a> " + additional_details);
+                        $("td[data-colname='citation']", nRow).html('<a href="/cgi-bin/koha/catalogue/showmarc.pl?importid=' + aData["import_record_id"] + '&viewas=html" class="previewMARC">' + escape_str(aData["citation"]) + "</a> " + additional_details);
 
-                        $("td:eq(2)", nRow).html(
+                        $("td[data-colname='status']", nRow).html(
                             aData["status"] == "imported"
                                 ? _("Imported")
                                 : aData["status"] == "ignored"
@@ -534,15 +586,15 @@
                                         : aData["status"]
                         );
 
-                        $("td:eq(3)", nRow).html(
+                        $("td[data-colname='overlay_status']", nRow).html(
                             aData["overlay_status"] == "no_match" ? _("No match") : aData["overlay_status"] == "match_applied" ? _("Match applied") : aData["overlay_status"] == "auto_match" ? _("Match found") : aData["overlay_status"]
                         );
 
                         if (aData["matches"].length > 0) {
                             var any_checked = 0;
-                            $("td:eq(4)", nRow).html('<ul class="matches"></ul>');
-                            $("td:eq(5)", nRow).html('<ul class="matches"></ul>');
-                            $("td:eq(6)", nRow).html('<ul class="matches"></ul>');
+                            $("td[data-colname='match_details']", nRow).html('<ul class="matches"></ul>');
+                            $("td[data-colname='match_score_breakdown']", nRow).html('<ul class="matches"></ul>');
+                            $("td[data-colname='diff']", nRow).html('<ul class="matches"></ul>');
                             var checked = "";
                             var disabled = "";
                             if (aData["status"] == "imported" || aData["status"] == "ignored") {
@@ -583,7 +635,7 @@
                                         match_citation += item.author;
                                     }
                                 }
-                                $("td:eq(4) ul", nRow).append(
+                                $("td[data-colname='match_details'] ul", nRow).append(
                                     '<li><label for="import_record_id_' +
                                         aData["import_record_id"] +
                                         "_match_" +
@@ -600,14 +652,14 @@
                                         })
                                         .join(", ");
                                 }
-                                $("td:eq(5) ul", nRow).append("<li>" + (score_breakdown || item.score) + "</li>");
-                                $("td:eq(6) ul", nRow).append('<li><a href="' + diff_url.format(import_batch_id, aData["import_record_id"], item.candidate_match_id, item.record_type) + '">' + _("View") + "</a></li>");
+                                $("td[data-colname='match_score_breakdown'] ul", nRow).append("<li>" + (score_breakdown || item.score) + "</li>");
+                                $("td[data-colname='diff'] ul", nRow).append('<li><a href="' + diff_url.format(import_batch_id, aData["import_record_id"], item.candidate_match_id, item.record_type) + '">' + _("View") + "</a></li>");
                                 checked = "";
                             });
                             if (!any_checked) {
                                 checked = 'checked="checked"';
                             }
-                            $("td:eq(4) ul", nRow).prepend(
+                            $("td[data-colname='match_details'] ul", nRow).prepend(
                                 '<li><label><input type="radio" data-import_record_id="' +
                                     aData["import_record_id"] +
                                     '" class="chosen" name="import_record_id_' +
@@ -619,18 +671,18 @@
                                     _("Ignore matches") +
                                     "</label></li>"
                             );
-                            $("td:eq(5) ul", nRow).prepend("<li>&nbsp;</li>");
-                            $("td:eq(6) ul", nRow).prepend("<li>&nbsp;</li>");
+                            $("td[data-colname='match_score_breakdown'] ul", nRow).prepend("<li>&nbsp;</li>");
+                            $("td[data-colname='diff'] ul", nRow).prepend("<li>&nbsp;</li>");
                         }
                         if (aData["diff_url"]) {
-                            $("td:eq(6)", nRow).html('<a href="' + aData["diff_url"] + '">' + _("View") + "</a>");
+                            $("td[data-colname='diff']", nRow).html('<a href="' + aData["diff_url"] + '">' + _("View") + "</a>");
                         }
                         if (aData["matched"]) {
                             let buttons = '<a class="btn btn-default btn-xs" target="_blank" href="' + record_details_url + aData["matched"] + '"><i class="fa-solid fa-eye"></i> ' + _("View") + "</a> ";
                             if (Koha.permissions.CAN_user_editcatalogue_edit_catalogue) {
                                 buttons += '<a class="btn btn-default btn-xs" target="_blank" href="' + record_edit_url + aData["matched"] + '"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' + _("Edit") + "</a>";
                             }
-                            $("td:eq(7)", nRow).html(buttons);
+                            $("td[data-colname='matched']", nRow).html(buttons);
                         }
                     },
                 }, table_settings);
