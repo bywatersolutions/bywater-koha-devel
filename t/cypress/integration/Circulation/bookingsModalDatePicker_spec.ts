@@ -571,8 +571,9 @@ describe("Booking Modal Date Picker Tests", () => {
          */
 
         // Calculate expected bold dates based on circulation rules (like original test)
-        // Bold dates occur at period endpoints: start + issuelength, start + issuelength + renewalperiod, etc.
-        const expectedBoldDates = [];
+        // Bold dates occur at the start date and at period endpoints:
+        // start, start + issuelength, start + issuelength + renewalperiod, etc.
+        const expectedBoldDates = [clearZoneStart];
 
         // Issue period end (after issuelength days)
         expectedBoldDates.push(
