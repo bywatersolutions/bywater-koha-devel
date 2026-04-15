@@ -41,6 +41,12 @@ __PACKAGE__->table("localization");
   is_nullable: 0
   size: 64
 
+=head2 property
+
+  data_type: 'varchar'
+  is_nullable: 0
+  size: 100
+
 =head2 lang
 
   data_type: 'varchar'
@@ -63,6 +69,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 0, size => 16 },
   "code",
   { data_type => "varchar", is_nullable => 0, size => 64 },
+  "property",
+  { data_type => "varchar", is_nullable => 0, size => 100 },
   "lang",
   { data_type => "varchar", is_nullable => 0, size => 25 },
   "translation",
@@ -83,7 +91,7 @@ __PACKAGE__->set_primary_key("localization_id");
 
 =head1 UNIQUE CONSTRAINTS
 
-=head2 C<entity_code_lang>
+=head2 C<entity_code_property_lang>
 
 =over 4
 
@@ -91,17 +99,22 @@ __PACKAGE__->set_primary_key("localization_id");
 
 =item * L</code>
 
+=item * L</property>
+
 =item * L</lang>
 
 =back
 
 =cut
 
-__PACKAGE__->add_unique_constraint("entity_code_lang", ["entity", "code", "lang"]);
+__PACKAGE__->add_unique_constraint(
+  "entity_code_property_lang",
+  ["entity", "code", "property", "lang"],
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2021-01-21 13:39:29
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Elbup2i+1JON+xa38uzd6A
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-04-15 16:28:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BwAULPPRTjz6/6oeL2uF+w
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
