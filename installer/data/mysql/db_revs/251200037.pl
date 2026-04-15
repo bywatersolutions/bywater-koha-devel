@@ -22,7 +22,7 @@ return {
         # add column is system
         unless ( column_exists( 'record_sources', 'is_system' ) ) {
             $dbh->do(
-                q{ ALTER TABLE record_sources ADD COLUMN `is_system` TINYINT(1) NOT NULL DEFAULT 0 AFTER can_be_edited }
+                q{ ALTER TABLE record_sources ADD COLUMN `is_system` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'If this record source is system-defined and cannot be deleted' AFTER can_be_edited }
             );
             say $out "Added column 'record_sources.is_system'";
         }
