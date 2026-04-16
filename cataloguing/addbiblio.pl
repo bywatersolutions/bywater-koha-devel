@@ -44,15 +44,20 @@ use MARC::Record;
 use C4::ClassSource qw( GetClassSources );
 use C4::ImportBatch qw( GetImportRecordMarc );
 use C4::Charset     qw( SetMarcUnicodeFlag );
+use C4::Languages   qw( getlanguage );
+use C4::Scrubber;
 use Koha::BiblioFrameworks;
 use Koha::DateUtils qw( dt_from_string );
 
 use Koha::Acquisition::Orders;
+use Koha::AdditionalContents;
 use Koha::Biblios;
 use Koha::ItemTypes;
 use Koha::Libraries;
 
 use Koha::Biblio::Metadata::Extractor::MARC::MARC21;
+use Koha::Logger;
+use Koha::TemplateUtils qw( process_tt );
 use Koha::Patrons;
 use Koha::UI::Form::Builder::Biblio;
 
@@ -793,12 +798,42 @@ if ( $op eq "cud-addbiblio" ) {
 
         # it may be a duplicate, warn the user and do nothing
         build_tabs( $template, $record, $dbh, $encoding, $input );
+
+        my $duplicate_additional_info = q{};
+        my $dup_biblio                = Koha::Biblios->find($duplicatebiblionumber);
+        if ($dup_biblio) {
+            my $lang           = C4::Languages::getlanguage();
+            my $branch         = C4::Context->userenv ? C4::Context->userenv->{branch} : q{};
+            my @customizations = Koha::AdditionalContents->search_for_display(
+                {
+                    category   => 'record_display',
+                    location   => 'StaffDuplicateCheckPage',
+                    lang       => $lang,
+                    library_id => $branch,
+                }
+            )->as_list;
+
+            foreach my $customization (@customizations) {
+                my $processed = eval { process_tt( $customization->content, { biblio => $dup_biblio } ) };
+                if ($@) {
+                    Koha::Logger->get->error("Duplicate check additional info template error: $@");
+                    next;
+                }
+                $duplicate_additional_info .= $processed if $processed;
+            }
+            if ($duplicate_additional_info) {
+                my $scrubber = C4::Scrubber->new('record_display');
+                $duplicate_additional_info = $scrubber->scrub($duplicate_additional_info);
+            }
+        }
+
         $template->param(
-            biblionumber          => $biblionumber,
-            biblioitemnumber      => $biblioitemnumber,
-            duplicatebiblionumber => $duplicatebiblionumber,
-            duplicatebibid        => $duplicatebiblionumber,
-            duplicatetitle        => $duplicatetitle,
+            biblionumber            => $biblionumber,
+            biblioitemnumber        => $biblioitemnumber,
+            duplicatebiblionumber   => $duplicatebiblionumber,
+            duplicatebibid          => $duplicatebiblionumber,
+            duplicatetitle          => $duplicatetitle,
+            duplicateadditionalinfo => $duplicate_additional_info,
         );
     }
 
