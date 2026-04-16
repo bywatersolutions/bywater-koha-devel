@@ -332,7 +332,8 @@ jobs:
               shell: bash
 
             - name: Notify package importer
-              run: curl --insecure --fail -w "\nHTTP Response Code: %{http_code}\n" "https://apt2.bywatersolutions.com/?tag=${{ steps.extracted_variables.outputs.TAG_NAME }}&t=${{ secrets.KOHA_IMPORT_GITHUB_RELEASES_TOKEN }}"
+              run: |
+                curl --insecure --fail -w "\nHTTP Response Code: %{http_code}\n" "https://apt2.bywatersolutions.com/?tag=${{ steps.extracted_variables.outputs.TAG_NAME }}&t=${{ secrets.KOHA_IMPORT_GITHUB_RELEASES_TOKEN }}"
               shell: bash
 
 
