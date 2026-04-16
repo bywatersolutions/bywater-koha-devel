@@ -2196,182 +2196,90 @@
 
     [% IF Koha.Preference('EnableItemGroups') %]
         <script nonce="[% Koha.CSPNonce | $raw %]">
-            $(document).ready(function () {
-                // Load item groups table
-                var itemGroupsTable = $("#items-group-table").kohaTable({
-                    autoWidth: false,
-                    dom: '<"top pager"ilp>t<"bottom pager"ip>r',
-                    columns: [
-                        {
-                            data: "display_order",
-                            title: _("Display order"),
-                            searchable: true,
-                            orderable: true,
-                        },
-                        {
-                            data: "description",
-                            title: _("Description"),
-                            searchable: true,
-                            orderable: true,
-                        },
-                        {
-                            data: function (oObj) {
-                                if (Koha.permissions.CAN_user_editcatalogue_manage_item_groups) {
-                                    return (
-                                        `<button class='item-group-edit btn btn-default btn-xs' data-item-group-id='${oObj.item_group_id}'>
+            // Load item groups table
+            var itemGroupsTable = $("#items-group-table").kohaTable({
+                autoWidth: false,
+                dom: '<"top pager"ilp>t<"bottom pager"ip>r',
+                columns: [
+                    {
+                        data: "display_order",
+                        title: _("Display order"),
+                        searchable: true,
+                        orderable: true,
+                    },
+                    {
+                        data: "description",
+                        title: _("Description"),
+                        searchable: true,
+                        orderable: true,
+                    },
+                    {
+                        data: function (oObj) {
+                            if (Koha.permissions.CAN_user_editcatalogue_manage_item_groups) {
+                                return (
+                                    `<button class='item-group-edit btn btn-default btn-xs' data-item-group-id='${oObj.item_group_id}'>
                                     <i class="fa-solid fa-pencil" aria-hidden="true"></i> ${_("Edit")}
                                 </button>` +
-                                        "&nbsp" +
-                                        `<button class='item-group-delete btn btn-default btn-xs' data-item-group-id='${oObj.item_group_id}'>
+                                    "&nbsp" +
+                                    `<button class='item-group-delete btn btn-default btn-xs' data-item-group-id='${oObj.item_group_id}'>
                                     <i class='fa fa-trash-can'></i> ${"Delete"}
                                 </button>`
-                                    );
-                                } else {
-                                    return "";
-                                }
-                            },
-                            searchable: false,
-                            orderable: false,
+                                );
+                            } else {
+                                return "";
+                            }
                         },
-                    ],
-                    paging: false,
-                    ajax: { url: `/api/v1/biblios/${biblionumber}/item_groups?_per_page=-1` },
-                });
-
-                // Create new item groups
-                $(".item-group-create").on("click", function () {
-                    $("#modal-item-group-create-form-description").val("");
-                    $("#modal-item-group-create-submit").removeAttr("disabled");
-                    $("#modal-item-group-create").modal("show");
-                });
-
-                $("#modal-item-group-create-form").validate({
-                    submitHandler: function (form) {
-                        $.ajax({
-                            url: `/api/v1/biblios/${biblionumber}/item_groups`,
-                            headers: { "x-koha-embed": "items" },
-                            success: function (item_groups) {
-                                $("#modal-item-group-create-submit").attr("disabled", "disabled");
-
-                                var settings = {
-                                    url: `/api/v1/biblios/${biblionumber}/item_groups`,
-                                    method: "POST",
-                                    headers: {
-                                        "Content-Type": "application/json",
-                                    },
-                                    data: JSON.stringify({
-                                        description: $("#modal-item-group-create-form-description").val(),
-                                        display_order: $("#modal-item-group-create-form-display_order").val(),
-                                    }),
-                                };
-
-                                $.ajax(settings)
-                                    .done(function (response) {
-                                        $("#item-group-add-form-select").append(
-                                            $("<option>", {
-                                                value: response.item_group_id,
-                                                text: response.description,
-                                            })
-                                        );
-
-                                        $("#modal-item-group-create").modal("hide");
-                                        if (item_groups.length == 0) {
-                                            // This bib has no previous item groups, reload the page
-                                            window.location.replace(`/cgi-bin/koha/catalogue/detail.pl?biblionumber=${biblionumber}`);
-                                        } else {
-                                            // Has other item groups, just reload the table
-                                            itemGroupsTable.api().ajax.reload();
-                                        }
-                                    })
-                                    .fail(function (err) {
-                                        var message = err.responseJSON.error;
-                                        alert(message);
-                                    });
-                            },
-                        });
+                        searchable: false,
+                        orderable: false,
                     },
-                });
+                ],
+                paging: false,
+                ajax: { url: `/api/v1/biblios/${biblionumber}/item_groups?_per_page=-1` },
+            });
 
-                $("#modal-item-group-create").on("shown.bs.modal", function () {
-                    $("#modal-item-group-create-form-description").focus();
-                });
+            // Create new item groups
+            $(".item-group-create").on("click", function () {
+                $("#modal-item-group-create-form-description").val("");
+                $("#modal-item-group-create-submit").removeAttr("disabled");
+                $("#modal-item-group-create").modal("show");
+            });
 
-                // Edit existing item groups
-                $("body").on("click", ".item-group-edit", function () {
-                    const item_group_id = $(this).data("item-group-id");
-                    const url = `/api/v1/biblios/${biblionumber}/item_groups/${item_group_id}`;
-                    $.get(url, function (data) {
-                        $("#modal-item-group-edit-form-description").val(data.description);
-                        $("#modal-item-group-edit-form-display_order").val(data.display_order);
-                        $("#modal-item-group-edit-submit").data("item-group-id", item_group_id);
-                        $("#modal-item-group-edit-submit").removeAttr("disabled");
-                        $("#modal-item-group-edit").modal("show");
-                    });
-                });
-
-                $("#modal-item-group-edit-form").validate({
-                    submitHandler: function (form) {
-                        $("#modal-item-group-edit-submit").attr("disabled", "disabled");
-
-                        const item_group_id = $("#modal-item-group-edit-submit").data("item-group-id");
-                        const url = `/api/v1/biblios/${biblionumber}/item_groups/${item_group_id}`;
-
-                        var settings = {
-                            url: url,
-                            method: "PUT",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            data: JSON.stringify({
-                                description: $("#modal-item-group-edit-form-description").val(),
-                                display_order: $("#modal-item-group-edit-form-display_order").val(),
-                            }),
-                        };
-
-                        $.ajax(settings)
-                            .done(function (response) {
-                                $("#modal-item-group-edit").modal("hide");
-                                itemGroupsTable.api().ajax.reload();
-                            })
-                            .fail(function (err) {
-                                var message = err.responseJSON.error;
-                                alert(message);
-                            });
-                    },
-                });
-
-                $("#modal-item-group-edit").on("shown.bs.modal", function () {
-                    $("#modal-item-group-edit-form-description").focus();
-                });
-
-                // Delete existing item groups
-                $("body").on("click", ".item-group-delete", function () {
-                    const item_group_id = $(this).data("item-group-id");
-                    $("#modal-item-group-delete-submit").data("item-group-id", item_group_id);
-                    $("#modal-item-group-delete-submit").removeAttr("disabled");
-                    $("#modal-item-group-delete").modal("show");
-                });
-                $("#modal-item-group-delete-submit").on("click", function () {
-                    $("#modal-item-group-delete-submit").attr("disabled", "disabled");
-                    const item_group_id = $("#modal-item-group-delete-submit").data("item-group-id");
-
+            $("#modal-item-group-create-form").validate({
+                submitHandler: function (form) {
                     $.ajax({
-                        url: `/api/v1/biblios/${biblionumber}/item_groups/${item_group_id}`,
+                        url: `/api/v1/biblios/${biblionumber}/item_groups`,
                         headers: { "x-koha-embed": "items" },
-                        success: function (item_group_data) {
-                            $.ajax({
-                                url: `/api/v1/biblios/${biblionumber}/item_groups/${item_group_id}`,
-                                method: "DELETE",
-                            })
+                        success: function (item_groups) {
+                            $("#modal-item-group-create-submit").attr("disabled", "disabled");
+
+                            var settings = {
+                                url: `/api/v1/biblios/${biblionumber}/item_groups`,
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                data: JSON.stringify({
+                                    description: $("#modal-item-group-create-form-description").val(),
+                                    display_order: $("#modal-item-group-create-form-display_order").val(),
+                                }),
+                            };
+
+                            $.ajax(settings)
                                 .done(function (response) {
-                                    $("#modal-item-group-delete").modal("hide");
-                                    $(`#item-group-add-form-select option[value='${item_group_id}']`).remove();
-                                    if (item_group_data.items === null) {
-                                        // No items for this item group, we can just refresh the table
-                                        itemGroupsTable.api().ajax.reload();
-                                    } else {
-                                        // This item group had items attached to it, we need to reload the page
+                                    $("#item-group-add-form-select").append(
+                                        $("<option>", {
+                                            value: response.item_group_id,
+                                            text: response.description,
+                                        })
+                                    );
+
+                                    $("#modal-item-group-create").modal("hide");
+                                    if (item_groups.length == 0) {
+                                        // This bib has no previous item groups, reload the page
                                         window.location.replace(`/cgi-bin/koha/catalogue/detail.pl?biblionumber=${biblionumber}`);
+                                    } else {
+                                        // Has other item groups, just reload the table
+                                        itemGroupsTable.api().ajax.reload();
                                     }
                                 })
                                 .fail(function (err) {
@@ -2380,44 +2288,109 @@
                                 });
                         },
                     });
+                },
+            });
+
+            $("#modal-item-group-create").on("shown.bs.modal", function () {
+                $("#modal-item-group-create-form-description").focus();
+            });
+
+            // Edit existing item groups
+            $("body").on("click", ".item-group-edit", function () {
+                const item_group_id = $(this).data("item-group-id");
+                const url = `/api/v1/biblios/${biblionumber}/item_groups/${item_group_id}`;
+                $.get(url, function (data) {
+                    $("#modal-item-group-edit-form-description").val(data.description);
+                    $("#modal-item-group-edit-form-display_order").val(data.display_order);
+                    $("#modal-item-group-edit-submit").data("item-group-id", item_group_id);
+                    $("#modal-item-group-edit-submit").removeAttr("disabled");
+                    $("#modal-item-group-edit").modal("show");
                 });
+            });
 
-                // Add item(s) to a item group
-                $(".itemselection_action_item_group_set").on("click", function () {
-                    $("#modal-item-group-set").modal("show");
-                });
+            $("#modal-item-group-edit-form").validate({
+                submitHandler: function (form) {
+                    $("#modal-item-group-edit-submit").attr("disabled", "disabled");
 
-                $("#modal-item-group-set-form").validate({
-                    submitHandler: function (form) {
-                        $("#modal-item-group-set-submit").attr("disabled", "disabled");
+                    const item_group_id = $("#modal-item-group-edit-submit").data("item-group-id");
+                    const url = `/api/v1/biblios/${biblionumber}/item_groups/${item_group_id}`;
 
-                        const item_group_id = $("#item-group-add-form-select").val();
+                    var settings = {
+                        url: url,
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        data: JSON.stringify({
+                            description: $("#modal-item-group-edit-form-description").val(),
+                            display_order: $("#modal-item-group-edit-form-display_order").val(),
+                        }),
+                    };
 
-                        let itemnumbers = new Array();
-                        $("input[name='itemnumber'][type='checkbox']:checked").each(function () {
-                            const itemnumber = $(this).val();
-                            itemnumbers.push(itemnumber);
+                    $.ajax(settings)
+                        .done(function (response) {
+                            $("#modal-item-group-edit").modal("hide");
+                            itemGroupsTable.api().ajax.reload();
+                        })
+                        .fail(function (err) {
+                            var message = err.responseJSON.error;
+                            alert(message);
                         });
-                        if (itemnumbers.length > 0) {
-                            let url = "/cgi-bin/koha/catalogue/detail.pl?op=set_item_group";
-                            url += "&itemnumber=" + itemnumbers.join("&itemnumber=");
-                            url += "&biblionumber=" + biblionumber;
-                            url += `&item_group_id=${item_group_id}`;
+                },
+            });
 
-                            window.location.replace(url);
-                        }
+            $("#modal-item-group-edit").on("shown.bs.modal", function () {
+                $("#modal-item-group-edit-form-description").focus();
+            });
 
-                        $("#modal-item-group-set").modal("hide");
+            // Delete existing item groups
+            $("body").on("click", ".item-group-delete", function () {
+                const item_group_id = $(this).data("item-group-id");
+                $("#modal-item-group-delete-submit").data("item-group-id", item_group_id);
+                $("#modal-item-group-delete-submit").removeAttr("disabled");
+                $("#modal-item-group-delete").modal("show");
+            });
+            $("#modal-item-group-delete-submit").on("click", function () {
+                $("#modal-item-group-delete-submit").attr("disabled", "disabled");
+                const item_group_id = $("#modal-item-group-delete-submit").data("item-group-id");
+
+                $.ajax({
+                    url: `/api/v1/biblios/${biblionumber}/item_groups/${item_group_id}`,
+                    headers: { "x-koha-embed": "items" },
+                    success: function (item_group_data) {
+                        $.ajax({
+                            url: `/api/v1/biblios/${biblionumber}/item_groups/${item_group_id}`,
+                            method: "DELETE",
+                        })
+                            .done(function (response) {
+                                $("#modal-item-group-delete").modal("hide");
+                                $(`#item-group-add-form-select option[value='${item_group_id}']`).remove();
+                                if (item_group_data.items === null) {
+                                    // No items for this item group, we can just refresh the table
+                                    itemGroupsTable.api().ajax.reload();
+                                } else {
+                                    // This item group had items attached to it, we need to reload the page
+                                    window.location.replace(`/cgi-bin/koha/catalogue/detail.pl?biblionumber=${biblionumber}`);
+                                }
+                            })
+                            .fail(function (err) {
+                                var message = err.responseJSON.error;
+                                alert(message);
+                            });
                     },
                 });
+            });
 
-                // Remove item(s) from an item group
-                $(".itemselection_action_item_group_unset").on("click", function () {
-                    $("#modal-item-group-unset").modal("show");
-                });
+            // Add item(s) to a item group
+            $(".itemselection_action_item_group_set").on("click", function () {
+                $("#modal-item-group-set").modal("show");
+            });
 
-                $("#modal-item-group-unset-submit").on("click", function () {
-                    $("#modal-item-group-unset-submit").attr("disabled", "disabled");
+            $("#modal-item-group-set-form").validate({
+                submitHandler: function (form) {
+                    $("#modal-item-group-set-submit").attr("disabled", "disabled");
+
+                    const item_group_id = $("#item-group-add-form-select").val();
 
                     let itemnumbers = new Array();
                     $("input[name='itemnumber'][type='checkbox']:checked").each(function () {
@@ -2425,15 +2398,40 @@
                         itemnumbers.push(itemnumber);
                     });
                     if (itemnumbers.length > 0) {
-                        let url = "/cgi-bin/koha/catalogue/detail.pl?op=unset_item_group";
+                        let url = "/cgi-bin/koha/catalogue/detail.pl?op=set_item_group";
                         url += "&itemnumber=" + itemnumbers.join("&itemnumber=");
                         url += "&biblionumber=" + biblionumber;
+                        url += `&item_group_id=${item_group_id}`;
 
                         window.location.replace(url);
                     }
 
-                    $("#modal-item-group-unset").modal("hide");
+                    $("#modal-item-group-set").modal("hide");
+                },
+            });
+
+            // Remove item(s) from an item group
+            $(".itemselection_action_item_group_unset").on("click", function () {
+                $("#modal-item-group-unset").modal("show");
+            });
+
+            $("#modal-item-group-unset-submit").on("click", function () {
+                $("#modal-item-group-unset-submit").attr("disabled", "disabled");
+
+                let itemnumbers = new Array();
+                $("input[name='itemnumber'][type='checkbox']:checked").each(function () {
+                    const itemnumber = $(this).val();
+                    itemnumbers.push(itemnumber);
                 });
+                if (itemnumbers.length > 0) {
+                    let url = "/cgi-bin/koha/catalogue/detail.pl?op=unset_item_group";
+                    url += "&itemnumber=" + itemnumbers.join("&itemnumber=");
+                    url += "&biblionumber=" + biblionumber;
+
+                    window.location.replace(url);
+                }
+
+                $("#modal-item-group-unset").modal("hide");
             });
         </script>
     [% END # /IF EnableItemGroups %]
