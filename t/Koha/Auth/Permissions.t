@@ -160,6 +160,7 @@ subtest 'superlibrarian tests' => sub {
         'CAN_user_coursereserves'                                   => 1,
         'CAN_user_editauthorities'                                  => 1,
         'CAN_user_editcatalogue_advanced_editor'                    => 1,
+        'CAN_user_editcatalogue_records_restore'                    => 1,
         'CAN_user_editcatalogue_create_shared_macros'               => 1,
         'CAN_user_editcatalogue_delete_all_items'                   => 1,
         'CAN_user_editcatalogue_delete_shared_macros'               => 1,
