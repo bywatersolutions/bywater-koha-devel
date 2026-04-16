@@ -387,6 +387,7 @@
           Bad request. Possible `error_code` attribute values:
 
             * `invalid_query`
+            * `max_page_size_exceeded`
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "401":

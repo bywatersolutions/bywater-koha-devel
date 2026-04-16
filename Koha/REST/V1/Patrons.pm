@@ -45,6 +45,20 @@ Controller function that handles listing Koha::Patron objects
 sub list {
     my $c = shift->openapi->valid_input or return;
 
+    my $max_page_size = C4::Context->preference('RESTMaxPatronsPageSize');
+    if ($max_page_size) {
+        my $per_page = $c->param('_per_page');
+        if ( defined $per_page && ( $per_page == -1 || $per_page > $max_page_size ) ) {
+            return $c->render(
+                status  => 400,
+                openapi => {
+                    error      => "_per_page exceeds the maximum allowed value of $max_page_size for this endpoint",
+                    error_code => 'max_page_size_exceeded',
+                }
+            );
+        }
+    }
+
     return try {
 
         my $query      = {};
