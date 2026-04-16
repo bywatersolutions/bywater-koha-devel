@@ -75,7 +75,7 @@ $mocked_letters->mock(
 
 subtest 'list() tests' => sub {
 
-    plan tests => 3;
+    plan tests => 4;
 
     $schema->storage->txn_begin;
     unauthorized_access_tests( 'GET', undef, undef );
@@ -279,6 +279,54 @@ subtest 'list() tests' => sub {
             ->tx->res->json;
 
         is( scalar @{$res}, 1, 'Only one patron returned' );
+
+        $schema->storage->txn_rollback;
+    };
+
+    subtest 'RESTMaxPatronsPageSize limit tests' => sub {
+
+        plan tests => 14;
+
+        $schema->storage->txn_begin;
+
+        my $librarian = $builder->build_object(
+            {
+                class => 'Koha::Patrons',
+                value => { flags => 2**4 }    # borrowers flag = 4
+            }
+        );
+        my $password = 'thePassword123';
+        $librarian->set_password( { password => $password, skip_validation => 1 } );
+        my $userid = $librarian->userid;
+
+        # Pref unset - _per_page=-1 should be allowed
+        t::lib::Mocks::mock_preference( 'RESTMaxPatronsPageSize', '' );
+        $t->get_ok("//$userid:$password@/api/v1/patrons?_per_page=-1")
+            ->status_is( 200, '_per_page=-1 allowed when RESTMaxPatronsPageSize is empty' );
+
+        # Pref set to 0 - _per_page=-1 should be allowed (falsy disables)
+        t::lib::Mocks::mock_preference( 'RESTMaxPatronsPageSize', 0 );
+        $t->get_ok("//$userid:$password@/api/v1/patrons?_per_page=-1")
+            ->status_is( 200, '_per_page=-1 allowed when RESTMaxPatronsPageSize is 0' );
+
+        # Pref set to 100 - _per_page=-1 should be rejected
+        t::lib::Mocks::mock_preference( 'RESTMaxPatronsPageSize', 100 );
+        $t->get_ok("//$userid:$password@/api/v1/patrons?_per_page=-1")
+            ->status_is( 400, '_per_page=-1 rejected when RESTMaxPatronsPageSize is set' )
+            ->json_is( '/error_code' => 'max_page_size_exceeded' );
+
+        # Pref set to 100 - _per_page=500 should be rejected
+        $t->get_ok("//$userid:$password@/api/v1/patrons?_per_page=500")
+            ->status_is( 400, '_per_page=500 rejected when RESTMaxPatronsPageSize is 100' )
+            ->json_is( '/error_code' => 'max_page_size_exceeded' );
+
+        # Pref set to 100 - _per_page=50 should be allowed
+        $t->get_ok("//$userid:$password@/api/v1/patrons?_per_page=50")
+            ->status_is( 200, '_per_page=50 allowed when RESTMaxPatronsPageSize is 100' );
+
+        # Pref set to 100 - _per_page=100 should be allowed (exact boundary)
+        $t->get_ok("//$userid:$password@/api/v1/patrons?_per_page=100")
+            ->status_is( 200, '_per_page=100 allowed when RESTMaxPatronsPageSize is 100' );
 
         $schema->storage->txn_rollback;
     };
