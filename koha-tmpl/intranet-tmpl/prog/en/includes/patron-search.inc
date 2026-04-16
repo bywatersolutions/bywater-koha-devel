@@ -799,6 +799,39 @@
                     fixedHeader: false,
                 }, typeof table_settings !== 'undefined' && !empty_table_settings ? table_settings : null, 1, additional_filters, filters_options, external_filter_nodes, parent_block.find(".search_description"), additional_search_descriptions );
 
+                [% IF Koha.Preference('RESTMaxPatronsPageSize') %]
+                    // The API rejects _per_page=-1 or > RESTMaxPatronsPageSize. jQuery's
+                    // $.extend in kohaTable merges arrays by index, so we can't fix the
+                    // menu via options — do it post-init on the instance's internal state
+                    // and on the rendered <select>.
+                    if ( patron_search_url == '/api/v1/patrons' ) {
+                        let rest_max = [% Koha.Preference('RESTMaxPatronsPageSize') | html %];
+                        let dt = patrons_table.DataTable();
+                        let settings = dt.settings()[0];
+                        let values = [...new Set(
+                            settings.aLengthMenu[0]
+                                .map(function(v){ return v == -1 ? rest_max : v; })
+                                .filter(function(v){ return v <= rest_max; })
+                        )].sort(function(a, b){ return a - b; });
+                        settings.aLengthMenu = [values, values.slice()];
+
+                        let $select = $(settings.nTableWrapper).find('select[name$="_length"]');
+                        let prev_val = $select.val();
+                        $select.empty();
+                        values.forEach(function(v){
+                            $select.append($('<option>').attr('value', v).text(v));
+                        });
+
+                        let cur_len = dt.page.len();
+                        if ( cur_len === -1 || cur_len > rest_max ) {
+                            dt.page.len(rest_max);
+                            $select.val(rest_max);
+                        } else if ( values.indexOf(parseInt(prev_val, 10)) !== -1 ) {
+                            $select.val(prev_val);
+                        }
+                    }
+                [% END %]
+
                 patron_search_form.on('submit', filter);
                 patron_search_form.on('submit', update_search_type);
                 patron_search_form.on('submit', function(){
