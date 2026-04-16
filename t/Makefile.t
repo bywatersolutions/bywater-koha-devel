@@ -30,6 +30,7 @@ my @ignored = qw(
     .editorconfig
     .gitignore
     .mailmap
+    .nvmrc
     .perlcriticrc
     .proverc
     .proverc.dist
