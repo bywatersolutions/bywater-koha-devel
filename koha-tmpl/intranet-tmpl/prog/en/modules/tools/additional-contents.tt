@@ -551,7 +551,7 @@
             [% END %]
         [% END %]
     [% ELSIF category ==  'record_display' %]
-        [% SET staff_available_options = ['StaffResultsPage' , 'StaffDetailPage', 'StaffListPage' ] %]
+        [% SET staff_available_options = ['StaffResultsPage' , 'StaffDetailPage', 'StaffListPage', 'StaffDuplicateCheckPage' ] %]
         <optgroup label="Staff interface">
             [% FOREACH l IN staff_available_options.sort %]
                 [% IF l == location %]
