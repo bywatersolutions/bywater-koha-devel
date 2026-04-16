@@ -708,6 +708,7 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('RESTAPIRenewalBranch','apiuserbranch'),
 ('RESTBasicAuth','0'),
 ('RESTdefaultPageSize','20'),
+('RESTMaxPatronsPageSize', ''),
 ('RESTOAuth2ClientCredentials','0'),
 ('RESTPublicAnonymousRequests','1'),
 ('RESTPublicAPI','1'),

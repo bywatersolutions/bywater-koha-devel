@@ -18,6 +18,11 @@ Web services:
               class: integer
             - "per page."
         -
+            - "Set the maximum number of patrons returned by the /patrons REST API endpoint to"
+            - pref: "RESTMaxPatronsPageSize"
+              class: integer
+            - "per page. Leave empty or set to 0 to disable this limit."
+        -
             - pref: RESTOAuth2ClientCredentials
               choices:
                   1: Enable
