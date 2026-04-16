@@ -154,7 +154,7 @@ sub stylesheets {
     return $stylesheets;
 }
 
-=head3 type
+=head3 _type
 
 =cut
 

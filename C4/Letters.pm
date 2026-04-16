@@ -748,6 +748,14 @@ sub GetPreparedLetter {
     return $letter;
 }
 
+=head2 _substitute_tables
+
+  _substitute_tables( $letter, $tables );
+
+Substitute placeholders in the letter with values from the given tables.
+
+=cut
+
 sub _substitute_tables {
     my ( $letter, $tables ) = @_;
     while ( my ( $table, $param ) = each %$tables ) {
@@ -774,6 +782,14 @@ sub _substitute_tables {
         _parseletter( $letter, $table, $values );
     }
 }
+
+=head2 _parseletter_sth
+
+  my $sth = _parseletter_sth( $table );
+
+Return a prepared statement handle for retrieving values from the given table.
+
+=cut
 
 sub _parseletter_sth {
     my $table = shift;
@@ -1306,7 +1322,7 @@ sub ResendMessage {
     return $rv;
 }
 
-=head2 _add_attachements
+=head2 _add_attachments
 
   _add_attachments({ letter => $letter, attachments => $attachments });
 
@@ -1427,6 +1443,15 @@ sub _get_unsent_messages {
     my $result = $sth->execute(@query_params);
     return $sth->fetchall_arrayref( {} );
 }
+
+=head2 _send_message_by_email
+
+  _send_message_by_email( $message, $username, $password, $method, $smtp_transports );
+
+Send a queued message via email. Handles SMTP transport selection, attachments,
+guarantor copies, and message status updates.
+
+=cut
 
 sub _send_message_by_email {
     my $message = shift or return;
@@ -1645,6 +1670,15 @@ sub _send_message_by_email {
     };
 }
 
+=head2 _wrap_html
+
+  my $html = _wrap_html( $content, $title, $type );
+
+Wrap letter content in an HTML document with appropriate stylesheets based
+on the message type ('email' or 'print').
+
+=cut
+
 sub _wrap_html {
     my ( $content, $title, $type ) = @_;
     my $stylesheets = '';
@@ -1682,6 +1716,15 @@ $content
 EOS
 }
 
+=head2 _is_duplicate
+
+  my $is_dup = _is_duplicate( $message );
+
+Check whether an identical message has already been sent today for the same
+patron, transport type, and letter code.
+
+=cut
+
 sub _is_duplicate {
     my ($message) = @_;
     my $dbh       = C4::Context->dbh;
@@ -1699,6 +1742,14 @@ sub _is_duplicate {
     );
     return $count;
 }
+
+=head2 _send_message_by_sms
+
+  _send_message_by_sms( $message );
+
+Send a queued message via SMS using the patron's SMS alert number.
+
+=cut
 
 sub _send_message_by_sms {
     my $message = shift or return;
@@ -1755,11 +1806,27 @@ sub _send_message_by_sms {
     return $success;
 }
 
+=head2 _update_message_to_address
+
+  _update_message_to_address( $message_id, $to_address );
+
+Update the to_address field for a queued message.
+
+=cut
+
 sub _update_message_to_address {
     my ( $id, $to ) = @_;
     my $dbh = C4::Context->dbh();
     $dbh->do( 'UPDATE message_queue SET to_address=? WHERE message_id=?', undef, ( $to, $id ) );
 }
+
+=head2 _update_message_from_address
+
+  _update_message_from_address( $message_id, $from_address );
+
+Update the from_address field for a queued message.
+
+=cut
 
 sub _update_message_from_address {
     my ( $message_id, $from_address ) = @_;
@@ -1767,11 +1834,27 @@ sub _update_message_from_address {
     $dbh->do( 'UPDATE message_queue SET from_address = ? WHERE message_id = ?', undef, ( $from_address, $message_id ) );
 }
 
+=head2 _update_message_cc_address
+
+  _update_message_cc_address( $message_id, $cc_address );
+
+Update the cc_address field for a queued message.
+
+=cut
+
 sub _update_message_cc_address {
     my ( $message_id, $cc_address ) = @_;
     my $dbh = C4::Context->dbh();
     $dbh->do( 'UPDATE message_queue SET cc_address = ? WHERE message_id = ?', undef, ( $cc_address, $message_id ) );
 }
+
+=head2 _set_message_status
+
+  _set_message_status({ message_id => $id, status => $status, failure_code => $code });
+
+Update the status and optional failure_code for a queued message.
+
+=cut
 
 sub _set_message_status {
     my $params = shift or return;
@@ -1790,6 +1873,23 @@ sub _set_message_status {
     );
     return $result;
 }
+
+=head2 _process_tt
+
+  my $output = _process_tt({
+      content    => $content,
+      tables     => $tables,
+      loops      => $loops,
+      objects    => $objects,
+      substitute => $substitute,
+      lang       => $lang,
+  });
+
+Process Template Toolkit content with the given parameters, returning the
+rendered output. Runs inside a database transaction that is rolled back
+after processing.
+
+=cut
 
 sub _process_tt {
     my ($params) = @_;
@@ -1843,6 +1943,16 @@ sub _process_tt {
 
     return $output;
 }
+
+=head2 _get_tt_params
+
+  my $params = _get_tt_params( $tables, $is_a_loop );
+
+Build a hashref of Template Toolkit parameters from the given table
+specifications. Each table entry is resolved to its corresponding
+Koha::Object(s) for use in notice templates.
+
+=cut
 
 sub _get_tt_params {
     my ( $tables, $is_a_loop ) = @_;
