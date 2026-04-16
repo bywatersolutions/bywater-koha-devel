@@ -358,8 +358,12 @@ subtest 'get() tests' => sub {
 
     my $module = Test::MockModule->new('C4::Languages');
     $module->mock( _get_language_dirs => sub { return 'en', 'de-DE' } );
-    $schema->resultset('Localization')
-        ->create( { entity => 'itemtypes', code => $itype->itemtype, lang => 'de-DE', translation => 'translated' } );
+    $schema->resultset('Localization')->create(
+        {
+            entity      => 'itemtypes', code => $itype->itemtype, property => 'description', lang => 'de-DE',
+            translation => 'translated'
+        }
+    );
     $t->get_ok(
         "//$userid:$password@/api/v1/items/" . $item->itemnumber,
         { 'X-Koha-Embed' => '+strings', Cookie => 'KohaOpacLanguage=de-DE', 'Accept-Language' => 'en' }
