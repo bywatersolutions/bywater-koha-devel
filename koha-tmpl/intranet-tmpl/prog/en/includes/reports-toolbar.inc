@@ -13,7 +13,7 @@
     [% END %]
 
     [% IF ( showsql || execute || editsql || save_successful ) %]
-        [% IF ( CAN_user_reports_delete_reports && !CAN_user_reports_create_reports ) %]
+        [% IF ( CAN_user_reports_delete_all_reports && !CAN_user_reports_create_reports ) %]
             <div class="btn-group">
                 <form>
                     <input type="hidden" name="op" value="cud-delete" />
@@ -22,7 +22,7 @@
                 </form>
             </div>
         [% ELSE %]
-            [% IF ( CAN_user_reports_create_reports || CAN_user_reports_delete_reports ) %]
+            [% IF ( CAN_user_reports_create_reports || CAN_user_reports_delete_all_reports || (CAN_user_delete_own_reports && report_creator == loggedinusernumber) ) %]
                 <div class="btn-group">
                     <button type="button" class="btn btn-default dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> <i class="fa-solid fa-pencil" aria-hidden="true"></i> Edit </button>
                     <ul class="dropdown-menu">
@@ -37,7 +37,7 @@
                             </li>
                         [% END %]
 
-                        [% IF ( CAN_user_reports_delete_reports ) %]
+                        [% IF ( CAN_user_reports_delete_all_reports || ( CAN_user_reports_delete_own_reports && report_creator == loggedinusernumber) ) %]
                             <li>
                                 <form method="post" action="/cgi-bin/koha/reports/guided_reports.pl">
                                     [% INCLUDE 'csrf-token.inc' %]

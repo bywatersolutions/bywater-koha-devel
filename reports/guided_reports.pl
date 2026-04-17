@@ -27,7 +27,7 @@ use C4::Reports::Guided
     qw( delete_report get_report_areas convert_sql update_sql get_saved_reports get_results ValidateSQLParameters format_results get_report_types get_columns get_from_dictionary get_criteria build_query save_report execute_query nb_rows get_report_groups );
 use Koha::Reports;
 use C4::Auth   qw( get_template_and_user get_session );
-use C4::Output qw( pagination_bar output_html_with_http_headers );
+use C4::Output qw( pagination_bar output_and_exit output_html_with_http_headers );
 use C4::Context;
 use Koha::Caches;
 use C4::Log qw( logaction );
@@ -85,7 +85,7 @@ if (
 } elsif ( $op eq 'cud-update_and_run_sql' ) {
     $flagsrequired = { 'create_reports' => 1, 'execute_reports' => 1 };            #NOTE: "and" permissions
 } elsif ( $op eq 'cud-delete' ) {
-    $flagsrequired = 'delete_reports';
+    $flagsrequired = [ 'delete_all_reports', 'delete_own_reports' ];
 } else {
 
     #NOTE: You should never get here
@@ -132,6 +132,15 @@ if ( !$op ) {
     );
 } elsif ( $op eq 'cud-delete' ) {
     my @ids = $input->multi_param('id');
+
+    my $report_params    = { id => { '-in' => \@ids } };
+    my $logged_in_patron = Koha::Patrons->find($borrowernumber);
+    $report_params->{borrowernumber} = $borrowernumber
+        unless $logged_in_patron->has_permission( { reports => 'delete_all_reports' } );
+
+    my $reports = Koha::Reports->search($report_params);
+    output_and_exit( $input, $cookie, $template, 'insufficient_permission' ) unless $reports->count == scalar(@ids);
+
     delete_report(@ids);
     $op = 'list';
 
@@ -140,14 +149,15 @@ if ( !$op ) {
     my $id     = $input->param('id');
     my $report = Koha::Reports->find($id);
     $template->param(
-        'id'            => $id,
-        'reportname'    => $report->report_name,
-        'notes'         => $report->notes,
-        'sql'           => $report->savedsql,
-        'showsql'       => 1,
-        'mana_success'  => scalar $input->param('mana_success'),
-        'mana_id'       => $report->{mana_id},
-        'mana_comments' => $report->{comments}
+        'id'             => $id,
+        'reportname'     => $report->report_name,
+        'notes'          => $report->notes,
+        'report_creator' => $report->borrowernumber,
+        'sql'            => $report->savedsql,
+        'showsql'        => 1,
+        'mana_success'   => scalar $input->param('mana_success'),
+        'mana_id'        => $report->{mana_id},
+        'mana_comments'  => $report->{comments}
     );
 
 } elsif ( $op eq 'edit_form' ) {
@@ -157,6 +167,7 @@ if ( !$op ) {
     my $subgroup = $report->report_subgroup;
     my $tables   = get_tables();
     $template->param(
+        'report_creator'        => $report->borrowernumber,
         'sql'                   => $report->savedsql,
         'reportname'            => $report->report_name,
         'groups_with_subgroups' => groups_with_subgroups( $group, $subgroup ),
@@ -254,10 +265,12 @@ if ( !$op ) {
                 $editsql = 0;
             }
 
+            my $report = Koha::Reports->find($id);
             $template->param(
                 'save_successful'       => 1,
                 'reportname'            => $reportname,
                 'id'                    => $id,
+                'report_creator'        => $report->borrowernumber,
                 'editsql'               => $editsql,
                 'sql'                   => $sql,
                 'groups_with_subgroups' => groups_with_subgroups( $group, $subgroup ),
@@ -612,10 +625,12 @@ if ( !$op ) {
                 }
             );
             logaction( "REPORTS", "ADD", $id, "$name | $sql" ) if C4::Context->preference("ReportsLog");
+            my $new_report = Koha::Reports->find($id);
             $template->param(
                 'save_successful'       => 1,
                 'reportname'            => $name,
                 'id'                    => $id,
+                'report_creator'        => $new_report->borrowernumber,
                 'editsql'               => 1,
                 'sql'                   => $sql,
                 'groups_with_subgroups' => groups_with_subgroups( $group, $subgroup ),
@@ -1057,15 +1072,16 @@ if ( $op eq 'run' ) {
                 );
             }
             $template->param(
-                'sql'         => $sql,
-                original_sql  => $original_sql,
-                'id'          => $report_id,
-                'execute'     => 1,
-                'name'        => $name,
-                'notes'       => $notes,
-                'errors'      => defined($errors) ? [$errors] : undef,
-                'sql_params'  => \@sql_params,
-                'param_names' => \@param_names,
+                'sql'            => $sql,
+                original_sql     => $original_sql,
+                'id'             => $report_id,
+                'report_creator' => $report->borrowernumber,
+                'execute'        => 1,
+                'name'           => $name,
+                'notes'          => $notes,
+                'errors'         => defined($errors) ? [$errors] : undef,
+                'sql_params'     => \@sql_params,
+                'param_names'    => \@param_names,
             );
         }
     } else {

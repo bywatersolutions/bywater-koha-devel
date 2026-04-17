@@ -508,8 +508,11 @@
     [%- CASE 'superserials' -%]
         <span class="sub_permission superserials_subpermission"> Manage subscriptions from any branch (only applies when IndependentBranches is used) </span>
         <span class="permissioncode">([% name | html %])</span>
-    [%- CASE 'delete_reports' -%]
-        <span class="sub_permission delete_reports_subpermission"> Delete SQL reports </span>
+    [%- CASE 'delete_own_reports' -%]
+        <span class="sub_permission delete_reports_subpermission"> Delete SQL reports you have created</span>
+        <span class="permissioncode">([% name | html %])</span>
+    [%- CASE 'delete_all_reports' -%]
+        <span class="sub_permission delete_reports_subpermission"> Delete SQL reports created by anyone</span>
         <span class="permissioncode">([% name | html %])</span>
     [%- CASE 'create_reports' -%]
         <span class="sub_permission create_reports_subpermission"> Create SQL reports </span>

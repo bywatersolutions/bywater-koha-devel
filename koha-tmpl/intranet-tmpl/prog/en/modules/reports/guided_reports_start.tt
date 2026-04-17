@@ -344,7 +344,7 @@
                                                 [% FOREACH savedreport IN savedreports %]
                                                     <tr>
                                                         <td class="report_checkbox">
-                                                            [% IF ( CAN_user_reports_delete_reports ) %]
+                                                            [% IF ( CAN_user_reports_delete_all_reports || (CAN_user_reports_delete_own_reports && savedreport.borrowernumber == loggedinusernumber) ) %]
                                                                 <!-- not break CSS -->
                                                                 <input type="checkbox" name="id" id="id_[% savedreport.id | html %]" value="[% savedreport.id | html %]" />
                                                             [% END %]
@@ -428,7 +428,12 @@
                                                                             [%- " "|$raw -%]class="dropdown-item preview_sql"
                                                                             [%- " "|$raw -%]data-reportid="[% savedreport.id | html %]"
                                                                             [%- " "|$raw -%]data-create="[% CAN_user_reports_create_reports || 0 | html %]"
-                                                                            [%- " "|$raw -%]data-delete="[% CAN_user_reports_delete_reports || 0 | html %]"
+                                                                            [%- " "|$raw -%]data-delete="[%
+                                                                                CAN_user_reports_delete_all_reports ||
+                                                                                CAN_user_reports_delete_own_reports && savedreport.borrowernumber == loggedinusernumber ||
+                                                                                0
+                                                                                | html
+                                                                            %]"
                                                                             [%- " "|$raw -%]data-run="[% CAN_user_reports_execute_reports || 0 | html %]"
                                                                             [%- ""|$raw -%]
                                                                         >
@@ -457,7 +462,7 @@
                                                                     <li
                                                                         ><a class="dropdown-item" href="/cgi-bin/koha/tools/scheduler.pl?id=[% savedreport.id | uri %]"><i class="fa-solid fa-clock" aria-hidden="true"></i> Schedule</a></li
                                                                     >
-                                                                    [% IF ( CAN_user_reports_delete_reports ) %]
+                                                                    [% IF ( CAN_user_reports_delete_all_reports || (CAN_user_reports_delete_own_reports && savedreport.borrowernumber == loggedinusernumber) ) %]
                                                                         <li>
                                                                             <a
                                                                                 class="dropdown-item submit-form-link"
@@ -480,7 +485,7 @@
                                             </tbody>
                                         </table>
 
-                                        [% IF ( CAN_user_reports_delete_reports ) %]
+                                        [% IF ( CAN_user_reports_delete_all_reports || CAN_user_reports_delete_own_reports ) %]
                                             <fieldset class="action">
                                                 <input type="submit" class="btn btn-primary" value="Delete selected" />
                                             </fieldset>
