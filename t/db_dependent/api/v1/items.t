@@ -347,6 +347,7 @@ subtest 'get() tests' => sub {
         'effective_not_for_loan_status now picks up itemtype level and falls back to 0 because undef'
         );
 
+    Koha::Caches->get_instance('localization')->flush_all();
     t::lib::Mocks::mock_preference( 'item-level_itypes', 0 );
     $t->get_ok( "//$userid:$password@/api/v1/items/" . $item->itemnumber )
         ->status_is( 200, 'REST3.2.2' )
