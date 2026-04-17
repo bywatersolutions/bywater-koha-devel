@@ -16,7 +16,6 @@
         pre {white-space: pre-wrap;}
         -->
     </style>
-    <!-- prettier-ignore-end -->
 [% IF ( stylesheet ) %]
     <link rel="stylesheet" type="text/css" href="[% stylesheet | url %]" />
 [% END %]
@@ -26,6 +25,7 @@
 [% IF ( print_notice_css ) %]
     <style nonce="[% Koha.CSPNonce | $raw %]">[% print_notice_css | $raw %]</style>
 [% END %]
+<!-- prettier-ignore-end -->
 </head>
 <body id="batch_print-notices" class="batch">
 [% FOREACH message IN messages %]
