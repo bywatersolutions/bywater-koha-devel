@@ -420,7 +420,7 @@
                                 [% END %]
                             [% END %]
 
-                            [% IF import_success || import_skipped || import_overwrite %]
+                            [% IF import_success || import_skipped || import_overwrote %]
                                 <div class="alert alert-success">
                                     [% IF import_success %]
                                         <p>Successfully imported [% import_success | html %] template(s).</p>

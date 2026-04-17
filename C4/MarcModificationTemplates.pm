@@ -840,9 +840,10 @@ sub ImportModificationTemplates {
     my ( $json, $skip_existing ) = @_;
 
     my $result = {
-        success => 0,
-        skipped => 0,
-        errors  => [],
+        success   => 0,
+        skipped   => 0,
+        overwrote => 0,
+        errors    => [],
     };
 
     my $data;

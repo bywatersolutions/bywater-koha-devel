@@ -1236,7 +1236,7 @@ subtest 'Import with skip_existing=0 overwrites existing templates' => sub {
     my $result = ImportModificationTemplates( $json, 0 );
     ok( $result->{success} == 1,               "Template imported successfully with skip_existing=0" );
     ok( $result->{skipped} == 0,               "No templates skipped" );
-    ok( $result->{overwrite} == 1,             "One template overwritten" );
+    ok( $result->{overwrote} == 1,             "One template overwritten" );
     ok( scalar( @{ $result->{errors} } ) == 0, "No import errors" );
 
     # Verify the template was overwritten (should have only 1 action now)
