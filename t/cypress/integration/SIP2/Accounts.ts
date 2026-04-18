@@ -143,7 +143,7 @@ describe("Accounts", () => {
         cy.left_menu_active_item_is("Accounts");
 
         // Fill in the form for normal attributes
-        cy.get("#accounts_add").contains("Save").click();
+        cy.get("#accounts_add").contains("Submit").click();
         cy.get("input:invalid,textarea:invalid,select:invalid").should(
             "have.length",
             2
@@ -197,7 +197,7 @@ describe("Accounts", () => {
 
         // relationshipWidgets
         cy.contains("Add new custom patron field").click();
-        cy.get("#accounts_add").contains("Save").click();
+        cy.get("#accounts_add").contains("Submit").click();
         cy.get("input:invalid,textarea:invalid,select:invalid").should(
             "have.length",
             2
@@ -241,7 +241,7 @@ describe("Accounts", () => {
         cy.intercept("POST", "/api/v1/sip2/accounts", {
             statusCode: 500,
         });
-        cy.get("#accounts_add").contains("Save").click();
+        cy.get("#accounts_add").contains("Submit").click();
 
         cy.get("main div[class='alert alert-warning']").contains(
             "Something went wrong: Error: Internal Server Error"
@@ -252,7 +252,7 @@ describe("Accounts", () => {
             statusCode: 201,
             body: account,
         });
-        cy.get("#accounts_add").contains("Save").click();
+        cy.get("#accounts_add").contains("Submit").click();
         cy.get("main div[class='alert alert-info']").contains(
             "Account created"
         );
@@ -312,7 +312,7 @@ describe("Accounts", () => {
                 delay: 1000,
             });
         }).as("edit-account");
-        cy.get("#accounts_add").contains("Save").click();
+        cy.get("#accounts_add").contains("Submit").click();
         cy.get("main div[class='modal_centered']").contains("Submitting...");
         cy.wait("@edit-account");
         cy.get("main div[class='alert alert-warning']").contains(
@@ -324,7 +324,7 @@ describe("Accounts", () => {
             statusCode: 200,
             body: account,
         });
-        cy.get("#accounts_add").contains("Save").click();
+        cy.get("#accounts_add").contains("Submit").click();
         cy.get("main div[class='alert alert-info']").contains(
             "Account updated"
         );

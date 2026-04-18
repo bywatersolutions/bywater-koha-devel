@@ -73,7 +73,7 @@ describe("SystemPreferenceOverrides", () => {
         cy.left_menu_active_item_is("System preference overrides");
 
         // Fill in the form for normal attributes
-        cy.get("#system_preference_overrides_add").contains("Save").click();
+        cy.get("#system_preference_overrides_add").contains("Submit").click();
         cy.get("input:invalid,textarea:invalid,select:invalid").should(
             "have.length",
             2
@@ -85,7 +85,7 @@ describe("SystemPreferenceOverrides", () => {
         cy.intercept("POST", "/api/v1/sip2/system_preference_overrides", {
             statusCode: 500,
         });
-        cy.get("#system_preference_overrides_add").contains("Save").click();
+        cy.get("#system_preference_overrides_add").contains("Submit").click();
 
         cy.get("main div[class='alert alert-warning']").contains(
             "Something went wrong: Error: Internal Server Error"
@@ -96,7 +96,7 @@ describe("SystemPreferenceOverrides", () => {
             statusCode: 201,
             body: system_preference_override,
         });
-        cy.get("#system_preference_overrides_add").contains("Save").click();
+        cy.get("#system_preference_overrides_add").contains("Submit").click();
         cy.get("main div[class='alert alert-info']").contains(
             "System preference override created"
         );
@@ -157,7 +157,7 @@ describe("SystemPreferenceOverrides", () => {
                 });
             }
         );
-        cy.get("#system_preference_overrides_add").contains("Save").click();
+        cy.get("#system_preference_overrides_add").contains("Submit").click();
 
         cy.get("main div[class='modal_centered']").contains("Submitting...");
         cy.wait(1000);
@@ -170,7 +170,7 @@ describe("SystemPreferenceOverrides", () => {
             statusCode: 200,
             body: system_preference_overrides,
         });
-        cy.get("#system_preference_overrides_add").contains("Save").click();
+        cy.get("#system_preference_overrides_add").contains("Submit").click();
         cy.get("main div[class='alert alert-info']").contains(
             "System preference override updated"
         );
