@@ -5,6 +5,8 @@ on:
             - "**"
         tags-ignore:
             - "**"
+    pull_request_target:
+      types: [opened, reopened]
     workflow_dispatch:
         inputs:
           debug:
