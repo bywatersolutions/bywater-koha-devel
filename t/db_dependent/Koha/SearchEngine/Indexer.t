@@ -78,7 +78,8 @@ SKIP: {
     }
     t::lib::Mocks::mock_userenv();
 
-    t::lib::Mocks::mock_preference( 'AutoLinkBiblios', 0 );
+    t::lib::Mocks::mock_preference( 'AutoLinkBiblios',               0 );
+    t::lib::Mocks::mock_preference( 'ElasticsearchEnableZebraQueue', 1 );
 
     for my $engine (@engines) {
         t::lib::Mocks::mock_preference( 'SearchEngine', $engine );
