@@ -4,6 +4,7 @@ on:
     types: [opened, reopened]
 jobs:
   run:
+    if: github.repository == 'Koha-Community/Koha'
     runs-on: ubuntu-latest
     steps:
       - name: checkout
