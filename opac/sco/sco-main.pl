@@ -191,12 +191,30 @@ if ( $patron && $op eq "cud-returnbook" && $allowselfcheckreturns ) {
             $barcode,
             undef,
             0,
-            C4::Context->preference("AllowItemsOnHoldCheckoutSCO")
+            0,
         );
+
+        my $hold_pref = C4::Context->preference("AllowItemsOnHoldCheckoutSCO") || 0;
+        if ( $hold_pref >= 1 ) {
+            delete $needconfirm->{RESERVED};
+        }
+        if ( $hold_pref >= 2 ) {
+            delete $needconfirm->{$_} for qw( RESERVE_WAITING TRANSFERRED PROCESSING );
+        }
+
+        # If all hold status keys were cleared, drop the hold metadata
+        # that CanBookBeIssued adds alongside them; otherwise the leftover
+        # keys keep %$needconfirm non-empty and surface the generic
+        # "please see a member of the library staff" message.
+        unless ( grep { $needconfirm->{$_} } qw( RESERVED RESERVE_WAITING TRANSFERRED PROCESSING ) ) {
+            delete $needconfirm->{$_} for qw( resfirstname ressurname rescardnumber resborrowernumber
+                resbranchcode resreservedate reswaitingdate reserve_id );
+        }
+
         my $issue_error;
         if ( $confirm_required = scalar keys %$needconfirm ) {
             for my $error (
-                qw( UNKNOWN_BARCODE max_loans_allowed ISSUED_TO_ANOTHER NO_MORE_RENEWALS NOT_FOR_LOAN DEBT WTHDRAWN RESTRICTED RESERVED ITEMNOTSAMEBRANCH EXPIRED DEBARRED CARD_LOST GNA INVALID_DATE UNKNOWN_BARCODE TOO_MANY DEBT_GUARANTEES DEBT_GUARANTORS USERBLOCKEDOVERDUE PATRON_CANT PREVISSUE NOT_FOR_LOAN_FORCING ITEM_LOST ADDITIONAL_MATERIALS )
+                qw( UNKNOWN_BARCODE max_loans_allowed ISSUED_TO_ANOTHER NO_MORE_RENEWALS NOT_FOR_LOAN DEBT WTHDRAWN RESTRICTED RESERVED RESERVE_WAITING TRANSFERRED PROCESSING ITEMNOTSAMEBRANCH EXPIRED DEBARRED CARD_LOST GNA INVALID_DATE UNKNOWN_BARCODE TOO_MANY DEBT_GUARANTEES DEBT_GUARANTORS USERBLOCKEDOVERDUE PATRON_CANT PREVISSUE NOT_FOR_LOAN_FORCING ITEM_LOST ADDITIONAL_MATERIALS )
                 )
             {
                 if ( $needconfirm->{$error} ) {

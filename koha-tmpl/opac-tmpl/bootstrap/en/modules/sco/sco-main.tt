@@ -588,6 +588,12 @@
                         <span id="ce_restricted">This item is restricted.</span>
                     [% ELSIF ( item.circ_error_RESERVED ) %]
                         <span id="ce_reserved">This item is on hold for another patron.</span>
+                    [% ELSIF ( item.circ_error_RESERVE_WAITING ) %]
+                        <span id="ce_reserve_waiting">This item is waiting on the hold shelf for another patron.</span>
+                    [% ELSIF ( item.circ_error_TRANSFERRED ) %]
+                        <span id="ce_transferred">This item is in transit to fill a hold for another patron.</span>
+                    [% ELSIF ( item.circ_error_PROCESSING ) %]
+                        <span id="ce_processing">This item is being processed to fill a hold for another patron.</span>
                     [% ELSIF ( item.circ_error_ITEMNOTSAMEBRANCH ) %]
                         <span id="ce_itemnotsamebranch">This item belongs to another library.</span>
                     [% ELSIF ( item.circ_error_EXPIRED ) %]
