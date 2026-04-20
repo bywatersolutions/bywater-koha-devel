@@ -702,6 +702,38 @@
                 [% IF ( BOOKED_TO_ANOTHER ) %]
                     <li>The item is booked for another patron</li>
                 [% END %]
+
+                [% IF ( RESERVED ) %]
+                    <li
+                        >Item <em>[% getTitleMessageIteminfo | html %]</em> ([% getBarcodeMessageIteminfo | html %]) is on hold for
+                        <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% resborrowernumber | uri %]">[% resfirstname | html %] [% ressurname | html %]</a> ([% rescardnumber | html %]) at
+                        [% Branches.GetName( resbranchcode ) | html %] since [% resreservedate | $KohaDates %].</li
+                    >
+                [% END %]
+
+                [% IF ( RESERVE_WAITING ) %]
+                    <li
+                        >Item <em>[% getTitleMessageIteminfo | html %]</em> ([% getBarcodeMessageIteminfo | html %]) has been waiting for
+                        <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% resborrowernumber | uri %]">[% resfirstname | html %] [% ressurname | html %]</a> ([% rescardnumber | html %]) at
+                        [% Branches.GetName( resbranchcode ) | html %] since [% reswaitingdate | $KohaDates %].</li
+                    >
+                [% END %]
+
+                [% IF ( TRANSFERRED ) %]
+                    <li
+                        >Item <em>[% getTitleMessageIteminfo | html %]</em> ([% getBarcodeMessageIteminfo | html %]) is on hold for
+                        <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% resborrowernumber | uri %]">[% resfirstname | html %] [% ressurname | html %]</a> ([% rescardnumber | html %]) and being transferred to
+                        [% Branches.GetName( resbranchcode ) | html %].</li
+                    >
+                [% END %]
+
+                [% IF ( PROCESSING ) %]
+                    <li
+                        >Item <em>[% getTitleMessageIteminfo | html %]</em> ([% getBarcodeMessageIteminfo | html %]) is being processed for
+                        <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% resborrowernumber | uri %]">[% resfirstname | html %] [% ressurname | html %]</a> ([% rescardnumber | html %]) at
+                        [% Branches.GetName( resbranchcode ) | html %].</li
+                    >
+                [% END %]
             </ul>
         </div>
         <!-- /#circ_impossible -->

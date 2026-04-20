@@ -371,6 +371,35 @@ if ( @$barcodes && $op eq 'cud-checkout' ) {
             $biblio = $item->biblio;
         }
 
+        # Enforce AllowHoldCheckoutOverride: when disabled, hold-related
+        # confirmations are promoted to blockers so staff cannot override
+        # them from the checkout screen. The hold metadata and item info
+        # are copied into $template_params because the later
+        # needsconfirmation rendering loop is skipped once we have a
+        # blocker.
+        unless ( C4::Context->preference('AllowHoldCheckoutOverride') ) {
+            my $promoted = 0;
+            for my $code (qw/RESERVED RESERVE_WAITING TRANSFERRED PROCESSING/) {
+                if ( exists $needsconfirmation->{$code} ) {
+                    $issuingimpossible->{$code} = $needsconfirmation->{$code};
+                    delete $needsconfirmation->{$code};
+                    $promoted = 1;
+                }
+            }
+            if ($promoted) {
+                for my $meta (
+                    qw/resfirstname ressurname rescardnumber resborrowernumber
+                    resbranchcode resreservedate reswaitingdate reserve_id/
+                    )
+                {
+                    $template_params->{$meta} = delete $needsconfirmation->{$meta}
+                        if exists $needsconfirmation->{$meta};
+                }
+                $template_params->{getTitleMessageIteminfo}   = $biblio->title if $biblio;
+                $template_params->{getBarcodeMessageIteminfo} = $item->barcode if $item;
+            }
+        }
+
         if ( $issuingimpossible->{'STATS'} ) {
 
             my ( $stats_return, $stats_messages, $stats_iteminformation, $stats_borrower ) =
