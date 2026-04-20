@@ -58,6 +58,11 @@ Tools:
               class: code
         -
             - Include the stylesheet at
+            - pref: PrintNoticeStylesheet
+              class: url
+            - on print notices. (This should be a complete URL, starting with <code>http://</code>.)
+        -
+            - Include the stylesheet at
             - pref: PrintSlipStylesheet
               class: url
             - on print slips. (This should be a complete URL, starting with <code>http://</code>.)

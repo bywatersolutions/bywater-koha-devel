@@ -7,36 +7,34 @@ return {
         my ($args) = @_;
         my ( $dbh, $out ) = @$args{qw(dbh out)};
 
-        # Do you stuffs here
-        $dbh->do(
-            q{
-            INSERT IGNORE INTO systempreferences (variable, value) VALUES
-            ('AllNoticeStylesheet', ''),
-            ('AllNoticeCSS',''),
-            ('EmailNoticeCSS',''),
-            ('PrintNoticeCSS',''),
-            ('PrintSlipCSS','')
-        }
+        my @new_prefs = qw(
+            AllNoticeStylesheet
+            AllNoticeCSS
+            EmailNoticeCSS
+            PrintNoticeStylesheet
+            PrintNoticeCSS
+            PrintSlipCSS
         );
-        say $out "Added new system preference 'AllNoticeStylesheet'";
-        say $out "Added new system preference 'AllNoticeCSS'";
-        say $out "Added new system preference 'EmailNoticeCSS'";
-        say $out "Added new system preference 'PrintNoticeCSS'";
-        say $out "Added new system preference 'PrintSlipCSS'";
+
+        for my $pref (@new_prefs) {
+            $dbh->do(
+                q{INSERT IGNORE INTO systempreferences (variable, value) VALUES (?, '')},
+                undef, $pref
+                ) == 1
+                && say $out "Added new system preference '$pref'";
+        }
 
         $dbh->do(
             q{
             UPDATE systempreferences SET variable='EmailNoticeStylesheet' WHERE variable='NoticeCSS'
         }
-        );
-        say $out "Rename system preference 'NoticeCSS' to 'EmailNoticeStylesheet'";
+        ) == 1 && say $out "Renamed system preference 'NoticeCSS' to 'EmailNoticeStylesheet'";
 
         $dbh->do(
             q{
             UPDATE systempreferences SET variable='PrintSlipStylesheet' WHERE variable='SlipCSS'
         }
-        );
-        say $out "Rename system preference 'SlipCSS' to 'PrintSlipStylesheet'";
+        ) == 1 && say $out "Renamed system preference 'SlipCSS' to 'PrintSlipStylesheet'";
 
     },
 };
