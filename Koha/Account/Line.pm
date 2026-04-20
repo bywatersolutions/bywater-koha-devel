@@ -1119,7 +1119,7 @@ sub store {
 
     #if there is a matching debit description letter, pull that content and render it for the accountline.description
     if ( $self->is_debit && !$self->in_storage ) {
-        my $debit_type = $self->debit_type;
+        my $debit_type = Koha::Account::DebitTypes->find( $self->debit_type_code );
         if ($debit_type) {
 
             # get the patron's prederred lang
