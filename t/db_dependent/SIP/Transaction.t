@@ -22,7 +22,8 @@ use C4::SIP::ILS::Transaction::Hold;
 use C4::SIP::ILS::Transaction::Checkout;
 use C4::SIP::ILS::Transaction::Checkin;
 
-use C4::Reserves qw( AddReserve ModReserve ModReserveAffect );
+use C4::Circulation qw( AddReturn );
+use C4::Reserves    qw( AddReserve ModReserve ModReserveAffect );
 use Koha::CirculationRules;
 use Koha::Item::Transfer;
 use Koha::DateUtils qw( dt_from_string output_pref );
@@ -1141,7 +1142,7 @@ subtest do_checkout_with_noblock => sub {
 };
 
 subtest do_checkout_with_holds => sub {
-    plan tests => 7;
+    plan tests => 9;
 
     my $library = $builder->build_object( { class => 'Koha::Libraries' } );
     my $patron  = $builder->build_object(
@@ -1189,6 +1190,9 @@ subtest do_checkout_with_holds => sub {
         $sip_item, "Item assigned to transaction"
     );
 
+    # Default pref value is 0 (don't allow): every hold state blocks checkout
+    t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSIP', '0' );
+
     # Test attached holds
     ModReserveAffect( $item->itemnumber, $patron->borrowernumber, 0, $reserve );    # Mark waiting (W)
     my $hold = Koha::Holds->find($reserve);
@@ -1203,16 +1207,45 @@ subtest do_checkout_with_holds => sub {
     $co_transaction->do_checkout();
     is( $patron->checkouts->count, 0, 'Checkout was not done due to attached hold (P)' );
 
-    # Test non-attached holds
+    # Pending (non-attached) hold: pref value 0 blocks, 1 allows
     $hold->set_waiting();
     $hold->revert_found();
-    t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSIP', '0' );
     $co_transaction->do_checkout();
-    is( $patron->checkouts->count, 0, 'Checkout refused due to hold and AllowItemsOnHoldCheckoutSIP' );
+    is(
+        $patron->checkouts->count, 0,
+        'Pending hold blocks checkout with AllowItemsOnHoldCheckoutSIP=0'
+    );
 
     t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSIP', '1' );
     $co_transaction->do_checkout();
-    is( $patron->checkouts->count, 1, 'Checkout allowed due to hold and AllowItemsOnHoldCheckoutSIP' );
+    is(
+        $patron->checkouts->count, 1,
+        'Pending hold allowed with AllowItemsOnHoldCheckoutSIP=1 (pending only)'
+    );
+
+    # Return the item and re-attach the waiting hold
+    AddReturn( $item->barcode, $library->branchcode );
+    ModReserveAffect( $item->itemnumber, $patron2->borrowernumber, 0, $reserve );
+    $hold->discard_changes;
+    $sip_item       = C4::SIP::ILS::Item->new( $item->barcode );
+    $co_transaction = C4::SIP::ILS::Transaction::Checkout->new();
+    $co_transaction->patron($sip_patron);
+    $co_transaction->item($sip_item);
+
+    # Waiting hold is still blocked when pref=1 (pending only)
+    $co_transaction->do_checkout();
+    is(
+        $patron->checkouts->count, 0,
+        'Waiting hold blocked with AllowItemsOnHoldCheckoutSIP=1 (pending only)'
+    );
+
+    # Waiting hold is allowed when pref=2 (pending and waiting)
+    t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSIP', '2' );
+    $co_transaction->do_checkout();
+    is(
+        $patron->checkouts->count, 1,
+        'Waiting hold allowed with AllowItemsOnHoldCheckoutSIP=2 (pending and waiting)'
+    );
 };
 
 subtest checkin_lost => sub {

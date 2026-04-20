@@ -74,18 +74,23 @@ sub do_checkout {
             last;
         }
     } else {
+        my $hold_pref = C4::Context->preference("AllowItemsOnHoldCheckoutSIP") || 0;
         foreach my $confirmation ( keys %{$needsconfirmation} ) {
             if ( $confirmation eq 'RENEW_ISSUE' ) {
                 $self->screen_msg("Item already checked out to you: renewing item.");
-            } elsif ( $confirmation eq 'RESERVED' and !C4::Context->preference("AllowItemsOnHoldCheckoutSIP") ) {
+            } elsif ( $confirmation eq 'RESERVED' ) {
+                if ( $hold_pref >= 1 ) {
+                    next;
+                }
                 $self->screen_msg("Item is reserved for another patron upon return.");
                 $noerror = 0;
-            } elsif ( $confirmation eq 'RESERVED' and C4::Context->preference("AllowItemsOnHoldCheckoutSIP") ) {
-                next;
             } elsif ( $confirmation eq 'RESERVE_WAITING'
                 or $confirmation eq 'TRANSFERRED'
                 or $confirmation eq 'PROCESSING' )
             {
+                if ( $hold_pref >= 2 ) {
+                    next;
+                }
                 $self->screen_msg("Item is on hold for another patron.");
                 $noerror = 0;
             } elsif ( $confirmation eq 'ISSUED_TO_ANOTHER' and C4::Context->preference("AllowItemsOnLoanCheckoutSIP") )
