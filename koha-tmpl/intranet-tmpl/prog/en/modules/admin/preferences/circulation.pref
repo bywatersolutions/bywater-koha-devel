@@ -225,13 +225,20 @@ Circulation:
                   0: "Don't allow"
             - staff to renew items that are on hold.
         -
-            - pref: AllowItemsOnHoldCheckoutSIP
+            - pref: AllowHoldCheckoutOverride
               choices:
                   1: Allow
                   0: "Don't allow"
+            - staff to override and check out items that are on hold for another patron. When not allowed, checkouts of items with a pending or waiting hold are blocked at the staff interface with no override option.
+        -
+            - pref: AllowItemsOnHoldCheckoutSIP
+              choices:
+                  0: "Don't allow"
+                  1: "Allow pending holds only"
+                  2: "Allow pending and waiting holds"
             - checkouts of items reserved to someone else via SIP checkout messages.
-            - If allowed do not generate RESERVED warning.
-            - This allows self-checkouts for those items. If using the holds queue items with pending holds will be marked as "unavailable" if this set to "Don't allow".
+            - When set to "Allow pending holds only" items with a pending hold (no pickup notification sent yet) can be checked out, but items already waiting on the hold shelf (or in transit/processing for pickup) are blocked.
+            - When set to "Allow pending and waiting holds" all on-hold items can be checked out regardless of hold state. If using the holds queue, items with pending holds will be marked as "unavailable" if this is set to "Don't allow".
         -
             - pref: AllowItemsOnLoanCheckoutSIP
               choices:
@@ -243,9 +250,12 @@ Circulation:
         -
             - pref: AllowItemsOnHoldCheckoutSCO
               choices:
-                  1: Allow
                   0: "Don't allow"
-            - checkouts of items reserved to someone else in the SCO module. If allowed do not generate RESERVE_WAITING and RESERVED warning. This allows self-checkouts for those items.
+                  1: "Allow pending holds only"
+                  2: "Allow pending and waiting holds"
+            - checkouts of items reserved to someone else in the SCO module.
+            - When set to "Allow pending holds only" items with a pending hold (no pickup notification sent yet) can be checked out, but items already waiting on the hold shelf (or in transit/processing for pickup) are blocked.
+            - When set to "Allow pending and waiting holds" all on-hold items can be checked out regardless of hold state.
         -
             - pref: AllFinesNeedOverride
               choices:

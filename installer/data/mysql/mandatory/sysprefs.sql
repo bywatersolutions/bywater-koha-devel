@@ -33,6 +33,7 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('AllowCheckoutNotes', '0'),
 ('AllowFineOverride','0'),
 ('AllowFineOverrideRenewing','0'),
+('AllowHoldCheckoutOverride','1'),
 ('AllowHoldDateInFuture','0'),
 ('AllowHoldItemTypeSelection','0'),
 ('AllowHoldPolicyOverride','0'),
