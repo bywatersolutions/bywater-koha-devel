@@ -1584,6 +1584,8 @@ sub _read_configuration {
 
     $configuration->{cxn_pool} //= 'Static';
 
+    $configuration->{deprecate_to} = ['File', '/dev/null'];
+
     return $configuration;
 }
 
