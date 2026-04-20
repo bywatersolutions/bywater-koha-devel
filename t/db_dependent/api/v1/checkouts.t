@@ -380,7 +380,7 @@ subtest 'get_availability' => sub {
     %needsconfirmation = ();
 
     subtest 'public availability' => sub {
-        plan tests => 22;
+        plan tests => 40;
 
         # Authentication required
         $t->get_ok("/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id")->status_is(401);
@@ -409,6 +409,59 @@ subtest 'get_availability' => sub {
             ->json_is( '/confirms' => {} )
             ->json_is( '/warnings' => {} )
             ->json_has('/confirmation_token');
+        %needsconfirmation = ();
+
+        # Hold confirmations are gated by AllowItemsOnHoldCheckoutSCO.
+        # Because the mocked CanBookBeIssued returns the hashes by reference
+        # and _check_availability mutates them, we reset both hashes before
+        # every request.
+        my $reset_hold_hashes = sub {
+            %issuingimpossible = ();
+            %needsconfirmation = (
+                RESERVED        => 1,
+                RESERVE_WAITING => 1,
+                TRANSFERRED     => 1,
+                PROCESSING      => 1
+            );
+        };
+
+        $reset_hold_hashes->();
+        t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSCO', 0 );
+        $t->get_ok(
+            "//$unauth_userid:$unauth_password@/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id"
+        )->status_is(200)->json_is(
+            '/blockers' => {
+                RESERVED        => 1,
+                RESERVE_WAITING => 1,
+                TRANSFERRED     => 1,
+                PROCESSING      => 1
+            }
+        )->json_is( '/confirms' => {} )->json_is( '/warnings' => {} )->json_has('/confirmation_token');
+
+        $reset_hold_hashes->();
+        t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSCO', 1 );
+        $t->get_ok(
+            "//$unauth_userid:$unauth_password@/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id"
+        )->status_is(200)->json_is(
+            '/blockers' => {
+                RESERVE_WAITING => 1,
+                TRANSFERRED     => 1,
+                PROCESSING      => 1
+            }
+        )->json_is( '/confirms' => {} )->json_is( '/warnings' => {} )->json_has('/confirmation_token');
+
+        $reset_hold_hashes->();
+        t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSCO', 2 );
+        $t->get_ok(
+            "//$unauth_userid:$unauth_password@/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id"
+            )
+            ->status_is(200)
+            ->json_is( '/blockers' => {} )
+            ->json_is( '/confirms' => {} )
+            ->json_is( '/warnings' => {} )
+            ->json_has('/confirmation_token');
+
+        %issuingimpossible = ();
         %needsconfirmation = ();
 
         # Remove personal information from public endpoint

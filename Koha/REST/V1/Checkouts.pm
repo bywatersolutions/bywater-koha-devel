@@ -120,8 +120,16 @@ sub _check_availability {
     if ( $c->stash('is_public') ) {
 
         # Upgrade some confirmations to blockers
-        my @should_block =
-            qw/TOO_MANY ISSUED_TO_ANOTHER RESERVED RESERVE_WAITING TRANSFERRED PROCESSING AGE_RESTRICTION/;
+        my @should_block = qw/TOO_MANY ISSUED_TO_ANOTHER AGE_RESTRICTION/;
+
+        # Hold-related confirmations are gated by AllowItemsOnHoldCheckoutSCO:
+        #   0 = block pending and waiting holds (default)
+        #   1 = allow pending holds, block waiting/transit/processing holds
+        #   2 = allow pending and waiting/transit/processing holds
+        my $hold_pref = C4::Context->preference('AllowItemsOnHoldCheckoutSCO') || 0;
+        push @should_block, 'RESERVED'                                 if $hold_pref < 1;
+        push @should_block, qw/RESERVE_WAITING TRANSFERRED PROCESSING/ if $hold_pref < 2;
+
         for my $block (@should_block) {
             if ( exists( $confirmation->{$block} ) ) {
                 $impossible->{$block} = $confirmation->{$block};
@@ -129,9 +137,15 @@ sub _check_availability {
             }
         }
 
+        # Drop the remaining hold confirmations so the caller does not have
+        # to resolve a confirmation token for a policy we've already permitted
+        for my $allowed (qw/RESERVED RESERVE_WAITING TRANSFERRED PROCESSING/) {
+            delete $confirmation->{$allowed};
+        }
+
         # Remove any non-public info that's returned by CanBookBeIssued
         my @restricted_keys =
-            qw/issued_borrowernumber issued_cardnumber issued_firstname issued_surname resborrowernumber resbranchcode rescardnumber reserve_id resfirstname resreservedate ressurname item_notforloan/;
+            qw/issued_borrowernumber issued_cardnumber issued_firstname issued_surname resborrowernumber resbranchcode rescardnumber reserve_id resfirstname resreservedate reswaitingdate ressurname item_notforloan/;
         for my $key (@restricted_keys) {
             delete $confirmation->{$key};
             delete $impossible->{$key};
