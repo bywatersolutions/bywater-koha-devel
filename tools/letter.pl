@@ -250,6 +250,11 @@ sub add_form {
     );
 
     my $field_selection;
+
+    if ( $module eq 'members' and $code and $code eq 'VIRTUALCARD' ) {
+        push @{$field_selection},                        { value => '',           text => '---VIRTUALCARD---' },
+            { value => 'my_image', text => 'my_image' }, { value => 'my_barcode', text => 'my_barcode' };
+    }
     push @{$field_selection}, add_fields('branches');
     if ( $module eq 'reserves' ) {
         push @{$field_selection}, add_fields( 'borrowers', 'reserves', 'biblio', 'biblioitems', 'items' );
