@@ -40,6 +40,7 @@ my @exceptions = qw(
     UsageStatsID
     UsageStatsLastUpdateTime
     UsageStatsPublicID
+    autoMemberNumValue
 );
 
 my @sysprefs_in_sql_file = Koha::Devel::Sysprefs->new->get_sysprefs_from_file();
