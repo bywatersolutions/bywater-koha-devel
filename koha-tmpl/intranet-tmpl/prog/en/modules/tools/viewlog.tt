@@ -95,6 +95,16 @@
         table.struct-diff ul.diff-obj li {
             white-space: nowrap;
         }
+        /* Catalog log info column (biblio JSON payload) */
+        div.loginfo-struct {
+            font-family: monospace;
+            font-size: 0.85em;
+        }
+        div.loginfo-struct ul.diff-obj {
+            list-style: none;
+            margin: 0;
+            padding: 0 0 0 0.8em;
+        }
     </style>
 [% END %]
 </head>
