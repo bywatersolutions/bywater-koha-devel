@@ -600,7 +600,7 @@ OPAC:
                   industrial2of5: "Industrial 2 of 5"
                   iata2of5: "IATA 2 of 5"
                   coop2of5: "COOP 2 of 5"
-            - " barcode in the patron's virtual card."
+            - " barcode in the patron's virtual card. To customize the card layout, see the VIRTUALCARD template in 'Tools > Notices and slips'"
     OpenURL:
         -
             - 'Complete URL of OpenURL resolver (starting with <code>http://</code> or <code>https://</code>):'

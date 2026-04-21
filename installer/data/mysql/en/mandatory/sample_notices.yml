@@ -2721,3 +2721,13 @@ tables:
             - "[% skipped %] records skipped"
             - "[% in_error %] records in error"
             - "[% total %] total"
+        - module: members
+          code: VIRTUALCARD
+          branchcode: ""
+          name: "OPAC virtual card"
+          is_html: 1
+          title: "OPAC virtual card"
+          message_transport_type: email
+          lang: default
+          content:
+            - ""

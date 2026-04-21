@@ -34,7 +34,7 @@
                 <h1>Your library card </h1>
                 <div id="patron-virtual-card">
                     <div id="card-details">
-                        [% IF content.content %]
+                        [% IF content.content && content.content.trim %]
                             [% content.content | $raw %]
                         [% ELSE %]
                             [% IF ( display_patron_image ) %]
