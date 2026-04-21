@@ -28,12 +28,23 @@ return {
                 undef, $pref,
             );
             say $out "Updated system preference '$pref' to Choice (0|1|2)";
-            say_info(
-                $out,
-                "If '$pref' was previously set to 'Allow' (1) and you want to continue allowing "
-                    . "checkout of waiting holds, change it to 'Allow pending and waiting' (2). "
-                    . "Value 1 now means 'Allow pending only'."
-            );
+
+            if ( $pref eq 'AllowItemsOnHoldCheckoutSCO' ) {
+                my $rows = $dbh->do(
+                    q{
+                        UPDATE systempreferences
+                        SET value = '2'
+                        WHERE variable = 'AllowItemsOnHoldCheckoutSCO'
+                          AND value = '1'
+                    }
+                );
+                if ( $rows && $rows > 0 ) {
+                    say_success(
+                        $out,
+                        "Migrated '$pref' value 1 -> 2 to preserve previous 'allow waiting holds' behavior"
+                    );
+                }
+            }
         }
 
         my $rv = $dbh->do(
