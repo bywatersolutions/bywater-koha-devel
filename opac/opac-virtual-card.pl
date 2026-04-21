@@ -43,6 +43,8 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
     }
 );
 
+my $lang = C4::Languages::getlanguage($query);
+
 my $patron = Koha::Patrons->find($borrowernumber);
 
 # Find and display patron image if allowed
@@ -67,7 +69,7 @@ my $content = C4::Letters::GetPreparedLetter(
             borrowers => $patron->borrowernumber,
             branches  => $patron->branchcode,
         },
-        lang                   => $patron->lang,
+        lang                   => $lang,
         message_transport_type => 'email',
         substitute             => {
             my_barcode => $barcode_html,
