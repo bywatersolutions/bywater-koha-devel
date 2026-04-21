@@ -2471,7 +2471,7 @@ subtest '_unblessed_for_log() tests' => sub {
 
 subtest 'CataloguingLog MARC-in-JSON diff tests' => sub {
 
-    plan tests => 18;
+    plan tests => 21;
 
     $schema->storage->txn_begin;
 
@@ -2489,6 +2489,10 @@ subtest 'CataloguingLog MARC-in-JSON diff tests' => sub {
     my $add_log =
         Koha::ActionLogs->search( { object => $biblionumber, module => 'Cataloguing', action => 'ADD' } )->next;
     ok( defined $add_log->diff, 'ADD log populates the diff column' );
+    is(
+        $add_log->info, 'biblio',
+        'ADD log info column is the bare "biblio" prefix (no pre-change JSON payload)'
+    );
 
     my $add_diff  = from_json( $add_log->diff );
     my $add_added = $add_diff->{D}{_marc}{A};
@@ -2516,6 +2520,10 @@ subtest 'CataloguingLog MARC-in-JSON diff tests' => sub {
     my $mod_log =
         Koha::ActionLogs->search( { object => $biblionumber, module => 'Cataloguing', action => 'MODIFY' } )->next;
     ok( defined $mod_log->diff, 'MODIFY log populates the diff column' );
+    like(
+        $mod_log->info, qr/^biblio \{/,
+        'MODIFY log info column carries the pre-change JSON payload'
+    );
 
     my $mod_diff = from_json( $mod_log->diff );
     ok( exists $mod_diff->{D}{_marc},   'MODIFY diff contains _marc key' );
@@ -2528,6 +2536,10 @@ subtest 'CataloguingLog MARC-in-JSON diff tests' => sub {
     my $del_log =
         Koha::ActionLogs->search( { object => $biblionumber, module => 'Cataloguing', action => 'DELETE' } )->next;
     ok( defined $del_log->diff, 'DELETE log populates the diff column' );
+    like(
+        $del_log->info, qr/^biblio \{/,
+        'DELETE log info column carries the final-state JSON payload'
+    );
 
     my $del_diff    = from_json( $del_log->diff );
     my $del_removed = $del_diff->{D}{_marc}{R};
