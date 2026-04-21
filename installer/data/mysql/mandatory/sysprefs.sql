@@ -786,7 +786,6 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('SpecifyReturnDate','1'),
 ('SpineLabelAutoPrint','0'),
 ('SpineLabelFormat','<itemcallnumber><copynumber>'),
-('SpineLabelShowPrintOnBibDetails','0'),
 ('staffClientBaseURL',''),
 ('StaffHighlightedWords','1'),
 ('StaffInterfaceLanguages','en'),

@@ -42,7 +42,7 @@
                 [% IF Koha.Preference('EasyAnalyticalRecords') %]<th id="[% tab | html %]_hostrecord" data-colname="hostrecord">Host records</th>[% END %]
                 [% IF ( analyze ) %]<th id="[% tab | html %]_usedin" data-colname="usedin">Used in</th><th></th>[% END %]
                 [% IF Koha.Preference('UseCourseReserves') %]<th id="[% tab | html %]_course_reserves" data-colname="course_reserves">Course reserves</th>[% END %]
-                [% IF Koha.Preference('SpineLabelShowPrintOnBibDetails') %]<th id="[% tab | html %]_spinelabel" data-colname="spinelabel" class="no-sort">Spine label</th>[% END %]
+                <th id="[% tab | html %]_spinelabel" data-colname="spinelabel" class="no-sort">Spine label</th>
                 [% IF ( CAN_user_editcatalogue_edit_items ) %]<th id="[% tab | html %]_actions" data-colname="actions" class="no-sort no-export">&nbsp;</th>[% END %]
             </tr>
         </thead>
@@ -146,7 +146,6 @@
             noItemTypeImages: [% Koha.Preference('noItemTypeImages') ? 1 : 0 | html %],
             DisplayPublishedDate: [% Koha.Preference('DisplayPublishedDate') ? 1 : 0 | html %],
             canreservefromotherbranches: [% Koha.Preference('canreservefromotherbranches') ? 1 : 0 | html %],
-            SpineLabelShowPrintOnBibDetails: [% Koha.Preference('SpineLabelShowPrintOnBibDetails') ? 1 : 0 | html %],
         });
         Koha.addPermissions({
             CAN_user_editcatalogue_edit_items: [% CAN_user_editcatalogue_edit_items ? 1 : 0 | html %],
@@ -868,21 +867,17 @@
                           },
                       ]
                     : []),
-                ...(Koha.prefs.SpineLabelShowPrintOnBibDetails
-                    ? [
-                          {
-                              data: "",
-                              searchable: false,
-                              orderable: false,
-                              render: function (data, type, row, meta) {
-                                  return '<a class="btn btn-default btn-xs print-label" href="/cgi-bin/koha/labels/spinelabel-print.pl?barcode=%s"><i class="fa fa-print"></i> %s</a>'.format(
-                                      escape_str(row.external_id),
-                                      escape_str(_("Print label"))
-                                  );
-                              },
-                          },
-                      ]
-                    : []),
+                {
+                    data: "",
+                    searchable: false,
+                    orderable: false,
+                    render: function (data, type, row, meta) {
+                        return '<a class="btn btn-default btn-xs print-label" href="/cgi-bin/koha/labels/spinelabel-print.pl?barcode=%s"><i class="fa fa-print"></i> %s</a>'.format(
+                            escape_str(row.external_id),
+                            escape_str(_("Print label"))
+                        );
+                    },
+                },
                 ...(Koha.permissions.CAN_user_editcatalogue_edit_items
                     ? [
                           {
@@ -966,13 +961,11 @@
                             container.find(".bottom.pager").remove();
                         }
 
-                        if (Koha.prefs.SpineLabelShowPrintOnBibDetails) {
-                            $(".print-label").on("click", function (e) {
-                                e.preventDefault();
-                                link = $(this).attr("href");
-                                openWindow(link, "Print spine label", 400, 400);
-                            });
-                        }
+                        $(".print-label").on("click", function (e) {
+                            e.preventDefault();
+                            link = $(this).attr("href");
+                            openWindow(link, "Print spine label", 400, 400);
+                        });
 
                         if (api.data().length) {
                             update_columns_visibility(api, items_table_settings[tab_id], user_colvis[tab_id]);

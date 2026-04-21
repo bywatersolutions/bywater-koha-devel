@@ -160,7 +160,6 @@ sub _shared_preferences {
         PrefillItem
         z3950NormalizeAuthor
         SpineLabelAutoPrint
-        SpineLabelShowPrintOnBibDetails
         BlockReturnOfLostItems
         BlockReturnOfWithdrawnItems
         CalculateFinesOnReturn
