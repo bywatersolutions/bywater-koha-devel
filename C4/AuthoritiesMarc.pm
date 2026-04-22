@@ -53,6 +53,7 @@ BEGIN {
 }
 
 use MARC::Field;
+use MARC::Record::MiJ;
 use Scalar::Util qw(blessed);
 use Try::Tiny    qw( try catch );
 
@@ -1537,48 +1538,21 @@ sub _get_authid_subfield {
     return $field->subfield('9') || $field->subfield('3');
 }
 
-=head2 _marc_record_to_diffable
-
-Return the required fields for the action logs to store a diff
-
-=cut
-
-sub _marc_record_to_diffable {
-    my ($record) = @_;
-    return {} unless defined $record;
-    my %marc;
-    for my $field ( $record->fields ) {
-        my $tag = $field->tag;
-        if ( $field->is_control_field ) {
-            $marc{$tag} = $field->data;
-        } else {
-            my $ind1      = $field->indicator(1);
-            my $ind2      = $field->indicator(2);
-            my $formatted = "$ind1$ind2";
-            for my $subfield ( $field->subfields ) {
-                $formatted .= " \$$subfield->[0] $subfield->[1]";
-            }
-            push @{ $marc{$tag} }, $formatted;
-        }
-    }
-    return \%marc;
-}
-
 =head2 _authority_log_data
 
-Return the data needed by _marc_record_to_diffable
+Returns a hashref combining the authority columns that are independent of
+the MARC record with a C<_marc> key containing the record in MARC-in-JSON
+format, suitable for passing to C<logaction> as either the C<$infos> or
+C<$original> argument.
 
 =cut
 
 sub _authority_log_data {
     my ( $authority, $marc_record ) = @_;
-    my %data = %{ $authority->unblessed };
-    delete $data{marcxml};
-    for my $key ( keys %data ) {
-        delete $data{$key} unless defined $data{$key} && $data{$key} ne '';
-    }
-    $data{_marc} = _marc_record_to_diffable($marc_record);
-    return \%data;
+    return {
+        %{ $authority->_unblessed_for_log },
+        _marc => ( $marc_record ? $marc_record->to_mij_structure : {} ),
+    };
 }
 
 =head2 GetHeaderAuthority

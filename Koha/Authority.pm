@@ -19,6 +19,8 @@ package Koha::Authority;
 
 use Modern::Perl;
 
+use Scalar::Util qw( blessed );
+
 use base qw(Koha::Object);
 
 use Koha::Authority::ControlledIndicators;
@@ -379,6 +381,34 @@ sub record_strip_nonxml {
 }
 
 =head2 Internal methods
+
+=head3 _unblessed_for_log
+
+Returns a plain hashref of authority column values that are independent of
+the attached MARC record, for use in action log diffing.
+
+Columns derived from MARC (C<heading>, C<authtrees>), the raw C<marcxml>
+blob, and system-managed timestamps (C<datecreated>, C<modification_time>)
+are omitted because they either duplicate MARC data already captured in
+the C<_marc> key of the log entry or add no diff signal. Only columns
+carrying independent Koha metadata are retained: C<authtypecode>,
+C<origincode>, and C<linkid>.
+
+=cut
+
+# auth_header columns that exist independently of the MARC record.
+my @_LOG_FIELDS = qw( authtypecode origincode linkid );
+
+sub _unblessed_for_log {
+    my ($self) = @_;
+    my $full = $self->unblessed;
+    my %data;
+    for my $key (@_LOG_FIELDS) {
+        next unless exists $full->{$key} && defined $full->{$key};
+        $data{$key} = blessed( $full->{$key} ) ? "$full->{$key}" : $full->{$key};
+    }
+    return \%data;
+}
 
 =head3 _type
 
