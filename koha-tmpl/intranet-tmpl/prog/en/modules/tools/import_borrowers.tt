@@ -426,36 +426,36 @@
     [% Asset.js("js/tools-menu.js") | $raw %]
     [% INCLUDE 'str/members-menu.inc' %]
     [% Asset.js("js/members-menu.js") | $raw %]
-    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
-        $(document).ready(function() {
-            [%# Make date fields have the datepicker %]
+    <script nonce="[% Koha.CSPNonce | $raw %]">
+        $(document).ready(function () {
+            // Make date fields have the datepicker
             $("#dateenrolled, #dateexpiry, #dateofbirth").flatpickr({
                 altInput: true,
                 altFormat: flatpickr_dateformat_string,
-                altInputClass: 'flatpickr-input',
+                altInputClass: "flatpickr-input",
                 dateFormat: "Y-m-d",
             });
 
-            $(".expand_defaults").click(function(e){
+            $(".expand_defaults").click(function (e) {
                 e.preventDefault();
                 $(".default_values").toggle();
                 $(".expand_defaults").toggle();
             });
 
-            $(".expand_preserves").click(function(e){
+            $(".expand_preserves").click(function (e) {
                 e.preventDefault();
                 $(".preserve_values").toggle();
                 $(".expand_preserves").toggle();
             });
         });
 
-        $("#overwrite_cardnumberno").click(function(){
-            $("#overwrite_passwords").prop('checked',false).prop('disabled',true);
-            $("#update_dateexpiry").prop('checked',false).prop('disabled',true);
+        $("#overwrite_cardnumberno").click(function () {
+            $("#overwrite_passwords").prop("checked", false).prop("disabled", true);
+            $("#update_dateexpiry").prop("checked", false).prop("disabled", true);
         });
-        $("#overwrite_cardnumberyes").click(function(){
-            $("#overwrite_passwords").prop('disabled',false);
-            $("#update_dateexpiry").prop('disabled',false);
+        $("#overwrite_cardnumberyes").click(function () {
+            $("#overwrite_passwords").prop("disabled", false);
+            $("#update_dateexpiry").prop("disabled", false);
         });
     </script>
 [% END %]
