@@ -94,11 +94,15 @@ sub logaction {
         }
     } else {
         $updated = $infos;
-        if (   $modulename eq 'CATALOGUING'
+        my %record_log_prefix = (
+            CATALOGUING => 'biblio',
+            AUTHORITIES => 'authority',
+        );
+        if (   $record_log_prefix{$modulename}
             && ref $original eq 'HASH'
             && $actionname ne 'ADD' )
         {
-            my $prefix = ref $infos eq 'HASH' ? 'biblio' : $infos;
+            my $prefix = ref $infos eq 'HASH' ? $record_log_prefix{$modulename} : $infos;
             $infos = "$prefix " . to_json( $original, { utf8 => 1, pretty => 1 } );
         }
     }

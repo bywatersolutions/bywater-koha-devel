@@ -402,7 +402,7 @@ subtest 'DelAuthority() tests' => sub {
 };
 
 subtest 'Authority action logs include MARC-in-JSON diff' => sub {
-    plan tests => 20;
+    plan tests => 23;
 
     $schema->storage->txn_begin;
 
@@ -418,6 +418,10 @@ subtest 'Authority action logs include MARC-in-JSON diff' => sub {
     my $add_log = Koha::ActionLogs->search( { object => $auth_id, module => 'AUTHORITIES', action => 'ADD' } )->next;
     ok( defined $add_log,       'ADD action logged' );
     ok( defined $add_log->diff, 'ADD: diff column populated' );
+    is(
+        $add_log->info, 'authority',
+        'ADD: info column is the bare "authority" prefix (no JSON payload)'
+    );
 
     my $add_diff  = from_json( $add_log->diff );
     my $add_added = $add_diff->{D}{_marc}{A};
@@ -440,6 +444,10 @@ subtest 'Authority action logs include MARC-in-JSON diff' => sub {
     my $mod_log = Koha::ActionLogs->search( { object => $auth_id, module => 'AUTHORITIES', action => 'MODIFY' } )->next;
     ok( defined $mod_log,       'MODIFY action logged' );
     ok( defined $mod_log->diff, 'MODIFY: diff column populated' );
+    like(
+        $mod_log->info, qr/^authority \{/,
+        'MODIFY: info column carries the pre-change JSON payload'
+    );
 
     my $mod_diff = from_json( $mod_log->diff );
     ok( exists $mod_diff->{D}{_marc},      'MODIFY diff contains _marc key' );
@@ -454,6 +462,10 @@ subtest 'Authority action logs include MARC-in-JSON diff' => sub {
     my $del_log = Koha::ActionLogs->search( { object => $auth_id, module => 'AUTHORITIES', action => 'DELETE' } )->next;
     ok( defined $del_log,       'DELETE action logged' );
     ok( defined $del_log->diff, 'DELETE: diff column populated' );
+    like(
+        $del_log->info, qr/^authority \{/,
+        'DELETE: info column carries the final-state JSON payload'
+    );
 
     my $del_diff    = from_json( $del_log->diff );
     my $del_removed = $del_diff->{D}{_marc}{R};
