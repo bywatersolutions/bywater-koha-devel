@@ -52,15 +52,16 @@ function fmtJsonValue(v) {
 }
 
 /**
- * Render the info column for a CATALOGUING log entry. The payload is
- * "biblio <JSON>" where the JSON is the pre-change (MODIFY) or final
- * (DELETE) state of the record, including a MARC-in-JSON `_marc` key.
- * Returns rendered HTML, or null if the text doesn't look like a
- * biblio JSON payload (e.g. the bare "biblio" prefix logged on ADD).
+ * Render the info column for a CATALOGUING or AUTHORITIES log entry.
+ * The payload is "biblio <JSON>" or "authority <JSON>" where the JSON
+ * is the pre-change (MODIFY) or final (DELETE) state of the record,
+ * including a MARC-in-JSON `_marc` key. Returns rendered HTML, or null
+ * if the text doesn't look like a record JSON payload (e.g. the bare
+ * "biblio" / "authority" prefix logged on ADD).
  */
-function renderCatalogInfo(raw) {
+function renderRecordInfo(raw) {
     if (!raw) return null;
-    var match = raw.match(/^biblio\s+(\{[\s\S]*\})\s*$/);
+    var match = raw.match(/^(?:biblio|authority)\s+(\{[\s\S]*\})\s*$/);
     if (!match) return null;
     var parsed;
     try {
@@ -299,7 +300,7 @@ $(document).ready(function () {
 
     $("div.loginfo").each(function () {
         var raw = $(this).text().trim();
-        var rendered = renderCatalogInfo(raw);
+        var rendered = renderRecordInfo(raw);
         if (rendered) {
             $(this).html(rendered);
         }
