@@ -944,56 +944,56 @@
         var new_lettercode = '[% new_lettercode | html %]';
         var new_branchcode = '[% new_branchcode | html %]';
         var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'notices', 'lettert', 'json' ) | $raw %];
-        $(document).ready(function(){
-            $(".headings").click(function(){
-                var lang = $(this).data('lang');
-                $("#style_"+lang).val(function(i, text) {
-                    return text + 'pre, #slip, #slip h1, #slip h2, #slip h3, #slip h4, #slip h5, #slip h6,\n' +
-                    '#receipt, #receipt h1, #receipt h2, #receipt h3, #receipt h4, #receipt h5, #receipt h6 {\n' +
-                    '// insert CSS here\n' +
-                    '}';
+    </script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
+        $(document).ready(function () {
+            $(".headings").click(function () {
+                var lang = $(this).data("lang");
+                $("#style_" + lang).val(function (i, text) {
+                    return text + "pre, #slip, #slip h1, #slip h2, #slip h3, #slip h4, #slip h5, #slip h6,\n" + "#receipt, #receipt h1, #receipt h2, #receipt h3, #receipt h4, #receipt h5, #receipt h6 {\n" + "// insert CSS here\n" + "}";
                 });
             });
-            $(".tables").click(function(){
-                var lang = $(this).data('lang');
-                $("#style_"+lang).val(function(i, text) {
-                    return text + '\nbody, table, th, td, th:last-child, td:last-child {\n' +
-                    '// insert CSS here\n' +
-                    '}';
+            $(".tables").click(function () {
+                var lang = $(this).data("lang");
+                $("#style_" + lang).val(function (i, text) {
+                    return text + "\nbody, table, th, td, th:last-child, td:last-child {\n" + "// insert CSS here\n" + "}";
                 });
             });
-            $(".text").click(function(){
-                var lang = $(this).data('lang');
-                $("#style_"+lang).val(function(i, text) {
-                    return text + 'pre, #slip, #slip h1, #slip h2, #slip h3, #slip h4, #slip h5, #slip h6,\n' +
-                    '#receipt, #receipt h1, #receipt h2, #receipt h3, #receipt h4, #receipt h5, #receipt h6,\n' +
-                    'table, th, td, th:last-child, td:last-child {\n' +
-                    '// insert CSS here\n' +
-                    '}';
+            $(".text").click(function () {
+                var lang = $(this).data("lang");
+                $("#style_" + lang).val(function (i, text) {
+                    return (
+                        text +
+                        "pre, #slip, #slip h1, #slip h2, #slip h3, #slip h4, #slip h5, #slip h6,\n" +
+                        "#receipt, #receipt h1, #receipt h2, #receipt h3, #receipt h4, #receipt h5, #receipt h6,\n" +
+                        "table, th, td, th:last-child, td:last-child {\n" +
+                        "// insert CSS here\n" +
+                        "}"
+                    );
                 });
             });
 
-            $(".notice-sample").on("click", function(e){
+            $(".notice-sample").on("click", function (e) {
                 e.preventDefault();
                 var noticeid = $(this).data("noticeid");
                 var replaceid = $(this).data("replace");
-                var body = $("#notice" + noticeid ).val();
+                var body = $("#notice" + noticeid).val();
                 $("#noticeSampleModal .template-body").text(body);
                 $("#noticeSampleModal").attr("data-replaceid", replaceid);
                 $("#noticeSampleModal").modal("show");
             });
 
-            $("#noticeSampleModal").on("hide.bs.modal", function(){
+            $("#noticeSampleModal").on("hide.bs.modal", function () {
                 $("#noticeSampleModalLabel").text("");
                 $("#noticeSampleModal .template-body").text("");
-                $("#noticeSampleModal").attr("data-replaceid", '');
+                $("#noticeSampleModal").attr("data-replaceid", "");
             });
 
-            $("#noticeSampleModal").on("click", ".copy", function(){
-                var content = $('#noticeSampleModal .template-body').text();
-                var replaceid = $('#noticeSampleModal').data('replaceid');
-                $('#'+replaceid).val(content);
-                $('#noticeSampleModal').modal('hide');
+            $("#noticeSampleModal").on("click", ".copy", function () {
+                var content = $("#noticeSampleModal .template-body").text();
+                var replaceid = $("#noticeSampleModal").data("replaceid");
+                $("#" + replaceid).val(content);
+                $("#noticeSampleModal").modal("hide");
             });
         });
     </script>
