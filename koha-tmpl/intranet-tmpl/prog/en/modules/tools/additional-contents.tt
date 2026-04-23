@@ -704,11 +704,7 @@
                                 alert(_("Please specify a title for 'Default'"));
                                 return false;
                             } else {
-                                if (!wysiwyg) {
-                                    let content = $("#content_default").siblings(".CodeMirror")[0].CodeMirror.getValue();
-                                } else {
-                                    let content = tinyMCE.get("content_default").getContent();
-                                }
+                                let content = wysiwyg ? tinyMCE.get("content_default").getContent() : $("#content_default").siblings(".CodeMirror")[0].CodeMirror.getValue();
 
                                 if (!content.length > 0) {
                                     alert(_("Please specify a content for 'Default'"));
