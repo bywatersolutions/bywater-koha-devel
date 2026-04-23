@@ -112,6 +112,68 @@ jobs:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
               if: always() # Pick up events even if the job fails or is canceled.
 
+    dbic-check:
+        # Regenerate Koha/Schema with dbic and fail if kohastructure.sql drift produces changes
+        if: (!contains(github.event.head_commit.message, '[FAST]')) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security')
+        name: Check DBIx::Class schema is up-to-date
+        needs: [check-repo]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export variables needed by koha-testing-docker
+              run: |
+                  echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
+                  echo "LOCAL_USER_ID=$(id -u)" >> $GITHUB_ENV
+                  echo "SYNC_REPO=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
+            - name: Clone koha-testing-docker
+              run: |
+                  git clone --branch main --single-branch --depth 1 https://gitlab.com/koha-community/koha-testing-docker.git "$HOME/ktd"
+                  echo "KTD_HOME=$HOME/ktd" >> $GITHUB_ENV
+
+            - name: Ensure proxy network exists
+              run: |
+                  docker network inspect proxy >/dev/null 2>&1 || docker network create proxy
+
+            - name: Start koha-testing-docker
+              run: |
+                  export PATH=$KTD_HOME/bin:$PATH
+                  cp $KTD_HOME/env/defaults.env $KTD_HOME/.env
+                  ktd --proxy --name dbic-check --search-engine zebra pull -q
+                  ktd --proxy --name dbic-check --search-engine zebra up -d
+                  ktd --name dbic-check --wait-ready 300
+
+            - name: Run dbic and check for schema drift
+              run: |
+                  export PATH=$KTD_HOME/bin:$PATH
+                  ktd --name dbic-check --shell --run "/kohadevbox/bin/dbic"
+                  if [ -n "$(git status --porcelain)" ]; then
+                      echo "::error::Running dbic produced file changes. kohastructure.sql and Koha/Schema/ have drifted. Run dbic locally and commit the regenerated schema files."
+                      echo "--- git status ---"
+                      git status
+                      echo "--- git diff (tracked) ---"
+                      git diff
+                      echo "--- untracked files ---"
+                      git ls-files --others --exclude-standard
+                      exit 1
+                  fi
+                  echo "No DBIx::Class schema drift detected."
+
+            - name: Stop koha-testing-docker
+              if: always()
+              run: |
+                  export PATH=$KTD_HOME/bin:$PATH
+                  ktd --name dbic-check down || true
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }}
+              if: always()
+
     release-notes: # This container checks out the branch on it's own, so no need for the GitHub checkout action
         if: github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-security'
         name: Build release notes
