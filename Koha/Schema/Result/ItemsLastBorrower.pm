@@ -39,7 +39,7 @@ __PACKAGE__->table("items_last_borrower");
 
   data_type: 'integer'
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 created_on
 
@@ -56,7 +56,7 @@ __PACKAGE__->add_columns(
   "itemnumber",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "borrowernumber",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "created_on",
   {
     data_type => "timestamp",
@@ -78,20 +78,6 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("id");
 
-=head1 UNIQUE CONSTRAINTS
-
-=head2 C<itemnumber>
-
-=over 4
-
-=item * L</itemnumber>
-
-=back
-
-=cut
-
-__PACKAGE__->add_unique_constraint("itemnumber", ["itemnumber"]);
-
 =head1 RELATIONS
 
 =head2 borrowernumber
@@ -106,7 +92,12 @@ __PACKAGE__->belongs_to(
   "borrowernumber",
   "Koha::Schema::Result::Borrower",
   { borrowernumber => "borrowernumber" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 itemnumber
@@ -125,8 +116,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07040 @ 2015-10-02 12:33:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ByHKNZCEz4a1AqTnOJgUWA
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-04-24 11:05:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GXL/yWCw6WMr5CrkpZwoUw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
