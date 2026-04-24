@@ -39,9 +39,8 @@ Foreign key to sip_institutions.sip_institution_id
 
 =head2 ae_field_template
 
-  data_type: 'varchar'
+  data_type: 'text'
   is_nullable: 1
-  size: 255
 
 =head2 allow_additional_materials_checkout
 
@@ -61,9 +60,8 @@ Foreign key to sip_institutions.sip_institution_id
 
 =head2 av_field_template
 
-  data_type: 'varchar'
+  data_type: 'text'
   is_nullable: 1
-  size: 255
 
 =head2 blocked_item_types
 
@@ -105,9 +103,8 @@ Foreign key to sip_institutions.sip_institution_id
 
 =head2 da_field_template
 
-  data_type: 'varchar'
+  data_type: 'text'
   is_nullable: 1
-  size: 255
 
 =head2 delimiter
 
@@ -260,7 +257,7 @@ __PACKAGE__->add_columns(
   "sip_institution_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "ae_field_template",
-  { data_type => "varchar", is_nullable => 1, size => 255 },
+  { data_type => "text", is_nullable => 1 },
   "allow_additional_materials_checkout",
   { data_type => "tinyint", is_nullable => 1 },
   "allow_empty_passwords",
@@ -268,7 +265,7 @@ __PACKAGE__->add_columns(
   "allow_fields",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "av_field_template",
-  { data_type => "varchar", is_nullable => 1, size => 255 },
+  { data_type => "text", is_nullable => 1 },
   "blocked_item_types",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "checked_in_ok",
@@ -284,7 +281,7 @@ __PACKAGE__->add_columns(
   "cv_triggers_alert",
   { data_type => "tinyint", is_nullable => 1 },
   "da_field_template",
-  { data_type => "varchar", is_nullable => 1, size => 255 },
+  { data_type => "text", is_nullable => 1 },
   "delimiter",
   { data_type => "varchar", default_value => "|", is_nullable => 1, size => 10 },
   "disallow_overpayment",
@@ -509,8 +506,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-04-23 21:50:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5HZwQtnHyG202V+11JqjPg
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-04-24 16:44:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nr/MwKeH6rrt/ekP3Zeqcw
 
 
 __PACKAGE__->add_columns(
