@@ -1320,9 +1320,9 @@
                                             [% IF header_ro.has_itemnumbers && ( header_ro.cell == 'itemnumber' || header_types.item( header_ro.cell ) == 'itemnumber' ) %]
                                                 <th class="itemnumber num-html">[% header_ro.cell | html %]</th>
                                             [% ELSIF header_ro.has_biblionumbers && ( header_ro.cell == 'biblionumber' || header_types.item( header_ro.cell ) == 'biblionumber' ) %]
-                                                <th class="biblionumber">[% header_ro.cell | html %]</th>
+                                                <th class="biblionumber num-html">[% header_ro.cell | html %]</th>
                                             [% ELSIF header_ro.cell == 'cardnumber' || header_types.item( header_ro.cell ) == 'cardnumber' %]
-                                                <th class="cardnumber">[% header_ro.cell | html %]</th>
+                                                <th class="cardnumber num-html">[% header_ro.cell | html %]</th>
                                             [% ELSIF header_ro.cell == 'borrowernumber' || header_types.item( header_ro.cell ) == 'borrowernumber' %]
                                                 <th class="borrowernumber num-html">[% header_ro.cell | html %]</th>
                                             [% ELSE %]
