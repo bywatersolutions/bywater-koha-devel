@@ -422,18 +422,17 @@
                                                                         ></li
                                                                     >
                                                                     <li>
+                                                                        [% SET can_delete_this_report = 0 %]
+                                                                        [% IF ( CAN_user_reports_delete_all_reports || (CAN_user_reports_delete_own_reports && savedreport.borrowernumber == loggedinusernumber) ) %]
+                                                                            [% can_delete_this_report = 1 %]
+                                                                        [% END %]
                                                                         <a
                                                                             [% # tags below to remove extra whitespace added for readability %]
                                                                             [%- " "|$raw -%]href="/cgi-bin/koha/reports/guided_reports.pl?id=[% savedreport.id | uri %]&op=show"
                                                                             [%- " "|$raw -%]class="dropdown-item preview_sql"
                                                                             [%- " "|$raw -%]data-reportid="[% savedreport.id | html %]"
                                                                             [%- " "|$raw -%]data-create="[% CAN_user_reports_create_reports || 0 | html %]"
-                                                                            [%- " "|$raw -%]data-delete="[%
-                                                                                CAN_user_reports_delete_all_reports ||
-                                                                                CAN_user_reports_delete_own_reports && savedreport.borrowernumber == loggedinusernumber ||
-                                                                                0
-                                                                                | html
-                                                                            %]"
+                                                                            [%- " "|$raw -%]data-delete="[% can_delete_this_report | html %]"
                                                                             [%- " "|$raw -%]data-run="[% CAN_user_reports_execute_reports || 0 | html %]"
                                                                             [%- ""|$raw -%]
                                                                         >
