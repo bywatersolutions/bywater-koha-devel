@@ -79,7 +79,7 @@ jobs:
 
     unit-test:
         # Fast builds will skip unit tests and go straight to building a debian package
-        if: (!contains(github.event.head_commit.message, '[FAST]')) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security')
+        if: (!contains(github.event.head_commit.message, '[FAST]')) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security' || github.repository == 'bywatersolutions/bywater-koha-devel')
         name: Run unit tests
         needs: [check-repo]
         runs-on: ubuntu-latest
@@ -114,7 +114,7 @@ jobs:
 
     dbic-check:
         # Regenerate Koha/Schema with dbic and fail if kohastructure.sql drift produces changes
-        if: (!contains(github.event.head_commit.message, '[FAST]')) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security')
+        if: (!contains(github.event.head_commit.message, '[FAST]')) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security' || github.repository == 'bywatersolutions/bywater-koha-devel')
         name: Check DBIx::Class schema is up-to-date
         needs: [check-repo]
         runs-on: ubuntu-latest
@@ -263,7 +263,7 @@ jobs:
         # If it is fast build, we still want to honor cancellation and stop on failures
         if: ( success() || ( contains(github.event.head_commit.message, '[FAST]') && !cancelled() && !contains(needs.*.result, 'failure') ) ) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security')
         name: Build Debian packages
-        needs: [unit-test, is-a-mark]
+        needs: [unit-test, is-a-mark, dbic-check]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
