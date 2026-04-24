@@ -500,6 +500,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 checkins
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::Checkin>
+
+=cut
+
+__PACKAGE__->has_many(
+  "checkins",
+  "Koha::Schema::Result::Checkin",
+  { "foreign.library_id" => "self.branchcode" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 circulation_rules
 
 Type: has_many
