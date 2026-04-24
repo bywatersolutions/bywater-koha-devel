@@ -6,7 +6,7 @@ on:
         tags-ignore:
             - "**"
     pull_request_target:
-      types: [opened, reopened]
+      types: [opened, reopened, synchronize]
     workflow_dispatch:
         inputs:
           debug:
@@ -16,6 +16,27 @@ on:
 env:
     DEBUG_SESSION: ${{github.event.input.debug}}
 jobs:
+    check-commit-messages:
+        name: Check PR commit messages start with "BWS-PKG - "
+        if: github.event_name == 'pull_request_target'
+        runs-on: ubuntu-latest
+        steps:
+            - name: Verify all commits start with "BWS-PKG - "
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+                  REPO: ${{ github.repository }}
+              run: |
+                  set -e
+                  bad=$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/commits" \
+                      --jq '.[] | select(.commit.message | startswith("BWS-PKG - ") | not) | "\(.sha[0:7]) \(.commit.message | split("\n")[0])"')
+                  if [ -n "$bad" ]; then
+                      echo "::error::The following commits do not start with 'BWS-PKG - ':"
+                      echo "$bad"
+                      exit 1
+                  fi
+                  echo "All commits start with 'BWS-PKG - '"
+
     check-repo:
         name: Check for correct repo
         runs-on: ubuntu-latest
