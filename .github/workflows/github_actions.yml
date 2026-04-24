@@ -77,10 +77,10 @@ jobs:
               run: |
                   curl --silent "https://registry.hub.docker.com/v2/repositories/bywater/koha-ncip-server/tags?page_size=1000" | jq -r ".results[].name" | sort --version-sort | grep "v${{ steps.extracted_variables.outputs.MAJOR_MINOR_VERSION }}-latest"
 
-    unit-test:
+    unit-test-perl:
         # Fast builds will skip unit tests and go straight to building a debian package
         if: (!contains(github.event.head_commit.message, '[FAST]')) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security' || github.repository == 'bywatersolutions/bywater-koha-devel')
-        name: Run unit tests
+        name: Run Perl unit tests
         needs: [check-repo]
         runs-on: ubuntu-latest
         steps:
@@ -102,7 +102,42 @@ jobs:
                   sudo apt-get update
                   sudo apt-get install -y cpanminus
                   sudo cpanm Modern::Perl IPC::Cmd
-                  perl .github/workflows/koha_tests_runner.pl --run-all-tests
+                  perl .github/workflows/koha_tests_runner.pl --run-all-perl-tests
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow # selectable (default: repo,message)
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
+              if: always() # Pick up events even if the job fails or is canceled.
+
+    unit-test-cypress:
+        # Fast builds will skip unit tests and go straight to building a debian package
+        if: (!contains(github.event.head_commit.message, '[FAST]')) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security' || github.repository == 'bywatersolutions/bywater-koha-devel')
+        name: Run Cypress tests
+        needs: [check-repo]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export additional variables needed by koha-testing-docker
+              run: |
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "BRANCH: $KOHA_BRANCH"
+                  echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
+
+            - name: Setup Debug Session
+              if: env.DEBUG_SESSION == 'true'
+              uses: csexton/debugger-action@master
+
+            - name: Run tests
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y cpanminus
+                  sudo cpanm Modern::Perl IPC::Cmd
+                  perl .github/workflows/koha_tests_runner.pl --run-cypress-tests-only
 
             - uses: bywatersolutions/action-slack@v3
               with:
@@ -263,7 +298,7 @@ jobs:
         # If it is fast build, we still want to honor cancellation and stop on failures
         if: ( success() || ( contains(github.event.head_commit.message, '[FAST]') && !cancelled() && !contains(needs.*.result, 'failure') ) ) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security')
         name: Build Debian packages
-        needs: [unit-test, is-a-mark, dbic-check]
+        needs: [unit-test-perl, is-a-mark, dbic-check]
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
@@ -493,7 +528,7 @@ jobs:
     zap-scan-baseline-opac:
         name: ZAP Scan - Baseline - OPAC
         if: false
-        needs: unit-test
+        needs: unit-test-perl
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
@@ -562,7 +597,7 @@ jobs:
     zap-scan-baseline-staff:
         name: ZAP Scan - Baseline - Staff
         if: false
-        needs: unit-test
+        needs: unit-test-perl
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
@@ -769,7 +804,7 @@ jobs:
         if: false
         #if: startsWith( github.ref, 'refs/heads/bywater-v' )
         name: Rebase XSLT
-        needs: [unit-test, is-a-mark]
+        needs: [unit-test-perl, is-a-mark]
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
