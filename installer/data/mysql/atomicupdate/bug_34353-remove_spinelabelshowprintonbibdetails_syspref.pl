@@ -1,5 +1,5 @@
 use Modern::Perl;
-use Koha::Installer::Output qw(say_warning say_success say_info);
+use Koha::Installer::Output qw(say_warning say_success);
 
 return {
     bug_number  => "34353",
@@ -8,6 +8,10 @@ return {
         my ($args) = @_;
         my ( $dbh, $out ) = @$args{qw(dbh out)};
 
+        # If a columns_settings row already exists, OR the migrated value into
+        # the existing is_hidden flag — when the previous syspref and an
+        # existing table-settings override disagree we err on the side of
+        # hiding the column (the old syspref's "Don't show" winning).
         for my $tablename (qw(holdings_table otherholdings_table)) {
             $dbh->do(
                 q{INSERT INTO columns_settings
@@ -22,8 +26,12 @@ return {
             );
         }
 
-        $dbh->do(q{DELETE FROM systempreferences WHERE variable='SpineLabelShowPrintOnBibDetails'});
+        my $deleted = $dbh->do(q{DELETE FROM systempreferences WHERE variable='SpineLabelShowPrintOnBibDetails'});
 
-        say_success( $out, "Deleted 'SpineLabelShowPrintOnBibDetails' syspref" );
+        if ( $deleted && $deleted > 0 ) {
+            say_success( $out, "Deleted 'SpineLabelShowPrintOnBibDetails' syspref" );
+        } else {
+            say_warning( $out, "'SpineLabelShowPrintOnBibDetails' syspref already removed" );
+        }
     },
 };
