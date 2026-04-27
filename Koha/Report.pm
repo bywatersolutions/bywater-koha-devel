@@ -163,7 +163,16 @@ sub new_from_mana {
 =head3 prep_report
 
 Prep the report and return executable sql with parameters embedded and a list of header types
-for building batch action links in the template
+for building batch action links in the template.
+
+The returned SQL is suffixed with a tracking comment of the form
+
+    /* { saved_sql.id: <id> } { user_id: <borrowernumber> } */
+
+L<Koha::Reports/running> parses this comment out of
+C<information_schema.processlist> to detect concurrent runs of the same
+report. External log/audit tooling that consumes Koha SQL should treat
+this format as part of the public contract.
 
 =cut
 
