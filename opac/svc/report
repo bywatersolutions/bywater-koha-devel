@@ -63,7 +63,19 @@ if ($cache_active) {
 unless ($json_text) {
     my $limit = C4::Context->preference("SvcMaxReportRows") || 10;
 
-    my ( $sql, undef ) = $report_rec->prep_report( \@param_names, \@sql_params );
+    my ( $sql, undef );
+    eval { ( $sql, undef ) = $report_rec->prep_report( \@param_names, \@sql_params ); };
+    if ( my $e = $@ ) {
+        if ( ref($e) eq 'Koha::Exceptions::Report::DuplicateRunning' ) {
+            print $query->header(
+                -type   => 'application/json',
+                -status => '429 Too Many Requests',
+            );
+            print encode_json( { error => 'duplicate_running_report' } );
+            exit 0;
+        }
+        die $e;
+    }
 
     my ( $sth, $errors ) = execute_query(
         {
