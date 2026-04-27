@@ -178,9 +178,12 @@ this format as part of the public contract.
 If C<duplicate_running_reports_per_user_limit> is set in C<koha-conf.xml>
 to a non-zero value and the current userenv already has at least that many
 runs of the same report in flight, this method throws
-L<Koha::Exceptions::Report::DuplicateRunning> instead of returning. All
-report-execution entry points (the staff guided-reports UI, C<svc/report>
-and C<opac/svc/report>) go through here so the limit is enforced uniformly.
+L<Koha::Exceptions::Report::DuplicateRunning> instead of returning. If
+C<total_running_reports_per_user_limit> is set and the userenv already has
+at least that many reports of any kind in flight, it throws
+L<Koha::Exceptions::Report::TotalRunning>. All report-execution entry
+points (the staff guided-reports UI, C<svc/report> and C<opac/svc/report>)
+go through here so the limits are enforced uniformly.
 
 =cut
 
@@ -259,6 +262,17 @@ sub prep_report {
                 report_id => $report_id,
                 user_id   => $user_id,
                 limit     => $duplicate_limit,
+            );
+        }
+    }
+
+    my $total_limit = C4::Context->config('total_running_reports_per_user_limit');
+    if ( $total_limit && $user_id ) {
+        my $running = Koha::Reports->running( { user_id => $user_id } );
+        if ( $running->count >= $total_limit ) {
+            Koha::Exceptions::Report::TotalRunning->throw(
+                user_id => $user_id,
+                limit   => $total_limit,
             );
         }
     }

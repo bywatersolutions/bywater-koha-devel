@@ -1593,6 +1593,8 @@
                             [% FOREACH error IN errors %]
                                 [% IF ( error.duplicate_running_report ) %]
                                     This report is already running. Please wait for it to finish before running it again.
+                                [% ELSIF ( error.total_running_reports_limit_exceeded ) %]
+                                    You have too many reports running at the moment. Please wait for some of them to finish before running this report again.
                                 [% ELSIF ( error.sqlerr ) %]
                                     This report contains the SQL keyword <strong>[% error.sqlerr | html %]</strong>.<br />
                                     Use of this keyword is not allowed in Koha reports due to security and data integrity risks. Only SELECT queries are allowed.<br />
