@@ -17,9 +17,10 @@
 
 use Modern::Perl;
 
+use Test::Exception;
 use Test::MockModule;
 use Test::NoWarnings;
-use Test::More tests => 11;
+use Test::More tests => 12;
 
 use Koha::Report;
 use Koha::Reports;
@@ -100,6 +101,43 @@ subtest 'prep_report' => sub {
     my $headers;
     ( $sql, $headers ) = $report->prep_report( [], [] );
     is_deeply( $headers, { 'itemnumber for batch' => 'itemnumber' } );
+};
+
+subtest 'prep_report throws when duplicate-running limit is exceeded' => sub {
+    plan tests => 4;
+
+    my $report = Koha::Report->new( { report_name => 'duplicate_running_test', savedsql => 'SELECT 1' } )->store;
+
+    # Pretend a real user is logged in so prep_report's user_id check fires.
+    my $patron = $builder->build_object( { class => 'Koha::Patrons' } );
+    t::lib::Mocks::mock_userenv( { patron => $patron } );
+
+    # Pretend two copies of this report are already in flight.
+    my $reports_mock = Test::MockModule->new('Koha::Reports');
+    $reports_mock->mock(
+        'running',
+        sub {
+            my ( $class, $params ) = @_;
+            return $class->search( { id => $report->id } ) if $params->{report_id};
+            return $class->search( { id => undef } );
+        }
+    );
+
+    t::lib::Mocks::mock_config( 'duplicate_running_reports_per_user_limit', 0 );
+    lives_ok { $report->prep_report( [], [] ) } 'limit=0 disables the guard';
+
+    t::lib::Mocks::mock_config( 'duplicate_running_reports_per_user_limit', 5 );
+    lives_ok { $report->prep_report( [], [] ) } 'limit not yet reached, prep_report returns normally';
+
+    t::lib::Mocks::mock_config( 'duplicate_running_reports_per_user_limit', 1 );
+    my $exception;
+    eval { $report->prep_report( [], [] ); };
+    $exception = $@;
+    isa_ok(
+        $exception, 'Koha::Exceptions::Report::DuplicateRunning',
+        'limit reached -> DuplicateRunning exception'
+    );
+    is( $exception->limit, 1, 'exception carries the configured limit' );
 };
 
 subtest 'is_sql_valid' => sub {
