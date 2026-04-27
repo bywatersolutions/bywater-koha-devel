@@ -792,6 +792,12 @@ if ( $op eq 'run' ) {
     my $duplicate_running_reports_per_user_limit = C4::Context->config('duplicate_running_reports_per_user_limit');
     my $duplicate_running_reports;
     if ( $duplicate_running_reports_per_user_limit && C4::Context->userenv ) {
+
+        # This is a TOCTOU check: between the count below and the actual
+        # query execution further down, a parallel request can slip past the
+        # limit. Worst case is one extra concurrent run, which is acceptable
+        # for the intended use case (preventing accidental double-clicks /
+        # multi-tab submissions) and avoids the cost of a serializing lock.
         $duplicate_running_reports = Koha::Reports->running(
             {
                 report_id => $report_id,
