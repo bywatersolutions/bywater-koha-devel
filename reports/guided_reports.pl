@@ -988,7 +988,13 @@ if ( $op eq 'run' ) {
             my ( $sql, $header_types );
             eval { ( $sql, $header_types ) = $report->prep_report( \@param_names, \@sql_params ); };
             if ( my $e = $@ ) {
+                my $error_key;
                 if ( ref($e) eq 'Koha::Exceptions::Report::DuplicateRunning' ) {
+                    $error_key = 'duplicate_running_report';
+                } elsif ( ref($e) eq 'Koha::Exceptions::Report::TotalRunning' ) {
+                    $error_key = 'total_running_reports_limit_exceeded';
+                }
+                if ($error_key) {
                     $template->param(
                         'sql'          => $original_sql,
                         'original_sql' => $original_sql,
@@ -996,7 +1002,7 @@ if ( $op eq 'run' ) {
                         'execute'      => 1,
                         'name'         => $name,
                         'notes'        => $notes,
-                        'errors'       => [ { duplicate_running_report => 1 } ],
+                        'errors'       => [ { $error_key => 1 } ],
                         'sql_params'   => \@sql_params,
                         'param_names'  => \@param_names,
                     );
