@@ -824,11 +824,15 @@ if ( $op eq 'run' ) {
     my $template_id     = $input->param('template');
     my $want_full_chart = $input->param('want_full_chart') || 0;
 
-    my @duplicate_running_report_ids;
     my $duplicate_running_reports_per_user_limit = C4::Context->config('duplicate_running_reports_per_user_limit');
+    my $duplicate_running_reports;
     if ( $duplicate_running_reports_per_user_limit && C4::Context->userenv ) {
-        my $user_id = C4::Context->userenv ? C4::Context->userenv->{number} : undef;
-        @duplicate_running_report_ids = Koha::Reports->running( { report_id => $report_id, user_id => $user_id } );
+        $duplicate_running_reports = Koha::Reports->running(
+            {
+                report_id => $report_id,
+                user_id   => C4::Context->userenv->{number},
+            }
+        );
     }
 
     # offset algorithm
@@ -1016,8 +1020,8 @@ if ( $op eq 'run' ) {
                 'id'              => $report_id,
                 'template_id'     => $template_id,
             );
-        } elsif ( $duplicate_running_reports_per_user_limit
-            && ( scalar @duplicate_running_report_ids >= $duplicate_running_reports_per_user_limit ) )
+        } elsif ( $duplicate_running_reports
+            && $duplicate_running_reports->count >= $duplicate_running_reports_per_user_limit )
         {
             $template->param(
                 'sql'          => $sql,
@@ -1026,7 +1030,7 @@ if ( $op eq 'run' ) {
                 'execute'      => 1,
                 'name'         => $name,
                 'notes'        => $notes,
-                'errors'       => [ { duplicate_running_report_ids => \@duplicate_running_report_ids } ],
+                'errors'       => [ { duplicate_running_report => 1 } ],
                 'sql_params'   => \@sql_params,
                 'param_names'  => \@param_names,
             );

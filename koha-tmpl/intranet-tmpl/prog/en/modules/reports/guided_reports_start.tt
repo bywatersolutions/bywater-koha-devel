@@ -1638,7 +1638,7 @@
                         <div class="alert alert-warning">
                             <strong>The following error was encountered:</strong><br />
                             [% FOREACH error IN errors %]
-                                [% IF ( error.duplicate_running_report_ids ) %]
+                                [% IF ( error.duplicate_running_report ) %]
                                     This report is already running. Please wait for it to finish before running it again.
                                 [% ELSIF ( error.sqlerr ) %]
                                     This report contains the SQL keyword <strong>[% error.sqlerr | html %]</strong>.<br />
