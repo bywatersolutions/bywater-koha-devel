@@ -18,6 +18,7 @@ package Koha::Reports;
 use Modern::Perl;
 
 use Koha::Database;
+use Koha::Logger;
 
 use Koha::Report;
 
@@ -51,6 +52,11 @@ Both C<user_id> (a borrowernumber) and C<report_id> are optional. The lookup
 relies on the SQL comment embedded by L<Koha::Report/prep_report> being
 visible in C<information_schema.processlist>.
 
+If the database user lacks the privileges needed to query
+C<information_schema.processlist>, the failure is logged via C<warn> and
+an empty resultset is returned so that callers degrade gracefully rather
+than aborting the operation they were guarding.
+
 =cut
 
 sub running {
@@ -74,8 +80,12 @@ sub running {
     my $sql = 'SELECT info FROM information_schema.processlist WHERE ' . join( ' AND ', @where );
 
     my $schema = Koha::Database->new->schema;
-    my $rows =
-        $schema->storage->dbh->selectall_arrayref( $sql, { Slice => {} }, @binds );
+    my $rows;
+    eval { $rows = $schema->storage->dbh->selectall_arrayref( $sql, { Slice => {} }, @binds ); };
+    if ($@) {
+        Koha::Logger->get->warn("Koha::Reports->running: unable to query information_schema.processlist: $@");
+        $rows = [];
+    }
 
     my %report_ids;
     for my $row (@$rows) {
