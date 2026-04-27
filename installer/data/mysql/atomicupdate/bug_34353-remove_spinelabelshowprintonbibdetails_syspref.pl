@@ -8,16 +8,19 @@ return {
         my ($args) = @_;
         my ( $dbh, $out ) = @$args{qw(dbh out)};
 
-        $dbh->do(
-            q{INSERT INTO columns_settings
-                       (module, page, tablename, columnname, cannot_be_toggled, is_hidden)
-                   VALUES
-                       ('catalogue', 'detail', 'holdings_table', 'spinelabel', 0,
-                        (SELECT IFNULL(
-                            (SELECT NOT value FROM systempreferences WHERE variable='SpineLabelShowPrintOnBibDetails'),
-                            0)))
-                   ON DUPLICATE KEY UPDATE is_hidden=(is_hidden OR VALUES(is_hidden))}
-        );
+        for my $tablename (qw(holdings_table otherholdings_table)) {
+            $dbh->do(
+                q{INSERT INTO columns_settings
+                           (module, page, tablename, columnname, cannot_be_toggled, is_hidden)
+                       VALUES
+                           ('catalogue', 'detail', ?, 'spinelabel', 0,
+                            (SELECT IFNULL(
+                                (SELECT NOT value FROM systempreferences WHERE variable='SpineLabelShowPrintOnBibDetails'),
+                                0)))
+                       ON DUPLICATE KEY UPDATE is_hidden=(is_hidden OR VALUES(is_hidden))},
+                undef, $tablename
+            );
+        }
 
         $dbh->do(q{DELETE FROM systempreferences WHERE variable='SpineLabelShowPrintOnBibDetails'});
 

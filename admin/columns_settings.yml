@@ -562,6 +562,7 @@ modules:
               columnname: course_reserves
             -
               columnname: spinelabel
+              is_hidden: 1
             -
               columnname: actions
               cannot_be_toggled: 1
@@ -635,6 +636,7 @@ modules:
               columnname: course_reserves
             -
               columnname: spinelabel
+              is_hidden: 1
             -
               columnname: actions
               cannot_be_toggled: 1
