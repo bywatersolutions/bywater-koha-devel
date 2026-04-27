@@ -35,42 +35,54 @@ Koha::Reports - Koha Report Object set class
 
 =head3 running
 
-Returns a list of reports that are currently running
+Returns a Koha::Reports resultset of reports currently being executed,
+optionally filtered by the patron that started them and/or by report id.
 
-my @query_ids = Koha::Reports->running({ [ user_id => $user->userid ] });
+    my $running = Koha::Reports->running(
+        {
+            user_id   => $patron->borrowernumber,
+            report_id => $report->id,
+        }
+    );
+
+    if ( $running->count ) { ... }
+
+Both C<user_id> (a borrowernumber) and C<report_id> are optional. The lookup
+relies on the SQL comment embedded by L<Koha::Report/prep_report> being
+visible in C<information_schema.processlist>.
 
 =cut
 
 sub running {
-    my ( $self, $params ) = @_;
+    my ( $class, $params ) = @_;
 
     my $user_id   = $params->{user_id};
     my $report_id = $params->{report_id};
 
-    my $dbh = Koha::Database->dbh;
+    my @where = ( 'command != ?', 'info LIKE ?' );
+    my @binds = ( 'Sleep',        '%saved_sql.id:%' );
 
-    my $query = q{
-        SELECT id, info
-         FROM information_schema.processlist
-        WHERE command != 'Sleep'
-          AND info LIKE '%saved_sql.id%'
-    };
-
-    my @ids;
-
-    my $sth = $dbh->prepare($query);
-    $sth->execute();
-    while ( my $row = $sth->fetchrow_hashref ) {
-        if ($user_id) {
-            next unless $row->{info} =~ /{ user_id: $user_id }/;
-        }
-        if ($report_id) {
-            next unless $row->{info} =~ /{ saved_sql.id: $report_id }/;
-        }
-        push @ids, $row->{id};
+    if ($user_id) {
+        push @where, 'info LIKE ?';
+        push @binds, sprintf( '%%{ user_id: %d }%%', $user_id );
+    }
+    if ($report_id) {
+        push @where, 'info LIKE ?';
+        push @binds, sprintf( '%%{ saved_sql.id: %d }%%', $report_id );
     }
 
-    return @ids;
+    my $sql = 'SELECT info FROM information_schema.processlist WHERE ' . join( ' AND ', @where );
+
+    my $schema = Koha::Database->new->schema;
+    my $rows =
+        $schema->storage->dbh->selectall_arrayref( $sql, { Slice => {} }, @binds );
+
+    my %report_ids;
+    for my $row (@$rows) {
+        $report_ids{$1} = 1 if $row->{info} =~ /saved_sql\.id:\s*(\d+)/;
+    }
+
+    return $class->search( { id => { -in => [ keys %report_ids ] } } );
 }
 
 =head3 _type
