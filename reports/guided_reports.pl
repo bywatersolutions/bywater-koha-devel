@@ -789,23 +789,6 @@ if ( $op eq 'run' ) {
     my $template_id     = $input->param('template');
     my $want_full_chart = $input->param('want_full_chart') || 0;
 
-    my $duplicate_running_reports_per_user_limit = C4::Context->config('duplicate_running_reports_per_user_limit');
-    my $duplicate_running_reports;
-    if ( $duplicate_running_reports_per_user_limit && C4::Context->userenv ) {
-
-        # This is a TOCTOU check: between the count below and the actual
-        # query execution further down, a parallel request can slip past the
-        # limit. Worst case is one extra concurrent run, which is acceptable
-        # for the intended use case (preventing accidental double-clicks /
-        # multi-tab submissions) and avoids the cost of a serializing lock.
-        $duplicate_running_reports = Koha::Reports->running(
-            {
-                report_id => $report_id,
-                user_id   => C4::Context->userenv->{number},
-            }
-        );
-    }
-
     # offset algorithm
     if ( $input->param('page') ) {
         $offset = ( $input->param('page') - 1 ) * $limit;
@@ -990,22 +973,27 @@ if ( $op eq 'run' ) {
                 'id'              => $report_id,
                 'template_id'     => $template_id,
             );
-        } elsif ( $duplicate_running_reports
-            && $duplicate_running_reports->count >= $duplicate_running_reports_per_user_limit )
-        {
-            $template->param(
-                'sql'          => $sql,
-                'original_sql' => $original_sql,
-                'id'           => $report_id,
-                'execute'      => 1,
-                'name'         => $name,
-                'notes'        => $notes,
-                'errors'       => [ { duplicate_running_report => 1 } ],
-                'sql_params'   => \@sql_params,
-                'param_names'  => \@param_names,
-            );
         } else {
-            my ( $sql, $header_types ) = $report->prep_report( \@param_names, \@sql_params );
+            my ( $sql, $header_types );
+            eval { ( $sql, $header_types ) = $report->prep_report( \@param_names, \@sql_params ); };
+            if ( my $e = $@ ) {
+                if ( ref($e) eq 'Koha::Exceptions::Report::DuplicateRunning' ) {
+                    $template->param(
+                        'sql'          => $original_sql,
+                        'original_sql' => $original_sql,
+                        'id'           => $report_id,
+                        'execute'      => 1,
+                        'name'         => $name,
+                        'notes'        => $notes,
+                        'errors'       => [ { duplicate_running_report => 1 } ],
+                        'sql_params'   => \@sql_params,
+                        'param_names'  => \@param_names,
+                    );
+                    output_html_with_http_headers $input, $cookie, $template->output;
+                    exit;
+                }
+                die $e;
+            }
             $template->param( header_types => $header_types );
             my ( $sth, $errors ) = execute_query(
                 {
