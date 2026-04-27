@@ -10,6 +10,7 @@ on:
 jobs:
     stress-test:
         name: OPAC Stress Test
+        if: github.repository != 'bywatersolutions/bywater-koha-devel'
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
