@@ -17,8 +17,9 @@
 
 use Modern::Perl;
 
+use Test::MockModule;
 use Test::NoWarnings;
-use Test::More tests => 9;
+use Test::More tests => 10;
 
 use Koha::Report;
 use Koha::Reports;
@@ -185,6 +186,68 @@ subtest '_might_add_limit' => sub {
     like(
         Koha::Report->_might_add_limit($sql), qr/ LIMIT 10$/,
         'Query refers to limit field, limit 10 found at the end'
+    );
+};
+
+subtest 'running' => sub {
+    plan tests => 7;
+
+    my $running = Koha::Reports->running;
+    isa_ok( $running, 'Koha::Reports', 'running() returns a Koha::Reports resultset' );
+
+    # No saved-report SQL is in flight in the test process; processlist may show
+    # this very test connection but its current statement carries no saved_sql.id
+    # marker, so the result must be empty.
+    is( Koha::Reports->running->count, 0, 'no running reports => empty resultset' );
+
+    is(
+        Koha::Reports->running( { user_id => 999_999_999 } )->count, 0,
+        'unknown user_id => empty resultset'
+    );
+    is(
+        Koha::Reports->running( { report_id => 999_999_999 } )->count, 0,
+        'unknown report_id => empty resultset'
+    );
+
+    # Capture the SQL bindings and feed synthetic rows back; this exercises the
+    # WHERE-clause assembly and the saved_sql.id parser without relying on a
+    # real long-running query in the database.
+    my $reports_mock = Test::MockModule->new('Koha::Reports');
+    my @captured_binds;
+    my $synthetic_rows = [];
+    $reports_mock->mock(
+        '_processlist_rows',
+        sub {
+            my ( $class, $sql, @binds ) = @_;
+            push @captured_binds, [@binds];
+            return $synthetic_rows;
+        }
+    );
+
+    my $report_a = $builder->build_object( { class => 'Koha::Reports' } );
+    my $report_b = $builder->build_object( { class => 'Koha::Reports' } );
+    my ( $a_id, $b_id ) = ( $report_a->id, $report_b->id );
+
+    $synthetic_rows = [
+        { info => "SELECT 1 /* { saved_sql.id: $a_id } { user_id: 17 } */" },
+        { info => "SELECT 1 /* { saved_sql.id: $b_id } { user_id: 18 } */" },
+        { info => "SELECT 1 /* no marker, should be ignored */" },
+    ];
+    is( Koha::Reports->running->count, 2, 'parses saved_sql.id markers and returns matching reports' );
+
+    @captured_binds = ();
+    Koha::Reports->running( { user_id => 17 } );
+    is_deeply(
+        $captured_binds[0],
+        [ 'Sleep', '%saved_sql.id:%', '%{ user_id: 17 }%' ],
+        'user_id contributes a parameterised LIKE bind'
+    );
+
+    # Graceful degradation when the underlying DB call dies (eg. PROCESS denied).
+    $reports_mock->mock( '_processlist_rows', sub { die "Access denied for user\n"; } );
+    is(
+        Koha::Reports->running->count, 0,
+        'DB failure => empty resultset (caller is not aborted)'
     );
 };
 
