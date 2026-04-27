@@ -20,7 +20,7 @@ use Modern::Perl;
 use Test::Exception;
 use Test::MockModule;
 use Test::NoWarnings;
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 use Koha::Report;
 use Koha::Reports;
@@ -138,6 +138,44 @@ subtest 'prep_report throws when duplicate-running limit is exceeded' => sub {
         'limit reached -> DuplicateRunning exception'
     );
     is( $exception->limit, 1, 'exception carries the configured limit' );
+};
+
+subtest 'prep_report throws when total-running limit is exceeded' => sub {
+    plan tests => 3;
+
+    my $report = Koha::Report->new( { report_name => 'total_running_test', savedsql => 'SELECT 1' } )->store;
+
+    my $patron = $builder->build_object( { class => 'Koha::Patrons' } );
+    t::lib::Mocks::mock_userenv( { patron => $patron } );
+
+    # The duplicate-limit check runs first, so neutralise it for these
+    # assertions and only exercise the total-limit branch.
+    t::lib::Mocks::mock_config( 'duplicate_running_reports_per_user_limit', 0 );
+
+    # Pretend the user has three reports of various ids in flight whenever
+    # running() is called without a report_id filter (ie. the "total" check).
+    my $reports_mock = Test::MockModule->new('Koha::Reports');
+    $reports_mock->mock(
+        'running',
+        sub {
+            my ( $class, $params ) = @_;
+            return $class->search( { id => undef } ) if $params->{report_id};
+            return $class->search( { id => $report->id } );
+        }
+    );
+
+    t::lib::Mocks::mock_config( 'total_running_reports_per_user_limit', 5 );
+    lives_ok { $report->prep_report( [], [] ) } 'total limit not yet reached, prep_report returns normally';
+
+    t::lib::Mocks::mock_config( 'total_running_reports_per_user_limit', 1 );
+    my $exception;
+    eval { $report->prep_report( [], [] ); };
+    $exception = $@;
+    isa_ok(
+        $exception, 'Koha::Exceptions::Report::TotalRunning',
+        'total limit reached -> TotalRunning exception'
+    );
+    is( $exception->limit, 1, 'exception carries the configured total limit' );
 };
 
 subtest 'is_sql_valid' => sub {
