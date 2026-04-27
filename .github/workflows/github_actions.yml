@@ -43,6 +43,10 @@ jobs:
         steps:
             - name: Get repository name
               run: |
+                if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
+                  echo "Skipping repo/version check for pull request"
+                  exit 0
+                fi
                 if [[ "$GITHUB_REPOSITORY" == "bywatersolutions/bywater-koha-security" ]]; then
                   echo "Skipping execution for $GITHUB_REPOSITORY"
                   exit 0
