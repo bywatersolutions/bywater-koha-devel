@@ -79,9 +79,8 @@ sub running {
 
     my $sql = 'SELECT info FROM information_schema.processlist WHERE ' . join( ' AND ', @where );
 
-    my $schema = Koha::Database->new->schema;
     my $rows;
-    eval { $rows = $schema->storage->dbh->selectall_arrayref( $sql, { Slice => {} }, @binds ); };
+    eval { $rows = $class->_processlist_rows( $sql, @binds ); };
     if ($@) {
         Koha::Logger->get->warn("Koha::Reports->running: unable to query information_schema.processlist: $@");
         $rows = [];
@@ -93,6 +92,11 @@ sub running {
     }
 
     return $class->search( { id => { -in => [ keys %report_ids ] } } );
+}
+
+sub _processlist_rows {
+    my ( $class, $sql, @binds ) = @_;
+    return Koha::Database->new->schema->storage->dbh->selectall_arrayref( $sql, { Slice => {} }, @binds );
 }
 
 =head3 _type
