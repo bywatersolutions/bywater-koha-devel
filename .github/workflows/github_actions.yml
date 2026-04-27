@@ -121,6 +121,9 @@ jobs:
                   echo "BRANCH: $KOHA_BRANCH"
                   echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
                   echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV=yes" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_URL=https://gitlab.com/tomascohen/koha-misc4dev.git" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_BRANCH=issue_105" >> $GITHUB_ENV
 
             - name: Setup Debug Session
               if: env.DEBUG_SESSION == 'true'
@@ -156,6 +159,9 @@ jobs:
                   echo "BRANCH: $KOHA_BRANCH"
                   echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
                   echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV=yes" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_URL=https://gitlab.com/tomascohen/koha-misc4dev.git" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_BRANCH=issue_105" >> $GITHUB_ENV
 
             - name: Setup Debug Session
               if: env.DEBUG_SESSION == 'true'
@@ -190,6 +196,9 @@ jobs:
                   echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
                   echo "LOCAL_USER_ID=$(id -u)" >> $GITHUB_ENV
                   echo "SYNC_REPO=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV=yes" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_URL=https://gitlab.com/tomascohen/koha-misc4dev.git" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_BRANCH=issue_105" >> $GITHUB_ENV
 
             - name: Clone koha-testing-docker
               run: |
@@ -204,6 +213,9 @@ jobs:
               run: |
                   export PATH=$KTD_HOME/bin:$PATH
                   cp $KTD_HOME/env/defaults.env $KTD_HOME/.env
+                  echo "DEBUG_GIT_REPO_MISC4DEV=yes" >> $KTD_HOME/.env
+                  echo "DEBUG_GIT_REPO_MISC4DEV_URL=https://gitlab.com/tomascohen/koha-misc4dev.git" >> $KTD_HOME/.env
+                  echo "DEBUG_GIT_REPO_MISC4DEV_BRANCH=issue_105" >> $KTD_HOME/.env
                   ktd --proxy --name dbic-check --search-engine zebra pull -q
                   ktd --proxy --name dbic-check --search-engine zebra up -d
                   ktd --name dbic-check --wait-ready 300
@@ -464,6 +476,85 @@ jobs:
                 curl --insecure --fail -w "\nHTTP Response Code: %{http_code}\n" "https://apt2.bywatersolutions.com/?tag=${{ steps.extracted_variables.outputs.TAG_NAME }}&t=${{ secrets.KOHA_IMPORT_GITHUB_RELEASES_TOKEN }}"
               shell: bash
 
+    build-debs-devel:
+        if: github.repository == 'bywatersolutions/bywater-koha-devel' && startsWith(github.ref, 'refs/heads/bywater-v') && endsWith(github.ref, '-devel')
+        name: Build Debian packages (devel)
+        needs: [check-repo]
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Export additional variables
+              id: extracted_variables
+              run: |
+                  export FULL_VERSION="$(cat Koha.pm | grep '$VERSION =')" && export FULL_VERSION=${FULL_VERSION%\"*} && export FULL_VERSION=${FULL_VERSION##*\"} && echo $FULL_VERSION
+                  IFS='.' read -ra VER_PARTS <<< "$FULL_VERSION"
+                  MAJOR_MINOR_VERSION="${VER_PARTS[0]}.${VER_PARTS[1]}"
+                  echo "MAJOR_MINOR_VERSION=$MAJOR_MINOR_VERSION" >> $GITHUB_OUTPUT
+                  KOHACLONE="$(pwd)"
+                  echo "KOHACLONE=$KOHACLONE" >> $GITHUB_OUTPUT
+                  KOHA_BRANCH=${GITHUB_REF##*/}
+                  echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_OUTPUT
+                  # bywater-v25.11.03-2-devel => SHORTNAME=bywater, MMM_VERSION=25.11.03, MARK=2-devel
+                  IFS='-' read -ra BRANCH_PARTS <<< "$KOHA_BRANCH"
+                  SHORTNAME=${BRANCH_PARTS[0]}
+                  echo "SHORTNAME=$SHORTNAME" >> $GITHUB_OUTPUT
+                  TMP_VERSION=${BRANCH_PARTS[1]}
+                  MMM_VERSION=${TMP_VERSION:1}
+                  echo "MMM_VERSION=$MMM_VERSION" >> $GITHUB_OUTPUT
+                  # Join remaining parts as MARK (e.g. "2-devel")
+                  MARK=$(IFS='-'; echo "${BRANCH_PARTS[*]:2}")
+                  echo "MARK=$MARK" >> $GITHUB_OUTPUT
+                  TAG_NAME="${SHORTNAME}_v${MMM_VERSION}-${MARK}"
+                  echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
+
+            - name: Create dir for debian packages
+              run: mkdir /tmp/debs
+
+            - name: Clean out old docker images
+              run: docker system prune -a
+
+            - name: Run koha-dpkg-docker
+              run: |
+                  docker run --volume=${{ steps.extracted_variables.outputs.KOHACLONE }}:/koha --volume=/tmp/debs:/debs --privileged --env VERSION="${{ steps.extracted_variables.outputs.MMM_VERSION }}~${{ steps.extracted_variables.outputs.SHORTNAME }}~${{ steps.extracted_variables.outputs.MARK }}" --env RELEASE="${{ steps.extracted_variables.outputs.MAJOR_MINOR_VERSION }}" --env DEB_BUILD_OPTIONS="nocheck" koha/koha-dpkg:main
+
+            - name: List debs
+              run: ls -alh /tmp/debs
+
+            - name: Create artifact zip
+              run: zip --junk-paths -r "/tmp/${{ steps.extracted_variables.outputs.KOHA_BRANCH }}.zip" /tmp/debs/*
+
+            - name: Delete existing release if present
+              run: gh release delete "${{ steps.extracted_variables.outputs.TAG_NAME }}" --cleanup-tag --yes 2>/dev/null || true
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Create Release
+              uses: bywatersolutions/github-action-create-release@master
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  tag_name: ${{ steps.extracted_variables.outputs.TAG_NAME }}
+                  release_name: "Devel: ${{ steps.extracted_variables.outputs.KOHA_BRANCH }}"
+                  target: ${{ steps.extracted_variables.outputs.KOHA_BRANCH }}
+                  draft: false
+                  prerelease: true
+
+            - name: Upload assets
+              uses: softprops/action-gh-release@v1
+              with:
+                tag_name: ${{ steps.extracted_variables.outputs.TAG_NAME }}
+                files: /tmp/${{ steps.extracted_variables.outputs.KOHA_BRANCH }}.zip
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - uses: bywatersolutions/action-slack@v3
+              with:
+                status: ${{ job.status }}
+                fields: ref,workflow
+              env:
+                SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }}
+              if: always()
 
     build-docker:
         if: false #github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future'
