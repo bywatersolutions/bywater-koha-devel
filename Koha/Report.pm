@@ -18,6 +18,7 @@ package Koha::Report;
 use Modern::Perl;
 
 use Koha::Database;
+use Koha::Exceptions::Report;
 use Koha::Reports;
 
 #use Koha::DateUtils qw( dt_from_string output_pref );
@@ -174,6 +175,13 @@ C<information_schema.processlist> to detect concurrent runs of the same
 report. External log/audit tooling that consumes Koha SQL should treat
 this format as part of the public contract.
 
+If C<duplicate_running_reports_per_user_limit> is set in C<koha-conf.xml>
+to a non-zero value and the current userenv already has at least that many
+runs of the same report in flight, this method throws
+L<Koha::Exceptions::Report::DuplicateRunning> instead of returning. All
+report-execution entry points (the staff guided-reports UI, C<svc/report>
+and C<opac/svc/report>) go through here so the limit is enforced uniformly.
+
 =cut
 
 sub prep_report {
@@ -242,6 +250,19 @@ sub prep_report {
 
     my $report_id = $self->id;
     my $user_id   = C4::Context->userenv ? C4::Context->userenv->{number} : 0;
+
+    my $duplicate_limit = C4::Context->config('duplicate_running_reports_per_user_limit');
+    if ( $duplicate_limit && $user_id ) {
+        my $running = Koha::Reports->running( { report_id => $report_id, user_id => $user_id } );
+        if ( $running->count >= $duplicate_limit ) {
+            Koha::Exceptions::Report::DuplicateRunning->throw(
+                report_id => $report_id,
+                user_id   => $user_id,
+                limit     => $duplicate_limit,
+            );
+        }
+    }
+
     $sql .= " /* { saved_sql.id: $report_id } { user_id: $user_id } */";
 
     return $sql, $headers;
