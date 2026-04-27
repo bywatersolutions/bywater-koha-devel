@@ -18,7 +18,7 @@ return {
                            (module, page, tablename, columnname, cannot_be_toggled, is_hidden)
                        VALUES
                            ('catalogue', 'detail', ?, 'spinelabel', 0,
-                            (SELECT IFNULL(
+                            (SELECT COALESCE(
                                 (SELECT NOT value FROM systempreferences WHERE variable='SpineLabelShowPrintOnBibDetails'),
                                 0)))
                        ON DUPLICATE KEY UPDATE is_hidden=(is_hidden OR VALUES(is_hidden))},
