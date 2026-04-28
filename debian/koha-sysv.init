@@ -11,6 +11,7 @@
 #                      - a Zebra server (using koha-zebra)
 #                      - a Plack server (using koha-plack)
 #                      - a SIP server   (using koha-sip)
+#                      - an OCLC Connexion daemon (using koha-connexion)
 #                      - a Z3950 server (using koha-z3950-responder)
 ### END INIT INFO
 
@@ -60,6 +61,7 @@ do_start()
     koha-create-dirs $(koha-list)
     koha-zebra --start $(koha-list --enabled)
     koha-sip   --start $(koha-list --enabled --sip)
+    koha-connexion --start $(koha-list --enabled --connexion)
     koha-plack --start $(koha-list --enabled --plack)
     koha-z3950-responder --start --quiet $(koha-list --enabled --z3950)
     # default queue
@@ -82,6 +84,7 @@ do_stop()
     # We stop everything, including disabled ones.
     koha-zebra --stop $(koha-list) || true
     koha-sip   --stop $(koha-list --sip)
+    koha-connexion --stop $(koha-list --connexion)
     koha-plack --stop --quiet $(koha-list --enabled --plack)
     koha-z3950-responder --stop --quiet $(koha-list --enabled --z3950)
     # default queue
@@ -102,6 +105,7 @@ do_stop()
 do_reload() {
     koha-zebra --restart $(koha-list --enabled)
     koha-sip   --restart $(koha-list --enabled --sip)
+    koha-connexion --restart $(koha-list --enabled --connexion)
     koha-plack --restart --quiet $(koha-list --enabled --plack)
     koha-z3950-responder --restart --quiet $(koha-list --enabled --z3950)
     # default queue
@@ -145,6 +149,24 @@ sip_status()
         log_daemon_msg "SIP server running for instance $instance"
 
         if is_sip_running $instance ; then
+            log_end_msg 0
+        else
+            log_end_msg 1
+        fi
+    done
+}
+
+#
+# Function that shows the status of the Connexion daemon for
+# enabled instances
+#
+connexion_status()
+{
+    for instance in $(koha-list --enabled --connexion); do
+
+        log_daemon_msg "Connexion daemon running for instance $instance"
+
+        if is_connexion_running $instance ; then
             log_end_msg 0
         else
             log_end_msg 1
@@ -232,6 +254,7 @@ case "$1" in
   status)
         zebra_status
         sip_status
+        connexion_status
         plack_status
         z3950_status
         ;;
