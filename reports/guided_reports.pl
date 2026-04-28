@@ -667,7 +667,18 @@ if ( !$op ) {
         $reportname ? "$report_id-$reportname-reportresults.$format" : "$report_id-reportresults.$format";
     my $scrubber = C4::Scrubber->new();
 
-    ( $sql, undef ) = $report->prep_report( \@param_names, \@sql_params, { export => 1 } );
+    eval { ( $sql, undef ) = $report->prep_report( \@param_names, \@sql_params, { export => 1 } ); };
+    if ( my $e = $@ ) {
+        if ( ref($e) eq 'Koha::Exceptions::Report::DuplicateRunning' ) {
+            print $input->header(
+                -status => '429 Too Many Requests',
+                -type   => 'text/plain; charset=UTF-8',
+            );
+            print "This report is already running. Please wait for it to finish before running it again.\n";
+            exit;
+        }
+        die $e;
+    }
     my ( $sth, $q_errors ) = execute_query( { sql => $sql, report_id => $report_id } );
     unless ( $q_errors and @$q_errors ) {
         my ( $type, $content );
