@@ -319,9 +319,11 @@
         let hide_patron_name = [% IF Koha.Preference('HidePatronName') %]true[% ELSE %]false[% END %];
         let hold_ids = [% IF updated_holds %] [% updated_holds | $raw %] [% ELSE %] [] [% END %];
         let hold_ids_from_sql = [% IF reserve_ids_list  %] [% reserve_ids_list  | $raw %] [% ELSE %] [] [% END %];
-
-        $(document).ready(function() {
-
+        var holds_to_modify_table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_hold_modification', 'holds_to_modify', 'json' ) | $raw %];
+        var modified_holds_table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_hold_modification', 'modified_holds', 'json' ) | $raw %];
+    </script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
+        $(document).ready(function () {
             // Apply select2 to all select fields having a "multiple" attribute
             let selectFields = document.querySelectorAll('select[multiple]');
             selectFields.forEach((selectField) => {
@@ -713,7 +715,7 @@
             });
 
             //Modified holds table and failed holds table share table settings
-            var table_settings = [% TablesSettings.GetTableSettings( 'circ', 'holds', 'modified_holds', 'json' ) | $raw %];
+            var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_hold_modification', 'modified_holds', 'json' ) | $raw %];
             [% IF updated_holds_obj  %]
                 $("#modified_holds").kohaTable({
                     pagingType: "full",
