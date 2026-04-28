@@ -60,6 +60,7 @@ filter_ok()
        instance_filter_letsencrypt   $instance && \
        instance_filter_plack         $instance && \
        instance_filter_z3950         $instance && \
+       instance_filter_connexion     $instance && \
        instance_filter_sip           $instance; then
         return 0;
     else
@@ -80,6 +81,27 @@ instance_filter_sip()
             fi ;;
         "disabled")
             if ! is_sip_enabled $instance; then
+                return 0
+            fi ;;
+    esac
+
+    # Didn't match any criteria
+    return 1
+}
+
+instance_filter_connexion()
+{
+    local instance=$1
+
+    case $show_connexion in
+        "all")
+            return 0 ;;
+        "enabled")
+            if is_connexion_enabled $instance; then
+                return 0
+            fi ;;
+        "disabled")
+            if ! is_connexion_enabled $instance; then
                 return 0
             fi ;;
     esac
@@ -259,6 +281,17 @@ set_show_sip()
     fi
 }
 
+set_show_connexion()
+{
+    local connexion_param=$1
+
+    if [ "$show_connexion" = "all" ]; then
+        show_connexion=$connexion_param
+    else
+        die "Error: --connexion and --noconnexion are mutually exclusive."
+    fi
+}
+
 set_show_z3950()
 {
     local z3950_param=$1
@@ -288,6 +321,8 @@ Options:
     --noemail         Show instances with email disabled
     --sip             Show instances with SIP enabled
     --nosip           Show instances with SIP disabled
+    --connexion       Show instances with Connexion daemon enabled
+    --noconnexion     Show instances with Connexion daemon disabled
     --plack           Show instances with Plack enabled
     --noplack         Show instances with Plack disabled
     --letsencrypt     Show instances with letsencrypt enabled
@@ -305,11 +340,12 @@ show="all"
 show_elasticsearch="all"
 show_email="all"
 show_sip="all"
+show_connexion="all"
 show_plack="all"
 show_letsencrypt="all"
 show_z3950="all"
 
-args=$(getopt -l help,enabled,disabled,elasticsearch,noelasticsearch,email,noemail,sip,nosip,plack,noplack,letsencrypt,noletsencrypt,z3950,noz3950 -o h -n $0 -- "$@")
+args=$(getopt -l help,enabled,disabled,elasticsearch,noelasticsearch,email,noemail,sip,nosip,connexion,noconnexion,plack,noplack,letsencrypt,noletsencrypt,z3950,noz3950 -o h -n $0 -- "$@")
 set -- $args
 
 while [ ! -z "$1" ]
@@ -320,6 +356,8 @@ do
         --noemail) set_show_email "disabled" ;;
             --sip) set_show_sip "enabled" ;;
           --nosip) set_show_sip "disabled" ;;
+      --connexion) set_show_connexion "enabled" ;;
+    --noconnexion) set_show_connexion "disabled" ;;
           --plack) set_show_plack "enabled" ;;
         --noplack) set_show_plack "disabled" ;;
     --letsencrypt) set_show_letsencrypt "enabled" ;;

@@ -47,6 +47,10 @@ case "$1" in
                 if [ -e "/var/lib/koha/${instance}/sip.enabled" ]; then
                     systemctl enable koha-sip@${instance}.service 2>/dev/null || true
                 fi
+                # Connexion: same SysV-era flag-file pattern as SIP.
+                if [ -e "/var/lib/koha/${instance}/connexion.enabled" ]; then
+                    systemctl enable koha-connexion@${instance}.service 2>/dev/null || true
+                fi
                 if koha-list --enabled --z3950 2>/dev/null | grep -qx "$instance"; then
                     systemctl enable koha-z3950@${instance}.service 2>/dev/null || true
                 fi
