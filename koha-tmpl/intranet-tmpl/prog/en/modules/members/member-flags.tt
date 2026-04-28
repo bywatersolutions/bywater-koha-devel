@@ -127,7 +127,6 @@
     [% Asset.js("js/members-menu.js") | $raw %]
     <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         $(document).ready(function() {
-
             [% IF disable_superlibrarian_privs && patron.is_superlibrarian %]
                 $("#CheckAllFlags,#UncheckAllFlags")
                     .attr("disabled", true)
@@ -152,22 +151,25 @@
                     return false;
                 });
                 $(".flag").change(function(){
-                    if(!$(this).is(':checked')){
+                    if(!$(this).is(":checked")){
                         $("input#flag-0").prop("checked", false);
                     }
                 });
             [% END %]
-
+        });
+    </script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
+        $(document).ready(function () {
             $(".open div").show();
 
-            $("#permissions_filter").on("keyup", function(){
-                $("#clear_filter").css("display","inline-block");
+            $("#permissions_filter").on("keyup", function () {
+                $("#clear_filter").css("display", "inline-block");
                 $("a[class^=toggle-]").hide();
                 var string = $(this).val();
                 var divs = $("div[id!='parent-flag-superlibrarian']", ".permissions");
-                if( string != "" && string.length > 3 ){
-                    divs.each(function(){
-                        if ( $(this).text().search(new RegExp( string, "i")) < 0 ) {
+                if (string != "" && string.length > 3) {
+                    divs.each(function () {
+                        if ($(this).text().search(new RegExp(string, "i")) < 0) {
                             $(this).hide();
                         } else {
                             $(this).show();
@@ -178,42 +180,46 @@
                 }
             });
 
-            $("#clear_filter").on("click", function(){
+            $("#clear_filter").on("click", function () {
                 $(".togglechildren_off").show();
                 $("#permissions_filter").val("");
                 $("div", "#permissionstree").show();
-                $(this).css("display","none");
+                $(this).css("display", "none");
             });
 
             // Enforce Superlibrarian Privilege Mutual Exclusivity
-            if( $('input[id="flag-0"]:checked').length || $(".superlib:checked").length ){
-                if ($('input[name="flag"]:checked').length > 1){
-                    alert(_("Inconsistency detected!") + "\n\n" + _("The superlibrarian privilege is mutually exclusive of other privileges, as it includes them all.") + "\n\n" + _("This patron's privileges will now be reset to include only superlibrarian."));
+            if ($('input[id="flag-0"]:checked').length || $(".superlib:checked").length) {
+                if ($('input[name="flag"]:checked').length > 1) {
+                    alert(
+                        _("Inconsistency detected!") +
+                            "\n\n" +
+                            _("The superlibrarian privilege is mutually exclusive of other privileges, as it includes them all.") +
+                            "\n\n" +
+                            _("This patron's privileges will now be reset to include only superlibrarian.")
+                    );
                 }
 
                 setLibrarian();
             }
 
-            $('input#flag-0').click(function() {
-                if( $('input[id="flag-0"]:checked').length || $(".superlib:checked").length ){
-                    $('input[name="flag"]').each(function() {
-                        if($(this).attr('id') != "flag-0" && !$(this).hasClass('superlib') ){
-                            $(this).prop('disabled', true);
-                            $(this).prop('checked', false);
+            $("input#flag-0").click(function () {
+                if ($('input[id="flag-0"]:checked').length || $(".superlib:checked").length) {
+                    $('input[name="flag"]').each(function () {
+                        if ($(this).attr("id") != "flag-0" && !$(this).hasClass("superlib")) {
+                            $(this).prop("disabled", true);
+                            $(this).prop("checked", false);
                         }
                     });
-                }
-                else {
-                    $('input[name="flag"]').each(function() {
-                        $(this).prop('disabled', false);
+                } else {
+                    $('input[name="flag"]').each(function () {
+                        $(this).prop("disabled", false);
                     });
                 }
             });
 
-
-            $(".toggleall_off, .toggleall_on").on('click', function(e) {
+            $(".toggleall_off, .toggleall_on").on("click", function (e) {
                 e.preventDefault();
-                if( $(this).hasClass("toggleall_on")){
+                if ($(this).hasClass("toggleall_on")) {
                     $(".children,.togglechildren_off").show();
                     $(".togglechildren_on").hide();
                 } else {
@@ -222,32 +228,38 @@
                 }
             });
 
-            $(".togglechildren_off, .togglechildren_on").on('click', function(e) {
+            $(".togglechildren_off, .togglechildren_on").on("click", function (e) {
                 e.preventDefault();
                 var bit = $(this).data("bit");
                 $("#flag-" + bit + "-children").toggle();
                 $(".toggle-" + bit).toggle();
             });
 
-            $(".togglechildren_off, .togglechildren_on").hover( function(){
-                $(this).parent().addClass("permission-highlight");
-            }, function(){
-                $(this).parent().removeClass("permission-highlight");
-            });
+            $(".togglechildren_off, .togglechildren_on").hover(
+                function () {
+                    $(this).parent().addClass("permission-highlight");
+                },
+                function () {
+                    $(this).parent().removeClass("permission-highlight");
+                }
+            );
 
-            $(".flag").on("change",function(e){
+            $(".flag").on("change", function (e) {
                 e.preventDefault();
-                if( $(this).hasClass("child") ){
-                    if( $(this).prop("checked") ){
+                if ($(this).hasClass("child")) {
+                    if ($(this).prop("checked")) {
                         // If this is the last of all the child boxes to be checked the parent should be checked too
                         var unchecked = 0;
-                        $(this).closest(".children").find(".child").each(function(){
-                            if( !$(this).prop("checked") ){
-                                // There are still unchecked checkboxes in this group
-                                unchecked = 1;
-                            }
-                        });
-                        if( unchecked === 0 ){
+                        $(this)
+                            .closest(".children")
+                            .find(".child")
+                            .each(function () {
+                                if (!$(this).prop("checked")) {
+                                    // There are still unchecked checkboxes in this group
+                                    unchecked = 1;
+                                }
+                            });
+                        if (unchecked === 0) {
                             $(this).closest(".parent").find(".flag.parent").prop("checked", true);
                         }
                     } else {
@@ -255,71 +267,77 @@
                     }
                 } else {
                     var bit = $(this).data("bit");
-                    if( $(this).is(":checked") ){
-                        $("#flag-" + bit + "-children").show().find(".flag").prop("checked", true);
+                    if ($(this).is(":checked")) {
+                        $("#flag-" + bit + "-children")
+                            .show()
+                            .find(".flag")
+                            .prop("checked", true);
                         $(".toggle-" + bit + ".togglechildren_on").hide();
                         $(".toggle-" + bit + ".togglechildren_off").show();
                     } else {
-                        $("#flag-" + bit + "-children").show().find(".flag").prop("checked", false);
+                        $("#flag-" + bit + "-children")
+                            .show()
+                            .find(".flag")
+                            .prop("checked", false);
                     }
                 }
             });
 
-            if( copied = getCopiedPermissions() ){
+            if ((copied = getCopiedPermissions())) {
                 $("#pastePermissions").removeClass("disabled");
             }
 
             /* write to the clipboard now */
-            $("#copyPermissions").on("click", function(e){
+            $("#copyPermissions").on("click", function (e) {
                 e.preventDefault();
                 let flags = new Object();
-                $("#flag_form input:checkbox").each(function(){
-                    flags[ $(this).attr('id') ] = $(this).prop("checked");
+                $("#flag_form input:checkbox").each(function () {
+                    flags[$(this).attr("id")] = $(this).prop("checked");
                 });
-                formText = JSON.stringify( flags );
-                localStorage.setItem("copiedPermissions", formText );
-                toggleBtnIcon( $(this), "fa-copy", "fa-check" );
+                formText = JSON.stringify(flags);
+                localStorage.setItem("copiedPermissions", formText);
+                toggleBtnIcon($(this), "fa-copy", "fa-check");
                 $("#pastePermissions").removeClass("disabled");
             });
 
-            $("#pastePermissions").on("click", function(e){
+            $("#pastePermissions").on("click", function (e) {
                 e.preventDefault();
                 $(".toggleall_on").click();
                 let copiedPermissions = getCopiedPermissions();
 
                 let checkBox;
                 let checked;
-                for( const permission in copiedPermissions ){
+                for (const permission in copiedPermissions) {
                     checkBox = `${permission}`;
                     checked = `${copiedPermissions[permission]}` == "true" ? true : false;
-                    $("#" + checkBox).prop("checked", checked );
+                    $("#" + checkBox).prop("checked", checked);
                 }
             });
 
-            $("#clearCopied").on("click", function(e){
+            $("#clearCopied").on("click", function (e) {
                 e.preventDefault();
                 localStorage.removeItem("copiedPermissions");
                 $("#pastePermissions").addClass("disabled");
             });
         });
 
-        function getCopiedPermissions(){
+        function getCopiedPermissions() {
             const copied = localStorage.getItem("copiedPermissions");
             let copiedPermissions;
             try {
-                copiedPermissions = JSON.parse( copied );
+                copiedPermissions = JSON.parse(copied);
                 return copiedPermissions;
-            } catch ( ex ){
-                console.error("Bad parse: ", ex.message );
+            } catch (ex) {
+                console.error("Bad parse: ", ex.message);
                 return false;
             }
         }
 
-        function setLibrarian(){
-            $('input[name="flag"]').each(function() {
-                if($(this).attr('id') != "flag-0" && !$(this).hasClass('superlib') ){
-                    $(this).prop('disabled', true);
-                    $(this).prop('checked', false);
+        function setLibrarian() {
+            $('input[name="flag"]').each(function () {
+                if ($(this).attr("id") != "flag-0" && !$(this).hasClass("superlib")) {
+                    $(this).prop("disabled", true);
+                    $(this).prop("checked", false);
                 }
             });
         }
