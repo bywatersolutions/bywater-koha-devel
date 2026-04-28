@@ -52,6 +52,14 @@ Both C<user_id> (a borrowernumber) and C<report_id> are optional. The lookup
 relies on the SQL comment embedded by L<Koha::Report/prep_report> being
 visible in C<information_schema.processlist>.
 
+The query is always scoped to the current connection's MySQL user via
+C<user = SUBSTRING_INDEX(CURRENT_USER(), '@', 1)>. Without C<PROCESS>
+privilege MariaDB/MySQL already restricts C<information_schema.processlist>
+to the caller's own threads, but if a site has granted broader privileges
+this filter ensures we never count threads belonging to other database
+users (eg. another Koha instance sharing the server, or an unrelated
+application using the same MariaDB).
+
 If the database user lacks the privileges needed to query
 C<information_schema.processlist>, the failure is logged via C<warn> and
 an empty resultset is returned so that callers degrade gracefully rather
@@ -65,8 +73,12 @@ sub running {
     my $user_id   = $params->{user_id};
     my $report_id = $params->{report_id};
 
-    my @where = ( 'command != ?', 'info LIKE ?' );
-    my @binds = ( 'Sleep',        '%saved_sql.id:%' );
+    my @where = (
+        q{user = SUBSTRING_INDEX(CURRENT_USER(), '@', 1)},
+        'command != ?',
+        'info LIKE ?',
+    );
+    my @binds = ( 'Sleep', '%saved_sql.id:%' );
 
     if ($user_id) {
         push @where, 'info LIKE ?';
