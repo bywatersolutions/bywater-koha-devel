@@ -402,7 +402,7 @@ subtest 'DelAuthority() tests' => sub {
 };
 
 subtest 'Authority action logs include MARC-in-JSON diff' => sub {
-    plan tests => 23;
+    plan tests => 25;
 
     $schema->storage->txn_begin;
 
@@ -412,7 +412,10 @@ subtest 'Authority action logs include MARC-in-JSON diff' => sub {
 
     # --- ADD ---
     my $add_record = MARC::Record->new;
-    $add_record->add_fields( [ '151', ' ', ' ', a => 'France' ] );
+    $add_record->add_fields(
+        [ '151', ' ', ' ', a => 'France' ],
+        [ '670', ' ', ' ', a => 'Source note' ],
+    );
     my $auth_id = AddAuthority( $add_record, undef, $auth_type );
 
     my $add_log = Koha::ActionLogs->search( { object => $auth_id, module => 'AUTHORITIES', action => 'ADD' } )->next;
@@ -437,8 +440,16 @@ subtest 'Authority action logs include MARC-in-JSON diff' => sub {
     ok( !exists $add_diff->{D}{authtrees}, 'MARC-derived authtrees column absent from diff' );
 
     # --- MODIFY ---
+    # Indicators below are bare ASCII strings (not utf8-flagged), as a CGI
+    # form would supply them. The stored MARC, once re-read via
+    # MARC::Record->new_from_xml, comes back utf8-flagged. Without the
+    # symmetric-reload in ModAuthority, Struct::Diff would emit phantom
+    # entries for every unchanged indicator.
     my $mod_record = MARC::Record->new;
-    $mod_record->add_fields( [ '151', ' ', ' ', a => 'France (updated)' ] );
+    $mod_record->add_fields(
+        [ '151', ' ', ' ', a => 'France (updated)' ],
+        [ '670', ' ', ' ', a => 'Source note' ],
+    );
     ModAuthority( $auth_id, $mod_record, $auth_type, { skip_merge => 1 } );
 
     my $mod_log = Koha::ActionLogs->search( { object => $auth_id, module => 'AUTHORITIES', action => 'MODIFY' } )->next;
@@ -455,6 +466,25 @@ subtest 'Authority action logs include MARC-in-JSON diff' => sub {
     ok( !exists $mod_diff->{D}{authtrees}, 'MARC-derived authtrees column absent from MODIFY diff' );
     like( $mod_log->diff, qr/France/,           'MODIFY: diff captures before value' );
     like( $mod_log->diff, qr/France.*updated/s, 'MODIFY: diff captures after value' );
+
+    my @changed_tags;
+    for my $field_entry ( @{ $mod_diff->{D}{_marc}{D}{fields}{D} || [] } ) {
+        next unless ref $field_entry->{D} eq 'HASH';
+        push @changed_tags, keys %{ $field_entry->{D} };
+    }
+
+    # 005 (timestamp) updates on every save and is expected; 151 is the
+    # field we actually edited. Anything else is a phantom (typically
+    # ind1/ind2 utf8-flag mismatches on untouched fields).
+    my @phantom_tags = grep { $_ ne '005' && $_ ne '151' } @changed_tags;
+    is_deeply(
+        [ sort @phantom_tags ], [],
+        'MODIFY: untouched fields produce no phantom diff entries'
+    );
+    unlike(
+        $mod_log->diff, qr/Source note/,
+        'MODIFY: untouched 670 field absent from diff'
+    );
 
     # --- DELETE ---
     DelAuthority( { authid => $auth_id, skip_merge => 1 } );

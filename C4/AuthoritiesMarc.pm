@@ -821,9 +821,16 @@ sub ModAuthority {
 
     if ( C4::Context->preference("AuthoritiesLog") ) {
         my $new_authority = Koha::Authorities->find($authid);
+
+        # Re-read the stored MARC so both sides of the diff come from the
+        # same XML parse path. The in-memory $record carries non-utf8 SVs
+        # for default indicators while GetAuthority/->record go through
+        # MARC::Record->new_from_xml which utf8-flags them; Struct::Diff
+        # treats those as different and emits phantom indicator entries.
+        my $new_record = eval { $new_authority->record } // $record;
         logaction(
             "AUTHORITIES", "MODIFY", $authid,
-            _authority_log_data( $new_authority, $record ),
+            _authority_log_data( $new_authority, $new_record ),
             undef, $original_data
         );
     }
