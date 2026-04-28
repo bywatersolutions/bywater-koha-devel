@@ -96,6 +96,11 @@ eof
         koha-sip --stop $name || /bin/true
         koha-sip --disable $name || /bin/true
     fi
+    # Stop the Connexion daemon if needed
+    if is_connexion_running $name; then
+        koha-connexion --stop $name || /bin/true
+        koha-connexion --disable $name || /bin/true
+    fi
     # Stop the ES indexing daemon if needed
     if is_es_indexer_running $name; then
         koha-es-indexer --stop $name || /bin/true

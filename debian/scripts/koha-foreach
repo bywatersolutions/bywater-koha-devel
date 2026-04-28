@@ -42,6 +42,8 @@ do
      --disabled) listopts="$listopts --disabled";;
           --sip) listopts="$listopts --sip";;
         --nosip) listopts="$listopts --nosip";;
+    --connexion) listopts="$listopts --connexion";;
+  --noconnexion) listopts="$listopts --noconnexion";;
         --plack) listopts="$listopts --plack";;
       --noplack) listopts="$listopts --noplack";;
   --letsencrypt) listopts="$listopts --letsencrypt" ;;

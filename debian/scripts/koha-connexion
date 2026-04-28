@@ -1,0 +1,243 @@
+#!/bin/bash
+
+# koha-connexion - Manage OCLC Connexion import daemon for Koha instances
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+
+. /lib/lsb/init-functions
+
+# Read configuration variable file if it is present
+[ -r /etc/default/koha-common ] && . /etc/default/koha-common
+
+# include helper functions
+if [ -f "/usr/share/koha/bin/koha-functions.sh" ]; then
+    . "/usr/share/koha/bin/koha-functions.sh"
+else
+    echo "Error: /usr/share/koha/bin/koha-functions.sh not present." 1>&2
+    exit 1
+fi
+
+usage()
+{
+    local scriptname=$(basename $0)
+
+    cat <<EOF
+$scriptname
+
+This script lets you manage the OCLC Connexion import daemon for your Koha
+instances. The daemon listens for connections from an OCLC Connexion client
+or WorldShare Record Manager and adds/stages records into Koha.
+
+Usage:
+$scriptname [--start|--stop|--restart] instancename1 [instancename2...]
+$scriptname -h|--help
+
+    --enable              Enable the Koha Connexion daemon.
+    --disable             Disable and stop the Koha Connexion daemon.
+    --start               Start the Connexion daemon for the specified instance(s)
+    --stop                Stop the Connexion daemon for the specified instance(s)
+    --restart             Restart the Connexion daemon for the specified instance(s)
+    --status              Show the status of the Connexion daemon for the specified instance(s)
+    --verbose|-v          Display progress and actions messages
+    --help|-h             Display this help message
+
+EOF
+}
+
+start_connexion()
+{
+    local name=$1
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl start connexion "$name"
+    else
+        _sysv_start_connexion "$name"
+    fi
+}
+
+stop_connexion()
+{
+    local name=$1
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl stop connexion "$name"
+    else
+        _sysv_stop_connexion "$name"
+    fi
+}
+
+restart_connexion()
+{
+    local name=$1
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl restart connexion "$name"
+    else
+        _sysv_restart_connexion "$name"
+    fi
+}
+
+connexion_status()
+{
+    local name=$1
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl status connexion "$name"
+    else
+        _sysv_connexion_status "$name"
+    fi
+}
+
+enable_connexion()
+{
+    local name=$1
+    local libdir=/var/lib/koha/${name}
+    local conffile=/etc/koha/sites/${name}/connexion.conf
+
+    if is_connexion_enabled ${name}; then
+        echo "Warning: Connexion daemon already enabled for ${name}"
+        return
+    fi
+
+    # Backend-specific signal (mirrors koha-sip --enable):
+    # - On systemd, systemctl enable IS the opt-in. The flag file is
+    #   no longer read on systemd hosts and is left alone.
+    # - On SysV, the flag file IS the opt-in.
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl enable connexion "$name"
+    else
+        touch ${libdir}/connexion.enabled
+    fi
+
+    echo "Enabling Connexion daemon for ${name}"
+
+    if [[ ! -f "$conffile" ]]; then
+        echo "No configuration file found at ${conffile}."
+        echo "You must create ${conffile} before starting the daemon."
+        echo "See /usr/share/koha/bin/connexion_import_daemon.pl --help for the file format."
+    fi
+}
+
+disable_connexion()
+{
+    local name=$1
+    local libdir=/var/lib/koha/${name}
+
+    if ! is_connexion_enabled ${name}; then
+        echo "Connexion daemon for ${name} not enabled - use koha-connexion --enable <instance> to enable."
+        return
+    fi
+
+    echo "Stopping running Connexion daemon"
+    stop_connexion ${name} || /bin/true
+
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl disable connexion "$name"
+    else
+        rm -f ${libdir}/connexion.enabled
+    fi
+
+    echo "Information: Connexion daemon disabled for ${name}"
+}
+
+
+set_action()
+{
+    if [ "$op" = "" ]; then
+        op=$1
+    else
+        die "Error: only one action can be specified."
+    fi
+}
+
+op=""
+verbose="no"
+
+# Read command line parameters
+while [ $# -gt 0 ]; do
+
+    case "$1" in
+        -h|--help)
+            usage ; exit 0 ;;
+        -v|--verbose)
+            verbose="yes"
+            shift ;;
+        --start)
+            set_action "start"
+            shift ;;
+        --stop)
+            set_action "stop"
+            shift ;;
+        --restart)
+            set_action "restart"
+            shift ;;
+        --status)
+            set_action "status"
+            shift ;;
+        --enable)
+            set_action "enable"
+            shift ;;
+        --disable)
+            set_action "disable"
+            shift ;;
+        -*)
+            die "Error: invalid option switch ($1)" ;;
+        *)
+            # We expect the remaining stuff are the instance names
+            break ;;
+    esac
+
+done
+
+if [ $# -gt 0 ]; then
+    # We have at least one instance name
+    for name in "$@"; do
+
+        if is_instance $name; then
+
+            export KOHA_CONF="/etc/koha/sites/$name/koha-conf.xml"
+
+            case $op in
+                "start")
+                    start_connexion $name
+                    ;;
+                "stop")
+                    stop_connexion $name
+                    ;;
+                "restart")
+                    restart_connexion $name
+                    ;;
+                "status")
+                    connexion_status $name
+                    ;;
+                "enable")
+                    enable_connexion $name
+                    ;;
+                "disable")
+                    disable_connexion $name
+            esac
+
+        else
+            if [ "$verbose" != "no" ]; then
+                log_daemon_msg "Error: Invalid instance name $name"
+                log_end_msg 1
+            fi
+        fi
+
+    done
+else
+    if [ "$verbose" != "no" ]; then
+        warn "Error: you must provide at least one instance name"
+    fi
+fi
+
+exit 0
