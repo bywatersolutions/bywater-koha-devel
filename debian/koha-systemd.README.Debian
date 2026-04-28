@@ -9,6 +9,7 @@ Each Koha service type runs as a separate systemd unit using instance templates:
 - `koha-plack@.service` - Plack/Starman web application server
 - `koha-zebra@.service` - Zebra search indexing server
 - `koha-sip@.service` - SIP2 circulation protocol server
+- `koha-connexion@.service` - OCLC Connexion import daemon
 - `koha-z3950@.service` - Z39.50/SRU server
 - `koha-worker@.service` - Background job worker (default queue)
 - `koha-worker-long@.service` - Background job worker (long_tasks queue)
@@ -66,6 +67,7 @@ journalctl -u 'koha-*.service'
 Some services are conditionally enabled based on configuration files:
 
 - **SIP**: Requires `/var/lib/koha/{instance}/sip.enabled` and `/etc/koha/sites/{instance}/SIPconfig.xml`
+- **Connexion**: Requires `/var/lib/koha/{instance}/connexion.enabled` and `/etc/koha/sites/{instance}/connexion.conf`
 - **Z3950**: Requires `/etc/koha/sites/{instance}/z3950/config.xml`
 
 ## Migration from init scripts

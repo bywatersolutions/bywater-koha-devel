@@ -1,0 +1,22 @@
+[Unit]
+Description=Koha OCLC Connexion import daemon for %i
+PartOf=koha@%i.target
+Requires=koha-create-dirs@%i.service
+After=koha@%i.target
+ConditionPathExists=/var/lib/koha/%i/connexion.enabled
+ConditionPathExists=/etc/koha/sites/%i/connexion.conf
+
+[Service]
+Type=simple
+User=%i-koha
+Group=%i-koha
+WorkingDirectory=/var/lib/koha/%i
+Environment=KOHA_CONF=/etc/koha/sites/%i/koha-conf.xml
+Environment=KOHA_HOME=/usr/share/koha
+Environment=PERL5LIB=/usr/share/koha/lib
+ExecStart=/usr/bin/perl /usr/share/koha/bin/connexion_import_daemon.pl --config /etc/koha/sites/%i/connexion.conf
+Restart=on-failure
+RestartSec=30s
+
+[Install]
+WantedBy=koha@%i.target

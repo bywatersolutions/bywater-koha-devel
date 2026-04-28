@@ -146,6 +146,17 @@ is_sip_enabled()
     fi
 }
 
+is_connexion_enabled()
+{
+    local instancename=$1
+
+    if [ -e /var/lib/koha/$instancename/connexion.enabled ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 is_sitemap_enabled()
 {
     local instancename=$1
@@ -214,6 +225,19 @@ is_sip_running()
         return
     fi
     daemon --name="$instancename-koha-sip" \
+        --pidfiles="/var/run/koha/$instancename/" \
+        --user="$instancename-koha.$instancename-koha" \
+        --running
+}
+
+is_connexion_running()
+{
+    local instancename=$1
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        systemctl is-active --quiet "$(_koha_systemd_unit connexion $instancename)"
+        return
+    fi
+    daemon --name="$instancename-koha-connexion" \
         --pidfiles="/var/run/koha/$instancename/" \
         --user="$instancename-koha.$instancename-koha" \
         --running
@@ -1211,6 +1235,120 @@ _check_and_fix_sip_perms()
 {
     local name=$1
     local files="/var/log/koha/${name}/sip-error.log /var/log/koha/${name}/sip-output.log"
+    for file in ${files}; do
+        if [ ! -e "${file}" ]; then
+            touch ${file}
+        fi
+        chown "${name}-koha":"${name}-koha" ${file}
+    done
+}
+
+_sysv_start_connexion()
+{
+    local name=$1
+
+    _check_and_fix_connexion_perms $name
+
+    if ! is_connexion_running $name; then
+        if [ ! -f "/etc/koha/sites/${name}/connexion.conf" ] || [ ! -f "/var/lib/koha/${name}/connexion.enabled" ] ; then
+            echo "Connexion daemon is disabled, or you do not have a connexion.conf file."
+        else
+            DAEMONOPTS="--name=${name}-koha-connexion \
+                    --errlog=/var/log/koha/${name}/connexion-error.log \
+                    --output=/var/log/koha/${name}/connexion-output.log \
+                    --verbose=1 --respawn --delay=30 \
+                    --pidfiles=/var/run/koha/${name} \
+                    --user=${name}-koha.${name}-koha"
+
+            CONNEXION_PARAMS="/usr/share/koha/bin/connexion_import_daemon.pl \
+                    --config /etc/koha/sites/${name}/connexion.conf"
+
+            [ "$verbose" != "no" ] && \
+                log_daemon_msg "Starting Connexion daemon for ${name}"
+
+            if daemon $DAEMONOPTS -- perl $CONNEXION_PARAMS; then
+                ([ "$verbose" != "no" ] && log_end_msg 0) || return 0
+            else
+                ([ "$verbose" != "no" ] && log_end_msg 1) || return 1
+            fi
+        fi
+    else
+        if [ "$verbose" != "no" ]; then
+            log_daemon_msg "Warning: Connexion daemon already running for ${name}"
+            log_end_msg 0
+        else
+            return 0
+        fi
+    fi
+}
+
+_sysv_stop_connexion()
+{
+    local name=$1
+    local PIDFILE="/var/run/koha/${name}/${name}-koha-connexion.pid"
+
+    if is_connexion_running $name; then
+        [ "$verbose" != "no" ] && \
+            log_daemon_msg "Stopping Connexion daemon for ${name}"
+
+        if start-stop-daemon --pidfile $PIDFILE --user ${name}-koha --stop --retry=TERM/30/KILL/5; then
+            ([ "$verbose" != "no" ] && log_end_msg 0) || return 0
+        else
+            ([ "$verbose" != "no" ] && log_end_msg 1) || return 1
+        fi
+    else
+        if [ "$verbose" != "no" ]; then
+            log_daemon_msg "Warning: Connexion daemon not running for ${name}"
+            log_end_msg 0
+        else
+            return 0
+        fi
+    fi
+}
+
+_sysv_restart_connexion()
+{
+    local name=$1
+
+    if is_connexion_running ${name}; then
+        local noLF="-n"
+        [ "$verbose" != "no" ] && noLF=""
+        echo $noLF `_sysv_stop_connexion ${name}`
+
+        MAX_ITERATION=10
+        while is_connexion_running ${name}; do
+            i=$((i+1))
+            if [ $MAX_ITERATION -lt $i ]; then
+                break
+            fi
+            sleep 1;
+        done
+        echo $noLF `_sysv_start_connexion ${name}`
+    else
+        if [ "$verbose" != "no" ]; then
+            log_warning_msg "Warning: Connexion daemon not running for ${name}."
+        fi
+        _sysv_start_connexion ${name}
+    fi
+}
+
+_sysv_connexion_status()
+{
+    local name=$1
+
+    if is_connexion_running ${name}; then
+        log_daemon_msg "Connexion daemon running for ${name}"
+        log_end_msg 0
+    else
+        log_daemon_msg "Connexion daemon not running for ${name}"
+        log_end_msg 3
+    fi
+}
+
+_check_and_fix_connexion_perms()
+{
+    local name=$1
+    local files="/var/log/koha/${name}/connexion-error.log /var/log/koha/${name}/connexion-output.log"
     for file in ${files}; do
         if [ ! -e "${file}" ]; then
             touch ${file}
