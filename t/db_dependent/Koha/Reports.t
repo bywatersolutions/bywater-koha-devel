@@ -253,7 +253,7 @@ subtest 'apply_execution_time_limit' => sub {
 };
 
 subtest 'running' => sub {
-    plan tests => 7;
+    plan tests => 8;
 
     my $running = Koha::Reports->running;
     isa_ok( $running, 'Koha::Reports', 'running() returns a Koha::Reports resultset' );
@@ -277,11 +277,13 @@ subtest 'running' => sub {
     # real long-running query in the database.
     my $reports_mock = Test::MockModule->new('Koha::Reports');
     my @captured_binds;
+    my $captured_sql;
     my $synthetic_rows = [];
     $reports_mock->mock(
         '_processlist_rows',
         sub {
             my ( $class, $sql, @binds ) = @_;
+            $captured_sql = $sql;
             push @captured_binds, [@binds];
             return $synthetic_rows;
         }
@@ -304,6 +306,12 @@ subtest 'running' => sub {
         $captured_binds[0],
         [ 'Sleep', '%saved_sql.id:%', '%{ user_id: 17 }%' ],
         'user_id contributes a parameterised LIKE bind'
+    );
+
+    like(
+        $captured_sql,
+        qr/user\s*=\s*SUBSTRING_INDEX\(CURRENT_USER\(\),\s*'\@',\s*1\)/,
+        'query is scoped to the current connection user'
     );
 
     # Graceful degradation when the underlying DB call dies (eg. PROCESS denied).
