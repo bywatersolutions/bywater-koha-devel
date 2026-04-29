@@ -72,6 +72,58 @@ function renderRecordInfo(raw) {
     return '<div class="loginfo-struct">' + fmtJsonValue(parsed) + "</div>";
 }
 
+/* global override_labels */
+
+/**
+ * Render the info column for a CIRCULATION log entry whose payload is a
+ * JSON object containing `forced` and/or `confirmations` arrays of
+ * override codes. Returns rendered HTML, or null if the payload doesn't
+ * look like a circulation JSON object.
+ */
+function renderCircInfo(raw) {
+    if (!raw) return null;
+    var trimmed = raw.replace(/^\s+|\s+$/g, "");
+    if (trimmed.charAt(0) !== "{") return null;
+    var parsed;
+    try {
+        parsed = JSON.parse(trimmed);
+    } catch (e) {
+        return null;
+    }
+    if (!parsed || typeof parsed !== "object") return null;
+
+    var forced =
+        Array.isArray(parsed.forced) && parsed.forced.length
+            ? parsed.forced
+            : null;
+    var confirmations =
+        Array.isArray(parsed.confirmations) && parsed.confirmations.length
+            ? parsed.confirmations
+            : null;
+    if (!forced && !confirmations) return null;
+
+    function translate(code) {
+        return override_labels[code] || escapeHtml(code);
+    }
+
+    var html = "";
+    if (forced) {
+        html += forced
+            .map(function (c) {
+                return '<div class="forced">' + translate(c) + "</div>";
+            })
+            .join("");
+    }
+    if (confirmations) {
+        html += confirmations
+            .map(function (c) {
+                return '<div class="confirmed">' + translate(c) + "</div>";
+            })
+            .join("");
+    }
+    return html;
+}
+
 /**
  * Render Struct::Diff JSON as a human-readable before/after table.
  * Falls back to a <pre> block for non-Struct::Diff JSON or plain text.
@@ -341,8 +393,16 @@ function renderInfo(data, type, row) {
         );
     }
 
-    var rendered = renderRecordInfo(info);
-    var body = rendered !== null ? rendered : escapeHtml(info);
+    var body = null;
+    if (mod == "CIRCULATION") {
+        body = renderCircInfo(info);
+    }
+    if (body === null) {
+        body = renderRecordInfo(info);
+    }
+    if (body === null) {
+        body = escapeHtml(info);
+    }
     return (
         '<div class="loginfo" id="loginfo' +
         escapeHtml(action_id) +
