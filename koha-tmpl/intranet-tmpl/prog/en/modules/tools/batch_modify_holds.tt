@@ -321,6 +321,8 @@
         let hold_ids_from_sql = [% IF reserve_ids_list  %] [% reserve_ids_list  | $raw %] [% ELSE %] [] [% END %];
         var holds_to_modify_table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_hold_modification', 'holds_to_modify', 'json' ) | $raw %];
         var modified_holds_table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_hold_modification', 'modified_holds', 'json' ) | $raw %];
+        let has_updated_holds = [% IF updated_holds_obj %]true[% ELSE %]false[% END %];
+        let has_failed_holds = [% IF failed_holds_obj %]true[% ELSE %]false[% END %];
     </script>
     <script nonce="[% Koha.CSPNonce | $raw %]">
         $(document).ready(function () {
@@ -715,20 +717,24 @@
             });
 
             //Modified holds table and failed holds table share table settings
-            var table_settings = [% TablesSettings.GetTableSettings( 'tools', 'batch_hold_modification', 'modified_holds', 'json' ) | $raw %];
-            [% IF updated_holds_obj  %]
-                $("#modified_holds").kohaTable({
-                    pagingType: "full",
-                    autoWidth: false
-                }, table_settings);
-            [% END %]
-            [% IF failed_holds_obj  %]
-                $("#failed_holds").kohaTable({
-                    pagingType: "full",
-                    autoWidth: false
-                }, table_settings);
-            [% END %]
-
+            if (has_updated_holds) {
+                $("#modified_holds").kohaTable(
+                    {
+                        pagingType: "full",
+                        autoWidth: false,
+                    },
+                    modified_holds_table_settings
+                );
+            }
+            if (has_failed_holds) {
+                $("#failed_holds").kohaTable(
+                    {
+                        pagingType: "full",
+                        autoWidth: false,
+                    },
+                    modified_holds_table_settings
+                );
+            }
         });
     </script>
 [% END %]
