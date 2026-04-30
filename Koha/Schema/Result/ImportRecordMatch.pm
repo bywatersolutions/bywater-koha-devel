@@ -46,6 +46,13 @@ the biblio the imported record matches (biblio.biblionumber)
 
 the match score
 
+=head2 composite_scores
+
+  data_type: 'longtext'
+  is_nullable: 1
+
+JSON object mapping search_index to contributed score
+
 =head2 chosen
 
   data_type: 'tinyint'
@@ -62,6 +69,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_nullable => 0 },
   "score",
   { data_type => "integer", default_value => 0, is_nullable => 0 },
+  "composite_scores",
+  { data_type => "longtext", is_nullable => 1 },
   "chosen",
   { data_type => "tinyint", is_nullable => 1 },
 );
@@ -98,8 +107,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2022-05-03 20:30:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:a1GMA3K9ZgtPGdsCWmDMFw
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-04-30 19:57:01
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Q0c2e5+VcUeqV0s3Q5vPHQ
 
 __PACKAGE__->add_columns(
     '+chosen' => { is_boolean => 1 },
