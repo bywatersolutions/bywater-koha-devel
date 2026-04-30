@@ -21,7 +21,7 @@ use strict;
 use warnings;
 
 use Getopt::Long qw( GetOptions );
-use POSIX qw( strftime );
+use POSIX        qw( strftime );
 
 my ( $help, $config, $daemon );
 
@@ -81,22 +81,22 @@ my $server = ImportProxyServer->new($config);
 # Add signal handlers to capture warnings and fatal errors
 $SIG{__WARN__} = sub {
     my $message = shift;
-    if ($server && $server->{log_fh}) {
-        my $t = strftime("%Y-%m-%dT%H:%M:%S", localtime);
+    if ( $server && $server->{log_fh} ) {
+        my $t = strftime( "%Y-%m-%dT%H:%M:%S", localtime );
         print { $server->{log_fh} } "$t: WARNING: $message\n";
-        $server->{log_fh}->flush(); # Ensure the warning is written to the log immediately
+        $server->{log_fh}->flush();    # Ensure the warning is written to the log immediately
     } else {
-        warn $message; # fallback to default behavior
+        warn $message;                 # fallback to default behavior
     }
 };
 
 $SIG{__DIE__} = sub {
     my $message = shift;
-    if ($server && $server->{log_fh}) {
-        my $t = strftime("%Y-%m-%dT%H:%M:%S", localtime);
+    if ( $server && $server->{log_fh} ) {
+        my $t = strftime( "%Y-%m-%dT%H:%M:%S", localtime );
         print { $server->{log_fh} } "$t: FATAL: $message\n";
     }
-    die $message; # fallback to default behavior
+    die $message;    # fallback to default behavior
 };
 
 if ($daemon) {
@@ -204,7 +204,7 @@ exit;
         my $log_fh = $self->{log_fh}
             or warn "No log fh",
             return;
-        my $t = strftime("%Y-%m-%dT%H:%M:%S", localtime);
+        my $t = strftime( "%Y-%m-%dT%H:%M:%S", localtime );
         print $log_fh map "$t: $_\n", @_;
     }
 
@@ -218,7 +218,11 @@ exit;
 
         POSIX::setsid() or die "Can't start a new session: $!";
 
-        $SIG{INT} = $SIG{TERM} = $SIG{HUP} = sub { $self->{time_to_die} = 1 };
+        $SIG{INT} = $SIG{TERM} = $SIG{HUP} = sub {
+            my $sig = shift;
+            $self->log("Received SIG$sig, shutting down");
+            $self->{time_to_die} = 1;
+        };
 
         # trap or ignore $SIG{PIPE}
         $SIG{USR1} = sub { $self->parse_config };
@@ -255,6 +259,7 @@ exit;
             last if $self->{time_to_die};
         }
 
+        $self->log("Exiting run loop (time_to_die=$self->{time_to_die})");
         close($server);
     }
 
