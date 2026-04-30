@@ -326,13 +326,15 @@ exit;
 
         $self->{ua} = _ua();
 
-        while ("FOREVER") {
-            my $client = $server->accept()
-                or die "Cannot accept: $!";
+        while ( !$self->{time_to_die} ) {
+            my $client = $server->accept();
+            unless ($client) {
+                next if $!{EINTR};    # interrupted by a signal, loop back
+                die "Cannot accept: $!";
+            }
             my $oldfh = select($client);
             $self->handle_request($client);
             select($oldfh);
-            last if $self->{time_to_die};
         }
 
         $self->_log_captured_signal;
