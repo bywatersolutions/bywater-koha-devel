@@ -208,6 +208,63 @@ exit;
         print $log_fh map "$t: $_\n", @_;
     }
 
+    sub _describe_pid {
+        my ( $self, $pid ) = @_;
+        return "pid=?" unless $pid && $pid =~ /^\d+$/;
+
+        my %info = ( pid => $pid );
+        if ( open my $fh, '<', "/proc/$pid/comm" ) {
+            chomp( my $c = <$fh> // '' );
+            $info{comm} = $c if length $c;
+            close $fh;
+        }
+        if ( open my $fh, '<', "/proc/$pid/cmdline" ) {
+            local $/;
+            my $cl = <$fh> // '';
+            $cl =~ s/\0/ /g;
+            $cl =~ s/\s+$//;
+            $info{cmdline} = $cl if length $cl;
+            close $fh;
+        }
+        if ( my $exe = readlink("/proc/$pid/exe") ) {
+            $info{exe} = $exe;
+        }
+        if ( open my $fh, '<', "/proc/$pid/status" ) {
+            while (<$fh>) {
+                if (/^PPid:\s+(\d+)/) { $info{ppid} = $1; last; }
+            }
+            close $fh;
+        }
+
+        return keys(%info) > 1
+            ? join( ' ', map { "$_=$info{$_}" } sort keys %info )
+            : "pid=$pid (gone)";
+    }
+
+    sub _log_captured_signal {
+        my $self  = shift;
+        my $signo = $self->{captured_signo};
+        return unless defined $signo;
+
+        my %name = (
+            POSIX::SIGINT()  => 'INT',
+            POSIX::SIGTERM() => 'TERM',
+            POSIX::SIGHUP()  => 'HUP',
+        );
+        my $name = $name{$signo} // "signal $signo";
+
+        my $siginfo    = $self->{captured_siginfo} // {};
+        my $sender_uid = $siginfo->{uid}           // '?';
+        my $sender     = $self->_describe_pid( $siginfo->{pid} );
+
+        my $parent = '';
+        if ( $sender =~ /\bppid=(\d+)/ ) {
+            $parent = ' parent[' . $self->_describe_pid($1) . ']';
+        }
+
+        $self->log("Received SIG$name uid=$sender_uid sender[$sender]$parent");
+    }
+
     sub background {
         my $self = shift;
 
@@ -218,11 +275,30 @@ exit;
 
         POSIX::setsid() or die "Can't start a new session: $!";
 
-        $SIG{INT} = $SIG{TERM} = $SIG{HUP} = sub {
-            my $sig = shift;
-            $self->log("Received SIG$sig, shutting down");
-            $self->{time_to_die} = 1;
+        # SA_SIGINFO gives us the sender pid/uid in the siginfo hashref, but
+        # only if the handler is dispatched in real signal context (safe(0)).
+        # safe(1) loses siginfo. So we keep the handler minimal -- just stash
+        # the captured info on $self -- and do the log formatting after the
+        # run loop exits, where we're back in normal Perl context.
+        my $sig_handler = sub {
+            my ( $signo, $siginfo ) = @_;
+            $self->{captured_signo}   = $signo;
+            $self->{captured_siginfo} = $siginfo;
+            $self->{time_to_die}      = 1;
         };
+
+        for my $signo ( POSIX::SIGINT, POSIX::SIGTERM, POSIX::SIGHUP ) {
+            my $action = POSIX::SigAction->new(
+                $sig_handler,
+                POSIX::SigSet->new(),
+                POSIX::SA_SIGINFO,
+            );
+
+            # NOTE: not calling $action->safe(1) -- that would strip siginfo.
+            # The handler above is intentionally minimal (scalar assigns only)
+            # so unsafe context is acceptable.
+            POSIX::sigaction( $signo, $action );
+        }
 
         # trap or ignore $SIG{PIPE}
         $SIG{USR1} = sub { $self->parse_config };
@@ -259,6 +335,7 @@ exit;
             last if $self->{time_to_die};
         }
 
+        $self->_log_captured_signal;
         $self->log("Exiting run loop (time_to_die=$self->{time_to_die})");
         close($server);
     }
