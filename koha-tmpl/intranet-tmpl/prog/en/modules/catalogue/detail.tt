@@ -1772,7 +1772,6 @@
 
         Koha.addPrefs({
             AlwaysShowHoldingsTableFilters: [% Koha.Preference('AlwaysShowHoldingsTableFilters') ? 1 : 0 | html %],
-            bundlesEnabled: [% bundlesEnabled ? 1 : 0 | html %],
             BundleLostValue: "[% Koha.Preference('BundleLostValue') | html %]",
         });
 
@@ -1791,7 +1790,8 @@
                 build_items_table(tab_id, false, {}, build_items_table_drawncallback);
             }
 
-            if (Koha.prefs.bundlesEnabled) {
+            // bundlesEnabled is defined in catalogue_detail.inc
+            if (bundlesEnabled) {
                 // Add event listener for opening and closing bundle details
                 $("#" + tab_id + "_table tbody").on("click", "button.details-control", function () {
                     var button = $(this);
