@@ -12,7 +12,7 @@ return {
             $dbh->do(
                 q{
                     ALTER TABLE tmp_holdsqueue
-                    ADD COLUMN hold_group_id int(11) DEFAULT NULL AFTER notes
+                    ADD COLUMN hold_group_id int(10) unsigned DEFAULT NULL AFTER notes
                 }
             );
             say_success( $out, "Added hold_group_id to tmp_holdsqueue" );
