@@ -565,6 +565,7 @@ sub UpdateFine {
     my $borrowernumber = $params->{borrowernumber};
     my $amount         = $params->{amount};
     my $due            = $params->{due} // q{};
+    my $checkin_id     = $params->{checkin_id};
 
     unless ($issue_id) {
         carp("No issue_id passed in!");
@@ -671,6 +672,7 @@ sub UpdateFine {
                     type        => 'OVERDUE',
                     item_id     => $itemnum,
                     issue_id    => $issue_id,
+                    ( $checkin_id ? ( checkin_id => $checkin_id ) : () ),
                 }
             );
         }
