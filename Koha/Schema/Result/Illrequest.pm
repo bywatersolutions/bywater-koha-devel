@@ -91,7 +91,6 @@ Current Koha status of request
 =head2 status_alias
 
   data_type: 'varchar'
-  is_foreign_key: 1
   is_nullable: 1
   size: 80
 
@@ -227,7 +226,7 @@ __PACKAGE__->add_columns(
   "status",
   { data_type => "varchar", is_nullable => 1, size => 50 },
   "status_alias",
-  { data_type => "varchar", is_foreign_key => 1, is_nullable => 1, size => 80 },
+  { data_type => "varchar", is_nullable => 1, size => 80 },
   "placed",
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
   "replied",
@@ -400,29 +399,9 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 status_alias
 
-Type: belongs_to
-
-Related object: L<Koha::Schema::Result::AuthorisedValue>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "status_alias",
-  "Koha::Schema::Result::AuthorisedValue",
-  { authorised_value => "status_alias" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "SET NULL",
-    on_update     => "CASCADE",
-  },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07051 @ 2025-11-03 14:19:07
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/61JmhVPxDt1TYOpljcPvg
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-05-06 20:57:38
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:g44uJHfnZE/4EcCZzMINIg
 
 __PACKAGE__->has_many(
   "comments",
