@@ -1295,18 +1295,18 @@
                                         orderable: true,
                                         render: function (data, type, row, meta) {
                                             let a = '<a href="suggestion.pl?suggestionid=%s&amp;op=show" title="%s">'.format(row.suggestion_id, _("suggestion"));
-                                            let node = a + ( row.author ? a + _("%s, by %s").format(row.title.escapeHtml(), row.author.escapeHtml()) : row.title.escapeHtml());
-                                            node += '</a><br />';
-                                            if(row.copyright_date) node += ' &copy; <span class="suggestion_copyrightdate">%s</span>'.format(row.copyright_date);
-                                            if(row.volume_desc) node += '; <span class="suggestion_volume">%s:<em>%s</em></span>'.format(_("Volume"), row.volume_desc);
-                                            if(row.isbn) node += '; <span class="suggestion_isbn">%s:<em>%s</em></span>'.format(_("ISBN"), row.isbn);
-                                            if(row.publisher_code) node += '; <span class="suggestion_publishercode">%s %s</span>'.format(_("Published by"), row.publisher_code);
-                                            if(row.publication_year && row.publication_year != 0) node += '; <span class="suggestion_publicationyear"><em>%s</em></span>'.format(row.publication_year);
-                                            if(row.publication_place) node += '; <span class="suggestion_place"><em>%s</em></span>'.format(row.publication_place);
-                                            if(row.collection_title) node += '; <span class="suggestion_collectiontitle"><em>%s</em></span>'.format(row.collection_title);
-                                            if(row.item_type && row._strings.item_type.str) node += '; <span class="suggestion_itype"><em>%s</em></span>'.format(row._strings.item_type.str);
-                                            if(row.note) node += '<div class="suggestion_note">%s</div>'.format(row.note);
-                                            if(row.archived) node += '<br /><i class="fa fa-archive"></i> %s'.format(_("Archived"));
+                                            let node = a + (row.author ? a + _("%s, by %s").format(row.title.escapeHtml(), row.author.escapeHtml()) : row.title.escapeHtml());
+                                            node += "</a><br />";
+                                            if (row.copyright_date) node += ' &copy; <span class="suggestion_copyrightdate">%s</span>'.format(row.copyright_date);
+                                            if (row.volume_desc) node += '; <span class="suggestion_volume">%s:<em>%s</em></span>'.format(_("Volume"), row.volume_desc);
+                                            if (row.isbn) node += '; <span class="suggestion_isbn">%s:<em>%s</em></span>'.format(_("ISBN"), row.isbn);
+                                            if (row.publisher_code) node += '; <span class="suggestion_publishercode">%s %s</span>'.format(_("Published by"), row.publisher_code);
+                                            if (row.publication_year && row.publication_year != 0) node += '; <span class="suggestion_publicationyear"><em>%s</em></span>'.format(row.publication_year);
+                                            if (row.publication_place) node += '; <span class="suggestion_place"><em>%s</em></span>'.format(row.publication_place);
+                                            if (row.collection_title) node += '; <span class="suggestion_collectiontitle"><em>%s</em></span>'.format(row.collection_title);
+                                            if (row.item_type && row._strings.item_type.str) node += '; <span class="suggestion_itype"><em>%s</em></span>'.format(row._strings.item_type.str);
+                                            if (row.note) node += '<div class="suggestion_note">%s</div>'.format(row.note);
+                                            if (row.archived) node += '<br /><i class="fa fa-archive"></i> %s'.format(_("Archived"));
                                             return node;
                                         },
                                     },
