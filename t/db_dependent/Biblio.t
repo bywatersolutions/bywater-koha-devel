@@ -1225,7 +1225,7 @@ subtest 'ModBiblio on invalid record' => sub {
         Koha::ActionLogs->search( { object => $biblionumber, module => 'Cataloguing', action => 'MODIFY' } );
     is( $action_logs->count, 1, "Modification of biblio was successful and recorded" );
     my $action_log = $action_logs->next;
-    like( $action_log->info, qr/biblionumber/, "Biblio data logged in action log info" );
+    like( $action_log->info, qr/^biblio /, "Biblio data logged in action log info" );
     ok( defined $action_log->diff, "Diff column is populated for MODIFY" );
     like( $action_log->diff, qr/_marc/, "MARC field changes are captured in the diff column" );
 };
