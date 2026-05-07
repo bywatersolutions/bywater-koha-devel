@@ -139,7 +139,7 @@ jobs:
                 fields: ref,workflow # selectable (default: repo,message)
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
-              if: always() # Pick up events even if the job fails or is canceled.
+              if: failure() # Only notify on job failures.
 
     unit-test-cypress:
         # Fast builds will skip unit tests and go straight to building a debian package
@@ -174,7 +174,7 @@ jobs:
                 fields: ref,workflow # selectable (default: repo,message)
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
-              if: always() # Pick up events even if the job fails or is canceled.
+              if: failure() # Only notify on job failures.
 
     dbic-check:
         # Regenerate Koha/Schema with dbic and fail if kohastructure.sql drift produces changes
@@ -236,7 +236,7 @@ jobs:
                 fields: ref,workflow
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }}
-              if: always()
+              if: failure()
 
     release-notes: # This container checks out the branch on it's own, so no need for the GitHub checkout action
         if: github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-security'
@@ -320,7 +320,7 @@ jobs:
                 fields: ref,workflow # selectable (default: repo,message)
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
-              if: always() # Pick up events even if the job fails or is canceled.
+              if: failure() # Only notify on job failures.
 
     build-debs:
         # Fast builds will skip unit tests and go straight to building a debian package
@@ -428,7 +428,7 @@ jobs:
                 fields: ref,workflow # selectable (default: repo,message)
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
-              if: always() # Pick up events even if the job fails or is canceled.
+              if: failure() # Only notify on job failures.
 
             - uses: bywatersolutions/action-slack@v3
               with:
@@ -621,7 +621,7 @@ jobs:
                 fields: ref,workflow # selectable (default: repo,message)
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
-              if: always() # Pick up events even if the job fails or is canceled.
+              if: failure() # Only notify on job failures.
 
     zap-scan-baseline-staff:
         name: ZAP Scan - Baseline - Staff
@@ -690,7 +690,7 @@ jobs:
                 fields: ref,workflow # selectable (default: repo,message)
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
-              if: always() # Pick up events even if the job fails or is canceled.
+              if: failure() # Only notify on job failures.
 
     zap-scan-full-staff:
         name: ZAP Scan - Full - Staff
@@ -759,7 +759,7 @@ jobs:
                 fields: ref,workflow # selectable (default: repo,message)
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
-              if: always() # Pick up events even if the job fails or is canceled.
+              if: failure() # Only notify on job failures.
 
     zap-scan-full-opac:
         name: ZAP Scan - Full - OPAC
@@ -827,7 +827,7 @@ jobs:
                 fields: ref,workflow # selectable (default: repo,message)
               env:
                 SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK }} # required
-              if: always() # Pick up events even if the job fails or is canceled.
+              if: failure() # Only notify on job failures.
 
     auto-rebase-xslt:
         if: false
