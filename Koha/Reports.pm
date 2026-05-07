@@ -106,6 +106,13 @@ sub running {
     return $class->search( { id => { -in => [ keys %report_ids ] } } );
 }
 
+=head3 _processlist_rows
+
+Used internally to query the database process list.
+Returns an arrayref of hashrefs, one per row.
+
+=cut
+
 sub _processlist_rows {
     my ( $class, $sql, @binds ) = @_;
     return Koha::Database->new->schema->storage->dbh->selectall_arrayref( $sql, { Slice => {} }, @binds );
