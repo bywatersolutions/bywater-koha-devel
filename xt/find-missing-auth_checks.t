@@ -33,7 +33,10 @@ FILE: foreach my $file (@files) {
     chomp $file;
     my @lines = read_file($file);
     for my $line (@lines) {
-        for my $routine (qw( get_template_and_user check_cookie_auth checkauth check_api_auth C4::Service->init )) {
+        for my $routine (
+            qw( get_template_and_user check_cookie_auth checkauth check_api_auth C4::Service->init Koha::Controller::Catalogue->init )
+            )
+        {
             next FILE if $line =~ m|^[^#]*$routine|;
         }
     }
