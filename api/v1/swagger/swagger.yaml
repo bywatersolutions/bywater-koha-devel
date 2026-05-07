@@ -1406,6 +1406,15 @@ tags:
   - description: "Manage ILL requests\n"
     name: ill_requests
     x-displayName: ILL requests
+  - description: "Manage ISO18626 ILL protocol\n"
+    name: iso18626
+    x-displayName: ISO18626
+  - description: "Manage ISO18626 ILL requests\n"
+    name: iso18626_requests
+    x-displayName: ISO18626 requests
+  - description: "Manage ISO18626 requesting agencies\n"
+    name: iso18626_requesting_agencies
+    x-displayName: ISO18626 requesting agencies
   - description: "Manage import batches\n"
     name: import_batches
     x-displayName: Import batches

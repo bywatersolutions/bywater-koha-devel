@@ -13,6 +13,7 @@
         required: true
         schema:
           type: object
+          additionalProperties: true
           # $ref: "../swagger.yaml#/definitions/ISO18626request"
           # $ref: "../swagger.yaml#/definitions/ISO18626requestingAgencyMessage"
     produces:
