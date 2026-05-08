@@ -41,6 +41,14 @@ the unique code assigned to the framework
 
 the description/name given to the framework
 
+=head2 is_fast_add
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 0
+
+the ability to be used as a Fast add framework
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -48,6 +56,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 4 },
   "frameworktext",
   { data_type => "varchar", default_value => "", is_nullable => 0, size => 255 },
+  "is_fast_add",
+  { data_type => "tinyint", default_value => 0, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -63,8 +73,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("frameworkcode");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2021-01-21 13:39:29
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YdCNaeY5v1WcfcDuA6xE0w
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-05-08 20:44:49
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:kIKiqbU/4fZbUzVrsxTu3Q
 
 # FIXME This should not be needed, we need to add the FK at DB level
 # It cannot be done now because the default framework (frameworkcode=='')
