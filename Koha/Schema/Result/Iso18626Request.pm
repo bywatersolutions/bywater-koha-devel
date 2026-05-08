@@ -336,8 +336,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-02-24 16:20:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UVWpopKYUM2me5GnUwLPxw
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-05-08 18:09:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1Uo2Dytg1I7qv9XNz0up2w
 
 =head2 koha_object_class
 
