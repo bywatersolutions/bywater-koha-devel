@@ -86,5 +86,9 @@ __PACKAGE__->has_many(
     { cascade_copy => 0, cascade_delete => 0 },
 );
 
+__PACKAGE__->add_columns(
+    '+is_fast_add' => { is_boolean => 1 },
+);
+
 # You can replace this text with custom content, and it will be preserved on regeneration
 1;
