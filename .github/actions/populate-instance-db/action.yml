@@ -1,0 +1,187 @@
+name: 'Populate a Koha instance DB with schema + sample records'
+description: |
+  Clones koha-misc4dev (https://gitlab.com/koha-community/koha-misc4dev)
+  inside the container and runs its populate_db.pl + insert_data.pl
+  against the named Koha instance.
+
+  populate_db.pl loads kohastructure.sql, the mandatory installer
+  data (sysprefs, value lists, message templates, user permissions,
+  frameworks, etc.). insert_data.pl loads actual bibliographic
+  records (biblio, biblioitems, items, auth_header, biblio_metadata)
+  so Zebra has something to index and search returns hits.
+
+  After this runs the instance is functionally exercisable end-to-
+  end: Plack serves real Koha pages, SIP starts cleanly, Zebra has
+  records to index, search queries return results.
+
+inputs:
+  container-name:
+    description: 'Docker container name'
+    required: true
+  instance:
+    description: 'Koha instance name (no @ prefix)'
+    required: true
+  marc-flavour:
+    description: 'MARC flavour (MARC21 or UNIMARC)'
+    required: false
+    default: 'MARC21'
+  misc4dev-ref:
+    description: 'Branch / tag / SHA of koha-misc4dev to use'
+    required: false
+    default: 'main'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        inst='${{ inputs.instance }}'
+        flavour='${{ inputs.marc-flavour }}'
+        ref='${{ inputs.misc4dev-ref }}'
+
+        # Clone (or refresh) koha-misc4dev inside the container. /tmp
+        # is fine — the container is ephemeral.
+        docker exec "$cn" bash -c "
+            set -euo pipefail
+            if [ ! -d /tmp/koha-misc4dev ]; then
+                git clone --depth=1 --branch '$ref' \
+                    https://gitlab.com/koha-community/koha-misc4dev.git \
+                    /tmp/koha-misc4dev
+            fi
+            ls /tmp/koha-misc4dev/populate_db.pl
+        "
+
+        # Run populate_db.pl via koha-shell so KOHA_CONF, KOHA_HOME,
+        # PERL5LIB, and the unprivileged instance user are all set up
+        # the way Koha expects. Without koha-shell, populate_db.pl
+        # fails to find C4::Installer or its config.
+        #
+        # The script may print a final harmless ES error if Elastic-
+        # search isn't running (Koha::SearchEngine::Elasticsearch->
+        # reset_elasticsearch_mappings at the end of initialize_data),
+        # but it still exits 0 because the schema + sample data
+        # already landed by then. Trust the exit code.
+        echo "Loading schema + sample data into $inst (marcflavour=$flavour)..."
+        if docker exec "$cn" \
+                koha-shell "$inst" -c \
+                "perl /tmp/koha-misc4dev/populate_db.pl --marcflavour $flavour --verbose"; then
+            echo "✓ $inst DB schema + sysprefs ready (populate_db.pl exited 0)"
+        else
+            echo "::error::populate_db.pl exited non-zero"
+            exit 1
+        fi
+
+        # Load the default MARC framework. populate_db.pl claims to
+        # load it during its run, but the marc_subfield_structure
+        # rows for the default framework can end up missing — without
+        # biblio.biblionumber mapped to a tag, koha-rebuild-zebra
+        # fails to embed item availability and exits with
+        # "Something went wrong rebuilding biblio indexes".
+        # We load the YAML installer file Koha ships in the
+        # koha-common .deb at
+        #   /usr/share/koha/intranet/cgi-bin/installer/data/mysql/en/
+        #     marcflavour/$flavour/mandatory/$flavour_framework_DEFAULT.yml
+        # via C4::Installer::load_sql, which dispatches on extension.
+        flavour_lc=$(echo "$flavour" | tr '[:upper:]' '[:lower:]')
+        fw_path="/usr/share/koha/intranet/cgi-bin/installer/data/mysql/en/marcflavour/${flavour_lc}/mandatory/${flavour_lc}_framework_DEFAULT.yml"
+        echo "Loading default $flavour framework into $inst..."
+
+        # Build the Perl script as a double-quoted bash string so
+        # ${fw_path} and ${flavour} are interpolated by bash before
+        # we tee into the container. Perl sigils are escaped (\$) so
+        # they survive bash and reach Perl literally. This avoids
+        # heredoc-vs-YAML indentation conflicts and the koha-shell
+        # sudo env-var stripping issue.
+        #
+        # Duplicate-key errors on tag 999 are treated as success: it
+        # means populate_db.pl already loaded the framework and we're
+        # idempotently re-running, which is fine.
+        framework_script="use C4::Installer;
+        my \$installer = C4::Installer->new;
+        my \$file = q{${fw_path}};
+        die qq{framework file not found: \$file\n} unless -f \$file;
+        print qq{Loading \$file\n};
+        my (\$err, \$msg, \$list) = \$installer->load_sql(\$file);
+        if (\$err) {
+            if (\$err =~ /Duplicate entry/) {
+                print qq{Framework already present (re-load hit duplicate key, fine)\n};
+            } else {
+                die qq{framework load failed: \$err\n};
+            }
+        } else {
+            print qq{Loaded default ${flavour} framework OK\n};
+        }"
+        printf '%s\n' "$framework_script" \
+            | docker exec -i "$cn" tee /tmp/load-frameworks.pl >/dev/null
+        docker exec "$cn" koha-shell "$inst" -c "perl /tmp/load-frameworks.pl"
+
+        # Verify the framework actually contains the kohafield -> tag
+        # mappings rebuild_zebra needs. Print key mappings so the log
+        # tells us what populate_db.pl ended up with, and fail fast
+        # if biblio.biblionumber is missing. Bind params keep the SQL
+        # quoting simple (no apostrophes in the bash-single-quoted
+        # Perl script body).
+        check_script='use C4::Context;
+        my $dbh = C4::Context->dbh;
+        my $count = $dbh->selectrow_arrayref(
+            qq{SELECT COUNT(*) FROM marc_subfield_structure WHERE frameworkcode=?},
+            undef,
+            q{}
+        )->[0];
+        print qq{marc_subfield_structure rows in default framework: $count\n};
+        my $rows = $dbh->selectall_arrayref(
+            qq{SELECT kohafield, tagfield, tagsubfield FROM marc_subfield_structure }
+            . qq{WHERE frameworkcode=? AND kohafield IN (?, ?, ?) }
+            . qq{ORDER BY kohafield},
+            undef,
+            q{},
+            q{biblio.biblionumber},
+            q{biblioitems.biblioitemnumber},
+            q{items.itemnumber}
+        );
+        print qq{key kohafield mappings:\n};
+        for my $r (@$rows) {
+            print qq{  $r->[0] -> $r->[1]\$$r->[2]\n};
+        }
+        die qq{biblio.biblionumber mapping missing in default framework\n}
+            unless grep { $_->[0] eq q{biblio.biblionumber} } @$rows;'
+        printf '%s\n' "$check_script" \
+            | docker exec -i "$cn" tee /tmp/check-fw.pl >/dev/null
+        docker exec "$cn" koha-shell "$inst" -c "perl /tmp/check-fw.pl"
+
+        # Load actual bibliographic records (biblio, biblioitems,
+        # items, auth_header, biblio_metadata) so Zebra has something
+        # to index and search.
+        #
+        # insert_data.pl loads the SQL record files first, then near
+        # the end uses t::lib::TestBuilder to add acquisitions data.
+        # TestBuilder ships only in a Koha source checkout, not the
+        # .deb, so it dies. Tolerate the late failure -- the records
+        # we care about (biblio/items/auth_header/biblio_metadata)
+        # are already in the DB by that point.
+        echo "Loading sample bibliographic records into $inst..."
+        set +e
+        docker exec "$cn" \
+            koha-shell "$inst" -c \
+            "perl /tmp/koha-misc4dev/insert_data.pl"
+        rc=$?
+        set -e
+        echo "insert_data.pl exited with status $rc (non-zero is OK if records landed)"
+
+        # All Koha daemons (zebra, indexer, plack, workers) were
+        # started by koha-create BEFORE the framework + biblios were
+        # loaded. They cached "MarcSubfieldStructure-" lookups in
+        # memcached against an empty marc_subfield_structure table —
+        # so even though the DB is now correct, GetMarcFromKohaField
+        # keeps returning empty, and rebuild_zebra fails to embed
+        # item availability. Flush memcached and (if running under
+        # systemd) bounce the per-instance target so daemons re-read
+        # the populated DB. In the SysV-to-systemd migration path,
+        # the target doesn't exist yet at Phase 2 — the swap step
+        # later replaces SysV with fresh systemd units, so it's
+        # enough to flush memcached here.
+        echo "Flushing memcached and bouncing koha@${inst}.target so daemons see the freshly-loaded data..."
+        docker exec "$cn" systemctl restart memcached || true
+        docker exec "$cn" systemctl restart "koha@${inst}.target" 2>/dev/null \
+            || echo "  (skipped systemd target restart — koha@${inst}.target not present, likely SysV-managed pre-swap)"

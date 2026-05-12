@@ -1,0 +1,125 @@
+name: 'Boot Koha systemd test container'
+description: |
+  Builds a Debian 12 container with systemd as PID 1 (image defined in
+  .github/test/Dockerfile.systemd), runs it with the cgroup mount and
+  privileges systemd needs, starts MariaDB inside, and installs the
+  named Koha packages from a deb directory mounted at /debs:ro.
+
+  This is one step in the calling job's UI; its internal steps appear
+  as nested log groups within it. Setup is treated as fail-fast — any
+  internal failure aborts the job before the assertion steps run.
+
+inputs:
+  container-name:
+    description: 'Docker container name'
+    required: true
+  packages:
+    description: |
+      Space-separated list of Koha package suffixes to install.
+      "core systemd common" → koha-core, koha-systemd, koha-common.
+      "core sysv common"    → koha-core, koha-sysv,    koha-common.
+    required: true
+  debs-dir:
+    description: 'Host path containing the .deb files (mounted at /debs:ro)'
+    required: false
+    default: 'out'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      name: Build the systemd test image
+      run: |
+        docker build -t koha-systemd-test \
+            -f .github/test/Dockerfile.systemd .
+
+    - shell: bash
+      name: Run the container with systemd as PID 1
+      run: |
+        # --cgroupns=host shares the cgroup namespace with the host,
+        # which systemd-in-container needs on cgroup v2 hosts (modern
+        # GitHub runners) to delegate cgroup management. Without it,
+        # systemd starts, fails to set up cgroups, and exits.
+        # --add-host=host.docker.internal:host-gateway lets the
+        # container reach services bound to the runner's loopback
+        # (e.g. the elasticsearch GHA service container on :9200).
+        docker run -d --name "${{ inputs.container-name }}" \
+            --privileged \
+            --cgroupns=host \
+            --add-host=host.docker.internal:host-gateway \
+            --tmpfs /run --tmpfs /run/lock \
+            -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
+            -v "$PWD/${{ inputs.debs-dir }}:/debs:ro" \
+            koha-systemd-test
+        # Wait up to 60s for systemd to settle. Detect early exit
+        # (container died) and dump its logs so we know WHY.
+        for i in $(seq 1 60); do
+            running=$(docker inspect --format '{{.State.Running}}' \
+                "${{ inputs.container-name }}" 2>/dev/null || echo "false")
+            if [ "$running" != "true" ]; then
+                echo "::error::Container ${{ inputs.container-name }} exited unexpectedly during boot."
+                docker inspect "${{ inputs.container-name }}" \
+                    --format 'ExitCode={{.State.ExitCode}} Error={{.State.Error}} Status={{.State.Status}}' || true
+                echo "--- docker logs ${{ inputs.container-name }} ---"
+                docker logs "${{ inputs.container-name }}" 2>&1 | tail -100 || true
+                exit 1
+            fi
+            s=$(docker exec "${{ inputs.container-name }}" \
+                systemctl is-system-running 2>/dev/null || true)
+            case "$s" in running|degraded) break ;; esac
+            sleep 1
+        done
+        echo "Final state: $(docker exec "${{ inputs.container-name }}" \
+            systemctl is-system-running 2>&1 || true)"
+
+    - shell: bash
+      name: Start MariaDB
+      run: |
+        docker exec "${{ inputs.container-name }}" systemctl start mariadb
+        for i in $(seq 1 30); do
+            docker exec "${{ inputs.container-name }}" \
+                test -S /run/mysqld/mysqld.sock && break
+            sleep 1
+        done
+        docker exec "${{ inputs.container-name }}" mysql -e 'SELECT VERSION()'
+
+    - shell: bash
+      name: Start RabbitMQ + enable STOMP plugin
+      run: |
+        # Koha workers consume from RabbitMQ over STOMP (port 61613).
+        # Without the plugin enabled, workers connect to MySQL but
+        # never receive job messages, and enqueue calls fail with
+        # "Connection refused" to localhost:61613.
+        docker exec "${{ inputs.container-name }}" systemctl start rabbitmq-server
+        for i in $(seq 1 60); do
+            if docker exec "${{ inputs.container-name }}" \
+                    rabbitmqctl status >/dev/null 2>&1; then
+                break
+            fi
+            sleep 1
+        done
+        docker exec "${{ inputs.container-name }}" \
+            rabbitmq-plugins enable rabbitmq_stomp
+        # Wait for STOMP listener to bind on 61613.
+        for i in $(seq 1 30); do
+            if docker exec "${{ inputs.container-name }}" \
+                    ss -ltn 2>/dev/null | grep -q ':61613'; then
+                echo "✓ RabbitMQ STOMP listening on 61613"
+                break
+            fi
+            sleep 1
+        done
+
+    - shell: bash
+      name: Install Koha packages
+      run: |
+        # Build the deb-file glob list from the suffixes input.
+        list=""
+        for s in ${{ inputs.packages }}; do
+            list="$list /debs/koha-${s}_*.deb"
+        done
+        docker exec "${{ inputs.container-name }}" bash -c "
+            rm -f /usr/sbin/policy-rc.d &&
+            apt-get update &&
+            apt-get install -y --no-install-recommends $list
+        "

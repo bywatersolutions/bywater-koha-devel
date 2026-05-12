@@ -1,0 +1,5 @@
+FROM docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+
+# Koha's biblios/authorities index mappings reference the ICU
+# token filter (icu_folding) so the analysis-icu plugin is mandatory.
+RUN /usr/share/elasticsearch/bin/elasticsearch-plugin install --batch analysis-icu

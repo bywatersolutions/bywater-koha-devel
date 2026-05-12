@@ -1,0 +1,65 @@
+# systemd-enabled Debian 12 container for bug 40901 integration tests.
+#
+# Used by .github/workflows/systemd-integration.yml. Run with:
+#
+#     docker build -t koha-systemd-test -f .github/test/Dockerfile.systemd .
+#     docker run -d --name koha-test \
+#         --privileged \
+#         --tmpfs /run --tmpfs /run/lock \
+#         -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
+#         koha-systemd-test
+#
+# Inside the container, /lib/systemd/systemd is PID 1 and the full
+# Koha service stack can be installed and exercised.
+
+FROM debian:bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Don't auto-start daemons during package install. The test will start
+# them via systemctl explicitly. (We delete this file before installing
+# the Koha packages so their postinst can do its real work.)
+RUN echo "exit 101" > /usr/sbin/policy-rc.d && chmod +x /usr/sbin/policy-rc.d
+
+# systemd as PID 1, plus everything the koha-* packages need at install
+# and runtime time. Also add the koha-community apt source so that
+# Koha-specific Perl module dependencies (libhtml-fromansi-tiny-perl,
+# libpdf-fromhtml-perl, libstruct-diff-perl, etc.) and koha-l10n can
+# be resolved when the locally-built koha-* .debs are installed.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        systemd systemd-sysv \
+        ca-certificates curl gnupg apt-utils \
+        apache2 libapache2-mpm-itk \
+        mariadb-server mariadb-client \
+        rabbitmq-server \
+        memcached \
+        xmlstarlet \
+        sysvinit-utils \
+        procps \
+        git \
+        ncat \
+        yaz \
+        less vim-tiny \
+    && curl -fsSL https://debian.koha-community.org/koha/gpg.asc \
+        | gpg --dearmor -o /etc/apt/trusted.gpg.d/koha.gpg \
+    && echo "deb http://debian.koha-community.org/koha stable main" \
+        > /etc/apt/sources.list.d/koha.list \
+    && rm -rf /var/lib/apt/lists/*
+
+# Enable the Apache modules koha-create's setup-time checks insist on.
+# mpm-itk requires mpm-prefork, so disable mpm-event/worker first.
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && a2enmod  mpm_prefork mpm_itk rewrite cgi headers ssl proxy proxy_http
+
+# MariaDB needs a place to find admin credentials so koha-create's
+# --create-db path works without prompting. The CI workflow replaces
+# this with whatever credentials the running mariadb actually uses.
+RUN printf '[client]\nuser=root\nsocket=/run/mysqld/mysqld.sock\n' \
+        > /etc/mysql/koha-common.cnf
+
+# In-container sane sysctls — these don't actually take effect from
+# inside an unprivileged user namespace, but they're harmless and make
+# the image self-documenting.
+
+STOPSIGNAL SIGRTMIN+3
+CMD ["/lib/systemd/systemd"]

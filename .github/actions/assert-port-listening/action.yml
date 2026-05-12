@@ -1,0 +1,50 @@
+name: 'Assert TCP port is listening'
+description: |
+  Asserts that a TCP port is listening on localhost inside the
+  container by attempting a TCP connection with `ncat`. Used as a
+  cheap functional check for services that listen on a port (SIP,
+  Z39.50, Zebra) before going deeper into protocol-level testing.
+
+  Acceptable: connection succeeds (port is bound and accepting).
+  Rejected: connection refused, no route, hangs.
+
+inputs:
+  container-name:
+    description: 'Docker container name'
+    required: true
+  port:
+    description: 'TCP port number to probe'
+    required: true
+  service-label:
+    description: |
+      Human-friendly label used in pass/fail messages, e.g. "koha-sip"
+      or "koha-z3950". Defaults to "port <N>".
+    required: false
+    default: ''
+  timeout-seconds:
+    description: 'Seconds to wait for connect (per attempt)'
+    required: false
+    default: '3'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        port='${{ inputs.port }}'
+        label='${{ inputs.service-label }}'
+        [ -z "$label" ] && label="port $port"
+        timeout='${{ inputs.timeout-seconds }}'
+
+        # `ncat -z` does a connect-only probe (no data sent). With
+        # --recv-only we don't wait for the server to send anything.
+        # The combination is the lightest possible "is anything
+        # listening" check.
+        if docker exec "$cn" ncat -z -w "${timeout}s" 127.0.0.1 "$port" 2>&1; then
+            echo "✓ ${label} listening on 127.0.0.1:${port}"
+        else
+            echo "::error::${label} not listening on 127.0.0.1:${port}"
+            docker exec "$cn" ss -tlnp 2>&1 | grep ":${port}" || true
+            exit 1
+        fi

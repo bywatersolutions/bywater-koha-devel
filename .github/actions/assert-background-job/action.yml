@@ -1,0 +1,51 @@
+name: 'Assert background-job worker processes a queue'
+description: |
+  Functional test for the koha-worker daemons. Enqueues a real Koha
+  background job (UpdateHoldsQueue for 'default', BatchUpdateAuthority
+  for 'long_tasks') with empty data — both are idempotent no-ops in
+  this configuration — and polls background_jobs.status until it
+  moves off 'new'. Any non-'new' status proves the worker pulled the
+  job from RabbitMQ.
+
+inputs:
+  container-name:
+    required: true
+  instance:
+    required: true
+  queue:
+    description: 'Worker queue to exercise: default | long_tasks'
+    required: true
+  timeout-seconds:
+    description: 'Max seconds to wait for worker to pick up the job'
+    required: false
+    default: '60'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        inst='${{ inputs.instance }}'
+        queue='${{ inputs.queue }}'
+        timeout='${{ inputs.timeout-seconds }}'
+
+        echo "Enqueuing background job on queue=${queue} for instance ${inst}..."
+        docker cp "${GITHUB_ACTION_PATH}/enqueue-and-poll.pl" \
+            "${cn}:/tmp/enqueue-and-poll.pl"
+        if ! docker exec "$cn" koha-shell "$inst" -c \
+                "perl /tmp/enqueue-and-poll.pl ${queue} ${timeout}"; then
+            # Dump consumer-side state so we can see whether the daemon
+            # is consuming at all and what queues RabbitMQ has registered.
+            consumer_unit="koha-worker@${inst}.service"
+            case "$queue" in
+                long_tasks)    consumer_unit="koha-worker-long_tasks@${inst}.service" ;;
+                elastic_index) consumer_unit="koha-es-indexer@${inst}.service" ;;
+            esac
+            echo "--- ${consumer_unit} journal (last 50 lines) ---"
+            docker exec "$cn" journalctl -u "$consumer_unit" --no-pager -n 50 || true
+            echo "--- rabbitmqctl list_queues (with consumer counts) ---"
+            docker exec "$cn" rabbitmqctl list_queues name messages consumers 2>/dev/null \
+                | head -40 || true
+            exit 1
+        fi

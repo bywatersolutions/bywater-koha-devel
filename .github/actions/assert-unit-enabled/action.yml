@@ -1,0 +1,37 @@
+name: 'Assert systemd unit is enabled'
+description: |
+  Asserts that a unit is in `enabled` state (or one of the equivalents
+  static / alias / enabled-runtime) inside a Docker container running
+  systemd as PID 1. Useful for verifying koha-create's enable wiring
+  and the postinst migration logic.
+
+  On failure, emits a workflow `::error::` annotation and exits non-zero.
+
+inputs:
+  container-name:
+    description: 'Docker container name'
+    required: true
+  unit:
+    description: 'systemd unit (e.g. koha-plack@washoedev.service)'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        unit='${{ inputs.unit }}'
+
+        state=$(docker exec "$cn" \
+            systemctl is-enabled "$unit" 2>/dev/null || true)
+
+        case "$state" in
+            enabled|alias|static|enabled-runtime)
+                echo "✓ $unit — $state"
+                ;;
+            *)
+                echo "::error::$unit is '$state' (expected enabled / alias / static / enabled-runtime)"
+                exit 1
+                ;;
+        esac

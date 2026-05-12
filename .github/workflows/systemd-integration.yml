@@ -1,0 +1,1102 @@
+name: systemd integration
+
+# Real systemd-in-container tests for bug 40901: a steady-state job and a SysV-to-systemd migration job, both inside a privileged container with systemd as PID 1.
+
+on:
+  push:
+  workflow_dispatch: {}
+
+jobs:
+  # Build the .debs once and cache for downstream jobs; runs in a debian:bookworm container so Build-Depends resolve.
+  build-debs:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
+      options: --user root
+    timeout-minutes: 60
+    outputs:
+      cache-key: ${{ steps.key.outputs.k }}
+
+    steps:
+      # build-deps-version-marker: bump this string when the build toolchain changes so the deb cache notices.
+      - name: Install git + dpkg-build toolchain + Koha apt source + node/yarn
+        # Install git for actions/checkout, dpkg-build toolchain, the koha-community apt source for Build-Depends Perl modules, and NodeSource Node 22 for yarn-driven Vue/SCSS/swagger bundling.
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+              git ca-certificates curl gnupg \
+              devscripts equivs build-essential debhelper \
+              fakeroot lintian
+          curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+          apt-get install -y --no-install-recommends nodejs
+          npm install -g yarn
+          curl -fsSL https://debian.koha-community.org/koha/gpg.asc \
+              | gpg --dearmor -o /etc/apt/trusted.gpg.d/koha.gpg
+          echo "deb http://debian.koha-community.org/koha stable main" \
+              > /etc/apt/sources.list.d/koha.list
+          apt-get update
+
+      - uses: actions/checkout@v4
+
+      - name: Mark workspace as a safe.directory
+        # Inside the container the workspace owner doesn't match the current uid, so git refuses to operate on it.
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Compute cache key
+        id: key
+        run: |
+          # The .deb contents only depend on the debian/ tree plus the build-deps-version-marker line; bump v3->v4 to force-invalidate.
+          build_deps_hash=$(awk '/build-deps-version-marker:/ {print $0}' \
+              .github/workflows/systemd-integration.yml \
+              | sha256sum | cut -c1-12)
+          k="koha-debs-bookworm-v3-$(git rev-parse HEAD:debian)-${build_deps_hash}"
+          echo "k=$k" >> "$GITHUB_OUTPUT"
+
+      - name: Restore deb cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: out/
+          key: ${{ steps.key.outputs.k }}
+
+      - name: Install package Build-Depends
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mk-build-deps -i debian/control \
+              -t 'apt-get -y --no-install-recommends'
+
+      - name: Bump debian/changelog version (CI-only)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          # Bump the version to 25.99 for CI so debian/control's `Breaks: koha-common (<< 25.11)` doesn't block our locally-built koha-common.
+          DEBEMAIL='ci@github.actions' DEBFULLNAME='CI' \
+              dch --newversion "25.99.0+ci$(date -u +%Y%m%d%H%M%S)-1" \
+                  --distribution unstable --force-distribution \
+                  'CI build for bug 40901 systemd packaging tests'
+          head -1 debian/changelog
+
+      - name: Build packages
+        if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          # Skip dh_auto_test — Koha's Perl test suite is unrelated to packaging and flakes without a DB or external services.
+          DEB_BUILD_OPTIONS: nocheck
+        run: |
+          dpkg-buildpackage -b -us -uc
+          mkdir -p out
+          mv ../*.deb out/
+          ls -la out/
+
+      - name: Upload .debs as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: koha-debs
+          path: out/*.deb
+          retention-days: 7
+
+  # Steady-state: clean install of all three packages, ephemeral instance, then each functional check is its own composite-action step.
+  steady-state:
+    runs-on: ubuntu-latest
+    needs: build-debs
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download built .debs
+        uses: actions/download-artifact@v4
+        with:
+          name: koha-debs
+          path: out/
+
+      # Build + start ES 7.17 with the analysis-icu plugin Koha's mappings require, reachable from the koha-test container via host.docker.internal:9200.
+      - name: Boot Elasticsearch with ICU plugin
+        uses: ./.github/actions/boot-elasticsearch
+        with:
+          container-name: koha-es
+
+      - name: Boot systemd container, start MariaDB, install Koha
+        uses: ./.github/actions/boot-koha-systemd
+        with:
+          container-name: koha-test
+          packages: core systemd common
+
+      - name: Create ephemeral test instance
+        run: |
+          docker exec koha-test koha-create --create-db ci_test
+          docker exec koha-test koha-list
+
+      - name: Configure Elasticsearch on ci_test
+        uses: ./.github/actions/configure-elasticsearch
+        with:
+          container-name: koha-test
+          instance: ci_test
+          index-prefix: ci_test
+
+      - name: Load schema + sample data into ci_test
+        uses: ./.github/actions/populate-instance-db
+        with:
+          container-name: koha-test
+          instance: ci_test
+
+      - name: Enable opt-in components on ci_test
+        run: |
+          # Plack, SIP, and Z39.50 are operator-opt-in like SysV, so enable them after the populate step (SIP queries the DB at startup).
+          docker exec koha-test koha-plack            --enable ci_test
+          docker exec koha-test koha-plack            --start  ci_test
+          docker exec koha-test koha-sip              --enable ci_test
+          docker exec koha-test koha-sip              --start  ci_test
+          docker exec koha-test koha-z3950-responder  --enable ci_test
+          docker exec koha-test koha-z3950-responder  --start  ci_test
+          # Connexion needs a connexion.conf in place before --start;
+          # the unit's ConditionPathExists= refuses otherwise. Minimal
+          # config pointing at plack so it has somewhere to authenticate
+          # against.
+          docker exec koha-test bash -c \
+              "printf 'port: 5510\nkoha: http://localhost:5000\nuser: koha\npassword: koha\n' \
+                  > /etc/koha/sites/ci_test/connexion.conf"
+          docker exec koha-test koha-connexion        --enable ci_test
+          docker exec koha-test koha-connexion        --start  ci_test
+          # Enable but do NOT start koha-es-indexer here — the daemon
+          # only runs when SearchEngine=Elasticsearch and we keep the
+          # syspref at Zebra for most of the suite. The dedicated
+          # ES/Setup step below flips the syspref and starts it.
+          docker exec koha-test koha-es-indexer       --enable ci_test
+
+      # Packaging checks
+      - name: 'Package: koha-core installed'
+        uses: ./.github/actions/assert-package-installed
+        with: { container-name: koha-test, package: koha-core }
+
+      - name: 'Package: koha-systemd installed'
+        uses: ./.github/actions/assert-package-installed
+        with: { container-name: koha-test, package: koha-systemd }
+
+      - name: 'Package: koha-common installed'
+        uses: ./.github/actions/assert-package-installed
+        with: { container-name: koha-test, package: koha-common }
+
+      - name: 'Package: koha-sysv NOT installed (mutual conflict)'
+        run: |
+          if docker exec koha-test dpkg -s koha-sysv 2>/dev/null \
+                  | grep -q '^Status: install ok installed'; then
+              echo "::error::koha-sysv is installed alongside koha-systemd"
+              exit 1
+          fi
+          echo "✓ koha-sysv not installed"
+
+      # Per-component unit state
+      - name: 'Active: koha-create-dirs@ci_test active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha-create-dirs@ci_test.service
+
+      - name: 'Active: koha-zebra@ci_test active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha-zebra@ci_test.service
+
+      - name: 'Active: koha-worker@ci_test active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha-worker@ci_test.service
+
+      - name: 'Active: koha-worker-long_tasks@ci_test active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha-worker-long_tasks@ci_test.service
+
+      - name: 'Active: koha-plack@ci_test active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha-plack@ci_test.service
+
+      - name: 'Active: koha-sip@ci_test active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha-sip@ci_test.service
+
+      - name: 'Active: koha-z3950@ci_test active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha-z3950@ci_test.service
+
+      - name: 'Active: koha-connexion@ci_test active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha-connexion@ci_test.service
+
+      - name: 'Active: koha-indexer@ci_test active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha-indexer@ci_test.service
+
+      - name: 'Active: koha@ci_test.target active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha@ci_test.target
+
+      # Per-component unit enablement
+      - name: 'Enabled: koha-create-dirs@ci_test enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha-create-dirs@ci_test.service
+
+      - name: 'Enabled: koha-zebra@ci_test enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha-zebra@ci_test.service
+
+      - name: 'Enabled: koha-worker@ci_test enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha-worker@ci_test.service
+
+      - name: 'Enabled: koha-worker-long_tasks@ci_test enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha-worker-long_tasks@ci_test.service
+
+      - name: 'Enabled: koha-plack@ci_test enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha-plack@ci_test.service
+
+      - name: 'Enabled: koha-sip@ci_test enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha-sip@ci_test.service
+
+      - name: 'Enabled: koha-z3950@ci_test enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha-z3950@ci_test.service
+
+      - name: 'Enabled: koha-connexion@ci_test enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha-connexion@ci_test.service
+
+      - name: 'Enabled: koha-indexer@ci_test enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha-indexer@ci_test.service
+
+      - name: 'Enabled: koha-es-indexer@ci_test enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha-es-indexer@ci_test.service
+
+      - name: 'Enabled: koha@ci_test.target enabled'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha@ci_test.target
+
+      - name: 'Enabled: koha.target enabled (global)'
+        uses: ./.github/actions/assert-unit-enabled
+        with:
+          container-name: koha-test
+          unit: koha.target
+
+      # Functional: hit each component at the protocol level to prove it actually serves, not just that systemd reports it active.
+      - name: 'Functional: koha-plack serves OPAC entry point'
+        uses: ./.github/actions/assert-plack-http
+        with:
+          container-name: koha-test
+          instance: ci_test
+          path: '/cgi-bin/koha/opac/opac-main.pl'
+
+      - name: 'Functional: koha-plack serves staff intranet entry point'
+        uses: ./.github/actions/assert-plack-http
+        with:
+          container-name: koha-test
+          instance: ci_test
+          path: '/cgi-bin/koha/mainpage.pl'
+
+      - name: 'Functional: koha-sip listening on port 6001'
+        uses: ./.github/actions/assert-port-listening
+        with:
+          container-name: koha-test
+          port: '6001'
+          service-label: 'koha-sip'
+
+      - name: 'Functional: koha-sip serves a 93 login + 63 patron info exchange'
+        uses: ./.github/actions/assert-sip-patron-info
+        with:
+          container-name: koha-test
+          instance: ci_test
+
+      - name: 'Functional: koha-z3950 listening on port 2100'
+        uses: ./.github/actions/assert-port-listening
+        with:
+          container-name: koha-test
+          port: '2100'
+          service-label: 'koha-z3950'
+        # Default port from /etc/koha/z3950/config.xml is tcp:@:2100; SRU (7090) is opt-in via koha-create --enable-sru.
+
+      - name: 'Functional: Index Zebra so it has something to search'
+        run: |
+          # Full reindex registers the biblios/authorities databases with Zebra; queries before this fail with "Database unavailable".
+          docker exec koha-test koha-rebuild-zebra -f -v ci_test
+
+      - name: 'Functional: Zebra biblios search returns the sample records'
+        uses: ./.github/actions/assert-zebra-query
+        with:
+          container-name: koha-test
+          instance: ci_test
+          require-hits: 'true'
+
+      - name: 'Functional: koha-z3950 serves a yaz-client search'
+        uses: ./.github/actions/assert-z3950-query
+        with:
+          container-name: koha-test
+          instance: ci_test
+
+      - name: 'Functional: koha-connexion listening on port 5510'
+        uses: ./.github/actions/assert-port-listening
+        with:
+          container-name: koha-test
+          port: '5510'
+          service-label: 'koha-connexion'
+
+      - name: 'Functional: Generate unique title for indexer + Elasticsearch tests'
+        id: gentitle
+        run: |
+          echo "title=SystemdCITest_${RANDOM}_$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: 'Functional: koha-indexer drains zebraqueue end-to-end'
+        uses: ./.github/actions/assert-incremental-zebra-index
+        with:
+          container-name: koha-test
+          instance: ci_test
+          title: ${{ steps.gentitle.outputs.title }}
+
+      - name: 'Functional: Rebuild Elasticsearch biblios index'
+        run: |
+          # Push all biblios into the Elasticsearch index (-d drops + recreates, -b for biblios).
+          docker exec koha-test koha-shell ci_test -c \
+              "perl /usr/share/koha/bin/search_tools/rebuild_elasticsearch.pl -d -b -v"
+
+      - name: 'Functional: Elasticsearch search returns the new biblio'
+        uses: ./.github/actions/assert-elastic-query
+        with:
+          container-name: koha-test
+          instance: ci_test
+          query: ${{ steps.gentitle.outputs.title }}
+
+      - name: 'Functional: koha-worker (default queue) processes a job'
+        uses: ./.github/actions/assert-background-job
+        with:
+          container-name: koha-test
+          instance: ci_test
+          queue: default
+
+      - name: 'Functional: koha-worker-long_tasks processes a job'
+        uses: ./.github/actions/assert-background-job
+        with:
+          container-name: koha-test
+          instance: ci_test
+          queue: long_tasks
+
+      - name: 'Functional: systemctl drop-in resource limit on koha-zebra is honoured'
+        run: |
+          # Lay an /etc/systemd/system/koha-zebra@ci_test.service.d/cilimit.conf
+          # drop-in capping MemoryMax at 256M, daemon-reload, restart the
+          # unit, then verify systemd reports the new value (256M = 268435456 bytes).
+          docker exec koha-test mkdir -p \
+              /etc/systemd/system/koha-zebra@ci_test.service.d
+          docker exec koha-test bash -c \
+              'printf "[Service]\nMemoryMax=256M\n" > /etc/systemd/system/koha-zebra@ci_test.service.d/cilimit.conf'
+          docker exec koha-test systemctl daemon-reload
+          docker exec koha-test systemctl restart koha-zebra@ci_test.service
+          got=$(docker exec koha-test systemctl show \
+              -p MemoryMax --value koha-zebra@ci_test.service | tr -d '\r')
+          if [ "$got" != "268435456" ]; then
+              echo "::error::Expected MemoryMax=268435456 from drop-in, got '${got}'"
+              exit 1
+          fi
+          echo "✓ koha-zebra@ci_test MemoryMax=$got via drop-in"
+          # Clean up so subsequent phases see the original limits.
+          docker exec koha-test rm -rf \
+              /etc/systemd/system/koha-zebra@ci_test.service.d
+          docker exec koha-test systemctl daemon-reload
+          docker exec koha-test systemctl restart koha-zebra@ci_test.service
+
+      - name: 'Functional: sandbox hardening directives are applied to koha-zebra'
+        run: |
+          # Verify the four hardening lines we added actually engage.
+          # `systemctl show` reports the resolved value; we compare
+          # against what the unit file declares.
+          for kv in ProtectSystem=full ProtectHome=yes PrivateTmp=yes NoNewPrivileges=yes; do
+              key=${kv%=*}; want=${kv#*=}
+              got=$(docker exec koha-test \
+                  systemctl show -p "$key" --value koha-zebra@ci_test.service | tr -d '\r')
+              if [ "$got" != "$want" ]; then
+                  echo "::error::koha-zebra@ci_test $key='$got', expected '$want'"
+                  exit 1
+              fi
+              echo "✓ koha-zebra@ci_test $key=$got"
+          done
+
+      # Restart: each per-component unit declares Restart=on-failure, so SIGKILL on its MainPID respawns it without taking the others down.
+      - name: 'Restart: koha-plack auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with:
+          container-name: koha-test
+          unit: koha-plack@ci_test.service
+
+      - name: 'Restart: koha-zebra auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with:
+          container-name: koha-test
+          unit: koha-zebra@ci_test.service
+
+      - name: 'Restart: koha-worker (default queue) auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with:
+          container-name: koha-test
+          unit: koha-worker@ci_test.service
+
+      - name: 'Restart: koha-worker-long_tasks auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with:
+          container-name: koha-test
+          unit: koha-worker-long_tasks@ci_test.service
+
+      - name: 'Restart: koha-sip auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with:
+          container-name: koha-test
+          unit: koha-sip@ci_test.service
+
+      - name: 'Restart: koha-z3950 auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with:
+          container-name: koha-test
+          unit: koha-z3950@ci_test.service
+
+      - name: 'Restart: koha-connexion auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with:
+          container-name: koha-test
+          unit: koha-connexion@ci_test.service
+
+      - name: 'Restart: koha-indexer auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with:
+          container-name: koha-test
+          unit: koha-indexer@ci_test.service
+
+      # ES: the koha-es-indexer daemon refuses to run unless SearchEngine=Elasticsearch, so we flip the syspref here and exercise it in isolation before moving on.
+      - name: 'ES/Setup: flip SearchEngine syspref to Elasticsearch + start daemon'
+        run: |
+          docker exec koha-test koha-shell ci_test -c \
+              'perl -MC4::Context -e "C4::Context->set_preference(q{SearchEngine}, q{Elasticsearch})"'
+          # Bounce memcached so the daemon (and anything else) reads
+          # the new syspref instead of the cached Zebra value.
+          docker exec koha-test systemctl restart memcached
+          docker exec koha-test koha-es-indexer --start ci_test
+          for i in $(seq 1 30); do
+              state=$(docker exec koha-test \
+                  systemctl is-active koha-es-indexer@ci_test.service 2>/dev/null || true)
+              [ "$state" = active ] && break
+              sleep 1
+          done
+          if [ "$state" != active ]; then
+              echo "::error::koha-es-indexer@ci_test failed to become active after syspref flip (state=$state)"
+              docker exec koha-test journalctl \
+                  -u koha-es-indexer@ci_test.service --no-pager -n 40 || true
+              exit 1
+          fi
+          echo "✓ koha-es-indexer@ci_test active (SearchEngine=Elasticsearch)"
+
+      - name: 'ES/Active: koha-es-indexer@ci_test active'
+        uses: ./.github/actions/assert-unit-active
+        with:
+          container-name: koha-test
+          unit: koha-es-indexer@ci_test.service
+
+      - name: 'ES/Functional: koha-es-indexer drains the elastic_index queue'
+        uses: ./.github/actions/assert-background-job
+        with:
+          container-name: koha-test
+          instance: ci_test
+          queue: elastic_index
+
+      - name: 'ES/Restart: koha-es-indexer auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with:
+          container-name: koha-test
+          unit: koha-es-indexer@ci_test.service
+
+      # ES/Discovery: koha-common.service's ExecStartPre should re-enable koha-es-indexer for any ES-configured instance whose enable symlink is gone — the SysV behaviour we restored. Must run after ES/Setup has flipped SearchEngine to Elasticsearch (koha-list --elasticsearch is gated on the syspref).
+      - name: 'ES/Discovery: koha-common ExecStartPre re-enables koha-es-indexer'
+        run: |
+          docker exec koha-test koha-es-indexer --disable ci_test
+          initial=$(docker exec koha-test \
+              systemctl is-enabled koha-es-indexer@ci_test.service 2>/dev/null || true)
+          if [ "$initial" = enabled ]; then
+              echo "::error::expected disabled before restart, got '$initial'"
+              exit 1
+          fi
+          docker exec koha-test systemctl restart koha-common
+          final=$(docker exec koha-test \
+              systemctl is-enabled koha-es-indexer@ci_test.service 2>/dev/null || true)
+          if [ "$final" != enabled ]; then
+              echo "::error::ExecStartPre did not re-enable koha-es-indexer (got '$final')"
+              docker exec koha-test journalctl -u koha-common.service --no-pager -n 30 || true
+              exit 1
+          fi
+          echo "✓ koha-common ExecStartPre re-enabled koha-es-indexer ($initial -> $final)"
+
+      # Cascade: stopping koha.target should cascade through PartOf= and bring down every per-component unit, then starting it should bring them all back.
+      - name: 'Cascade: systemctl stop koha.target — cascade verify'
+        run: |
+          docker exec koha-test systemctl stop koha.target
+          # Give the PartOf cascade a moment to ripple through.
+          sleep 3
+          for u in koha-plack koha-zebra koha-worker koha-worker-long_tasks \
+                   koha-sip koha-z3950 koha-indexer; do
+              state=$(docker exec koha-test \
+                  systemctl is-active "${u}@ci_test.service" 2>/dev/null || true)
+              if [ "$state" = active ]; then
+                  echo "::error::${u}@ci_test.service still active after koha.target stop"
+                  exit 1
+              fi
+              echo "✓ ${u}@ci_test.service — $state (cascade ok)"
+          done
+
+      - name: 'Cascade: systemctl start koha.target — recover after cascade'
+        run: |
+          docker exec koha-test systemctl start koha.target
+          # Wait up to 30s per unit — workers and plack take a few seconds to settle.
+          for u in koha-plack koha-zebra koha-worker koha-worker-long_tasks \
+                   koha-sip koha-z3950 koha-indexer; do
+              for i in $(seq 1 30); do
+                  state=$(docker exec koha-test \
+                      systemctl is-active "${u}@ci_test.service" 2>/dev/null || true)
+                  case "$state" in
+                      activating|deactivating|reloading) sleep 1 ;;
+                      *) break ;;
+                  esac
+              done
+              if [ "$state" != active ]; then
+                  echo "::error::${u}@ci_test.service did not come back (state=$state)"
+                  docker exec koha-test journalctl -u "${u}@ci_test.service" -n 30 --no-pager || true
+                  exit 1
+              fi
+              echo "✓ ${u}@ci_test.service — $state (back after cascade)"
+          done
+
+      # Compat: the koha-common.service oneshot is the compat shim that lets `systemctl restart koha-common` keep working post-migration.
+      - name: 'Compat: systemctl restart koha-common cascades through koha.target'
+        run: |
+          docker exec koha-test systemctl restart koha-common
+          # Give the oneshot's stop/start cycle and the PartOf cascade
+          # a moment to settle.
+          sleep 5
+          for u in koha-plack koha-zebra koha-worker koha-worker-long_tasks \
+                   koha-sip koha-z3950 koha-connexion koha-indexer koha-es-indexer; do
+              for i in $(seq 1 30); do
+                  state=$(docker exec koha-test \
+                      systemctl is-active "${u}@ci_test.service" 2>/dev/null || true)
+                  case "$state" in
+                      activating|deactivating|reloading) sleep 1 ;;
+                      *) break ;;
+                  esac
+              done
+              if [ "$state" != active ]; then
+                  echo "::error::${u}@ci_test.service not active after koha-common restart (state=$state)"
+                  exit 1
+              fi
+              echo "✓ ${u}@ci_test.service active after koha-common restart"
+          done
+
+      # Disable: the operator-opt-in --disable lifecycle should both stop the unit and remove the WantedBy symlink.
+      - name: 'Disable: opt-in --disable stops and disables koha-plack'
+        run: |
+          docker exec koha-test koha-plack --stop ci_test
+          docker exec koha-test koha-plack --disable ci_test
+          state=$(docker exec koha-test \
+              systemctl is-active koha-plack@ci_test.service 2>/dev/null || true)
+          enabled=$(docker exec koha-test \
+              systemctl is-enabled koha-plack@ci_test.service 2>/dev/null || true)
+          if [ "$state" = active ]; then
+              echo "::error::koha-plack@ci_test still active after --disable (state=$state)"
+              exit 1
+          fi
+          if [ "$enabled" = enabled ]; then
+              echo "::error::koha-plack@ci_test still enabled after --disable (enabled=$enabled)"
+              exit 1
+          fi
+          echo "✓ koha-plack@ci_test — state=$state enabled=$enabled"
+
+      - name: 'Disable: opt-in --disable stops and disables koha-sip'
+        run: |
+          docker exec koha-test koha-sip --stop ci_test
+          docker exec koha-test koha-sip --disable ci_test
+          state=$(docker exec koha-test \
+              systemctl is-active koha-sip@ci_test.service 2>/dev/null || true)
+          enabled=$(docker exec koha-test \
+              systemctl is-enabled koha-sip@ci_test.service 2>/dev/null || true)
+          [ "$state" != active ] || { echo "::error::sip still active"; exit 1; }
+          [ "$enabled" != enabled ] || { echo "::error::sip still enabled"; exit 1; }
+          echo "✓ koha-sip@ci_test — state=$state enabled=$enabled"
+
+      - name: 'Disable: opt-in --disable stops and disables koha-z3950'
+        run: |
+          docker exec koha-test koha-z3950-responder --stop ci_test
+          docker exec koha-test koha-z3950-responder --disable ci_test
+          state=$(docker exec koha-test \
+              systemctl is-active koha-z3950@ci_test.service 2>/dev/null || true)
+          enabled=$(docker exec koha-test \
+              systemctl is-enabled koha-z3950@ci_test.service 2>/dev/null || true)
+          [ "$state" != active ] || { echo "::error::z3950 still active"; exit 1; }
+          [ "$enabled" != enabled ] || { echo "::error::z3950 still enabled"; exit 1; }
+          echo "✓ koha-z3950@ci_test — state=$state enabled=$enabled"
+
+      - name: 'Disable: opt-in --disable stops and disables koha-connexion'
+        run: |
+          docker exec koha-test koha-connexion --stop ci_test
+          docker exec koha-test koha-connexion --disable ci_test
+          state=$(docker exec koha-test \
+              systemctl is-active koha-connexion@ci_test.service 2>/dev/null || true)
+          enabled=$(docker exec koha-test \
+              systemctl is-enabled koha-connexion@ci_test.service 2>/dev/null || true)
+          [ "$state" != active ] || { echo "::error::connexion still active"; exit 1; }
+          [ "$enabled" != enabled ] || { echo "::error::connexion still enabled"; exit 1; }
+          echo "✓ koha-connexion@ci_test — state=$state enabled=$enabled"
+
+      # Cleanup: koha-remove should disable + stop every per-instance unit, leaving no enabled symlinks behind.
+      - name: 'Cleanup: koha-remove tears down all per-instance units'
+        run: |
+          docker exec koha-test koha-remove --purge-all ci_test
+          # koha-create-dirs is excluded — it's a Type=oneshot
+          # RemainAfterExit=yes unit that stays "active" by design and
+          # koha-remove doesn't disable it (arguably a small packaging
+          # gap; orthogonal to this assertion).
+          for u in koha-plack koha-zebra koha-worker koha-worker-long_tasks \
+                   koha-sip koha-z3950 koha-connexion koha-indexer koha-es-indexer; do
+              state=$(docker exec koha-test \
+                  systemctl is-active "${u}@ci_test.service" 2>/dev/null || true)
+              enabled=$(docker exec koha-test \
+                  systemctl is-enabled "${u}@ci_test.service" 2>/dev/null || true)
+              if [ "$state" = active ]; then
+                  echo "::error::${u}@ci_test still active after koha-remove (state=$state)"
+                  exit 1
+              fi
+              # is-enabled returns 'enabled', 'disabled', 'static', 'masked',
+              # 'not-found', etc. We just require it's no longer 'enabled'.
+              if [ "$enabled" = enabled ]; then
+                  echo "::error::${u}@ci_test still enabled after koha-remove (enabled=$enabled)"
+                  exit 1
+              fi
+              echo "✓ ${u}@ci_test — state=$state enabled=$enabled"
+          done
+          target_enabled=$(docker exec koha-test \
+              systemctl is-enabled koha@ci_test.target 2>/dev/null || true)
+          if [ "$target_enabled" = enabled ]; then
+              echo "::error::koha@ci_test.target still enabled after koha-remove"
+              exit 1
+          fi
+          echo "✓ koha@ci_test.target — enabled=$target_enabled"
+
+      # Cleanup
+      - name: Capture journals on failure
+        if: failure()
+        run: |
+          docker exec koha-test journalctl --no-pager > journal.txt || true
+          docker exec koha-test journalctl -u 'koha-*' --no-pager > journal-koha.txt || true
+          docker exec koha-test systemctl --failed --no-pager > failed-units.txt || true
+
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: steady-state-diagnostics
+          path: |
+            journal*.txt
+            failed-units.txt
+
+      - name: Tear down container
+        if: always()
+        run: docker rm -f koha-test || true
+
+  # Migration: install koha-sysv first, create instances, swap to koha-systemd in a single apt transaction (via mutual Replaces/Conflicts), then verify postinst migrated everything.
+  migration-sysv-to-systemd:
+    runs-on: ubuntu-latest
+    needs: build-debs
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download built .debs
+        uses: actions/download-artifact@v4
+        with:
+          name: koha-debs
+          path: out/
+
+      - name: Build the systemd test container
+        run: |
+          docker build -t koha-systemd-test -f .github/test/Dockerfile.systemd .
+
+      - name: Boot the container
+        run: |
+          # See .github/actions/boot-koha-systemd for the rationale on --cgroupns=host and the early-exit detection.
+          docker run -d --name koha-mig \
+              --privileged \
+              --cgroupns=host \
+              --tmpfs /run --tmpfs /run/lock \
+              -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
+              -v "$PWD/out:/debs:ro" \
+              koha-systemd-test
+          for i in $(seq 1 60); do
+              running=$(docker inspect --format '{{.State.Running}}' koha-mig 2>/dev/null || echo "false")
+              if [ "$running" != "true" ]; then
+                  echo "::error::Container koha-mig exited unexpectedly during boot."
+                  docker inspect koha-mig \
+                      --format 'ExitCode={{.State.ExitCode}} Error={{.State.Error}} Status={{.State.Status}}' || true
+                  echo "--- docker logs koha-mig ---"
+                  docker logs koha-mig 2>&1 | tail -100 || true
+                  exit 1
+              fi
+              s=$(docker exec koha-mig systemctl is-system-running 2>/dev/null || true)
+              if [ "$s" = running ] || [ "$s" = degraded ]; then break; fi
+              sleep 1
+          done
+
+      - name: Start MariaDB
+        run: |
+          docker exec koha-mig systemctl start mariadb
+          for i in $(seq 1 30); do
+              docker exec koha-mig test -S /run/mysqld/mysqld.sock && break
+              sleep 1
+          done
+
+      - name: Start RabbitMQ + enable STOMP plugin
+        run: |
+          docker exec koha-mig systemctl start rabbitmq-server
+          for i in $(seq 1 60); do
+              docker exec koha-mig rabbitmqctl status >/dev/null 2>&1 && break
+              sleep 1
+          done
+          docker exec koha-mig rabbitmq-plugins enable rabbitmq_stomp
+          for i in $(seq 1 30); do
+              docker exec koha-mig ss -ltn 2>/dev/null | grep -q ':61613' && break
+              sleep 1
+          done
+          echo "✓ RabbitMQ STOMP listening on 61613"
+
+      - name: Install koha-core + koha-sysv (NOT koha-systemd)
+        run: |
+          docker exec koha-mig bash -c '
+              rm -f /usr/sbin/policy-rc.d &&
+              apt-get update &&
+              apt-get install -y --no-install-recommends \
+                  /debs/koha-core_*.deb \
+                  /debs/koha-sysv_*.deb \
+                  /debs/koha-common_*.deb &&
+              # Confirm we are on the SysV backend, not systemd.
+              dpkg -l koha-sysv koha-systemd 2>/dev/null
+              . /usr/share/koha/bin/koha-functions.sh && \
+                  test "$(koha_init_backend)" = sysv
+          '
+
+      - name: Create two instances under SysV
+        run: |
+          docker exec koha-mig bash -c '
+              koha-create --create-db oldlib1 &&
+              koha-create --create-db oldlib2 &&
+              koha-sip --enable oldlib2 &&
+              koha-list
+          '
+          # oldlib2 has SIP enabled — exercises the postinst flag-file detection path.
+
+      - name: Load schema + sample data into oldlib1
+        uses: ./.github/actions/populate-instance-db
+        with:
+          container-name: koha-mig
+          instance: oldlib1
+
+      - name: Load schema + sample data into oldlib2
+        uses: ./.github/actions/populate-instance-db
+        with:
+          container-name: koha-mig
+          instance: oldlib2
+
+      - name: Swap koha-sysv -> koha-systemd in a single transaction
+        run: |
+          docker exec koha-mig bash -c '
+              # Stop SysV-managed services first so the postinst gets a clean run.
+              service koha-common stop || true
+              # Single apt install — works because koha-systemd Replaces koha-sysv and vice versa in debian/control.
+              apt-get install -y /debs/koha-systemd_*.deb &&
+              # Confirm koha-sysv removed, koha-systemd installed, koha-common still installed.
+              dpkg -l koha-systemd koha-common
+              ! dpkg -l koha-sysv 2>/dev/null | grep -q "^ii"
+          '
+
+      - name: Verify postinst migration enabled units for both instances
+        run: |
+          docker exec koha-mig bash -c '
+              for inst in oldlib1 oldlib2; do
+                  for u in koha-zebra koha-plack koha-worker koha-worker-long_tasks koha-create-dirs; do
+                      systemctl is-enabled "${u}@${inst}.service" \
+                          || { echo "FAIL: ${u}@${inst}.service not enabled"; exit 1; }
+                  done
+                  systemctl is-enabled "koha@${inst}.target"
+              done
+              # oldlib2 had the SIP flag file; the postinst should have enabled koha-sip@oldlib2 without consulting koha-list.
+              systemctl is-enabled koha-sip@oldlib2.service
+              ! systemctl is-enabled koha-sip@oldlib1.service 2>/dev/null
+          '
+
+      # Migrated: same functional battery as steady-state, against oldlib1 (post-migration); oldlib2 is verified structurally above.
+      - name: 'Migrated/Setup: Bring koha.target up + enable opt-in components'
+        run: |
+          # koha-create ran under SysV which doesn't start koha.target; bring it up now.
+          docker exec koha-mig systemctl start koha.target
+          # Do not enable SIP on oldlib1 — oldlib2's SIP already holds 127.0.0.1:6001 in this single-container, single-port-namespace setup.
+          docker exec koha-mig koha-plack            --enable oldlib1
+          docker exec koha-mig koha-plack            --start  oldlib1
+          docker exec koha-mig koha-z3950-responder  --enable oldlib1
+          docker exec koha-mig koha-z3950-responder  --start  oldlib1
+          # See steady-state's note: the es-indexer daemon needs
+          # SearchEngine=Elasticsearch to run, so just enable here.
+          docker exec koha-mig koha-es-indexer       --enable oldlib1
+
+      - name: 'Migrated/Active: koha-plack@oldlib1 active'
+        uses: ./.github/actions/assert-unit-active
+        with: { container-name: koha-mig, unit: koha-plack@oldlib1.service }
+
+      - name: 'Migrated/Active: koha-zebra@oldlib1 active'
+        uses: ./.github/actions/assert-unit-active
+        with: { container-name: koha-mig, unit: koha-zebra@oldlib1.service }
+
+      - name: 'Migrated/Active: koha-worker@oldlib1 active'
+        uses: ./.github/actions/assert-unit-active
+        with: { container-name: koha-mig, unit: koha-worker@oldlib1.service }
+
+      - name: 'Migrated/Active: koha-worker-long_tasks@oldlib1 active'
+        uses: ./.github/actions/assert-unit-active
+        with: { container-name: koha-mig, unit: koha-worker-long_tasks@oldlib1.service }
+
+      - name: 'Migrated/Active: koha-sip@oldlib2 active (migrated SIP)'
+        uses: ./.github/actions/assert-unit-active
+        with: { container-name: koha-mig, unit: koha-sip@oldlib2.service }
+
+      - name: 'Migrated/Active: koha-z3950@oldlib1 active'
+        uses: ./.github/actions/assert-unit-active
+        with: { container-name: koha-mig, unit: koha-z3950@oldlib1.service }
+
+      - name: 'Migrated/Active: koha-indexer@oldlib1 active'
+        uses: ./.github/actions/assert-unit-active
+        with: { container-name: koha-mig, unit: koha-indexer@oldlib1.service }
+
+      - name: 'Migrated/Functional: koha-plack on oldlib1 serves OPAC entry point'
+        uses: ./.github/actions/assert-plack-http
+        with:
+          container-name: koha-mig
+          instance: oldlib1
+          path: '/cgi-bin/koha/opac/opac-main.pl'
+
+      - name: 'Migrated/Functional: koha-plack on oldlib1 serves staff intranet entry point'
+        uses: ./.github/actions/assert-plack-http
+        with:
+          container-name: koha-mig
+          instance: oldlib1
+          path: '/cgi-bin/koha/mainpage.pl'
+
+      - name: 'Migrated/Functional: koha-sip (oldlib2, migrated) listening on port 6001'
+        uses: ./.github/actions/assert-port-listening
+        with:
+          container-name: koha-mig
+          port: '6001'
+          service-label: 'koha-sip@oldlib2 (migrated)'
+
+      - name: 'Migrated/Functional: koha-sip (oldlib2) serves 93 login + 63 patron info'
+        uses: ./.github/actions/assert-sip-patron-info
+        with:
+          container-name: koha-mig
+          instance: oldlib2
+          barcode: 'SIPMIG002'
+
+      - name: 'Migrated/Functional: koha-z3950 on oldlib1 listening on port 2100'
+        uses: ./.github/actions/assert-port-listening
+        with:
+          container-name: koha-mig
+          port: '2100'
+          service-label: 'koha-z3950 (migrated)'
+
+      - name: 'Migrated/Functional: Index Zebra for oldlib1 so yaz-client can find records'
+        run: |
+          # Full reindex required before any Zebra/Z39.50 query — Zebra lazily registers databases at first index.
+          docker exec koha-mig koha-rebuild-zebra -f -v oldlib1
+
+      - name: 'Migrated/Functional: koha-z3950 (oldlib1) serves yaz-client search'
+        uses: ./.github/actions/assert-z3950-query
+        with:
+          container-name: koha-mig
+          instance: oldlib1
+
+      - name: 'Migrated/Functional: koha-indexer@oldlib1 drains zebraqueue end-to-end'
+        uses: ./.github/actions/assert-incremental-zebra-index
+        with:
+          container-name: koha-mig
+          instance: oldlib1
+
+      - name: 'Migrated/Functional: koha-worker@oldlib1 (default) processes a job'
+        uses: ./.github/actions/assert-background-job
+        with:
+          container-name: koha-mig
+          instance: oldlib1
+          queue: default
+
+      - name: 'Migrated/Functional: koha-worker-long_tasks@oldlib1 processes a job'
+        uses: ./.github/actions/assert-background-job
+        with:
+          container-name: koha-mig
+          instance: oldlib1
+          queue: long_tasks
+
+      # Migrated/Isolation: stopping one instance's target must not affect the other.
+      - name: 'Migrated/Isolation: stop koha@oldlib1.target leaves oldlib2 alone'
+        run: |
+          docker exec koha-mig systemctl stop koha@oldlib1.target
+          sleep 3
+          # oldlib1 components must be inactive.
+          for u in koha-plack koha-zebra koha-worker koha-indexer koha-z3950; do
+              state=$(docker exec koha-mig \
+                  systemctl is-active "${u}@oldlib1.service" 2>/dev/null || true)
+              if [ "$state" = active ]; then
+                  echo "::error::${u}@oldlib1 still active after stopping koha@oldlib1.target"
+                  exit 1
+              fi
+              echo "✓ ${u}@oldlib1 — $state"
+          done
+          # oldlib2 components must NOT have been touched.
+          for u in koha-zebra koha-worker koha-sip; do
+              state=$(docker exec koha-mig \
+                  systemctl is-active "${u}@oldlib2.service" 2>/dev/null || true)
+              if [ "$state" != active ]; then
+                  echo "::error::${u}@oldlib2 lost (state=$state) from oldlib1 target stop"
+                  exit 1
+              fi
+              echo "✓ ${u}@oldlib2 — $state (isolated from oldlib1)"
+          done
+          # Bring oldlib1 back so the Migrated/Restart tests below have something to act on. Wait for the slowest unit (plack, which loads all of Koha's Perl tree) to settle into active before continuing.
+          docker exec koha-mig systemctl start koha@oldlib1.target
+          for u in koha-zebra koha-worker koha-worker-long_tasks koha-indexer koha-z3950 koha-plack; do
+              for i in $(seq 1 60); do
+                  state=$(docker exec koha-mig \
+                      systemctl is-active "${u}@oldlib1.service" 2>/dev/null || true)
+                  [ "$state" = active ] && break
+                  sleep 1
+              done
+              if [ "$state" != active ]; then
+                  echo "::error::${u}@oldlib1 didn't return to active after isolation (state=$state)"
+                  exit 1
+              fi
+              echo "  ${u}@oldlib1 — $state"
+          done
+
+      - name: 'Migrated/Restart: koha-plack@oldlib1 auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with: { container-name: koha-mig, unit: koha-plack@oldlib1.service }
+
+      - name: 'Migrated/Restart: koha-zebra@oldlib1 auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with: { container-name: koha-mig, unit: koha-zebra@oldlib1.service }
+
+      - name: 'Migrated/Restart: koha-worker@oldlib1 auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with: { container-name: koha-mig, unit: koha-worker@oldlib1.service }
+
+      - name: 'Migrated/Restart: koha-sip@oldlib2 auto-restarts after SIGKILL (migrated)'
+        uses: ./.github/actions/assert-restart-on-kill
+        with: { container-name: koha-mig, unit: koha-sip@oldlib2.service }
+
+      - name: 'Migrated/Restart: koha-z3950@oldlib1 auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with: { container-name: koha-mig, unit: koha-z3950@oldlib1.service }
+
+      - name: 'Migrated/Restart: koha-indexer@oldlib1 auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with: { container-name: koha-mig, unit: koha-indexer@oldlib1.service }
+
+      # Migrated/ES: same syspref flip + dedicated functional sweep as steady-state.
+      - name: 'Migrated/ES/Setup: flip SearchEngine + start es-indexer for oldlib1'
+        run: |
+          docker exec koha-mig koha-shell oldlib1 -c \
+              'perl -MC4::Context -e "C4::Context->set_preference(q{SearchEngine}, q{Elasticsearch})"'
+          docker exec koha-mig systemctl restart memcached
+          docker exec koha-mig koha-es-indexer --start oldlib1
+          for i in $(seq 1 30); do
+              state=$(docker exec koha-mig \
+                  systemctl is-active koha-es-indexer@oldlib1.service 2>/dev/null || true)
+              [ "$state" = active ] && break
+              sleep 1
+          done
+          if [ "$state" != active ]; then
+              echo "::error::koha-es-indexer@oldlib1 failed to become active (state=$state)"
+              docker exec koha-mig journalctl \
+                  -u koha-es-indexer@oldlib1.service --no-pager -n 40 || true
+              exit 1
+          fi
+          echo "✓ koha-es-indexer@oldlib1 active"
+
+      - name: 'Migrated/ES/Active: koha-es-indexer@oldlib1 active'
+        uses: ./.github/actions/assert-unit-active
+        with: { container-name: koha-mig, unit: koha-es-indexer@oldlib1.service }
+
+      - name: 'Migrated/ES/Functional: koha-es-indexer drains elastic_index queue'
+        uses: ./.github/actions/assert-background-job
+        with:
+          container-name: koha-mig
+          instance: oldlib1
+          queue: elastic_index
+
+      - name: 'Migrated/ES/Restart: koha-es-indexer@oldlib1 auto-restarts after SIGKILL'
+        uses: ./.github/actions/assert-restart-on-kill
+        with: { container-name: koha-mig, unit: koha-es-indexer@oldlib1.service }
+
+      - name: Capture journals on failure
+        if: failure()
+        run: |
+          docker exec koha-mig journalctl --no-pager > journal-mig.txt || true
+          docker exec koha-mig journalctl -u 'koha-*' --no-pager > journal-mig-koha.txt || true
+          docker exec koha-mig systemctl --failed --no-pager > failed-mig.txt || true
+
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-diagnostics
+          path: |
+            journal-mig*.txt
+            failed-mig.txt
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f koha-mig || true

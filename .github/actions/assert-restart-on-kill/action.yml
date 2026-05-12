@@ -1,0 +1,75 @@
+name: 'Assert systemd auto-restarts a unit after SIGKILL'
+description: |
+  The headline systemd packaging behaviour for bug 40901: kill the
+  unit's MainPID with SIGKILL, then verify systemd's `Restart=on-
+  failure` policy brought it back. Asserts:
+    - unit is `active` AND has a non-zero MainPID before the kill
+    - kill -9 succeeds
+    - within `recovery-seconds`, unit is `active` again with a
+      DIFFERENT MainPID (proving it was restarted, not just polled)
+
+  Use this to prove each long-running Koha service self-heals: plack,
+  zebra, sip, z3950, worker queues, indexer.
+
+inputs:
+  container-name:
+    description: 'Docker container name'
+    required: true
+  unit:
+    description: 'systemd unit (e.g. koha-plack@ci_test.service)'
+    required: true
+  recovery-seconds:
+    description: |
+      Max seconds to wait for systemd to bring the unit back up
+      after the kill. Plack/Zebra need more than workers.
+    required: false
+    default: '60'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        unit='${{ inputs.unit }}'
+        timeout='${{ inputs.recovery-seconds }}'
+
+        # Pre-check: unit must be active with a real MainPID before
+        # we have anything to kill.
+        pre_state=$(docker exec "$cn" systemctl is-active "$unit" 2>/dev/null || true)
+        pre_pid=$(docker exec "$cn" systemctl show -p MainPID --value "$unit" 2>/dev/null || true)
+        if [ "$pre_state" != active ] || [ -z "$pre_pid" ] || [ "$pre_pid" = 0 ]; then
+            echo "::error::$unit not in killable state (active=$pre_state, MainPID=$pre_pid)"
+            docker exec "$cn" systemctl status "$unit" --no-pager || true
+            exit 1
+        fi
+
+        echo "Killing $unit MainPID=$pre_pid with SIGKILL ..."
+        # The PID is in the unit's cgroup but in the container's PID
+        # namespace. Kill from inside the container.
+        docker exec "$cn" kill -9 "$pre_pid" 2>&1 || true
+
+        # Poll for recovery. Accept activating as a transient (worker
+        # restart) but don't break out on it.
+        new_pid=""
+        new_state=""
+        for i in $(seq 1 "$timeout"); do
+            sleep 1
+            new_state=$(docker exec "$cn" systemctl is-active "$unit" 2>/dev/null || true)
+            new_pid=$(docker exec "$cn" systemctl show -p MainPID --value "$unit" 2>/dev/null || true)
+            if [ "$new_state" = active ] && [ -n "$new_pid" ] && [ "$new_pid" -gt 0 ] 2>/dev/null \
+                    && [ "$new_pid" != "$pre_pid" ]; then
+                break
+            fi
+        done
+
+        if [ "$new_state" = active ] && [ -n "$new_pid" ] && [ "$new_pid" != "$pre_pid" ]; then
+            echo "✓ $unit auto-restarted: MainPID $pre_pid -> $new_pid (state=$new_state)"
+        else
+            echo "::error::$unit did NOT auto-restart within ${timeout}s"
+            echo "  pre-kill: state=active MainPID=$pre_pid"
+            echo "  post:     state=$new_state MainPID=$new_pid"
+            docker exec "$cn" systemctl status "$unit" --no-pager || true
+            docker exec "$cn" journalctl -u "$unit" -n 30 --no-pager || true
+            exit 1
+        fi
