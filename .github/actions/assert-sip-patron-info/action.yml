@@ -1,0 +1,122 @@
+name: 'Assert SIP 93 login + 63 patron info'
+description: |
+  Functional test for the koha-sip daemon. Creates a Koha
+  superlibrarian (via misc/devel/create_superlibrarian.pl) whose
+  userid + password are the SIP login credentials AND whose
+  cardnumber is the patron looked up by the 63 request. Replaces
+  SIPconfig.xml's <accounts> with a single <login> entry that
+  matches the new user, then exchanges a 93 + 63 over the SIP
+  socket. Modern Koha SIP gates the userid via SIPconfig.xml and
+  authenticates the password via api_auth against the borrowers
+  table — that's why a real Koha user is required.
+
+inputs:
+  container-name:
+    required: true
+  instance:
+    required: true
+  port:
+    required: false
+    default: '6001'
+  barcode:
+    required: false
+    default: 'SIPTEST001'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        inst='${{ inputs.instance }}'
+        port='${{ inputs.port }}'
+        barcode='${{ inputs.barcode }}'
+        sip_user='sipci'
+        sip_pass='cisip_pass'
+
+        branchcode=$(docker exec "$cn" koha-shell "$inst" -c \
+            'perl -MKoha::Libraries -E "say Koha::Libraries->search->next->branchcode"')
+        categorycode=$(docker exec "$cn" koha-shell "$inst" -c \
+            'perl -MKoha::Patron::Categories -E "say Koha::Patron::Categories->search->next->categorycode"')
+        echo "Using branchcode=${branchcode} categorycode=${categorycode}"
+
+        # If the user already exists from a prior run, drop it so
+        # create_superlibrarian.pl can create cleanly. (Loose perl
+        # inline would trip over koha-shell's sh on the curly braces.)
+        docker cp "${GITHUB_ACTION_PATH}/delete-existing.pl" \
+            "${cn}:/tmp/delete-existing.pl"
+        docker exec "$cn" koha-shell "$inst" -c \
+            "perl /tmp/delete-existing.pl ${sip_user} ${barcode}"
+
+        # Locate create_superlibrarian.pl — the koha .deb installs it
+        # under /usr/share/koha but the exact subpath depends on the
+        # Koha Makefile's SCRIPT_NONDEV_DIR mapping.
+        create_sl=$(docker exec "$cn" sh -c \
+            "find /usr/share/koha -name create_superlibrarian.pl -type f 2>/dev/null | head -1")
+        if [ -z "$create_sl" ]; then
+            echo "::error::create_superlibrarian.pl not found under /usr/share/koha"
+            docker exec "$cn" find /usr/share/koha -name "*superlibrarian*" 2>/dev/null || true
+            exit 1
+        fi
+        echo "Creating superlibrarian ${sip_user} (cardnumber=${barcode}) via ${create_sl}..."
+        docker exec "$cn" koha-shell "$inst" -c \
+            "perl ${create_sl} \
+                --userid ${sip_user} \
+                --password ${sip_pass} \
+                --branchcode ${branchcode} \
+                --categorycode ${categorycode} \
+                --cardnumber ${barcode} \
+                --surname CITest"
+
+        # Drop all existing <login> accounts and add our own pointing
+        # at the new user. Koha SIP only checks if the userid is in
+        # SIPconfig.xml — actual auth is api_auth against borrowers.
+        sip_conf="/etc/koha/sites/${inst}/SIPconfig.xml"
+        docker exec "$cn" xmlstarlet ed --inplace \
+            -d '//*[local-name()="login"]' \
+            "$sip_conf"
+        docker exec "$cn" xmlstarlet ed --inplace \
+            --subnode '//*[local-name()="accounts"]' --type elem -n login -v '' \
+            --insert '//*[local-name()="accounts"]/*[local-name()="login"][last()]' \
+                --type attr -n id -v "$sip_user" \
+            --insert '//*[local-name()="accounts"]/*[local-name()="login"][last()]' \
+                --type attr -n password -v "$sip_pass" \
+            --insert '//*[local-name()="accounts"]/*[local-name()="login"][last()]' \
+                --type attr -n institution -v "$branchcode" \
+            --insert '//*[local-name()="accounts"]/*[local-name()="login"][last()]' \
+                --type attr -n delimiter -v '|' \
+            --insert '//*[local-name()="accounts"]/*[local-name()="login"][last()]' \
+                --type attr -n error-detect -v 'enabled' \
+            --insert '//*[local-name()="accounts"]/*[local-name()="login"][last()]' \
+                --type attr -n encoding -v 'ascii' \
+            "$sip_conf"
+
+        # The branchcode we picked must have a matching <institution>
+        # entry — add one if not already present.
+        if ! docker exec "$cn" xmlstarlet sel -t -v \
+                "//*[local-name()='institution'][@id='${branchcode}']/@id" \
+                "$sip_conf" >/dev/null 2>&1; then
+            docker exec "$cn" xmlstarlet ed --inplace \
+                --subnode '//*[local-name()="institutions"]' --type elem -n institution -v '' \
+                --insert '//*[local-name()="institutions"]/*[local-name()="institution"][last()]' \
+                    --type attr -n id -v "$branchcode" \
+                --insert '//*[local-name()="institutions"]/*[local-name()="institution"][last()]' \
+                    --type attr -n implementation -v 'ILS' \
+                "$sip_conf"
+        fi
+
+        echo "Restarting koha-sip@${inst}.service to pick up new accounts..."
+        docker exec "$cn" systemctl restart "koha-sip@${inst}.service"
+        sleep 3
+
+        docker cp "${GITHUB_ACTION_PATH}/sip-test.pl" \
+            "${cn}:/tmp/sip-test.pl"
+        if ! docker exec "$cn" perl /tmp/sip-test.pl \
+                127.0.0.1 "$port" "$sip_user" "$sip_pass" "$barcode" "$branchcode"; then
+            echo "--- koha-sip@${inst} journal (last 50 lines) ---"
+            docker exec "$cn" journalctl -u "koha-sip@${inst}.service" \
+                --no-pager -n 50 || true
+            echo "--- ${sip_conf} (base64) ---"
+            docker exec "$cn" base64 "$sip_conf" | tr -d '\n'; echo
+            exit 1
+        fi

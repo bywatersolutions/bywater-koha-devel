@@ -1,0 +1,50 @@
+name: 'Assert koha-indexer drains zebraqueue end-to-end'
+description: |
+  Functional test for the koha-indexer daemon (rebuild_zebra.pl
+  -daemon mode). Adds a new biblio with a distinctive title via
+  C4::Biblio::AddBiblio — which writes a zebraqueue entry as a side
+  effect — then polls Zebra via SimpleSearch until the new record is
+  searchable, with no koha-rebuild-zebra invocation in between. The
+  only path from "biblio added" to "biblio searchable" is the
+  koha-indexer daemon consuming zebraqueue, so a hit proves the
+  daemon is functioning end-to-end.
+
+inputs:
+  container-name:
+    required: true
+  instance:
+    required: true
+  title:
+    description: 'Unique title to assign to the test biblio. Defaults to a per-run random value.'
+    required: false
+    default: ''
+  timeout-seconds:
+    description: 'Max seconds to wait for the daemon to index the biblio'
+    required: false
+    default: '180'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        inst='${{ inputs.instance }}'
+        title='${{ inputs.title }}'
+        timeout='${{ inputs.timeout-seconds }}'
+
+        if [ -z "$title" ]; then
+            # Unique title with PID + timestamp so re-runs in the same job
+            # don't collide on previously-indexed entries.
+            unique="SystemdCITestIdx_$$_$(date +%s)"
+        else
+            unique="$title"
+        fi
+
+        echo "Adding biblio with title '${unique}' to ${inst} and "
+        echo "polling Zebra (via SimpleSearch) until the koha-indexer "
+        echo "daemon makes it searchable..."
+        docker cp "${GITHUB_ACTION_PATH}/add-and-wait.pl" \
+            "${cn}:/tmp/add-and-wait.pl"
+        docker exec "$cn" koha-shell "$inst" -c \
+            "perl /tmp/add-and-wait.pl '${unique}' ${timeout}"

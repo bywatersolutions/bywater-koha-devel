@@ -1,0 +1,85 @@
+name: 'Assert Z39.50 search via yaz-client'
+description: |
+  Runs a yaz-client search against the koha-z3950 daemon. Proves the
+  daemon is not only listening on tcp:2100 but actually serving search
+  requests — exercising its koha-conf, Zebra db pointers, and ZOOM
+  target config end-to-end.
+
+inputs:
+  container-name:
+    required: true
+  instance:
+    description: 'Koha instance whose z3950.log to dump on failure'
+    required: false
+    default: ''
+  database:
+    description: 'Z39.50 database name (biblios | authorities)'
+    required: false
+    default: 'biblios'
+  query:
+    description: 'PQF query'
+    required: false
+    default: '@attr 1=4 a'
+  port:
+    required: false
+    default: '2100'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        port='${{ inputs.port }}'
+        db='${{ inputs.database }}'
+        query='${{ inputs.query }}'
+        inst='${{ inputs.instance }}'
+
+        dump_logs() {
+            if [ -n "$inst" ]; then
+                echo "--- /var/run/koha/${inst}/ contents ---"
+                docker exec "$cn" ls -la "/var/run/koha/${inst}/" 2>/dev/null || true
+                echo "--- Zconn diagnostic as ${inst}-koha ---"
+                docker cp "${GITHUB_ACTION_PATH}/zconn-diag.pl" \
+                    "${cn}:/tmp/zconn-diag.pl"
+                docker exec "$cn" koha-shell "$inst" -c \
+                    "perl /tmp/zconn-diag.pl" 2>&1 || true
+                echo "--- /var/log/koha/${inst}/z3950.log ---"
+                docker exec "$cn" cat "/var/log/koha/${inst}/z3950.log" 2>/dev/null || true
+                echo "--- koha-z3950@${inst} journal (last 80 lines) ---"
+                docker exec "$cn" journalctl -u "koha-z3950@${inst}.service" \
+                    --no-pager -n 80 || true
+                echo "--- koha-conf.xml biblioserver block ---"
+                docker exec "$cn" sh -c \
+                    "xmlstarlet sel -t -c '//*[local-name()=\"server\"][@id=\"biblioserver\"]' '/etc/koha/sites/${inst}/koha-conf.xml' 2>/dev/null; xmlstarlet sel -t -c '//*[local-name()=\"listen\"]' '/etc/koha/sites/${inst}/koha-conf.xml'" \
+                    2>/dev/null || true
+            fi
+        }
+
+        # yaz-client commands fed via stdin: open the target, run the
+        # PQF search, close, quit. Default query `@attr 1=4 a` is a
+        # very broad title-contains-'a' that should hit anything in a
+        # populated biblios database.
+        out=$(printf 'f %s\nclose\nquit\n' "$query" \
+            | docker exec -i "$cn" yaz-client "tcp:127.0.0.1:${port}/${db}" 2>&1) || {
+            echo "::error::yaz-client invocation failed"
+            echo "$out"
+            dump_logs
+            exit 1
+        }
+        echo "--- yaz-client output ---"
+        echo "$out"
+        echo "-------------------------"
+
+        hits=$(echo "$out" | sed -nE 's/^Number of hits: *([0-9]+).*$/\1/p' | head -1)
+        if [ -z "$hits" ]; then
+            echo "::error::yaz-client did not report a hit count for database '${db}'"
+            dump_logs
+            exit 1
+        fi
+        if [ "$hits" -lt 1 ]; then
+            echo "::error::expected at least 1 hit on '${db}' database, got '${hits}'"
+            dump_logs
+            exit 1
+        fi
+        echo "✓ Z39.50 search on ${db} returned ${hits} hits"

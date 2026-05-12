@@ -1,0 +1,37 @@
+name: 'Assert dpkg package installed'
+description: |
+  Asserts that a Debian package is installed (Status: install ok
+  installed) inside a Docker container.
+
+inputs:
+  container-name:
+    description: 'Docker container name'
+    required: true
+  package:
+    description: 'Package name (e.g. koha-core)'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        pkg='${{ inputs.package }}'
+
+        # dpkg-query is the supported scripted interface to dpkg's state.
+        # ${db:Status-Abbrev} returns e.g. "ii " for installed (note the
+        # trailing space — it's a 3-char field). dpkg-query exits 1
+        # if the package is unknown to dpkg.
+        status=$(docker exec "$cn" \
+            dpkg-query -W -f='${db:Status-Abbrev}' "$pkg" 2>/dev/null \
+            || echo "<unknown>")
+        # Trim trailing whitespace
+        status="${status%% }"
+        if [ "$status" = "ii" ]; then
+            echo "✓ $pkg installed (status=$status)"
+        else
+            echo "::error::package '$pkg' is not installed (status='$status')"
+            docker exec "$cn" dpkg -l "$pkg" 2>&1 || true
+            exit 1
+        fi
