@@ -1,0 +1,52 @@
+name: 'Boot Elasticsearch 7.x with the Koha-required ICU plugin'
+description: |
+  Builds a small custom Elasticsearch image that bundles the
+  analysis-icu plugin (Koha's biblios/authorities mappings reference
+  the icu_folding token filter and refuse to load without it), runs
+  it as a detached container on the runner with port 9200 bound to
+  localhost, and waits for the cluster to report yellow/green.
+
+inputs:
+  container-name:
+    required: false
+    default: 'koha-es'
+  host-port:
+    description: 'Host port to bind ES :9200 to'
+    required: false
+    default: '9200'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      name: Build custom Elasticsearch image with ICU plugin
+      run: |
+        docker build -f .github/test/Dockerfile.elasticsearch \
+            -t koha-es-icu:7.17.10 .github/test
+
+    - shell: bash
+      name: Run Elasticsearch container
+      run: |
+        docker run -d --name "${{ inputs.container-name }}" \
+            -e discovery.type=single-node \
+            -e xpack.security.enabled=false \
+            -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
+            -p ${{ inputs.host-port }}:9200 \
+            koha-es-icu:7.17.10
+
+    - shell: bash
+      name: Wait for Elasticsearch to be ready
+      run: |
+        for i in $(seq 1 120); do
+            if curl -fsS "http://127.0.0.1:${{ inputs.host-port }}/_cluster/health" \
+                    >/dev/null 2>&1; then
+                echo "✓ Elasticsearch reachable on localhost:${{ inputs.host-port }} (t=${i}s)"
+                curl -s "http://127.0.0.1:${{ inputs.host-port }}/_cluster/health" \
+                    | head -c 200; echo
+                exit 0
+            fi
+            sleep 2
+        done
+        echo "::error::Elasticsearch did not come up in 240s"
+        docker logs "${{ inputs.container-name }}" | tail -50 || true
+        exit 1

@@ -1,0 +1,39 @@
+name: 'Assert Elasticsearch search returns the expected record'
+description: |
+  Runs a Koha::SearchEngine::Elasticsearch::Search query against the
+  configured ES cluster. Polls within a timeout so we tolerate ES
+  refresh delay after a fresh index build. Proves not only that ES
+  is reachable, but that Koha's ES integration (mappings, indexing,
+  query DSL) is wired correctly end-to-end.
+
+inputs:
+  container-name:
+    required: true
+  instance:
+    required: true
+  query:
+    description: 'Free-text query, passed to simple_search_compat'
+    required: true
+  timeout-seconds:
+    required: false
+    default: '30'
+  require-hits:
+    description: 'If "true", fail if hits = 0 after timeout'
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        inst='${{ inputs.instance }}'
+        query='${{ inputs.query }}'
+        timeout='${{ inputs.timeout-seconds }}'
+        require_hits='${{ inputs.require-hits }}'
+
+        docker cp "${GITHUB_ACTION_PATH}/es-search.pl" \
+            "${cn}:/tmp/es-search.pl"
+        docker exec "$cn" koha-shell "$inst" -c \
+            "perl /tmp/es-search.pl '${query}' ${timeout} ${require_hits}"

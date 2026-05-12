@@ -1,0 +1,65 @@
+name: 'Configure Elasticsearch in koha-conf.xml'
+description: |
+  Inserts an <elasticsearch> block under //yazgfs/config in the
+  per-instance koha-conf.xml so Koha::SearchEngine::Elasticsearch
+  can connect to the GHA service container (defaults to
+  http://host.docker.internal:9200). Bounces memcached and the per-
+  instance target so the daemons pick up the new config.
+
+inputs:
+  container-name:
+    required: true
+  instance:
+    required: true
+  es-url:
+    description: 'Elasticsearch server URL reachable from inside the container'
+    required: false
+    default: 'http://host.docker.internal:9200'
+  index-prefix:
+    description: 'Prefix for biblios/authorities ES index names'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        inst='${{ inputs.instance }}'
+        es_url='${{ inputs.es-url }}'
+        prefix='${{ inputs.index-prefix }}'
+        conf="/etc/koha/sites/${inst}/koha-conf.xml"
+
+        echo "Adding <elasticsearch> block to ${conf}..."
+        # If the block already exists we delete it first so this is
+        # idempotent across CI re-runs against the same container.
+        docker exec "$cn" xmlstarlet ed --inplace \
+            -d '/yazgfs/config/elasticsearch' "$conf" || true
+
+        docker exec "$cn" xmlstarlet ed --inplace \
+            --subnode '/yazgfs/config' --type elem -n elasticsearch -v '' \
+            --subnode '/yazgfs/config/elasticsearch[last()]' --type elem -n server -v "$es_url" \
+            --subnode '/yazgfs/config/elasticsearch[last()]' --type elem -n index_name -v "$prefix" \
+            "$conf"
+
+        echo "--- ${conf} elasticsearch block ---"
+        docker exec "$cn" xmlstarlet sel -t -c '/yazgfs/config/elasticsearch' "$conf" \
+            || docker exec "$cn" grep -A3 '<elasticsearch>' "$conf" || true
+
+        echo "Wait for Elasticsearch at $es_url to be reachable from inside the container..."
+        for i in $(seq 1 60); do
+            if docker exec "$cn" sh -c "curl -fsS '${es_url}/_cluster/health' >/dev/null 2>&1"; then
+                echo "✓ Elasticsearch reachable from inside ${cn} (t=${i}s)"
+                break
+            fi
+            sleep 2
+            if [ "$i" = "60" ]; then
+                echo "::error::Elasticsearch at ${es_url} not reachable from inside ${cn} after 120s"
+                docker exec "$cn" sh -c "curl -v '${es_url}/_cluster/health' 2>&1 | head -20" || true
+                exit 1
+            fi
+        done
+
+        echo "Restarting memcached and koha@${inst}.target to pick up ES config..."
+        docker exec "$cn" systemctl restart memcached || true
+        docker exec "$cn" systemctl restart "koha@${inst}.target"

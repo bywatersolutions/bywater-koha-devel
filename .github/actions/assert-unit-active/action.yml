@@ -1,0 +1,48 @@
+name: 'Assert systemd unit is active'
+description: |
+  Asserts that a unit is in `active` state inside a Docker container
+  running systemd as PID 1. Tolerates transient `activating` /
+  `deactivating` / `reloading` states by polling for up to N seconds.
+
+  On failure, emits a workflow `::error::` annotation (clickable in
+  the run summary and PR Files Changed view) and exits non-zero.
+
+inputs:
+  container-name:
+    description: 'Docker container name'
+    required: true
+  unit:
+    description: 'systemd unit (e.g. koha-plack@washoedev.service)'
+    required: true
+  timeout-seconds:
+    description: 'Max seconds to wait for the unit to settle'
+    required: false
+    default: '10'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        unit='${{ inputs.unit }}'
+        timeout='${{ inputs.timeout-seconds }}'
+
+        for i in $(seq 1 "$timeout"); do
+            state=$(docker exec "$cn" \
+                systemctl is-active "$unit" 2>/dev/null || true)
+            case "$state" in
+                activating|deactivating|reloading) sleep 1 ;;
+                *) break ;;
+            esac
+        done
+
+        if [ "$state" = active ]; then
+            echo "✓ $unit — active"
+        else
+            echo "::error::$unit is '$state' (expected 'active')"
+            docker exec "$cn" systemctl status "$unit" --no-pager || true
+            echo "--- journalctl -u $unit (last 80 lines) ---"
+            docker exec "$cn" journalctl -u "$unit" -n 80 --no-pager || true
+            exit 1
+        fi

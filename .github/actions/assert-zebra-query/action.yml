@@ -1,0 +1,78 @@
+name: 'Assert Zebra search via Koha SimpleSearch'
+description: |
+  Runs a Koha biblios search through C4::Search::SimpleSearch via
+  koha-shell. This goes through the same Zebra connection plumbing
+  that production Koha uses (so Zebra database-name resolution,
+  CCL-to-RPN translation, and ZOOM client setup are all exercised
+  exactly as the GUI does).
+
+  Asserts: the search runs without error and reports a hit count.
+  Optionally fails if the count is zero.
+
+inputs:
+  container-name:
+    required: true
+  instance:
+    required: true
+  query:
+    description: 'CCL query string'
+    required: false
+    default: 'a'
+  require-hits:
+    description: 'If "true", fail unless the search returns at least one hit'
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        inst='${{ inputs.instance }}'
+        query='${{ inputs.query }}'
+        require_hits='${{ inputs.require-hits }}'
+
+        # Drop a Perl script into the container — sidesteps the
+        # bash/docker/koha-shell/perl quoting nightmare. The query
+        # is passed through an env var so we don't have to escape
+        # it into the script body. Single-quoted bash string
+        # preserves $err / $res / $hits / $ENV{QUERY} literally for
+        # Perl to parse.
+        script='use C4::Search;
+        my $query = $ENV{QUERY} // qq{a};
+        my ($err, $res, $hits) = C4::Search::SimpleSearch($query, 0, 1);
+        print qq{ERROR=}, defined $err ? $err : qq{<none>}, qq{\n};
+        print qq{HITS=}, defined $hits ? $hits : -1, qq{\n};'
+        printf '%s\n' "$script" | docker exec -i "$cn" tee /tmp/zebra-search.pl >/dev/null
+
+        # Use C4::Search::SimpleSearch — same path Koha's GUI search
+        # uses, so every piece of the Zebra plumbing (db-name resolution,
+        # CCL-to-RPN, ZOOM, unix socket connection) is exercised under
+        # the production code path.
+        out=$(docker exec -e "QUERY=$query" "$cn" \
+            koha-shell "$inst" -c "perl /tmp/zebra-search.pl" 2>&1)
+        echo "--- SimpleSearch output ---"
+        echo "$out"
+        echo "---------------------------"
+
+        err=$(echo "$out" | sed -n 's/^ERROR=//p' | head -1)
+        hits=$(echo "$out" | sed -n 's/^HITS=//p' | head -1)
+
+        if [ -z "$hits" ] || [ "$hits" = "-1" ]; then
+            echo "::error::SimpleSearch did not report a hit count"
+            exit 1
+        fi
+        if [ -n "$err" ] && [ "$err" != "<none>" ]; then
+            echo "::error::SimpleSearch error: $err"
+            exit 1
+        fi
+        echo "✓ Zebra biblios search on ${inst} responded — hits=${hits}"
+
+        if [ "$require_hits" = "true" ]; then
+            if [ "$hits" -lt 1 ] 2>/dev/null; then
+                echo "::error::expected at least 1 hit, got '${hits}'"
+                exit 1
+            fi
+            echo "✓ hit count is at least 1"
+        fi

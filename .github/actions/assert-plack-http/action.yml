@@ -1,0 +1,71 @@
+name: 'Assert Koha Plack responds over its Unix socket'
+description: |
+  Hits the per-instance Plack Unix socket directly (bypassing Apache,
+  DNS, and vhost config) and asserts that Plack returns a non-5xx HTTP
+  response. Validates that:
+    - the socket exists at /var/run/koha/<inst>/plack.sock
+    - the socket is owned by <inst>-koha so the unit user could connect
+    - starman is alive and serving the PSGI app
+    - basic routing inside the app responds (not a 502 / connection
+      reset / timeout)
+
+  Acceptable outcome: any HTTP 2xx, 3xx, or 4xx. A 4xx (e.g. 404 on a
+  fresh schema-less instance) is fine — it still proves Plack is up.
+  Rejected: 000 (no response), 5xx (server error), or socket missing.
+
+inputs:
+  container-name:
+    description: 'Docker container name'
+    required: true
+  instance:
+    description: 'Koha instance name (no @ prefix)'
+    required: true
+  path:
+    description: |
+      URL path to request inside Plack. Defaults to /cgi-bin/koha/opac/
+      opac-main.pl. Override for staff intranet (/cgi-bin/koha/mainpage.pl)
+      or any other entry point.
+    required: false
+    default: '/cgi-bin/koha/opac/opac-main.pl'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        cn='${{ inputs.container-name }}'
+        inst='${{ inputs.instance }}'
+        path='${{ inputs.path }}'
+        sock="/var/run/koha/${inst}/plack.sock"
+
+        # Socket must exist
+        if ! docker exec "$cn" test -S "$sock"; then
+            echo "::error::$sock does not exist or is not a socket"
+            docker exec "$cn" ls -la "/var/run/koha/${inst}/" || true
+            exit 1
+        fi
+
+        # Hit it. --unix-socket goes through the AF_UNIX path; the
+        # http://localhost is a placeholder host since starman doesn't
+        # care about it for routing.
+        code=$(docker exec "$cn" curl \
+            --unix-socket "$sock" \
+            -sSI -o /dev/null -w '%{http_code}' \
+            --max-time 15 \
+            "http://localhost${path}" 2>/dev/null || echo 000)
+
+        case "$code" in
+            2*|3*|4*)
+                echo "✓ koha-plack@${inst}.service responded HTTP $code on ${path}"
+                ;;
+            5*)
+                echo "::error::koha-plack@${inst}.service returned HTTP $code (server error) on ${path}"
+                docker exec "$cn" tail -50 "/var/log/koha/${inst}/plack-error.log" 2>&1 || true
+                exit 1
+                ;;
+            000|*)
+                echo "::error::koha-plack@${inst}.service did not respond (curl reported '$code') on ${path}"
+                docker exec "$cn" systemctl status "koha-plack@${inst}.service" --no-pager || true
+                exit 1
+                ;;
+        esac
