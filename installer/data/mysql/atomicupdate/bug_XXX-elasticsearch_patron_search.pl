@@ -13,6 +13,12 @@ return {
             VALUES ('ElasticsearchPatronSearch', '0', NULL, 'Use Elasticsearch for patron searches', 'YesNo')
         });
 
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type)
+            VALUES ('ElasticsearchIndexStatus_patrons', '0', NULL, 'Elasticsearch patrons index status', 'integer')
+        });
+
         say $out "Added new system preference 'ElasticsearchPatronSearch'";
+        say $out "Added new system preference 'ElasticsearchIndexStatus_patrons'";
     },
 };

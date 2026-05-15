@@ -250,6 +250,7 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('ElasticsearchEscapeCharacters', ''),
 ('ElasticsearchIndexStatus_authorities', '0'),
 ('ElasticsearchIndexStatus_biblios', '0'),
+('ElasticsearchIndexStatus_patrons', '0'),
 ('ElasticsearchMARCFormat', 'base64ISO2709'),
 ('ElasticsearchPatronSearch', '0'),
 ('ElasticsearchPreventAutoTruncate', 'barcode|control-number|control-number-identifier|date-of-acquisition|date-of-publication|date-time-last-modified|identifier-standard|isbn|issn|itype|lc-card-number|number-local-acquisition|other-control-number|record-control-number'),

@@ -73,6 +73,7 @@ __PACKAGE__->mk_accessors(qw( sort_fields ));
 # Constants to refer to the standard index names
 Readonly our $BIBLIOS_INDEX     => 'biblios';
 Readonly our $AUTHORITIES_INDEX => 'authorities';
+Readonly our $PATRONS_INDEX     => 'patrons';
 
 =head1 NAME
 
