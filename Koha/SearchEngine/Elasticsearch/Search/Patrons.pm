@@ -229,13 +229,26 @@ sub _build_query {
     my $filters       = $args{filters};
     my $library       = $args{library};
 
-    # Main text query
+    # Main text query — combine query_string with prefix for short queries
+    my $escaped = $query_string;
+    $escaped =~ s/([\+\-\=\&\|\>\<\!\(\)\{\}\[\]\^"~\*\?\:\\\/])/\\$1/g;
+    my $lc_query = lc($query_string);
+
     my $must = {
-        multi_match => {
-            query  => $query_string,
-            fields => $search_fields,
-            type   => 'cross_fields',
-            operator => 'and',
+        bool => {
+            should => [
+                {
+                    query_string => {
+                        query            => "$escaped*",
+                        fields           => $search_fields,
+                        analyze_wildcard => \1,
+                    },
+                },
+                { prefix => { 'cardnumber.ci_raw' => $lc_query } },
+                { prefix => { 'patron_name.ci_raw' => $lc_query } },
+                { prefix => { 'email.ci_raw' => $lc_query } },
+            ],
+            minimum_should_match => 1,
         },
     };
 

@@ -22,48 +22,52 @@
 [% WRAPPER 'sub-header.inc' %]
     [% WRAPPER breadcrumbs %]
         [% WRAPPER breadcrumb_item bc_active=1 %]
-            <span>Patron search</span>
+            <span>Patrons</span>
         [% END %]
     [% END %]
 [% END %]
 
 <div class="main container-fluid">
     <div class="row">
-        <div class="col-md-10 col-md-offset-1">
-
-            <h1>Patron search</h1>
-
-            <div class="row">
-                <div class="col-md-9">
-                    <form id="patron-search-form" class="form-inline">
-                        <div class="form-group">
-                            <label for="search-query">Search:</label>
-                            <input type="text" id="search-query" class="form-control" placeholder="Name, cardnumber, email..." autofocus />
-                        </div>
-                        <button type="submit" class="btn btn-primary">Search</button>
-                    </form>
-                </div>
-                <div class="col-md-3" id="facets-container">
-                </div>
+        <div class="col-md-2 order-md-1 order-sm-2" id="facets-container">
+            <div id="facets" class="sidebar" style="display:none;">
+                <h4>Refine search</h4>
+                <p><a href="#" id="clear-facets" class="btn btn-link btn-sm"><i class="fa fa-times"></i> Clear all filters</a></p>
+                <div id="facet-branchcode"></div>
+                <div id="facet-categorycode"></div>
             </div>
+        </div>
 
-            <div class="row">
-                <div class="col-md-12">
-                    <table id="patron-search-table" class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Card</th>
-                                <th>Name</th>
-                                <th>Category</th>
-                                <th>Library</th>
-                                <th>Expires</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+        <div class="col-md-10 order-md-2 order-sm-1">
+            <main>
+                [% INCLUDE 'patron-toolbar.inc' %]
+
+                <form id="patron-search-form" class="form-inline" style="margin: 1em 0;">
+                    <div class="form-group">
+                        <label for="search-query" class="sr-only">Search:</label>
+                        <input type="text" id="search-query" class="form-control" placeholder="Name, cardnumber, email..." autofocus style="width: 400px;" />
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> Search</button>
+                </form>
+
+                <div id="active-filters" style="display:none; margin-bottom: 1em;">
+                    <span class="label">Active filters:</span>
+                    <span id="active-filters-list"></span>
                 </div>
-            </div>
 
+                <table id="patron-search-table" class="table table-striped" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Card number</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Library</th>
+                            <th>Expires</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </main>
         </div>
     </div>
 </div>
@@ -75,13 +79,15 @@
 
         $(document).ready(function() {
             var patron_table;
+            var active_filters = {};
 
             function doSearch() {
                 var q = $("#search-query").val();
                 if (!q) return;
 
+                $("#patron-search-table").show();
+
                 if (patron_table) {
-                    // Redraw with new search
                     patron_table.DataTable().ajax.reload();
                 } else {
                     patron_table = $("#patron-search-table").kohaTable({
@@ -91,46 +97,38 @@
                                 renderFacets(json.facets);
                                 return json.hits;
                             },
-                            data: function(data) {
+                            data: function(data, settings) {
                                 var q = $("#search-query").val();
-                                var dataSet = {
+                                var params = {
                                     q: q,
                                     _page: Math.floor(data.start / data.length) + 1,
                                     _per_page: data.length,
                                 };
 
-                                // Column filters → filters JSON
-                                var filters = {};
-                                data.columns.forEach(function(col, idx) {
-                                    if (col.search && col.search.value) {
-                                        var field = col.data;
-                                        if (field === "category_id") {
-                                            filters.categorycode = col.search.value;
-                                        } else if (field === "library_id") {
-                                            filters.branchcode = col.search.value;
-                                        } else if (field && field.startsWith("ext_attr_")) {
-                                            filters[field] = col.search.value;
-                                        }
-                                    }
-                                });
-                                if (Object.keys(filters).length) {
-                                    dataSet.filters = JSON.stringify(filters);
-                                }
-
                                 // Sort
                                 if (data.order && data.order.length) {
                                     var columns = ["cardnumber", "surname", "category_id", "library_id", "expiry_date"];
-                                    dataSet._order_by = data.order.map(function(e) {
+                                    params._order_by = data.order.map(function(e) {
                                         var col = columns[e.column] || "surname";
                                         var dir = e.dir === "asc" ? "+" : "-";
                                         return dir + col;
                                     }).join(",");
                                 }
 
-                                return dataSet;
+                                // Active filters
+                                if (Object.keys(active_filters).length) {
+                                    params.filters = JSON.stringify(active_filters);
+                                }
+
+                                return params;
+                            },
+                            dataFilter: function(data, type) {
+                                var json = JSON.parse(data);
+                                json.recordsTotal = json.total;
+                                json.recordsFiltered = json.total;
+                                return JSON.stringify(json);
                             }
                         },
-                        pageLength: defined_per_page,
                         columns: [
                             {
                                 data: "cardnumber",
@@ -150,40 +148,88 @@
                             { data: "expiry_date" }
                         ],
                         order: [[1, "asc"]],
+                        pageLength: defined_per_page,
                     });
                 }
             }
 
             function renderFacets(facets) {
                 if (!facets) return;
-                var html = '<h4>Filter by</h4>';
-                if (facets.branchcode && facets.branchcode.length) {
-                    html += '<h5>Library</h5><ul class="list-unstyled">';
-                    facets.branchcode.forEach(function(f) {
-                        html += '<li><a href="#" class="facet-link" data-field="branchcode" data-value="' + f.value + '">' + f.value + ' (' + f.count + ')</a></li>';
-                    });
-                    html += '</ul>';
-                }
-                if (facets.categorycode && facets.categorycode.length) {
-                    html += '<h5>Category</h5><ul class="list-unstyled">';
-                    facets.categorycode.forEach(function(f) {
-                        html += '<li><a href="#" class="facet-link" data-field="categorycode" data-value="' + f.value + '">' + f.value + ' (' + f.count + ')</a></li>';
-                    });
-                    html += '</ul>';
-                }
-                $("#facets-container").html(html);
+                var hasFacets = false;
 
-                // Facet click handler
-                $(".facet-link").on("click", function(e) {
+                // Library facet
+                var html = '';
+                if (facets.branchcode && facets.branchcode.length) {
+                    hasFacets = true;
+                    html = '<h5>Library</h5><ul class="list-unstyled">';
+                    facets.branchcode.forEach(function(f) {
+                        var cls = active_filters.branchcode === f.value ? 'font-weight-bold' : '';
+                        html += '<li><a href="#" class="facet-link ' + cls + '" data-field="branchcode" data-value="' + f.value + '">' + f.value + '</a> <span class="badge">' + f.count + '</span></li>';
+                    });
+                    html += '</ul>';
+                }
+                $("#facet-branchcode").html(html);
+
+                // Category facet
+                html = '';
+                if (facets.categorycode && facets.categorycode.length) {
+                    hasFacets = true;
+                    html = '<h5>Category</h5><ul class="list-unstyled">';
+                    facets.categorycode.forEach(function(f) {
+                        var cls = active_filters.categorycode === f.value ? 'font-weight-bold' : '';
+                        html += '<li><a href="#" class="facet-link ' + cls + '" data-field="categorycode" data-value="' + f.value + '">' + f.value + '</a> <span class="badge">' + f.count + '</span></li>';
+                    });
+                    html += '</ul>';
+                }
+                $("#facet-categorycode").html(html);
+
+                if (hasFacets) {
+                    $("#facets").show();
+                }
+
+                // Bind facet clicks
+                $(".facet-link").off("click").on("click", function(e) {
                     e.preventDefault();
                     var field = $(this).data("field");
                     var value = $(this).data("value");
-                    // Add as column filter and redraw
-                    var dt = patron_table.DataTable();
-                    var colIdx = field === "branchcode" ? 3 : 2;
-                    dt.column(colIdx).search(value).draw();
+                    if (active_filters[field] === value) {
+                        delete active_filters[field];
+                    } else {
+                        active_filters[field] = value;
+                    }
+                    updateActiveFiltersDisplay();
+                    patron_table.DataTable().ajax.reload();
                 });
             }
+
+            function updateActiveFiltersDisplay() {
+                var keys = Object.keys(active_filters);
+                if (keys.length) {
+                    var html = keys.map(function(k) {
+                        return '<span class="badge bg-primary">' + k + ': ' + active_filters[k] + ' <a href="#" class="remove-filter text-white" data-field="' + k + '">&times;</a></span> ';
+                    }).join('');
+                    $("#active-filters-list").html(html);
+                    $("#active-filters").show();
+
+                    $(".remove-filter").on("click", function(e) {
+                        e.preventDefault();
+                        delete active_filters[$(this).data("field")];
+                        updateActiveFiltersDisplay();
+                        patron_table.DataTable().ajax.reload();
+                    });
+                } else {
+                    $("#active-filters").hide();
+                }
+            }
+
+            $("#clear-facets").on("click", function(e) {
+                e.preventDefault();
+                active_filters = {};
+                updateActiveFiltersDisplay();
+                if (patron_table) {
+                    patron_table.DataTable().ajax.reload();
+                }
+            });
 
             $("#patron-search-form").on("submit", function(e) {
                 e.preventDefault();
