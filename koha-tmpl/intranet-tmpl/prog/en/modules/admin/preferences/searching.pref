@@ -124,6 +124,13 @@ Searching:
                   0: Disable
             - "adding items to the Zebra queue after indexing it in Elasticsearch. This preference should probably be set to 'Disable' unless you want Koha to act as a Z39.50 or SRU server."
         -
+            - pref: ElasticsearchPatronSearch
+              default: 0
+              choices:
+                  1: Use
+                  0: "Don't use"
+            - "Elasticsearch for patron searches. Requires Elasticsearch to be the selected search engine and the patrons index to be built."
+        -
             - pref: SearchCancelledAndInvalidISBNandISSN
               default: 0
               choices:
