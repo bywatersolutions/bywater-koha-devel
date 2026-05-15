@@ -26,7 +26,7 @@ my $query = CGI->new;
 
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     {
-        template_name => "members/patron_search.tt",
+        template_name => "members/patrons.tt",
         query         => $query,
         type          => "intranet",
         flagsrequired => { borrowers => [ 'edit_borrowers', 'list_borrowers' ] },
