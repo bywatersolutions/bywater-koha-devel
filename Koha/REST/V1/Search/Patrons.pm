@@ -48,6 +48,11 @@ sub search {
         my $page     = $c->param('_page') // 1;
         my $per_page = $c->param('_per_page') // 20;
 
+        # Facet filters
+        my $branchcode   = $c->param('branchcode');
+        my $categorycode = $c->param('categorycode');
+        my $debarred     = $c->param('debarred');
+
         unless ( C4::Context->preference('ElasticsearchPatronSearch') ) {
             return $c->render(
                 status  => 400,
@@ -57,14 +62,16 @@ sub search {
 
         # TODO: Implement ES search
         # 1. Resolve searchable fields based on caller's library
-        # 2. Build multi_match query
-        # 3. Apply sorting
-        # 4. Execute search
-        # 5. Hydrate results from DB
+        # 2. Build multi_match query in bool.must
+        # 3. Apply facet filters in bool.filter
+        # 4. Add aggs for branchcode, categorycode, debarred
+        # 5. Apply sorting
+        # 6. Execute search
+        # 7. Hydrate results from DB
 
         return $c->render(
             status  => 200,
-            openapi => { total => 0, hits => [] },
+            openapi => { total => 0, hits => [], facets => {} },
         );
     } catch {
         $c->unhandled_exception($_);

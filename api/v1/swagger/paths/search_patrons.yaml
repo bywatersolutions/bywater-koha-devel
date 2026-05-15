@@ -39,6 +39,21 @@
         minimum: 1
         maximum: 100
         default: 20
+      - name: branchcode
+        in: query
+        description: Filter by library branch code
+        required: false
+        type: string
+      - name: categorycode
+        in: query
+        description: Filter by patron category code
+        required: false
+        type: string
+      - name: debarred
+        in: query
+        description: Filter by restriction status
+        required: false
+        type: boolean
       - $ref: "../swagger.yaml#/parameters/request_id_header"
     responses:
       "200":
@@ -53,6 +68,37 @@
               type: array
               items:
                 $ref: "../swagger.yaml#/definitions/patron"
+            facets:
+              type: object
+              description: Aggregated counts for facetable fields
+              properties:
+                branchcode:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      value:
+                        type: string
+                      count:
+                        type: integer
+                categorycode:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      value:
+                        type: string
+                      count:
+                        type: integer
+                debarred:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      value:
+                        type: boolean
+                      count:
+                        type: integer
       "400":
         description: Bad request
         schema:
