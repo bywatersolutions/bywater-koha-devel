@@ -1,0 +1,295 @@
+---
+# Patron field mappings for Elasticsearch
+# Each field defines: type, sort, facet, suggestible
+#
+# Types (from field_config.yaml):
+#   ""        - default text (analyzer_standard, with .phrase, .raw, .ci_raw sub-fields)
+#   "stdno"   - standard number (whitespace tokenizer, punctuation removal)
+#   "boolean" - boolean
+#   "integer" - integer
+#   "date"    - date
+#
+# Dynamic extended attribute fields (ext_attr_*) are handled via ES dynamic_templates
+# and are not listed here.
+
+patrons:
+  # Identity - core name fields
+  surname:
+    type: ""
+    sort: true
+    facet: false
+    suggestible: true
+  firstname:
+    type: ""
+    sort: true
+    facet: false
+    suggestible: true
+  preferred_name:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  middle_name:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  othernames:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  initials:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  title:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+
+  # Identifiers
+  cardnumber:
+    type: stdno
+    sort: true
+    facet: false
+    suggestible: true
+  userid:
+    type: stdno
+    sort: false
+    facet: false
+    suggestible: false
+  borrowernumber:
+    type: integer
+    sort: false
+    facet: false
+    suggestible: false
+
+  # Composite search field (populated from multiple source fields)
+  patron_name:
+    type: ""
+    sort: true
+    facet: false
+    suggestible: false
+
+  # Classification
+  categorycode:
+    type: ""
+    sort: true
+    facet: true
+    suggestible: false
+  branchcode:
+    type: ""
+    sort: true
+    facet: true
+    suggestible: false
+
+  # Dates
+  dateofbirth:
+    type: date
+    sort: true
+    facet: false
+    suggestible: false
+  dateenrolled:
+    type: date
+    sort: true
+    facet: false
+    suggestible: false
+  dateexpiry:
+    type: date
+    sort: true
+    facet: false
+    suggestible: false
+
+  # Primary address
+  streetnumber:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  streettype:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  address:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  address2:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  city:
+    type: ""
+    sort: true
+    facet: true
+    suggestible: false
+  state:
+    type: ""
+    sort: true
+    facet: true
+    suggestible: false
+  zipcode:
+    type: stdno
+    sort: true
+    facet: false
+    suggestible: false
+  country:
+    type: ""
+    sort: false
+    facet: true
+    suggestible: false
+
+  # Contact
+  email:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  emailpro:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  B_email:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  phone:
+    type: stdno
+    sort: false
+    facet: false
+    suggestible: false
+  phonepro:
+    type: stdno
+    sort: false
+    facet: false
+    suggestible: false
+  mobile:
+    type: stdno
+    sort: false
+    facet: false
+    suggestible: false
+  B_phone:
+    type: stdno
+    sort: false
+    facet: false
+    suggestible: false
+  altcontactphone:
+    type: stdno
+    sort: false
+    facet: false
+    suggestible: false
+
+  # Alternate address
+  B_address:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  B_address2:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  B_city:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  B_state:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  B_zipcode:
+    type: stdno
+    sort: false
+    facet: false
+    suggestible: false
+  B_country:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+
+  # Alternate contact
+  altcontactfirstname:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  altcontactsurname:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  altcontactaddress1:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  altcontactaddress2:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  altcontactaddress3:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+
+  # Status flags
+  debarred:
+    type: boolean
+    sort: false
+    facet: true
+    suggestible: false
+  gonenoaddress:
+    type: boolean
+    sort: false
+    facet: true
+    suggestible: false
+  lost:
+    type: boolean
+    sort: false
+    facet: true
+    suggestible: false
+
+  # Custom sort fields
+  sort1:
+    type: ""
+    sort: true
+    facet: true
+    suggestible: false
+  sort2:
+    type: ""
+    sort: true
+    facet: true
+    suggestible: false
+
+  # Notes (searchable but not sortable)
+  borrowernotes:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+  opacnote:
+    type: ""
+    sort: false
+    facet: false
+    suggestible: false
+
+  # Extended attributes (nested for correlated code+value queries)
+  extended_attributes:
+    type: nested
+    sort: false
+    facet: false
+    suggestible: false
