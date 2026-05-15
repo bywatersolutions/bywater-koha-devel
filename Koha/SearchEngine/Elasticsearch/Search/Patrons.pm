@@ -1,0 +1,294 @@
+package Koha::SearchEngine::Elasticsearch::Search::Patrons;
+
+# This file is part of Koha.
+#
+# Koha is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Koha is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Koha; if not, see <https://www.gnu.org/licenses>.
+
+use Modern::Perl;
+
+use base qw(Koha::SearchEngine::Elasticsearch::Search);
+
+use C4::Context;
+use Koha::Patron::Attribute::Types;
+use Koha::SearchEngine::Elasticsearch;
+
+=head1 NAME
+
+Koha::SearchEngine::Elasticsearch::Search::Patrons - Patron search via ES
+
+=head1 SYNOPSIS
+
+    use Koha::SearchEngine::Elasticsearch::Search::Patrons;
+
+    my $searcher = Koha::SearchEngine::Elasticsearch::Search::Patrons->new();
+    my $results  = $searcher->search_patrons(
+        query    => "smith",
+        page     => 1,
+        per_page => 20,
+        order_by => "-surname",
+        filters  => { branchcode => "CPL" },
+        library  => $logged_in_library,
+    );
+
+=cut
+
+# Core fields always included in search
+my @CORE_SEARCH_FIELDS = qw(
+    patron_name surname firstname cardnumber userid
+    email emailpro B_email phone mobile
+    address address2 city state zipcode
+);
+
+# Fields used for facet aggregations
+my @FACET_FIELDS = qw( branchcode categorycode debarred );
+
+sub new {
+    my ( $class, $params ) = @_;
+    $params //= {};
+    $params->{index} = Koha::SearchEngine::Elasticsearch::PATRONS_INDEX;
+    return $class->SUPER::new($params);
+}
+
+=head2 search_patrons
+
+    my $results = $searcher->search_patrons(
+        query    => $q,
+        fields   => \@fields,       # optional, overrides default
+        page     => $page,
+        per_page => $per_page,
+        order_by => $order_by,       # e.g. "-surname", "+ext_attr_DEPT"
+        filters  => \%filters,       # facet filters
+        library  => $branchcode,     # caller's library for scoping
+    );
+
+Returns hashref: { total => $n, hits => \@patron_ids, facets => \%facets }
+
+=cut
+
+sub search_patrons {
+    my ( $self, %args ) = @_;
+
+    my $query_string = $args{query};
+    my $page         = $args{page} // 1;
+    my $per_page     = $args{per_page} // 20;
+    my $order_by     = $args{order_by};
+    my $filters      = $args{filters} // {};
+    my $library      = $args{library};
+    my $fields       = $args{fields};
+
+    # Resolve search fields
+    my @search_fields = $fields ? @$fields : $self->_resolve_search_fields($library);
+
+    # Build the query body
+    my $body = $self->_build_query(
+        query_string  => $query_string,
+        search_fields => \@search_fields,
+        filters       => $filters,
+        library       => $library,
+    );
+
+    # Sorting
+    if ($order_by) {
+        $body->{sort} = $self->_build_sort($order_by);
+    }
+
+    # Pagination
+    $body->{from} = ( $page - 1 ) * $per_page;
+    $body->{size} = $per_page;
+
+    # Only return _id, we hydrate from DB
+    $body->{_source} = \0;
+
+    # Execute
+    my $elasticsearch = $self->get_elasticsearch();
+    my $response      = $elasticsearch->search(
+        index            => $self->index_name,
+        track_total_hits => \1,
+        body             => $body,
+    );
+
+    # Parse results
+    my $total = ref $response->{hits}{total} eq 'HASH'
+        ? $response->{hits}{total}{value}
+        : $response->{hits}{total};
+
+    my @patron_ids = map { $_->{_id} } @{ $response->{hits}{hits} };
+
+    my %facets;
+    if ( my $aggs = $response->{aggregations} ) {
+        for my $field (@FACET_FIELDS) {
+            next unless $aggs->{$field};
+            $facets{$field} = [
+                map { { value => $_->{key}, count => $_->{doc_count} } }
+                    @{ $aggs->{$field}{buckets} }
+            ];
+        }
+    }
+
+    return {
+        total  => $total,
+        hits   => \@patron_ids,
+        facets => \%facets,
+    };
+}
+
+=head2 autocomplete
+
+    my $suggestions = $searcher->autocomplete(
+        query    => $prefix,
+        per_page => 10,
+        library  => $branchcode,
+    );
+
+Returns arrayref of patron_ids matching the completion suggest.
+
+=cut
+
+sub autocomplete {
+    my ( $self, %args ) = @_;
+
+    my $query    = $args{query};
+    my $per_page = $args{per_page} // 10;
+    my $library  = $args{library};
+
+    my $body = {
+        suggest => {
+            patron_suggest => {
+                prefix     => $query,
+                completion => {
+                    field => 'suggest',
+                    size  => $per_page,
+                },
+            },
+        },
+        _source => \0,
+    };
+
+    my $elasticsearch = $self->get_elasticsearch();
+    my $response      = $elasticsearch->search(
+        index => $self->index_name,
+        body  => $body,
+    );
+
+    my @patron_ids;
+    if ( my $suggestions = $response->{suggest}{patron_suggest} ) {
+        for my $entry (@$suggestions) {
+            push @patron_ids, map { $_->{_id} } @{ $entry->{options} };
+        }
+    }
+
+    return \@patron_ids;
+}
+
+=head2 _resolve_search_fields
+
+Returns the list of ES fields to search based on the caller's library.
+Includes core fields + extended attribute fields visible to the library.
+
+=cut
+
+sub _resolve_search_fields {
+    my ( $self, $library ) = @_;
+
+    my @fields = @CORE_SEARCH_FIELDS;
+
+    # Add searchable extended attribute fields visible to this library
+    my $attr_types_rs = Koha::Patron::Attribute::Types->search({ staff_searchable => 1 });
+    $attr_types_rs = $attr_types_rs->filter_by_branch($library) if $library;
+
+    while ( my $type = $attr_types_rs->next ) {
+        push @fields, "ext_attr_" . $type->code;
+    }
+
+    return @fields;
+}
+
+=head2 _build_query
+
+Builds the ES query body with multi_match + filters + aggregations.
+
+=cut
+
+sub _build_query {
+    my ( $self, %args ) = @_;
+
+    my $query_string  = $args{query_string};
+    my $search_fields = $args{search_fields};
+    my $filters       = $args{filters};
+    my $library       = $args{library};
+
+    # Main text query
+    my $must = {
+        multi_match => {
+            query  => $query_string,
+            fields => $search_fields,
+            type   => 'cross_fields',
+            operator => 'and',
+        },
+    };
+
+    # Filter clauses
+    my @filter_clauses;
+
+    # Facet filters from the request
+    for my $field ( keys %$filters ) {
+        next unless defined $filters->{$field} && $filters->{$field} ne '';
+        my $es_field = $field eq 'debarred' ? $field : "${field}.facet";
+        push @filter_clauses, { term => { $es_field => $filters->{$field} } };
+    }
+
+    # Library scoping (IndependentBranches)
+    if ( $library && C4::Context->preference('IndependentBranches') ) {
+        push @filter_clauses, { term => { 'branchcode.facet' => $library } };
+    }
+
+    my $body = {
+        query => {
+            bool => {
+                must   => $must,
+                filter => \@filter_clauses,
+            },
+        },
+        aggs => {
+            map { $_ => { terms => { field => $_ eq 'debarred' ? $_ : "${_}.facet", size => 50 } } }
+                @FACET_FIELDS
+        },
+    };
+
+    return $body;
+}
+
+=head2 _build_sort
+
+Translates an _order_by string like "-surname" or "+ext_attr_DEPT" into ES sort.
+
+=cut
+
+sub _build_sort {
+    my ( $self, $order_by ) = @_;
+
+    my $direction = 'asc';
+    if ( $order_by =~ s/^-// ) {
+        $direction = 'desc';
+    } elsif ( $order_by =~ s/^\+// ) {
+        $direction = 'asc';
+    }
+
+    # Use the .sort sub-field for sortable fields
+    my $sort_field = "${order_by}.sort";
+
+    return [ { $sort_field => { order => $direction, unmapped_type => 'long' } } ];
+}
+
+1;
