@@ -21,6 +21,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use C4::Context;
 use Koha::Patrons;
+use Koha::SearchEngine::Elasticsearch::Search::Patrons;
 
 use Try::Tiny qw( catch try );
 
@@ -42,17 +43,6 @@ sub search {
     my $c = shift->openapi->valid_input or return;
 
     return try {
-        my $q        = $c->param('q');
-        my $fields   = $c->param('fields');
-        my $order_by = $c->param('_order_by');
-        my $page     = $c->param('_page') // 1;
-        my $per_page = $c->param('_per_page') // 20;
-
-        # Facet filters
-        my $branchcode   = $c->param('branchcode');
-        my $categorycode = $c->param('categorycode');
-        my $debarred     = $c->param('debarred');
-
         unless ( C4::Context->preference('ElasticsearchPatronSearch') ) {
             return $c->render(
                 status  => 400,
@@ -60,18 +50,53 @@ sub search {
             );
         }
 
-        # TODO: Implement ES search
-        # 1. Resolve searchable fields based on caller's library
-        # 2. Build multi_match query in bool.must
-        # 3. Apply facet filters in bool.filter
-        # 4. Add aggs for branchcode, categorycode, debarred
-        # 5. Apply sorting
-        # 6. Execute search
-        # 7. Hydrate results from DB
+        my $q        = $c->param('q');
+        my $fields   = $c->param('fields');
+        my $order_by = $c->param('_order_by');
+        my $page     = $c->param('_page') // 1;
+        my $per_page = $c->param('_per_page') // 20;
+
+        # Facet filters
+        my %filters;
+        for my $f (qw( branchcode categorycode debarred )) {
+            my $val = $c->param($f);
+            $filters{$f} = $val if defined $val;
+        }
+
+        my $library = $c->stash('koha.user')->branchcode;
+
+        my $searcher = Koha::SearchEngine::Elasticsearch::Search::Patrons->new();
+        my $results  = $searcher->search_patrons(
+            query    => $q,
+            fields   => $fields ? [ split /\|/, $fields ] : undef,
+            page     => $page,
+            per_page => $per_page,
+            order_by => $order_by,
+            filters  => \%filters,
+            library  => $library,
+        );
+
+        # Hydrate patron objects from DB
+        my @patrons;
+        if ( @{ $results->{hits} } ) {
+            my $patrons_rs = Koha::Patrons->search(
+                { borrowernumber => { -in => $results->{hits} } }
+            );
+            # Preserve ES result order
+            my %order = map { $results->{hits}[$_] => $_ } 0 .. $#{ $results->{hits} };
+            @patrons = sort { $order{ $a->borrowernumber } <=> $order{ $b->borrowernumber } }
+                $patrons_rs->as_list;
+        }
+
+        my $user = $c->stash('koha.user');
 
         return $c->render(
             status  => 200,
-            openapi => { total => 0, hits => [], facets => {} },
+            openapi => {
+                total  => $results->{total},
+                hits   => [ map { $_->to_api({ user => $user }) } @patrons ],
+                facets => $results->{facets},
+            },
         );
     } catch {
         $c->unhandled_exception($_);
@@ -88,9 +113,6 @@ sub autocomplete {
     my $c = shift->openapi->valid_input or return;
 
     return try {
-        my $q        = $c->param('q');
-        my $per_page = $c->param('_per_page') // 10;
-
         unless ( C4::Context->preference('ElasticsearchPatronSearch') ) {
             return $c->render(
                 status  => 400,
@@ -98,13 +120,41 @@ sub autocomplete {
             );
         }
 
-        # TODO: Implement ES completion suggester
-        # 1. Build suggest query
-        # 2. Return lightweight patron summaries
+        my $q        = $c->param('q');
+        my $per_page = $c->param('_per_page') // 10;
+        my $library  = $c->stash('koha.user')->branchcode;
+
+        my $searcher   = Koha::SearchEngine::Elasticsearch::Search::Patrons->new();
+        my $patron_ids = $searcher->autocomplete(
+            query    => $q,
+            per_page => $per_page,
+            library  => $library,
+        );
+
+        my @suggestions;
+        if (@$patron_ids) {
+            my $patrons_rs = Koha::Patrons->search(
+                { borrowernumber => { -in => $patron_ids } }
+            );
+            my %order = map { $patron_ids->[$_] => $_ } 0 .. $#$patron_ids;
+            my @sorted = sort { $order{ $a->borrowernumber } <=> $order{ $b->borrowernumber } }
+                $patrons_rs->as_list;
+
+            @suggestions = map {
+                {
+                    patron_id   => $_->borrowernumber,
+                    cardnumber  => $_->cardnumber,
+                    firstname   => $_->firstname,
+                    surname     => $_->surname,
+                    library_id  => $_->branchcode,
+                    category_id => $_->categorycode,
+                }
+            } @sorted;
+        }
 
         return $c->render(
             status  => 200,
-            openapi => [],
+            openapi => \@suggestions,
         );
     } catch {
         $c->unhandled_exception($_);

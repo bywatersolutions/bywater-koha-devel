@@ -56,7 +56,7 @@ my @FACET_FIELDS = qw( branchcode categorycode debarred );
 sub new {
     my ( $class, $params ) = @_;
     $params //= {};
-    $params->{index} = Koha::SearchEngine::Elasticsearch::PATRONS_INDEX;
+    $params->{index} = $Koha::SearchEngine::Elasticsearch::PATRONS_INDEX;
     return $class->SUPER::new($params);
 }
 
@@ -204,8 +204,9 @@ sub _resolve_search_fields {
     my @fields = @CORE_SEARCH_FIELDS;
 
     # Add searchable extended attribute fields visible to this library
-    my $attr_types_rs = Koha::Patron::Attribute::Types->search({ staff_searchable => 1 });
-    $attr_types_rs = $attr_types_rs->filter_by_branch($library) if $library;
+    my $attr_types_rs = Koha::Patron::Attribute::Types->search_with_library_limits(
+        { staff_searchable => 1 }, {}, $library
+    );
 
     while ( my $type = $attr_types_rs->next ) {
         push @fields, "ext_attr_" . $type->code;
