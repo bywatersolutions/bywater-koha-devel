@@ -1,0 +1,196 @@
+[% USE raw %]
+[% USE Asset %]
+[% USE Koha %]
+[% USE Branches %]
+[% USE Categories %]
+[% PROCESS 'i18n.inc' %]
+[% SET footerjs = 1 %]
+[% SET libraries = Branches.all %]
+[% SET categories = Categories.all.unblessed %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title>[% FILTER collapse %]
+    [% t("Patron search") | html %] &rsaquo; [% t("Patrons") | html %] &rsaquo; [% t("Koha") | html %]
+[% END %]</title>
+[% INCLUDE 'doc-head-close.inc' %]
+</head>
+
+<body id="pat_patron_search" class="pat">
+[% WRAPPER 'header.inc' %]
+    [% INCLUDE 'patron-search-header.inc' %]
+[% END %]
+
+[% WRAPPER 'sub-header.inc' %]
+    [% WRAPPER breadcrumbs %]
+        [% WRAPPER breadcrumb_item bc_active=1 %]
+            <span>Patron search</span>
+        [% END %]
+    [% END %]
+[% END %]
+
+<div class="main container-fluid">
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+
+            <h1>Patron search</h1>
+
+            <div class="row">
+                <div class="col-md-9">
+                    <form id="patron-search-form" class="form-inline">
+                        <div class="form-group">
+                            <label for="search-query">Search:</label>
+                            <input type="text" id="search-query" class="form-control" placeholder="Name, cardnumber, email..." autofocus />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </form>
+                </div>
+                <div class="col-md-3" id="facets-container">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <table id="patron-search-table" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Card</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Library</th>
+                                <th>Expires</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+[% MACRO jsinclude BLOCK %]
+    [% INCLUDE 'datatables.inc' %]
+    <script>
+        var defined_per_page = [% PatronsPerPage | html %];
+
+        $(document).ready(function() {
+            var patron_table;
+
+            function doSearch() {
+                var q = $("#search-query").val();
+                if (!q) return;
+
+                if (patron_table) {
+                    // Redraw with new search
+                    patron_table.DataTable().ajax.reload();
+                } else {
+                    patron_table = $("#patron-search-table").kohaTable({
+                        ajax: {
+                            url: "/api/v1/search/patrons",
+                            dataSrc: function(json) {
+                                renderFacets(json.facets);
+                                return json.hits;
+                            },
+                            data: function(data) {
+                                var q = $("#search-query").val();
+                                var dataSet = {
+                                    q: q,
+                                    _page: Math.floor(data.start / data.length) + 1,
+                                    _per_page: data.length,
+                                };
+
+                                // Column filters → filters JSON
+                                var filters = {};
+                                data.columns.forEach(function(col, idx) {
+                                    if (col.search && col.search.value) {
+                                        var field = col.data;
+                                        if (field === "category_id") {
+                                            filters.categorycode = col.search.value;
+                                        } else if (field === "library_id") {
+                                            filters.branchcode = col.search.value;
+                                        } else if (field && field.startsWith("ext_attr_")) {
+                                            filters[field] = col.search.value;
+                                        }
+                                    }
+                                });
+                                if (Object.keys(filters).length) {
+                                    dataSet.filters = JSON.stringify(filters);
+                                }
+
+                                // Sort
+                                if (data.order && data.order.length) {
+                                    var columns = ["cardnumber", "surname", "category_id", "library_id", "expiry_date"];
+                                    dataSet._order_by = data.order.map(function(e) {
+                                        var col = columns[e.column] || "surname";
+                                        var dir = e.dir === "asc" ? "+" : "-";
+                                        return dir + col;
+                                    }).join(",");
+                                }
+
+                                return dataSet;
+                            }
+                        },
+                        pageLength: defined_per_page,
+                        columns: [
+                            {
+                                data: "cardnumber",
+                                render: function(data, type, row) {
+                                    return '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '">' + (data || '') + '</a>';
+                                }
+                            },
+                            {
+                                data: "surname",
+                                render: function(data, type, row) {
+                                    var name = (row.surname || '') + ', ' + (row.firstname || '');
+                                    return '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '" class="patron_name">' + name + '</a>';
+                                }
+                            },
+                            { data: "category_id" },
+                            { data: "library_id" },
+                            { data: "expiry_date" }
+                        ],
+                        order: [[1, "asc"]],
+                    });
+                }
+            }
+
+            function renderFacets(facets) {
+                if (!facets) return;
+                var html = '<h4>Filter by</h4>';
+                if (facets.branchcode && facets.branchcode.length) {
+                    html += '<h5>Library</h5><ul class="list-unstyled">';
+                    facets.branchcode.forEach(function(f) {
+                        html += '<li><a href="#" class="facet-link" data-field="branchcode" data-value="' + f.value + '">' + f.value + ' (' + f.count + ')</a></li>';
+                    });
+                    html += '</ul>';
+                }
+                if (facets.categorycode && facets.categorycode.length) {
+                    html += '<h5>Category</h5><ul class="list-unstyled">';
+                    facets.categorycode.forEach(function(f) {
+                        html += '<li><a href="#" class="facet-link" data-field="categorycode" data-value="' + f.value + '">' + f.value + ' (' + f.count + ')</a></li>';
+                    });
+                    html += '</ul>';
+                }
+                $("#facets-container").html(html);
+
+                // Facet click handler
+                $(".facet-link").on("click", function(e) {
+                    e.preventDefault();
+                    var field = $(this).data("field");
+                    var value = $(this).data("value");
+                    // Add as column filter and redraw
+                    var dt = patron_table.DataTable();
+                    var colIdx = field === "branchcode" ? 3 : 2;
+                    dt.column(colIdx).search(value).draw();
+                });
+            }
+
+            $("#patron-search-form").on("submit", function(e) {
+                e.preventDefault();
+                doSearch();
+            });
+        });
+    </script>
+[% END %]
+
+[% INCLUDE 'intranet-bottom.inc' %]
