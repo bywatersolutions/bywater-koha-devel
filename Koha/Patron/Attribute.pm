@@ -259,7 +259,7 @@ sub delete {
 
 =head3 _es_reindex_patron
 
-Reindex the parent patron in Elasticsearch (if enabled).
+Enqueue a background job to reindex the parent patron in Elasticsearch (if enabled).
 
 =cut
 
@@ -267,9 +267,10 @@ sub _es_reindex_patron {
     my ( $self, $borrowernumber ) = @_;
     $borrowernumber //= $self->borrowernumber;
     return unless C4::Context->preference('ElasticsearchPatronSearch');
-    require Koha::SearchEngine::Elasticsearch::Indexer::Patrons;
-    my $indexer = Koha::SearchEngine::Elasticsearch::Indexer::Patrons->new();
-    $indexer->index_patrons( [$borrowernumber] );
+    require Koha::BackgroundJob::UpdateElasticPatronIndex;
+    Koha::BackgroundJob::UpdateElasticPatronIndex->new->enqueue(
+        { patron_ids => [$borrowernumber] }
+    );
 }
 
 =head3 _type

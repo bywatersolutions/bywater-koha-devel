@@ -4116,16 +4116,17 @@ Martin Renvoize <martin.renvoize@ptfs-europe.com>
 
 =head3 _es_index_patron
 
-Index this patron in Elasticsearch (if enabled).
+Enqueue a background job to index this patron in Elasticsearch (if enabled).
 
 =cut
 
 sub _es_index_patron {
     my ($self) = @_;
     return unless C4::Context->preference('ElasticsearchPatronSearch');
-    require Koha::SearchEngine::Elasticsearch::Indexer::Patrons;
-    my $indexer = Koha::SearchEngine::Elasticsearch::Indexer::Patrons->new();
-    $indexer->index_patrons( [ $self->borrowernumber ] );
+    require Koha::BackgroundJob::UpdateElasticPatronIndex;
+    Koha::BackgroundJob::UpdateElasticPatronIndex->new->enqueue(
+        { patron_ids => [ $self->borrowernumber ] }
+    );
 }
 
 =head3 _es_delete_patron
