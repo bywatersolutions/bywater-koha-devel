@@ -23,6 +23,8 @@ use YAML::XS;
 
 use base qw(Koha::SearchEngine::Elasticsearch::Indexer);
 
+use Koha::Exceptions;
+use Koha::Exceptions::Elasticsearch;
 use C4::Context;
 use Koha::Patrons;
 use Koha::Patron::Attribute::Types;
@@ -196,6 +198,59 @@ sub _build_document {
     }
 
     return $doc;
+}
+
+=head2 create_index
+
+    $indexer->create_index();
+
+Creates the patrons index with settings and mappings.
+Overrides the parent to use patron-specific mappings with dynamic templates.
+
+=cut
+
+sub create_index {
+    my ($self) = @_;
+
+    my $settings      = $self->get_elasticsearch_settings();
+    my $elasticsearch = $self->get_elasticsearch();
+
+    $elasticsearch->indices->create(
+        index => $self->index_name,
+        body  => { settings => $settings },
+    );
+
+    $self->update_mappings();
+}
+
+=head2 update_mappings
+
+    $indexer->update_mappings();
+
+Applies patron-specific mappings including dynamic templates for extended attributes.
+
+=cut
+
+sub update_mappings {
+    my ($self) = @_;
+
+    my $elasticsearch = $self->get_elasticsearch();
+    my $mappings      = $self->get_elasticsearch_mappings();
+
+    try {
+        $elasticsearch->indices->put_mapping(
+            index => $self->index_name,
+            body  => $mappings,
+        );
+    } catch {
+        $self->set_index_status_recreate_required();
+        my $reason     = $_[0]->{vars}->{body}->{error}->{reason} // 'unknown';
+        my $index_name = $self->index_name;
+        Koha::Exception->throw(
+            error => "Unable to update mappings for index \"$index_name\". Reason: \"$reason\". Index needs recreation.",
+        );
+    };
+    $self->set_index_status_ok();
 }
 
 =head2 get_elasticsearch_mappings
