@@ -82,7 +82,11 @@ sub store {
         $self->borrowernumber
     );
 
-    return $self->SUPER::store();
+    $self = $self->SUPER::store();
+
+    $self->_es_reindex_patron();
+
+    return $self;
 }
 
 =head3 type
@@ -236,6 +240,37 @@ sub value_ok {
 }
 
 =head2 Internal methods
+
+=head3 delete
+
+    $attribute->delete();
+
+Override to trigger ES reindex of the parent patron.
+
+=cut
+
+sub delete {
+    my ($self) = @_;
+    my $borrowernumber = $self->borrowernumber;
+    $self->SUPER::delete();
+    $self->_es_reindex_patron($borrowernumber);
+    return $self;
+}
+
+=head3 _es_reindex_patron
+
+Reindex the parent patron in Elasticsearch (if enabled).
+
+=cut
+
+sub _es_reindex_patron {
+    my ( $self, $borrowernumber ) = @_;
+    $borrowernumber //= $self->borrowernumber;
+    return unless C4::Context->preference('ElasticsearchPatronSearch');
+    require Koha::SearchEngine::Elasticsearch::Indexer::Patrons;
+    my $indexer = Koha::SearchEngine::Elasticsearch::Indexer::Patrons->new();
+    $indexer->index_patrons( [$borrowernumber] );
+}
 
 =head3 _type
 

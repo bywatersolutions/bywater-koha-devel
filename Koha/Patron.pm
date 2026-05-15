@@ -444,6 +444,9 @@ sub store {
             }
         }
     );
+
+    $self->_es_index_patron();
+
     return $self;
 }
 
@@ -512,6 +515,9 @@ sub delete {
                 if C4::Context->preference("BorrowersLog");
         }
     );
+
+    $self->_es_delete_patron();
+
     return $self;
 }
 
@@ -2862,6 +2868,8 @@ sub anonymize {
         $self->_anonymize_column( $col, $mandatory->{ lc $col } );
     }
     $self->anonymized(1)->store;
+
+    $self->_es_delete_patron();
 }
 
 =head3 _anonymize_column
@@ -4106,6 +4114,32 @@ Kyle M Hall <kyle@bywatersolutions.com>
 Alex Sassmannshausen <alex.sassmannshausen@ptfs-europe.com>
 Martin Renvoize <martin.renvoize@ptfs-europe.com>
 
+=head3 _es_index_patron
+
+Index this patron in Elasticsearch (if enabled).
+
 =cut
+
+sub _es_index_patron {
+    my ($self) = @_;
+    return unless C4::Context->preference('ElasticsearchPatronSearch');
+    require Koha::SearchEngine::Elasticsearch::Indexer::Patrons;
+    my $indexer = Koha::SearchEngine::Elasticsearch::Indexer::Patrons->new();
+    $indexer->index_patrons( [ $self->borrowernumber ] );
+}
+
+=head3 _es_delete_patron
+
+Remove this patron from the Elasticsearch index (if enabled).
+
+=cut
+
+sub _es_delete_patron {
+    my ($self) = @_;
+    return unless C4::Context->preference('ElasticsearchPatronSearch');
+    require Koha::SearchEngine::Elasticsearch::Indexer::Patrons;
+    my $indexer = Koha::SearchEngine::Elasticsearch::Indexer::Patrons->new();
+    $indexer->delete_patrons( [ $self->borrowernumber ] );
+}
 
 1;
