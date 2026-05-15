@@ -1,0 +1,146 @@
+---
+"/search/patrons":
+  get:
+    x-mojo-to: Search::Patrons#search
+    operationId: searchPatronsES
+    tags:
+      - patrons
+      - search
+    summary: Search patrons using Elasticsearch
+    produces:
+      - application/json
+    parameters:
+      - name: q
+        in: query
+        description: Free-text search query
+        required: true
+        type: string
+      - name: fields
+        in: query
+        description: Pipe-separated list of fields to search. If empty, searches all searchable fields.
+        required: false
+        type: string
+      - name: _order_by
+        in: query
+        description: "Sort field. Prefix with + or - for direction. Supports extended attribute fields (ext_attr_{CODE})."
+        required: false
+        type: string
+      - name: _page
+        in: query
+        description: Page number
+        required: false
+        type: integer
+        minimum: 1
+      - name: _per_page
+        in: query
+        description: Number of results per page
+        required: false
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      - $ref: "../swagger.yaml#/parameters/request_id_header"
+    responses:
+      "200":
+        description: Search results
+        schema:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: Total number of matching patrons
+            hits:
+              type: array
+              items:
+                $ref: "../swagger.yaml#/definitions/patron"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: Internal server error
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        - borrowers: "list_borrowers"
+"/search/patrons/autocomplete":
+  get:
+    x-mojo-to: Search::Patrons#autocomplete
+    operationId: autocompletePatronsES
+    tags:
+      - patrons
+      - search
+    summary: Autocomplete patron search using Elasticsearch
+    produces:
+      - application/json
+    parameters:
+      - name: q
+        in: query
+        description: Partial input for autocomplete
+        required: true
+        type: string
+      - name: _per_page
+        in: query
+        description: Maximum number of suggestions
+        required: false
+        type: integer
+        minimum: 1
+        maximum: 20
+        default: 10
+      - $ref: "../swagger.yaml#/parameters/request_id_header"
+    responses:
+      "200":
+        description: Autocomplete suggestions
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              patron_id:
+                type: integer
+              cardnumber:
+                type: string
+              firstname:
+                type: string
+              surname:
+                type: string
+              library_id:
+                type: string
+              category_id:
+                type: string
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: Internal server error
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        - borrowers: "list_borrowers"
