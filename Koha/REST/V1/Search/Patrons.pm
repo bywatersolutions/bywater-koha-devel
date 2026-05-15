@@ -56,6 +56,11 @@ sub search {
         my $page     = $c->param('_page') // 1;
         my $per_page = $c->param('_per_page') // 20;
 
+        # Strip 'me.' prefix from _order_by (kohaTable adds it)
+        if ($order_by) {
+            $order_by =~ s/me\.//g;
+        }
+
         # Facet filters
         my %filters;
         for my $f (qw( branchcode categorycode debarred )) {
@@ -89,6 +94,13 @@ sub search {
         }
 
         my $user = $c->stash('koha.user');
+
+        # Response headers for kohaTable/DataTables compatibility
+        $c->res->headers->add( 'X-Total-Count'      => $results->{total} );
+        $c->res->headers->add( 'X-Base-Total-Count' => $results->{total} );
+        if ( my $request_id = $c->req->headers->header('x-koha-request-id') ) {
+            $c->res->headers->add( 'x-koha-request-id' => $request_id );
+        }
 
         return $c->render(
             status  => 200,

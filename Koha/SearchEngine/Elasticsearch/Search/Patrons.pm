@@ -279,17 +279,24 @@ Translates an _order_by string like "-surname" or "+ext_attr_DEPT" into ES sort.
 sub _build_sort {
     my ( $self, $order_by ) = @_;
 
-    my $direction = 'asc';
-    if ( $order_by =~ s/^-// ) {
-        $direction = 'desc';
-    } elsif ( $order_by =~ s/^\+// ) {
-        $direction = 'asc';
+    my @sort;
+    for my $field ( split /,/, $order_by ) {
+        $field =~ s/^\s+|\s+$//g;
+        next unless $field;
+
+        my $direction = 'asc';
+        if ( $field =~ s/^-// ) {
+            $direction = 'desc';
+        } elsif ( $field =~ s/^\+// ) {
+            $direction = 'asc';
+        }
+
+        # Use the .sort sub-field for sortable fields
+        my $sort_field = "${field}.sort";
+        push @sort, { $sort_field => { order => $direction, unmapped_type => 'long' } };
     }
 
-    # Use the .sort sub-field for sortable fields
-    my $sort_field = "${order_by}.sort";
-
-    return [ { $sort_field => { order => $direction, unmapped_type => 'long' } } ];
+    return \@sort;
 }
 
 1;
