@@ -19,6 +19,7 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 
+use Mojo::JSON;
 use C4::Context;
 use Koha::Patrons;
 use Koha::SearchEngine::Elasticsearch::Search::Patrons;
@@ -61,11 +62,16 @@ sub search {
             $order_by =~ s/me\.//g;
         }
 
-        # Facet filters
+        # Facet filters (core fields + extended attributes)
         my %filters;
         for my $f (qw( branchcode categorycode debarred )) {
             my $val = $c->param($f);
             $filters{$f} = $val if defined $val;
+        }
+        # JSON filters param (supports ext_attr_{CODE} and others)
+        if ( my $filters_json = $c->param('filters') ) {
+            my $extra = eval { Mojo::JSON::decode_json($filters_json) } // {};
+            %filters = ( %filters, %$extra );
         }
 
         my $library = $c->stash('koha.user')->branchcode;

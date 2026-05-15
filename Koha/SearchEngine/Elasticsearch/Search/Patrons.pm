@@ -245,7 +245,14 @@ sub _build_query {
     # Facet filters from the request
     for my $field ( keys %$filters ) {
         next unless defined $filters->{$field} && $filters->{$field} ne '';
-        my $es_field = $field eq 'debarred' ? $field : "${field}.facet";
+        my $es_field;
+        if ( $field eq 'debarred' ) {
+            $es_field = $field;
+        } elsif ( $field =~ /^ext_attr_/ ) {
+            $es_field = "${field}.raw";
+        } else {
+            $es_field = "${field}.facet";
+        }
         push @filter_clauses, { term => { $es_field => $filters->{$field} } };
     }
 

@@ -54,6 +54,11 @@
         description: Filter by restriction status
         required: false
         type: boolean
+      - name: filters
+        in: query
+        description: "JSON object of additional filters. Supports extended attribute filters as ext_attr_{CODE}:value pairs."
+        required: false
+        type: string
       - $ref: "../swagger.yaml#/parameters/request_id_header"
     responses:
       "200":
