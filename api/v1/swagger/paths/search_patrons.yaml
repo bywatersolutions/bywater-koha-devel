@@ -54,6 +54,56 @@
         description: Filter by restriction status
         required: false
         type: boolean
+      - name: cardnumber
+        in: query
+        description: Search on cardnumber
+        required: false
+        type: string
+      - name: surname
+        in: query
+        description: Search on surname
+        required: false
+        type: string
+      - name: firstname
+        in: query
+        description: Search on firstname
+        required: false
+        type: string
+      - name: phone
+        in: query
+        description: Search on phone
+        required: false
+        type: string
+      - name: date_of_birth
+        in: query
+        description: Search on date of birth
+        required: false
+        type: string
+      - name: expiry_date
+        in: query
+        description: Search on expiry date
+        required: false
+        type: string
+      - name: email
+        in: query
+        description: Search on email
+        required: false
+        type: string
+      - name: address
+        in: query
+        description: Search on address
+        required: false
+        type: string
+      - name: city
+        in: query
+        description: Search on city
+        required: false
+        type: string
+      - name: staff_notes
+        in: query
+        description: Search on staff notes
+        required: false
+        type: string
       - name: filters
         in: query
         description: "JSON object of additional filters. Supports extended attribute filters as ext_attr_{CODE}:value pairs."

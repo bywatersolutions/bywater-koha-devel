@@ -30,9 +30,47 @@
 <div class="main container-fluid">
     <div class="row">
         <div class="col-md-2 order-md-1 order-sm-2" id="facets-container">
-            <div id="facets" class="sidebar" style="display:none;">
+            <div id="search-panel" class="sidebar">
+                <h4>[% t("Search for patron") | html %]</h4>
+                <form id="patron-search-form">
+                    <div class="form-group mb-2">
+                        <input type="text" id="search-query" class="form-control form-control-sm" placeholder="[% t("Search") | html %]" />
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="search-field" class="form-label">[% t("Search field:") | html %]</label>
+                        <select id="search-field" class="form-select form-select-sm">
+                            <option value="">[% t("Standard") | html %]</option>
+                            <option value="surname">[% t("Surname") | html %]</option>
+                            <option value="cardnumber">[% t("Card number") | html %]</option>
+                            <option value="email">[% t("All emails") | html %]</option>
+                            <option value="phone|mobile">[% t("All phones") | html %]</option>
+                            <option value="address|city|postal_code">[% t("Full address") | html %]</option>
+                            <option value="date_of_birth">[% t("Date of birth") | html %]</option>
+                            <option value="patron_id">[% t("Borrower number") | html %]</option>
+                            [% IF Koha.Preference('ExtendedPatronAttributes') %]
+                                [% FOREACH attribute IN ExtendedAttributeTypes.all( staff_searchable => 1 ) %]
+                                    <option value="ext_attr_[% attribute.code | html %]">[% attribute.description | html %]</option>
+                                [% END %]
+                            [% END %]
+                        </select>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="search-type" class="form-label">[% t("Search type:") | html %]</label>
+                        <select id="search-type" class="form-select form-select-sm">
+                            <option value="starts_with">[% t("Starts with") | html %]</option>
+                            <option value="contains" selected>[% t("Contains") | html %]</option>
+                        </select>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm">[% t("Search") | html %]</button>
+                        <button type="button" id="clear-search" class="btn btn-default btn-sm">[% t("Clear") | html %]</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="facets" class="sidebar" style="display:none; margin-top: 1em;">
                 <h4>[% t("Refine search") | html %]</h4>
-                <p><a href="#" id="clear-facets" class="btn btn-link btn-sm"><i class="fa fa-times"></i> [% t("Clear all filters") | html %]</a></p>
+                <p><a href="#" id="clear-facets" class="btn btn-link btn-sm" style="display:none;"><i class="fa fa-times"></i> [% t("Clear all filters") | html %]</a></p>
                 <div id="facet-library_id"></div>
                 <div id="facet-category_id"></div>
             </div>
@@ -42,50 +80,19 @@
             <main>
                 [% INCLUDE 'patron-toolbar.inc' %]
 
-                <form id="patron-search-form" class="form-inline" style="margin: 1em 0;">
-                    <div class="form-group">
-                        <label for="search-query" class="sr-only">[% t("Search") | html %]:</label>
-                        <input type="text" id="search-query" class="form-control" placeholder="[% t("Name, cardnumber, email...") | html %]" autofocus style="width: 400px;" />
-                    </div>
-                    <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> [% t("Search") | html %]</button>
-                    <a href="#" id="toggle-advanced" class="btn btn-link btn-sm"><i class="fa fa-sliders"></i> [% t("Advanced") | html %]</a>
-
-                    <div id="advanced-search-panel" style="display:none; margin-top: 0.5em;" class="form-inline">
-                        <div class="form-group me-2">
-                            <label for="search-field" class="me-1">[% t("Search field") | html %]:</label>
-                            <select id="search-field" class="form-select form-select-sm">
-                                <option value="">[% t("All fields") | html %]</option>
-                                <option value="surname">[% t("Surname") | html %]</option>
-                                <option value="firstname">[% t("First name") | html %]</option>
-                                <option value="cardnumber">[% t("Card number") | html %]</option>
-                                <option value="email">[% t("All emails") | html %]</option>
-                                <option value="phone|mobile">[% t("All phones") | html %]</option>
-                                <option value="address|city|postal_code">[% t("Full address") | html %]</option>
-                                <option value="date_of_birth">[% t("Date of birth") | html %]</option>
-                                <option value="patron_id">[% t("Patron ID") | html %]</option>
-                                [% IF Koha.Preference('ExtendedPatronAttributes') %]
-                                    [% FOREACH attribute IN ExtendedAttributeTypes.all( staff_searchable => 1 ) %]
-                                        <option value="ext_attr_[% attribute.code | html %]">[% attribute.description | html %]</option>
-                                    [% END %]
-                                [% END %]
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="search-type" class="me-1">[% t("Search type") | html %]:</label>
-                            <select id="search-type" class="form-select form-select-sm">
-                                <option value="starts_with">[% t("Starts with") | html %]</option>
-                                <option value="contains" selected>[% t("Contains") | html %]</option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
+                <div id="browse-by-letter" class="mb-2">
+                    <span>[% t("Browse by last name:") | html %]</span>
+                    [% FOREACH letter IN ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'] %]
+                        <a href="#" class="letter-link btn btn-link btn-sm" data-letter="[% letter | html %]">[% letter | html %]</a>
+                    [% END %]
+                </div>
 
                 <div id="active-filters" style="display:none; margin-bottom: 1em;">
                     <span class="label">[% t("Active filters:") | html %]</span>
                     <span id="active-filters-list"></span>
                 </div>
 
-                <table id="patron-search-table" class="table table-striped" style="display:none;">
+                <table id="patron-search-table" class="table table-striped">
                     <thead>
                         <tr>
                             <th>[% t("Card number") | html %]</th>
@@ -113,7 +120,6 @@
     <script>
         var defined_per_page = [% PatronsPerPage | html %];
 
-        // Build lookup maps for descriptions
         var library_map = {
             [% FOREACH l IN libraries %]"[% l.branchcode | html %]": "[% l.branchname | html %]",[% END %]
         };
@@ -127,129 +133,151 @@
             return code;
         }
 
+        var logged_in_library_id = "[% Branches.GetLoggedInBranchcode | html %]";
+
         $(document).ready(function() {
-            var patron_table;
-            var active_filters = {}; // { library_id: ["MPL","CPL"], category_id: ["PT"] }
+            var active_filters = {};
 
-            function doSearch() {
-                var q = $("#search-query").val();
+            var patron_table = $("#patron-search-table").kohaTable({
+                ajax: {
+                    url: "/api/v1/search/patrons",
+                    dataSrc: function(json) {
+                        renderFacets(json.facets);
+                        return json.hits;
+                    },
+                    data: function(data) {
+                        var params = {
+                            _page: Math.floor(data.start / data.length) + 1,
+                            _per_page: data.length,
+                        };
+                        var q = $("#search-query").val();
+                        if (q) {
+                            params.q = q;
+                            var field = $("#search-field").val();
+                            if (field) params.fields = field;
+                            var searchType = $("#search-type").val();
+                            if (searchType) params._match = searchType;
+                        }
 
-                $("#patron-search-table").show();
+                        if (data.order && data.order.length) {
+                            var columns = ["cardnumber", "surname", "phone", "date_of_birth", "library_id", "category_id", "expiry_date", "checkouts_count", "account_balance", "staff_notes", null];
+                            params._order_by = data.order.map(function(e) {
+                                var col = columns[e.column];
+                                if (!col) return null;
+                                return (e.dir === "asc" ? "+" : "-") + col;
+                            }).filter(Boolean).join(",");
+                        }
 
-                if (patron_table) {
-                    patron_table.DataTable().ajax.reload();
-                } else {
-                    patron_table = $("#patron-search-table").kohaTable({
-                        ajax: {
-                            url: "/api/v1/search/patrons",
-                            dataSrc: function(json) {
-                                renderFacets(json.facets);
-                                return json.hits;
-                            },
-                            data: function(data, settings) {
-                                var q = $("#search-query").val();
-                                var params = {
-                                    _page: Math.floor(data.start / data.length) + 1,
-                                    _per_page: data.length,
-                                };
-                                if (q) params.q = q;
+                        if (Object.keys(active_filters).length) {
+                            params.filters = JSON.stringify(active_filters);
+                        }
 
-                                // Advanced: specific field
-                                var field = $("#search-field").val();
-                                if (field) {
-                                    params.fields = field;
+                        // Column filters — pass as individual field params
+                        var col_filters_json = {};
+                        if (data.columns) {
+                            data.columns.forEach(function(col) {
+                                if (col.search && col.search.value && col.data) {
+                                    var val = col.search.value.replace(/[\^$]/g, '');
+                                    if (col.data.startsWith("ext_attr_")) {
+                                        col_filters_json[col.data] = val;
+                                    } else {
+                                        params[col.data] = val;
+                                    }
                                 }
-
-                                // Advanced: search type (starts_with handled server-side via prefix)
-                                var searchType = $("#search-type").val();
-                                if (searchType) {
-                                    params._match = searchType;
-                                }
-
-                                // Sort
-                                if (data.order && data.order.length) {
-                                    var columns = ["cardnumber", "surname", "phone", "date_of_birth", "library_id", "category_id", "expiry_date", "checkouts_count", "account_balance", "staff_notes"];
-                                    params._order_by = data.order.map(function(e) {
-                                        var col = columns[e.column] || "surname";
-                                        var dir = e.dir === "asc" ? "+" : "-";
-                                        return dir + col;
-                                    }).join(",");
-                                }
-
-                                // Active filters
-                                if (Object.keys(active_filters).length) {
-                                    params.filters = JSON.stringify(active_filters);
-                                }
-
-                                return params;
-                            },
-                            dataFilter: function(data, type) {
-                                var json = JSON.parse(data);
-                                json.recordsTotal = json.total;
-                                json.recordsFiltered = json.total;
-                                return JSON.stringify(json);
-                            }
-                        },
-                        columns: [
-                            {
-                                data: "cardnumber",
-                                render: function(data, type, row) {
-                                    return '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '">' + (data || '') + '</a>';
-                                }
-                            },
-                            {
-                                data: "surname",
-                                render: function(data, type, row) {
-                                    var name = (row.surname || '') + ', ' + (row.firstname || '');
-                                    var address = [row.address, row.city, row.postal_code].filter(Boolean).join(', ');
-                                    var html = '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '" class="patron_name">' + name + '</a>';
-                                    if (address) html += '<br/><span class="text-muted">' + address + '</span>';
-                                    return html;
-                                }
-                            },
-                            { data: "phone", defaultContent: "" },
-                            { data: "date_of_birth", defaultContent: "" },
-                            { data: "library_id", render: function(data) { return library_map[data] || data || ''; } },
-                            { data: "category_id", render: function(data) { return category_map[data] || data || ''; } },
-                            { data: "expiry_date", defaultContent: "" },
-                            { data: "checkouts_count", defaultContent: "0" },
-                            {
-                                data: "account_balance",
-                                render: function(data) {
-                                    if (!data || data == 0) return "0.00";
-                                    var cls = data > 0 ? "text-danger" : "";
-                                    return '<span class="' + cls + '">' + parseFloat(data).toFixed(2) + '</span>';
-                                }
-                            },
-                            { data: "staff_notes", defaultContent: "" },
-                            {
-                                data: "patron_id",
-                                searchable: false,
-                                orderable: false,
-                                render: function(data, type, row) {
-                                    var html = '';
-                                    [% IF CAN_user_borrowers_edit_borrowers %]
-                                    html += '<a href="/cgi-bin/koha/members/memberentry.pl?op=edit_form&amp;destination=circ&amp;borrowernumber=' + data + '" class="btn btn-default btn-xs"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' + __("Edit") + '</a> ';
-                                    [% END %]
-                                    [% IF CAN_user_circulate_circulate_remaining_permissions %]
-                                    html += '<a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=' + data + '" class="btn btn-default btn-xs"><i class="fa fa-barcode"></i> ' + __("Check out") + '</a>';
-                                    [% END %]
-                                    return html;
-                                }
-                            }
-                        ],
-                        order: [[1, "asc"]],
-                        pageLength: defined_per_page,
-                    });
-                }
-            }
+                            });
+                        }
+                        // Merge ext_attr column filters into the filters param
+                        if (Object.keys(col_filters_json).length) {
+                            var existing = params.filters ? JSON.parse(params.filters) : {};
+                            Object.assign(existing, col_filters_json);
+                            params.filters = JSON.stringify(existing);
+                        }
+                        return params;
+                    },
+                    dataFilter: function(data) {
+                        var json = JSON.parse(data);
+                        json.recordsTotal = json.total;
+                        json.recordsFiltered = json.total;
+                        return JSON.stringify(json);
+                    }
+                },
+                columns: [
+                    {
+                        data: "cardnumber",
+                        render: function(data, type, row) {
+                            return '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '">' + (data || '') + '</a>';
+                        }
+                    },
+                    {
+                        data: "surname",
+                        render: function(data, type, row) {
+                            var name = (row.surname || '') + ', ' + (row.firstname || '');
+                            var parts = [row.address, row.city, row.state, row.postal_code].filter(Boolean);
+                            var html = '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '" class="patron_name">' + name + '</a>';
+                            if (parts.length) html += '<br/>' + parts.join(', ');
+                            if (row.email) html += '<br/>' + __("Email: ") + '<a href="mailto:' + row.email + '">' + row.email + '</a>';
+                            return html;
+                        }
+                    },
+                    { data: "phone", defaultContent: "" },
+                    {
+                        data: "date_of_birth",
+                        defaultContent: "",
+                        render: function(data) {
+                            if (!data) return "";
+                            return '<span class="dateofbirth">' + $date(data) + ' <span class="agehint">(' + __("%s years").format($get_age(data)) + ')</span></span>';
+                        }
+                    },
+                    { data: "library_id", render: function(data) {
+                        var name = library_map[data] || data || '';
+                        if (data === logged_in_library_id) return '<span class="currentlibrary">' + name + '</span>';
+                        return name;
+                    } },
+                    { data: "category_id", render: function(data) { return category_map[data] || data || ''; } },
+                    {
+                        data: "expiry_date",
+                        defaultContent: "",
+                        render: function(data) {
+                            if (!data) return "";
+                            var cls = new Date(data) < new Date() ? ' expired' : '';
+                            return '<span class="dateexpiry' + cls + '">' + $date(data) + '</span>';
+                        }
+                    },
+                    { data: "checkouts_count", defaultContent: "0" },
+                    {
+                        data: "account_balance",
+                        render: function(data) {
+                            if (!data || data == 0) return "0.00";
+                            var cls = data > 0 ? "text-danger" : "";
+                            return '<span class="' + cls + '">' + parseFloat(data).toFixed(2) + '</span>';
+                        }
+                    },
+                    { data: "staff_notes", defaultContent: "" },
+                    {
+                        data: "patron_id",
+                        searchable: false,
+                        orderable: false,
+                        render: function(data) {
+                            var html = '';
+                            [% IF CAN_user_borrowers_edit_borrowers %]
+                            html += '<a href="/cgi-bin/koha/members/memberentry.pl?op=edit_form&amp;destination=circ&amp;borrowernumber=' + data + '" class="btn btn-default btn-xs"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' + __("Edit") + '</a> ';
+                            [% END %]
+                            [% IF CAN_user_circulate_circulate_remaining_permissions %]
+                            html += '<a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=' + data + '" class="btn btn-default btn-xs"><i class="fa fa-barcode"></i> ' + __("Check out") + '</a>';
+                            [% END %]
+                            return html;
+                        }
+                    }
+                ],
+                order: [[1, "asc"]],
+                pageLength: defined_per_page,
+            }, null, 1);
 
             function renderFacets(facets) {
                 if (!facets) return;
                 var hasFacets = false;
-
-                // Library facet
                 var html = '';
+
                 if (facets.library_id && facets.library_id.length) {
                     hasFacets = true;
                     html = '<h5>' + __("Library") + '</h5><ul class="list-unstyled">';
@@ -258,13 +286,12 @@
                         var label = describeValue('library_id', f.value);
                         var cls = selected ? 'fw-bold' : '';
                         var x = selected ? ' <a href="#" class="facet-link text-danger" data-field="library_id" data-value="' + f.value + '">&times;</a>' : '';
-                        html += '<li><a href="#" class="facet-link ' + cls + '" data-field="library_id" data-value="' + f.value + '">' + label + '</a> <span class="badge">' + f.count + '</span>' + x + '</li>';
+                        html += '<li><a href="#" class="facet-link ' + cls + '" data-field="library_id" data-value="' + f.value + '" title="' + f.count + '">' + label + '</a>' + x + '</li>';
                     });
                     html += '</ul>';
                 }
                 $("#facet-library_id").html(html);
 
-                // Category facet
                 html = '';
                 if (facets.category_id && facets.category_id.length) {
                     hasFacets = true;
@@ -274,17 +301,14 @@
                         var label = describeValue('category_id', f.value);
                         var cls = selected ? 'fw-bold' : '';
                         var x = selected ? ' <a href="#" class="facet-link text-danger" data-field="category_id" data-value="' + f.value + '">&times;</a>' : '';
-                        html += '<li><a href="#" class="facet-link ' + cls + '" data-field="category_id" data-value="' + f.value + '">' + label + '</a> <span class="badge">' + f.count + '</span>' + x + '</li>';
+                        html += '<li><a href="#" class="facet-link ' + cls + '" data-field="category_id" data-value="' + f.value + '" title="' + f.count + '">' + label + '</a>' + x + '</li>';
                     });
                     html += '</ul>';
                 }
                 $("#facet-category_id").html(html);
 
-                if (hasFacets) {
-                    $("#facets").show();
-                }
+                if (hasFacets) $("#facets").show();
 
-                // Bind facet clicks
                 $(".facet-link").off("click").on("click", function(e) {
                     e.preventDefault();
                     var field = $(this).data("field");
@@ -317,6 +341,7 @@
                     });
                     $("#active-filters-list").html(html);
                     $("#active-filters").show();
+                    $("#clear-facets").show();
 
                     $(".remove-filter").on("click", function(e) {
                         e.preventDefault();
@@ -332,6 +357,7 @@
                     });
                 } else {
                     $("#active-filters").hide();
+                    $("#clear-facets").hide();
                 }
             }
 
@@ -339,19 +365,30 @@
                 e.preventDefault();
                 active_filters = {};
                 updateActiveFiltersDisplay();
-                if (patron_table) {
-                    patron_table.DataTable().ajax.reload();
-                }
-            });
-
-            $("#toggle-advanced").on("click", function(e) {
-                e.preventDefault();
-                $("#advanced-search-panel").toggle();
+                patron_table.DataTable().ajax.reload();
             });
 
             $("#patron-search-form").on("submit", function(e) {
                 e.preventDefault();
-                doSearch();
+                patron_table.DataTable().ajax.reload();
+            });
+
+            $("#clear-search").on("click", function() {
+                $("#search-query").val("");
+                $("#search-field").val("");
+                $("#search-type").val("contains");
+                $(".letter-link").removeClass("fw-bold");
+                patron_table.DataTable().ajax.reload();
+            });
+
+            $(".letter-link").on("click", function(e) {
+                e.preventDefault();
+                $(".letter-link").removeClass("fw-bold");
+                $(this).addClass("fw-bold");
+                $("#search-query").val($(this).data("letter"));
+                $("#search-field").val("surname");
+                $("#search-type").val("starts_with");
+                patron_table.DataTable().ajax.reload();
             });
         });
     </script>

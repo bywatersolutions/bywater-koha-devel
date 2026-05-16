@@ -79,25 +79,27 @@ Returns hashref: { total => $n, hits => \@patron_ids, facets => \%facets }
 sub search_patrons {
     my ( $self, %args ) = @_;
 
-    my $query_string = $args{query};
-    my $page         = $args{page} // 1;
-    my $per_page     = $args{per_page} // 20;
-    my $order_by     = $args{order_by};
-    my $match        = $args{match} // 'contains';
-    my $filters      = $args{filters} // {};
-    my $library      = $args{library};
-    my $fields       = $args{fields};
+    my $query_string    = $args{query};
+    my $page            = $args{page} // 1;
+    my $per_page        = $args{per_page} // 20;
+    my $order_by        = $args{order_by};
+    my $match           = $args{match} // 'contains';
+    my $column_filters  = $args{column_filters} // {};
+    my $filters         = $args{filters} // {};
+    my $library         = $args{library};
+    my $fields          = $args{fields};
 
     # Resolve search fields
     my @search_fields = $fields ? @$fields : $self->_resolve_search_fields($library);
 
     # Build the query body
     my $body = $self->_build_query(
-        query_string  => $query_string,
-        search_fields => \@search_fields,
-        match         => $match,
-        filters       => $filters,
-        library       => $library,
+        query_string   => $query_string,
+        search_fields  => \@search_fields,
+        match          => $match,
+        column_filters => $column_filters,
+        filters        => $filters,
+        library        => $library,
     );
 
     # Sorting
@@ -233,11 +235,12 @@ Builds the ES query body with multi_match + filters + aggregations.
 sub _build_query {
     my ( $self, %args ) = @_;
 
-    my $query_string  = $args{query_string};
-    my $search_fields = $args{search_fields};
-    my $match         = $args{match} // 'contains';
-    my $filters       = $args{filters};
-    my $library       = $args{library};
+    my $query_string   = $args{query_string};
+    my $search_fields  = $args{search_fields};
+    my $match          = $args{match} // 'contains';
+    my $column_filters = $args{column_filters} // {};
+    my $filters        = $args{filters};
+    my $library        = $args{library};
 
     # Main text query — combine query_string with prefix for short queries
     my $escaped = $query_string;
@@ -304,10 +307,27 @@ sub _build_query {
         push @filter_clauses, { term => { 'library_id.facet' => $library } };
     }
 
+    # Column-level field filters (additive, each becomes a must clause)
+    my @must_clauses;
+    push @must_clauses, $must;
+    for my $field ( keys %$column_filters ) {
+        my $value   = $column_filters->{$field};
+        my $lc_val  = lc($value);
+        push @must_clauses, {
+            bool => {
+                should => [
+                    { prefix => { "${field}.ci_raw" => $lc_val } },
+                    { match  => { $field => $value } },
+                ],
+                minimum_should_match => 1,
+            },
+        };
+    }
+
     my $body = {
         query => {
             bool => {
-                must   => $must,
+                must   => \@must_clauses,
                 filter => \@filter_clauses,
             },
         },

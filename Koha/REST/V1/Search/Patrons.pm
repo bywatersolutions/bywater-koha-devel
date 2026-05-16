@@ -52,6 +52,9 @@ sub search {
         }
 
         my $q        = $c->param('q');
+        # TODO: Support DBIC-style q= JSON queries ({"surname":{"like":"%smith%"}})
+        # by translating them to ES queries. This would allow kohaTable to work
+        # without a custom data function. See Koha::SearchEngine::Elasticsearch::QueryTranslator.
         my $fields   = $c->param('fields');
         my $order_by = $c->param('_order_by');
         my $match    = $c->param('_match') // 'contains';
@@ -63,7 +66,16 @@ sub search {
             $order_by =~ s/me\.//g;
         }
 
-        # Facet filters (core fields + extended attributes)
+        # Column-level field filters (additive)
+        my %column_filters;
+        my @known_fields = qw( cardnumber surname firstname phone date_of_birth
+            library_id category_id expiry_date staff_notes email address city );
+        for my $f (@known_fields) {
+            my $val = $c->param($f);
+            $column_filters{$f} = $val if defined $val && $val ne '';
+        }
+
+        # Facet filters (from the filters JSON param)
         my %filters;
         for my $f (qw( library_id category_id restricted )) {
             my $val = $c->param($f);
@@ -72,21 +84,28 @@ sub search {
         # JSON filters param (supports ext_attr_{CODE} and others)
         if ( my $filters_json = $c->param('filters') ) {
             my $extra = eval { Mojo::JSON::decode_json($filters_json) } // {};
-            %filters = ( %filters, %$extra );
+            for my $key ( keys %$extra ) {
+                if ( $key =~ /^ext_attr_/ ) {
+                    $column_filters{$key} = $extra->{$key};
+                } else {
+                    $filters{$key} = $extra->{$key};
+                }
+            }
         }
 
         my $library = $c->stash('koha.user')->branchcode;
 
         my $searcher = Koha::SearchEngine::Elasticsearch::Search::Patrons->new();
         my $results  = $searcher->search_patrons(
-            query    => $q,
-            fields   => $fields ? [ split /\|/, $fields ] : undef,
-            match    => $match,
-            page     => $page,
-            per_page => $per_page,
-            order_by => $order_by,
-            filters  => \%filters,
-            library  => $library,
+            query          => $q,
+            fields         => $fields ? [ split /\|/, $fields ] : undef,
+            match          => $match,
+            column_filters => \%column_filters,
+            page           => $page,
+            per_page       => $per_page,
+            order_by       => $order_by,
+            filters        => \%filters,
+            library        => $library,
         );
 
         # Hydrate patron objects from DB

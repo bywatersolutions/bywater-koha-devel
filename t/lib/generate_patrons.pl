@@ -45,6 +45,26 @@ my @surnames = qw(Smith Johnson Williams Brown Jones Garcia Miller Davis Rodrigu
     Young Allen King Wright Scott Torres Nguyen Hill Flores Green Adams Nelson
     Baker Hall Rivera Campbell Mitchell Carter Roberts Gomez Phillips Evans Turner);
 
+my @departments = qw(Engineering Marketing Sales Finance HR Legal Operations Research Support IT);
+my @student_ids = map { sprintf("STU%06d", $_) } 1..100;
+
+# Create searchable extended attribute types
+print "Creating extended attribute types...\n" if $verbose;
+$dbh->do(q{
+    INSERT IGNORE INTO borrower_attribute_types (code, description, staff_searchable, searched_by_default, repeatable, unique_id)
+    VALUES ('DEPT', 'Department', 1, 1, 0, 0),
+           ('STUID', 'Student ID', 1, 1, 0, 1),
+           ('CAMPUS', 'Campus', 1, 0, 0, 0),
+           ('BARCODE', 'Alt barcode', 1, 0, 0, 1),
+           ('ALLERGIES', 'Allergies', 0, 0, 0, 0),
+           ('NOTES', 'Internal notes', 0, 0, 1, 0)
+});
+$dbh->commit;
+
+my @campuses = ('North', 'South', 'East', 'West', 'Main', 'Downtown', 'Online');
+my @allergies = ('None', 'Peanuts', 'Latex', 'Dust', 'Penicillin');
+my @notes = ('VIP', 'Needs assistance', 'Do not call', 'Prefers email', 'Large print');
+
 my $sth = $dbh->prepare(q{
     INSERT INTO borrowers
         (surname, firstname, cardnumber, branchcode, categorycode, userid, dateenrolled, dateexpiry, email, phone, city, address)
@@ -85,6 +105,50 @@ for my $i (1 .. $count) {
 $dbh->commit;
 my $elapsed = time() - $start;
 printf "Inserted %d patrons in %.1f seconds (%.0f/sec)\n", $inserted, $elapsed, $inserted/$elapsed;
+
+# Add extended attributes
+print "Adding extended attributes...\n" if $verbose;
+my $attr_sth = $dbh->prepare(q{
+    INSERT INTO borrower_attributes (borrowernumber, code, attribute) VALUES (?, ?, ?)
+});
+
+my $patron_ids = $dbh->selectcol_arrayref("SELECT borrowernumber FROM borrowers WHERE cardnumber LIKE 'P%'");
+my $attr_count = 0;
+my $attr_start = time();
+
+for my $pid (@$patron_ids) {
+    # Every patron gets a department
+    $attr_sth->execute($pid, 'DEPT', $departments[int(rand(@departments))]);
+    # 60% get a student ID
+    if (rand() < 0.6) {
+        $attr_sth->execute($pid, 'STUID', sprintf("STU%07d", $pid));
+    }
+    # 40% get a campus
+    if (rand() < 0.4) {
+        $attr_sth->execute($pid, 'CAMPUS', $campuses[int(rand(@campuses))]);
+    }
+    # 50% get an alt barcode (searchable, not searched_by_default)
+    if (rand() < 0.5) {
+        $attr_sth->execute($pid, 'BARCODE', sprintf("ALT%08d", $pid));
+    }
+    # 30% get allergies (non-searchable)
+    if (rand() < 0.3) {
+        $attr_sth->execute($pid, 'ALLERGIES', $allergies[int(rand(@allergies))]);
+    }
+    # 20% get notes (non-searchable, repeatable)
+    if (rand() < 0.2) {
+        $attr_sth->execute($pid, 'NOTES', $notes[int(rand(@notes))]);
+    }
+    $attr_count++;
+    if ($attr_count % $batch_size == 0) {
+        $dbh->commit;
+        printf "  Attributes: %d / %d (%.1f%%)\n", $attr_count, scalar(@$patron_ids), ($attr_count/scalar(@$patron_ids)*100)
+            if $verbose && $attr_count % ($batch_size * 10) == 0;
+    }
+}
+$dbh->commit;
+my $attr_elapsed = time() - $attr_start;
+printf "Added attributes for %d patrons in %.1f seconds (%.0f/sec)\n", $attr_count, $attr_elapsed, $attr_count/$attr_elapsed;
 
 # Index if requested
 if ($index) {
