@@ -107,8 +107,8 @@ sub search_patrons {
     $body->{from} = ( $page - 1 ) * $per_page;
     $body->{size} = $per_page;
 
-    # Only return _id, we hydrate from DB
-    $body->{_source} = \0;
+    # Return only computed fields from _source (rest hydrated from DB)
+    $body->{_source} = [qw( checkouts_count account_balance )];
 
     # Execute
     my $elasticsearch = $self->get_elasticsearch();
@@ -125,6 +125,12 @@ sub search_patrons {
 
     my @patron_ids = map { $_->{_id} } @{ $response->{hits}{hits} };
 
+    # Extract _source fields keyed by patron_id
+    my %es_data;
+    for my $hit ( @{ $response->{hits}{hits} } ) {
+        $es_data{ $hit->{_id} } = $hit->{_source} // {};
+    }
+
     my %facets;
     if ( my $aggs = $response->{aggregations} ) {
         for my $field (@FACET_FIELDS) {
@@ -137,9 +143,10 @@ sub search_patrons {
     }
 
     return {
-        total  => $total,
-        hits   => \@patron_ids,
-        facets => \%facets,
+        total   => $total,
+        hits    => \@patron_ids,
+        es_data => \%es_data,
+        facets  => \%facets,
     };
 }
 

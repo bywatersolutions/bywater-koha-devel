@@ -190,6 +190,10 @@ sub _build_document {
     $doc->{incorrect_address}  = $patron->gonenoaddress ? \1 : \0;
     $doc->{patron_card_lost}   = $patron->lost ? \1 : \0;
 
+    # Computed fields
+    $doc->{checkouts_count} = $patron->checkouts->count;
+    $doc->{account_balance} = $patron->account->balance + 0;
+
     # Composite field for cross-field name search
     my @name_parts = grep { defined $_ && $_ ne '' }
         map { $patron->$_ } qw(surname firstname preferred_name othernames middle_name);
@@ -321,6 +325,16 @@ sub get_elasticsearch_mappings {
             if ( $spec->{sort} ) {
                 $properties{"${field_name}__sort"} = { type => 'date', format => 'yyyy-MM-dd', index => \0 };
             }
+            next;
+        }
+
+        if ( $type eq 'integer' ) {
+            $properties{$field_name} = { type => 'integer' };
+            next;
+        }
+
+        if ( $type eq 'number' ) {
+            $properties{$field_name} = { type => 'float' };
             next;
         }
 

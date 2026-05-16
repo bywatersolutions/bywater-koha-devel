@@ -108,11 +108,19 @@ sub search {
             $c->res->headers->add( 'x-koha-request-id' => $request_id );
         }
 
+        my @hits = map {
+            my $api = $_->to_api({ user => $user });
+            my $es  = $results->{es_data}{ $_->borrowernumber } // {};
+            $api->{checkouts_count} = $es->{checkouts_count} // 0;
+            $api->{account_balance} = $es->{account_balance} // 0;
+            $api;
+        } @patrons;
+
         return $c->render(
             status  => 200,
             openapi => {
                 total  => $results->{total},
-                hits   => [ map { $_->to_api({ user => $user }) } @patrons ],
+                hits   => \@hits,
                 facets => $results->{facets},
             },
         );

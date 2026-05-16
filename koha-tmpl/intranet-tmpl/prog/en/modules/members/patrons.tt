@@ -22,7 +22,7 @@
 [% WRAPPER 'sub-header.inc' %]
     [% WRAPPER breadcrumbs %]
         [% WRAPPER breadcrumb_item bc_active=1 %]
-            <span>Patrons</span>
+            <span>[% t("Patrons") | html %]</span>
         [% END %]
     [% END %]
 [% END %]
@@ -31,8 +31,8 @@
     <div class="row">
         <div class="col-md-2 order-md-1 order-sm-2" id="facets-container">
             <div id="facets" class="sidebar" style="display:none;">
-                <h4>Refine search</h4>
-                <p><a href="#" id="clear-facets" class="btn btn-link btn-sm"><i class="fa fa-times"></i> Clear all filters</a></p>
+                <h4>[% t("Refine search") | html %]</h4>
+                <p><a href="#" id="clear-facets" class="btn btn-link btn-sm"><i class="fa fa-times"></i> [% t("Clear all filters") | html %]</a></p>
                 <div id="facet-library_id"></div>
                 <div id="facet-category_id"></div>
             </div>
@@ -44,25 +44,31 @@
 
                 <form id="patron-search-form" class="form-inline" style="margin: 1em 0;">
                     <div class="form-group">
-                        <label for="search-query" class="sr-only">Search:</label>
-                        <input type="text" id="search-query" class="form-control" placeholder="Name, cardnumber, email..." autofocus style="width: 400px;" />
+                        <label for="search-query" class="sr-only">[% t("Search") | html %]:</label>
+                        <input type="text" id="search-query" class="form-control" placeholder="[% t("Name, cardnumber, email...") | html %]" autofocus style="width: 400px;" />
                     </div>
-                    <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> Search</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> [% t("Search") | html %]</button>
                 </form>
 
                 <div id="active-filters" style="display:none; margin-bottom: 1em;">
-                    <span class="label">Active filters:</span>
+                    <span class="label">[% t("Active filters:") | html %]</span>
                     <span id="active-filters-list"></span>
                 </div>
 
                 <table id="patron-search-table" class="table table-striped" style="display:none;">
                     <thead>
                         <tr>
-                            <th>Card number</th>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>Library</th>
-                            <th>Expires</th>
+                            <th>[% t("Card number") | html %]</th>
+                            <th>[% t("Name") | html %]</th>
+                            <th>[% t("Phone") | html %]</th>
+                            <th>[% t("Date of birth") | html %]</th>
+                            <th>[% t("Library") | html %]</th>
+                            <th>[% t("Category") | html %]</th>
+                            <th>[% t("Expires") | html %]</th>
+                            <th>[% t("Checkouts") | html %]</th>
+                            <th>[% t("Fines") | html %]</th>
+                            <th>[% t("Notes") | html %]</th>
+                            <th class="noExport">[% t("Actions") | html %]</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -121,7 +127,7 @@
 
                                 // Sort
                                 if (data.order && data.order.length) {
-                                    var columns = ["cardnumber", "surname", "category_id", "library_id", "expiry_date"];
+                                    var columns = ["cardnumber", "surname", "phone", "date_of_birth", "library_id", "category_id", "expiry_date", "checkouts_count", "account_balance", "staff_notes"];
                                     params._order_by = data.order.map(function(e) {
                                         var col = columns[e.column] || "surname";
                                         var dir = e.dir === "asc" ? "+" : "-";
@@ -154,12 +160,42 @@
                                 data: "surname",
                                 render: function(data, type, row) {
                                     var name = (row.surname || '') + ', ' + (row.firstname || '');
-                                    return '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '" class="patron_name">' + name + '</a>';
+                                    var address = [row.address, row.city, row.postal_code].filter(Boolean).join(', ');
+                                    var html = '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '" class="patron_name">' + name + '</a>';
+                                    if (address) html += '<br/><span class="text-muted">' + address + '</span>';
+                                    return html;
                                 }
                             },
-                            { data: "category_id" },
-                            { data: "library_id" },
-                            { data: "expiry_date" }
+                            { data: "phone", defaultContent: "" },
+                            { data: "date_of_birth", defaultContent: "" },
+                            { data: "library_id", render: function(data) { return library_map[data] || data || ''; } },
+                            { data: "category_id", render: function(data) { return category_map[data] || data || ''; } },
+                            { data: "expiry_date", defaultContent: "" },
+                            { data: "checkouts_count", defaultContent: "0" },
+                            {
+                                data: "account_balance",
+                                render: function(data) {
+                                    if (!data || data == 0) return "0.00";
+                                    var cls = data > 0 ? "text-danger" : "";
+                                    return '<span class="' + cls + '">' + parseFloat(data).toFixed(2) + '</span>';
+                                }
+                            },
+                            { data: "staff_notes", defaultContent: "" },
+                            {
+                                data: "patron_id",
+                                searchable: false,
+                                orderable: false,
+                                render: function(data, type, row) {
+                                    var html = '';
+                                    [% IF CAN_user_borrowers_edit_borrowers %]
+                                    html += '<a href="/cgi-bin/koha/members/memberentry.pl?op=edit_form&amp;destination=circ&amp;borrowernumber=' + data + '" class="btn btn-default btn-xs"><i class="fa-solid fa-pencil" aria-hidden="true"></i> ' + __("Edit") + '</a> ';
+                                    [% END %]
+                                    [% IF CAN_user_circulate_circulate_remaining_permissions %]
+                                    html += '<a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=' + data + '" class="btn btn-default btn-xs"><i class="fa fa-barcode"></i> ' + __("Check out") + '</a>';
+                                    [% END %]
+                                    return html;
+                                }
+                            }
                         ],
                         order: [[1, "asc"]],
                         pageLength: defined_per_page,
@@ -175,7 +211,7 @@
                 var html = '';
                 if (facets.library_id && facets.library_id.length) {
                     hasFacets = true;
-                    html = '<h5>Library</h5><ul class="list-unstyled">';
+                    html = '<h5>' + __("Library") + '</h5><ul class="list-unstyled">';
                     facets.library_id.forEach(function(f) {
                         var selected = active_filters.library_id && active_filters.library_id.indexOf(f.value) >= 0;
                         var label = describeValue('library_id', f.value);
@@ -191,7 +227,7 @@
                 html = '';
                 if (facets.category_id && facets.category_id.length) {
                     hasFacets = true;
-                    html = '<h5>Category</h5><ul class="list-unstyled">';
+                    html = '<h5>' + __("Category") + '</h5><ul class="list-unstyled">';
                     facets.category_id.forEach(function(f) {
                         var selected = active_filters.category_id && active_filters.category_id.indexOf(f.value) >= 0;
                         var label = describeValue('category_id', f.value);

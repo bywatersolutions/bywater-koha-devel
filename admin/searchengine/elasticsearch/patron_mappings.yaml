@@ -263,6 +263,18 @@ patrons:
     facet: true
     suggestible: false
 
+  # Computed fields
+  checkouts_count:
+    type: integer
+    sort: true
+    facet: false
+    suggestible: false
+  account_balance:
+    type: number
+    sort: true
+    facet: false
+    suggestible: false
+
   # Custom sort fields
   statistics_1:
     type: ""
