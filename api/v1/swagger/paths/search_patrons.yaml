@@ -39,17 +39,17 @@
         minimum: 1
         maximum: 100
         default: 20
-      - name: branchcode
+      - name: library_id
         in: query
-        description: Filter by library branch code
+        description: Filter by library
         required: false
         type: string
-      - name: categorycode
+      - name: category_id
         in: query
-        description: Filter by patron category code
+        description: Filter by patron category
         required: false
         type: string
-      - name: debarred
+      - name: restricted
         in: query
         description: Filter by restriction status
         required: false

@@ -146,7 +146,26 @@ sub _build_document {
 
     my $doc = {};
 
-    # Core fields from the patron record
+    # Core fields from the patron record — indexed using API field names
+    my %api_field_map = (
+        borrowernumber => 'patron_id',
+        branchcode     => 'library_id',
+        categorycode   => 'category_id',
+        dateofbirth    => 'date_of_birth',
+        dateenrolled   => 'date_enrolled',
+        dateexpiry     => 'expiry_date',
+        borrowernotes  => 'staff_notes',
+        gonenoaddress  => 'incorrect_address',
+        lost           => 'patron_card_lost',
+        sort1          => 'statistics_1',
+        sort2          => 'statistics_2',
+        zipcode        => 'postal_code',
+        othernames     => 'other_name',
+        streetnumber   => 'street_number',
+        streettype     => 'street_type',
+        opacnote       => 'opac_notes',
+    );
+
     my @direct_fields = qw(
         borrowernumber cardnumber surname firstname preferred_name middle_name
         othernames initials title userid
@@ -161,13 +180,15 @@ sub _build_document {
 
     for my $field (@direct_fields) {
         my $value = $patron->$field;
-        $doc->{$field} = $value if defined $value && $value ne '';
+        next unless defined $value && $value ne '';
+        my $index_field = $api_field_map{$field} // $field;
+        $doc->{$index_field} = $value;
     }
 
     # Boolean fields
-    $doc->{debarred}      = $patron->debarred ? \1 : \0;
-    $doc->{gonenoaddress} = $patron->gonenoaddress ? \1 : \0;
-    $doc->{lost}          = $patron->lost ? \1 : \0;
+    $doc->{restricted}         = $patron->debarred ? \1 : \0;
+    $doc->{incorrect_address}  = $patron->gonenoaddress ? \1 : \0;
+    $doc->{patron_card_lost}   = $patron->lost ? \1 : \0;
 
     # Composite field for cross-field name search
     my @name_parts = grep { defined $_ && $_ ne '' }

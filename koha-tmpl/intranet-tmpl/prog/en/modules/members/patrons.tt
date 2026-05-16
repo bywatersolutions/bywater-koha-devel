@@ -33,8 +33,8 @@
             <div id="facets" class="sidebar" style="display:none;">
                 <h4>Refine search</h4>
                 <p><a href="#" id="clear-facets" class="btn btn-link btn-sm"><i class="fa fa-times"></i> Clear all filters</a></p>
-                <div id="facet-branchcode"></div>
-                <div id="facet-categorycode"></div>
+                <div id="facet-library_id"></div>
+                <div id="facet-category_id"></div>
             </div>
         </div>
 
@@ -77,9 +77,23 @@
     <script>
         var defined_per_page = [% PatronsPerPage | html %];
 
+        // Build lookup maps for descriptions
+        var library_map = {
+            [% FOREACH l IN libraries %]"[% l.branchcode | html %]": "[% l.branchname | html %]",[% END %]
+        };
+        var category_map = {
+            [% FOREACH c IN categories %]"[% c.categorycode | html %]": "[% c.description | html %]",[% END %]
+        };
+
+        function describeValue(field, code) {
+            if (field === "library_id") return library_map[code] || code;
+            if (field === "category_id") return category_map[code] || code;
+            return code;
+        }
+
         $(document).ready(function() {
             var patron_table;
-            var active_filters = {};
+            var active_filters = {}; // { library_id: ["MPL","CPL"], category_id: ["PT"] }
 
             function doSearch() {
                 var q = $("#search-query").val();
@@ -159,29 +173,35 @@
 
                 // Library facet
                 var html = '';
-                if (facets.branchcode && facets.branchcode.length) {
+                if (facets.library_id && facets.library_id.length) {
                     hasFacets = true;
                     html = '<h5>Library</h5><ul class="list-unstyled">';
-                    facets.branchcode.forEach(function(f) {
-                        var cls = active_filters.branchcode === f.value ? 'font-weight-bold' : '';
-                        html += '<li><a href="#" class="facet-link ' + cls + '" data-field="branchcode" data-value="' + f.value + '">' + f.value + '</a> <span class="badge">' + f.count + '</span></li>';
+                    facets.library_id.forEach(function(f) {
+                        var selected = active_filters.library_id && active_filters.library_id.indexOf(f.value) >= 0;
+                        var label = describeValue('library_id', f.value);
+                        var cls = selected ? 'fw-bold' : '';
+                        var x = selected ? ' <a href="#" class="facet-link text-danger" data-field="library_id" data-value="' + f.value + '">&times;</a>' : '';
+                        html += '<li><a href="#" class="facet-link ' + cls + '" data-field="library_id" data-value="' + f.value + '">' + label + '</a> <span class="badge">' + f.count + '</span>' + x + '</li>';
                     });
                     html += '</ul>';
                 }
-                $("#facet-branchcode").html(html);
+                $("#facet-library_id").html(html);
 
                 // Category facet
                 html = '';
-                if (facets.categorycode && facets.categorycode.length) {
+                if (facets.category_id && facets.category_id.length) {
                     hasFacets = true;
                     html = '<h5>Category</h5><ul class="list-unstyled">';
-                    facets.categorycode.forEach(function(f) {
-                        var cls = active_filters.categorycode === f.value ? 'font-weight-bold' : '';
-                        html += '<li><a href="#" class="facet-link ' + cls + '" data-field="categorycode" data-value="' + f.value + '">' + f.value + '</a> <span class="badge">' + f.count + '</span></li>';
+                    facets.category_id.forEach(function(f) {
+                        var selected = active_filters.category_id && active_filters.category_id.indexOf(f.value) >= 0;
+                        var label = describeValue('category_id', f.value);
+                        var cls = selected ? 'fw-bold' : '';
+                        var x = selected ? ' <a href="#" class="facet-link text-danger" data-field="category_id" data-value="' + f.value + '">&times;</a>' : '';
+                        html += '<li><a href="#" class="facet-link ' + cls + '" data-field="category_id" data-value="' + f.value + '">' + label + '</a> <span class="badge">' + f.count + '</span>' + x + '</li>';
                     });
                     html += '</ul>';
                 }
-                $("#facet-categorycode").html(html);
+                $("#facet-category_id").html(html);
 
                 if (hasFacets) {
                     $("#facets").show();
@@ -192,10 +212,16 @@
                     e.preventDefault();
                     var field = $(this).data("field");
                     var value = $(this).data("value");
-                    if (active_filters[field] === value) {
-                        delete active_filters[field];
+                    if (!active_filters[field]) {
+                        active_filters[field] = [value];
                     } else {
-                        active_filters[field] = value;
+                        var idx = active_filters[field].indexOf(value);
+                        if (idx >= 0) {
+                            active_filters[field].splice(idx, 1);
+                            if (!active_filters[field].length) delete active_filters[field];
+                        } else {
+                            active_filters[field].push(value);
+                        }
                     }
                     updateActiveFiltersDisplay();
                     patron_table.DataTable().ajax.reload();
@@ -205,15 +231,25 @@
             function updateActiveFiltersDisplay() {
                 var keys = Object.keys(active_filters);
                 if (keys.length) {
-                    var html = keys.map(function(k) {
-                        return '<span class="badge bg-primary">' + k + ': ' + active_filters[k] + ' <a href="#" class="remove-filter text-white" data-field="' + k + '">&times;</a></span> ';
-                    }).join('');
+                    var html = '';
+                    keys.forEach(function(k) {
+                        active_filters[k].forEach(function(v) {
+                            var label = describeValue(k, v);
+                            html += '<span class="badge bg-primary me-1">' + label + ' <a href="#" class="remove-filter text-white" data-field="' + k + '" data-value="' + v + '">&times;</a></span>';
+                        });
+                    });
                     $("#active-filters-list").html(html);
                     $("#active-filters").show();
 
                     $(".remove-filter").on("click", function(e) {
                         e.preventDefault();
-                        delete active_filters[$(this).data("field")];
+                        var field = $(this).data("field");
+                        var value = $(this).data("value");
+                        if (active_filters[field]) {
+                            var idx = active_filters[field].indexOf(value);
+                            if (idx >= 0) active_filters[field].splice(idx, 1);
+                            if (!active_filters[field].length) delete active_filters[field];
+                        }
                         updateActiveFiltersDisplay();
                         patron_table.DataTable().ajax.reload();
                     });

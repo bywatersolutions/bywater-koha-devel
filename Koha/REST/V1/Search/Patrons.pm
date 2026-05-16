@@ -64,7 +64,7 @@ sub search {
 
         # Facet filters (core fields + extended attributes)
         my %filters;
-        for my $f (qw( branchcode categorycode debarred )) {
+        for my $f (qw( library_id category_id restricted )) {
             my $val = $c->param($f);
             $filters{$f} = $val if defined $val;
         }

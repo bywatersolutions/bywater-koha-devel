@@ -47,11 +47,11 @@ Koha::SearchEngine::Elasticsearch::Search::Patrons - Patron search via ES
 my @CORE_SEARCH_FIELDS = qw(
     patron_name surname firstname cardnumber userid
     email emailpro B_email phone mobile
-    address address2 city state zipcode
+    address address2 city state postal_code
 );
 
 # Fields used for facet aggregations
-my @FACET_FIELDS = qw( branchcode categorycode debarred );
+my @FACET_FIELDS = qw( library_id category_id restricted );
 
 sub new {
     my ( $class, $params ) = @_;
@@ -257,21 +257,30 @@ sub _build_query {
 
     # Facet filters from the request
     for my $field ( keys %$filters ) {
-        next unless defined $filters->{$field} && $filters->{$field} ne '';
+        next unless defined $filters->{$field};
+        my $value = $filters->{$field};
+        next if ref $value eq 'ARRAY' && !@$value;
+        next if !ref $value && $value eq '';
+
         my $es_field;
-        if ( $field eq 'debarred' ) {
+        if ( $field eq 'restricted' ) {
             $es_field = $field;
         } elsif ( $field =~ /^ext_attr_/ ) {
             $es_field = "${field}.raw";
         } else {
             $es_field = "${field}.facet";
         }
-        push @filter_clauses, { term => { $es_field => $filters->{$field} } };
+
+        if ( ref $value eq 'ARRAY' ) {
+            push @filter_clauses, { terms => { $es_field => $value } };
+        } else {
+            push @filter_clauses, { term => { $es_field => $value } };
+        }
     }
 
     # Library scoping (IndependentBranches)
     if ( $library && C4::Context->preference('IndependentBranches') ) {
-        push @filter_clauses, { term => { 'branchcode.facet' => $library } };
+        push @filter_clauses, { term => { 'library_id.facet' => $library } };
     }
 
     my $body = {
@@ -282,7 +291,7 @@ sub _build_query {
             },
         },
         aggs => {
-            map { $_ => { terms => { field => $_ eq 'debarred' ? $_ : "${_}.facet", size => 50 } } }
+            map { $_ => { terms => { field => $_ eq 'restricted' ? $_ : "${_}.facet", size => 50 } } }
                 @FACET_FIELDS
         },
     };

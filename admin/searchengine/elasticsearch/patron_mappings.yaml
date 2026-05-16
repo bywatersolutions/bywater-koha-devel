@@ -61,7 +61,7 @@ patrons:
     sort: false
     facet: false
     suggestible: false
-  borrowernumber:
+  patron_id:
     type: integer
     sort: false
     facet: false
@@ -75,41 +75,41 @@ patrons:
     suggestible: false
 
   # Classification
-  categorycode:
+  category_id:
     type: ""
     sort: true
     facet: true
     suggestible: false
-  branchcode:
+  library_id:
     type: ""
     sort: true
     facet: true
     suggestible: false
 
   # Dates
-  dateofbirth:
+  date_of_birth:
     type: date
     sort: true
     facet: false
     suggestible: false
-  dateenrolled:
+  date_enrolled:
     type: date
     sort: true
     facet: false
     suggestible: false
-  dateexpiry:
+  expiry_date:
     type: date
     sort: true
     facet: false
     suggestible: false
 
   # Primary address
-  streetnumber:
+  street_number:
     type: ""
     sort: false
     facet: false
     suggestible: false
-  streettype:
+  street_type:
     type: ""
     sort: false
     facet: false
@@ -134,7 +134,7 @@ patrons:
     sort: true
     facet: true
     suggestible: false
-  zipcode:
+  postal_code:
     type: stdno
     sort: true
     facet: false
@@ -247,41 +247,41 @@ patrons:
     suggestible: false
 
   # Status flags
-  debarred:
+  restricted:
     type: boolean
     sort: false
     facet: true
     suggestible: false
-  gonenoaddress:
+  incorrect_address:
     type: boolean
     sort: false
     facet: true
     suggestible: false
-  lost:
+  patron_card_lost:
     type: boolean
     sort: false
     facet: true
     suggestible: false
 
   # Custom sort fields
-  sort1:
+  statistics_1:
     type: ""
     sort: true
     facet: true
     suggestible: false
-  sort2:
+  statistics_2:
     type: ""
     sort: true
     facet: true
     suggestible: false
 
   # Notes (searchable but not sortable)
-  borrowernotes:
+  staff_notes:
     type: ""
     sort: false
     facet: false
     suggestible: false
-  opacnote:
+  opac_notes:
     type: ""
     sort: false
     facet: false
