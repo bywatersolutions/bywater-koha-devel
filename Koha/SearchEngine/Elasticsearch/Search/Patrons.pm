@@ -245,7 +245,10 @@ sub _build_query {
     my $lc_query = lc($query_string);
 
     my $must;
-    if ( $match eq 'starts_with' ) {
+    if ( !$query_string || $query_string eq '' ) {
+        # Empty query: browse all patrons
+        $must = { match_all => {} };
+    } elsif ( $match eq 'starts_with' ) {
         # Prefix-only: match beginning of fields
         my @should = map { { prefix => { "$_.ci_raw" => $lc_query } } } @$search_fields;
         $must = { bool => { should => \@should, minimum_should_match => 1 } };

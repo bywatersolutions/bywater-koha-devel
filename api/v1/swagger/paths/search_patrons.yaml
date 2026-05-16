@@ -12,8 +12,8 @@
     parameters:
       - name: q
         in: query
-        description: Free-text search query
-        required: true
+        description: Free-text search query. If empty, returns all patrons.
+        required: false
         type: string
       - name: fields
         in: query

@@ -133,7 +133,6 @@
 
             function doSearch() {
                 var q = $("#search-query").val();
-                if (!q) return;
 
                 $("#patron-search-table").show();
 
@@ -150,10 +149,10 @@
                             data: function(data, settings) {
                                 var q = $("#search-query").val();
                                 var params = {
-                                    q: q,
                                     _page: Math.floor(data.start / data.length) + 1,
                                     _per_page: data.length,
                                 };
+                                if (q) params.q = q;
 
                                 // Advanced: specific field
                                 var field = $("#search-field").val();
