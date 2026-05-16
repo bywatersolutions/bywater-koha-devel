@@ -48,6 +48,36 @@
                         <input type="text" id="search-query" class="form-control" placeholder="[% t("Name, cardnumber, email...") | html %]" autofocus style="width: 400px;" />
                     </div>
                     <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> [% t("Search") | html %]</button>
+                    <a href="#" id="toggle-advanced" class="btn btn-link btn-sm"><i class="fa fa-sliders"></i> [% t("Advanced") | html %]</a>
+
+                    <div id="advanced-search-panel" style="display:none; margin-top: 0.5em;" class="form-inline">
+                        <div class="form-group me-2">
+                            <label for="search-field" class="me-1">[% t("Search field") | html %]:</label>
+                            <select id="search-field" class="form-select form-select-sm">
+                                <option value="">[% t("All fields") | html %]</option>
+                                <option value="surname">[% t("Surname") | html %]</option>
+                                <option value="firstname">[% t("First name") | html %]</option>
+                                <option value="cardnumber">[% t("Card number") | html %]</option>
+                                <option value="email">[% t("All emails") | html %]</option>
+                                <option value="phone|mobile">[% t("All phones") | html %]</option>
+                                <option value="address|city|postal_code">[% t("Full address") | html %]</option>
+                                <option value="date_of_birth">[% t("Date of birth") | html %]</option>
+                                <option value="patron_id">[% t("Patron ID") | html %]</option>
+                                [% IF Koha.Preference('ExtendedPatronAttributes') %]
+                                    [% FOREACH attribute IN ExtendedAttributeTypes.all( staff_searchable => 1 ) %]
+                                        <option value="ext_attr_[% attribute.code | html %]">[% attribute.description | html %]</option>
+                                    [% END %]
+                                [% END %]
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="search-type" class="me-1">[% t("Search type") | html %]:</label>
+                            <select id="search-type" class="form-select form-select-sm">
+                                <option value="starts_with">[% t("Starts with") | html %]</option>
+                                <option value="contains" selected>[% t("Contains") | html %]</option>
+                            </select>
+                        </div>
+                    </div>
                 </form>
 
                 <div id="active-filters" style="display:none; margin-bottom: 1em;">
@@ -124,6 +154,18 @@
                                     _page: Math.floor(data.start / data.length) + 1,
                                     _per_page: data.length,
                                 };
+
+                                // Advanced: specific field
+                                var field = $("#search-field").val();
+                                if (field) {
+                                    params.fields = field;
+                                }
+
+                                // Advanced: search type (starts_with handled server-side via prefix)
+                                var searchType = $("#search-type").val();
+                                if (searchType) {
+                                    params._match = searchType;
+                                }
 
                                 // Sort
                                 if (data.order && data.order.length) {
@@ -301,6 +343,11 @@
                 if (patron_table) {
                     patron_table.DataTable().ajax.reload();
                 }
+            });
+
+            $("#toggle-advanced").on("click", function(e) {
+                e.preventDefault();
+                $("#advanced-search-panel").toggle();
             });
 
             $("#patron-search-form").on("submit", function(e) {

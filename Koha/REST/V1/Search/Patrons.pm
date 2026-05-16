@@ -54,6 +54,7 @@ sub search {
         my $q        = $c->param('q');
         my $fields   = $c->param('fields');
         my $order_by = $c->param('_order_by');
+        my $match    = $c->param('_match') // 'contains';
         my $page     = $c->param('_page') // 1;
         my $per_page = $c->param('_per_page') // 20;
 
@@ -80,6 +81,7 @@ sub search {
         my $results  = $searcher->search_patrons(
             query    => $q,
             fields   => $fields ? [ split /\|/, $fields ] : undef,
+            match    => $match,
             page     => $page,
             per_page => $per_page,
             order_by => $order_by,

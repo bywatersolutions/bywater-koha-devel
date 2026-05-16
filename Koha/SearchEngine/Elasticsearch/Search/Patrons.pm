@@ -83,6 +83,7 @@ sub search_patrons {
     my $page         = $args{page} // 1;
     my $per_page     = $args{per_page} // 20;
     my $order_by     = $args{order_by};
+    my $match        = $args{match} // 'contains';
     my $filters      = $args{filters} // {};
     my $library      = $args{library};
     my $fields       = $args{fields};
@@ -94,6 +95,7 @@ sub search_patrons {
     my $body = $self->_build_query(
         query_string  => $query_string,
         search_fields => \@search_fields,
+        match         => $match,
         filters       => $filters,
         library       => $library,
     );
@@ -233,6 +235,7 @@ sub _build_query {
 
     my $query_string  = $args{query_string};
     my $search_fields = $args{search_fields};
+    my $match         = $args{match} // 'contains';
     my $filters       = $args{filters};
     my $library       = $args{library};
 
@@ -241,23 +244,31 @@ sub _build_query {
     $escaped =~ s/([\+\-\=\&\|\>\<\!\(\)\{\}\[\]\^"~\*\?\:\\\/])/\\$1/g;
     my $lc_query = lc($query_string);
 
-    my $must = {
-        bool => {
-            should => [
-                {
-                    query_string => {
-                        query            => "$escaped*",
-                        fields           => $search_fields,
-                        analyze_wildcard => \1,
+    my $must;
+    if ( $match eq 'starts_with' ) {
+        # Prefix-only: match beginning of fields
+        my @should = map { { prefix => { "$_.ci_raw" => $lc_query } } } @$search_fields;
+        $must = { bool => { should => \@should, minimum_should_match => 1 } };
+    } else {
+        # Contains: wildcard + prefix fallback
+        $must = {
+            bool => {
+                should => [
+                    {
+                        query_string => {
+                            query            => "$escaped*",
+                            fields           => $search_fields,
+                            analyze_wildcard => \1,
+                        },
                     },
-                },
-                { prefix => { 'cardnumber.ci_raw' => $lc_query } },
-                { prefix => { 'patron_name.ci_raw' => $lc_query } },
-                { prefix => { 'email.ci_raw' => $lc_query } },
-            ],
-            minimum_should_match => 1,
-        },
-    };
+                    { prefix => { 'cardnumber.ci_raw' => $lc_query } },
+                    { prefix => { 'patron_name.ci_raw' => $lc_query } },
+                    { prefix => { 'email.ci_raw' => $lc_query } },
+                ],
+                minimum_should_match => 1,
+            },
+        };
+    }
 
     # Filter clauses
     my @filter_clauses;
