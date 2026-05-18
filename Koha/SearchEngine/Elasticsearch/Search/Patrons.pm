@@ -214,9 +214,9 @@ sub _resolve_search_fields {
 
     my @fields = @CORE_SEARCH_FIELDS;
 
-    # Add searchable extended attribute fields visible to this library
+    # Add only searched_by_default extended attribute fields to the default search
     my $attr_types_rs = Koha::Patron::Attribute::Types->search_with_library_limits(
-        { staff_searchable => 1 }, {}, $library
+        { staff_searchable => 1, searched_by_default => 1 }, {}, $library
     );
 
     while ( my $type = $attr_types_rs->next ) {
