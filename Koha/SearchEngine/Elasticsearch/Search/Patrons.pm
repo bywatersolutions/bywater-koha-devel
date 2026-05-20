@@ -242,16 +242,17 @@ sub _build_query {
     my $filters        = $args{filters};
     my $library        = $args{library};
 
-    # Main text query — combine query_string with prefix for short queries
-    my $escaped = $query_string;
-    $escaped =~ s/([\+\-\=\&\|\>\<\!\(\)\{\}\[\]\^"~\*\?\:\\\/])/\\$1/g;
-    my $lc_query = lc($query_string);
-
+    # Main text query
     my $must;
-    if ( !$query_string || $query_string eq '' ) {
+    if ( !defined $query_string || $query_string eq '' ) {
         # Empty query: browse all patrons
         $must = { match_all => {} };
-    } elsif ( $match eq 'starts_with' ) {
+    } else {
+        my $escaped = $query_string;
+        $escaped =~ s/([\+\-\=\&\|\>\<\!\(\)\{\}\[\]\^"~\*\?\:\\\/])/\\$1/g;
+        my $lc_query = lc($query_string);
+
+        if ( $match eq 'starts_with' ) {
         # Prefix-only: match beginning of fields
         my @should = map { { prefix => { "$_.ci_raw" => $lc_query } } } @$search_fields;
         $must = { bool => { should => \@should, minimum_should_match => 1 } };
@@ -274,6 +275,7 @@ sub _build_query {
                 minimum_should_match => 1,
             },
         };
+        }
     }
 
     # Filter clauses
@@ -317,7 +319,7 @@ sub _build_query {
             bool => {
                 should => [
                     { prefix => { "${field}.ci_raw" => $lc_val } },
-                    { match  => { $field => $value } },
+                    { match_phrase_prefix => { $field => $value } },
                 ],
                 minimum_should_match => 1,
             },

@@ -68,7 +68,7 @@ sub search {
 
         # Column-level field filters (additive)
         my %column_filters;
-        my @known_fields = qw( cardnumber surname firstname phone date_of_birth
+        my @known_fields = qw( cardnumber surname firstname patron_name phone date_of_birth
             library_id category_id expiry_date staff_notes email address city );
         for my $f (@known_fields) {
             my $val = $c->param($f);

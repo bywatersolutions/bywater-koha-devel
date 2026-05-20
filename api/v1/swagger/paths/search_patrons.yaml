@@ -64,6 +64,11 @@
         description: Search on surname
         required: false
         type: string
+      - name: patron_name
+        in: query
+        description: Search on combined name (surname + firstname)
+        required: false
+        type: string
       - name: firstname
         in: query
         description: Search on firstname

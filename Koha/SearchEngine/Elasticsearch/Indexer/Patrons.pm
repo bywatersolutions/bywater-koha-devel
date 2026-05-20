@@ -191,8 +191,10 @@ sub _build_document {
     $doc->{patron_card_lost}   = $patron->lost ? \1 : \0;
 
     # Computed fields
-    $doc->{checkouts_count} = $patron->checkouts->count;
-    $doc->{account_balance} = $patron->account->balance + 0;
+    $doc->{checkouts_count}      = $patron->checkouts->count;
+    $doc->{account_balance}      = $patron->account->balance + 0;
+    $doc->{library_name}         = $patron->library->branchname;
+    $doc->{category_description} = $patron->category->description;
 
     # Composite field for cross-field name search
     my @name_parts = grep { defined $_ && $_ ne '' }

@@ -160,7 +160,7 @@
                         }
 
                         if (data.order && data.order.length) {
-                            var columns = ["cardnumber", "surname", "phone", "date_of_birth", "library_id", "category_id", "expiry_date", "checkouts_count", "account_balance", "staff_notes", null];
+                            var columns = ["cardnumber", "surname", "phone", "date_of_birth", "library_name", "category_description", "expiry_date", "checkouts_count", "account_balance", "staff_notes", null];
                             params._order_by = data.order.map(function(e) {
                                 var col = columns[e.column];
                                 if (!col) return null;
@@ -178,10 +178,13 @@
                             data.columns.forEach(function(col) {
                                 if (col.search && col.search.value && col.data) {
                                     var val = col.search.value.replace(/[\^$]/g, '');
-                                    if (col.data.startsWith("ext_attr_")) {
-                                        col_filters_json[col.data] = val;
+                                    var field = col.data;
+                                    // Multi-field columns (colon-separated) use patron_name
+                                    if (field.indexOf(":") !== -1) field = "patron_name";
+                                    if (field.startsWith("ext_attr_")) {
+                                        col_filters_json[field] = val;
                                     } else {
-                                        params[col.data] = val;
+                                        params[field] = val;
                                     }
                                 }
                             });
@@ -209,7 +212,7 @@
                         }
                     },
                     {
-                        data: "surname",
+                        data: "surname:firstname",
                         render: function(data, type, row) {
                             var name = (row.surname || '') + ', ' + (row.firstname || '');
                             var parts = [row.address, row.city, row.state, row.postal_code].filter(Boolean);
