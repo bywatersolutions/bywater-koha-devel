@@ -62,12 +62,18 @@ sub store {
 
     if ($flush) {
         $cache->clear_from_cache('libraries:name');
+
+        # Reindex patrons at this library if ES patron search is enabled
+        if ( C4::Context->preference('ElasticsearchPatronSearch') ) {
+            require Koha::BackgroundJob::UpdateElasticPatronIndex;
+            Koha::BackgroundJob::UpdateElasticPatronIndex->reindex_by_library( $self->branchcode );
+        }
     }
 
     return $self;
 }
 
-=head2 delete
+=head3 delete
 
 Library specific C<delete> to clear relevant caches on delete.
 

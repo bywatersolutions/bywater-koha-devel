@@ -76,4 +76,30 @@ sub enqueue {
     );
 }
 
+=head3 reindex_by_library
+
+    Koha::BackgroundJob::UpdateElasticPatronIndex->reindex_by_library($library_id);
+
+Enqueues background jobs to reindex all patrons at the given library,
+paginating to avoid loading all IDs into memory.
+
+=cut
+
+sub reindex_by_library {
+    my ( $class, $library_id ) = @_;
+
+    require Koha::Patrons;
+    my $rs   = Koha::Patrons->search({ branchcode => $library_id });
+    my $page = 1;
+    my $size = 1000;
+
+    while (1) {
+        my @ids = $rs->search( undef, { rows => $size, page => $page } )
+            ->get_column('borrowernumber');
+        last unless @ids;
+        $class->new->enqueue( { patron_ids => \@ids } );
+        $page++;
+    }
+}
+
 1;
