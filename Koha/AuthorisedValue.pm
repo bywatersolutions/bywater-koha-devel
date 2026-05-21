@@ -72,6 +72,22 @@ sub store {
     if ($flush) {
         my $key = "AV_descriptions:" . $self->category;
         $cache->clear_from_cache($key);
+
+        # Reindex patrons if this AV category is used by a patron attribute type
+        if ( C4::Context->preference('ElasticsearchPatronSearch') ) {
+            require Koha::Patron::Attribute::Types;
+            my @attr_types = Koha::Patron::Attribute::Types->search(
+                { authorised_value_category => $self->category }
+            )->as_list;
+            if (@attr_types) {
+                require Koha::BackgroundJob::UpdateElasticPatronIndex;
+                for my $type (@attr_types) {
+                    Koha::BackgroundJob::UpdateElasticPatronIndex->reindex_by_attribute_value(
+                        $type->code, $self->authorised_value
+                    );
+                }
+            }
+        }
     }
 
     return $self;

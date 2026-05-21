@@ -217,9 +217,16 @@ sub _build_document {
 
             push @nested, { code => $code, value => $value };
 
-            # Dynamic field per attribute code
+            # Dynamic field per attribute code (raw value/code for filtering)
             $doc->{"ext_attr_$code"} //= [];
             push @{ $doc->{"ext_attr_$code"} }, $value;
+
+            # Description field for search/sort (from authorised value if available)
+            my $av = $attr->authorised_value;
+            if ($av) {
+                $doc->{"ext_attr_${code}_description"} //= [];
+                push @{ $doc->{"ext_attr_${code}_description"} }, $av->lib;
+            }
         }
         $doc->{extended_attributes} = \@nested if @nested;
     }

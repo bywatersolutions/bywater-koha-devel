@@ -221,6 +221,9 @@ sub _resolve_search_fields {
 
     while ( my $type = $attr_types_rs->next ) {
         push @fields, "ext_attr_" . $type->code;
+        # Include description field for AV-backed attributes
+        push @fields, "ext_attr_" . $type->code . "_description"
+            if $type->authorised_value_category;
     }
 
     return @fields;

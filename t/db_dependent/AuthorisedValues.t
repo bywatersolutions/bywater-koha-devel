@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use Modern::Perl;
-use Test::More tests => 18;
+use Test::More tests => 19;
 use Test::NoWarnings;
 use Test::Exception;
 use Try::Tiny;
@@ -409,6 +409,32 @@ subtest 'is_integer_only' => sub {
         'Exception expected for trailing space';
 
     $schema->storage->txn_rollback;
+};
+
+subtest 'ES patron reindex on AV description change' => sub {
+    plan tests => 3;
+
+    my @reindex_calls;
+    my $job_mock = Test::MockModule->new('Koha::BackgroundJob::UpdateElasticPatronIndex');
+    $job_mock->mock( 'reindex_by_attribute_value', sub { shift; push @reindex_calls, [@_] } );
+
+    t::lib::Mocks::mock_preference( 'ElasticsearchPatronSearch', 1 );
+
+    # Create an AV category used by a patron attribute type
+    my $av_cat = 'TEST_ES_AV';
+    my $av = Koha::AuthorisedValue->new({ category => $av_cat, authorised_value => 'VAL1', lib => 'Value One' })->store;
+    my $attr_type = $builder->build_object({
+        class => 'Koha::Patron::Attribute::Types',
+        value => { authorised_value_category => $av_cat, staff_searchable => 1 }
+    });
+
+    # Change description
+    @reindex_calls = ();
+    $av->lib('Value One Updated')->store;
+
+    is( scalar @reindex_calls, 1, 'AV lib change triggers reindex_by_attribute_value' );
+    is( $reindex_calls[0][0], $attr_type->code, 'Correct attribute code' );
+    is( $reindex_calls[0][1], 'VAL1', 'Correct attribute value' );
 };
 
 $schema->storage->txn_rollback;

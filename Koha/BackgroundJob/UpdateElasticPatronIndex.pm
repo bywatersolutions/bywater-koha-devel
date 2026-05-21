@@ -127,4 +127,32 @@ sub reindex_by_category {
     }
 }
 
+=head3 reindex_by_attribute_value
+
+    Koha::BackgroundJob::UpdateElasticPatronIndex->reindex_by_attribute_value(
+        $attribute_code, $value
+    );
+
+Enqueues background jobs to reindex all patrons who have the given
+extended attribute code+value combination.
+
+=cut
+
+sub reindex_by_attribute_value {
+    my ( $class, $code, $value ) = @_;
+
+    require Koha::Patron::Attributes;
+    my $rs = Koha::Patron::Attributes->search({ code => $code, attribute => $value });
+    my $page = 1;
+    my $size = 1000;
+
+    while (1) {
+        my @ids = $rs->search( undef, { rows => $size, page => $page } )
+            ->get_column('borrowernumber');
+        last unless @ids;
+        $class->new->enqueue( { patron_ids => \@ids } );
+        $page++;
+    }
+}
+
 1;
