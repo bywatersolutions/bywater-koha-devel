@@ -20,7 +20,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 9;
+use Test::More tests => 10;
 
 use t::lib::TestBuilder;
 use t::lib::Mocks;
@@ -359,6 +359,35 @@ subtest 'can_make_suggestions' => sub {
         !$category_1->can_make_suggestions && !$category_2->can_make_suggestions,
         'suggestions disabled, no matter what the value of suggestionPatronCategoryExceptions is'
     );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'ES patron reindex on category description change' => sub {
+    plan tests => 3;
+
+    $schema->storage->txn_begin;
+
+    my @reindex_calls;
+    my $job_mock = Test::MockModule->new('Koha::BackgroundJob::UpdateElasticPatronIndex');
+    $job_mock->mock( 'reindex_by_category', sub { push @reindex_calls, $_[1] } );
+
+    t::lib::Mocks::mock_preference( 'ElasticsearchPatronSearch', 1 );
+
+    my $category = $builder->build_object( { class => 'Koha::Patron::Categories' } );
+
+    # Change description
+    @reindex_calls = ();
+    $category->description('New Description')->store;
+
+    is( scalar @reindex_calls, 1, 'Description change triggers reindex_by_category' );
+    is( $reindex_calls[0], $category->categorycode, 'Correct category_id passed' );
+
+    # No change to description
+    @reindex_calls = ();
+    $category->enrolmentperiod(99)->store;
+
+    is( scalar @reindex_calls, 0, 'Non-description change does not trigger reindex' );
 
     $schema->storage->txn_rollback;
 };

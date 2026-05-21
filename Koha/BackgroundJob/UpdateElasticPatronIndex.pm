@@ -102,4 +102,29 @@ sub reindex_by_library {
     }
 }
 
+=head3 reindex_by_category
+
+    Koha::BackgroundJob::UpdateElasticPatronIndex->reindex_by_category($category_id);
+
+Enqueues background jobs to reindex all patrons in the given category.
+
+=cut
+
+sub reindex_by_category {
+    my ( $class, $category_id ) = @_;
+
+    require Koha::Patrons;
+    my $rs   = Koha::Patrons->search({ categorycode => $category_id });
+    my $page = 1;
+    my $size = 1000;
+
+    while (1) {
+        my @ids = $rs->search( undef, { rows => $size, page => $page } )
+            ->get_column('borrowernumber');
+        last unless @ids;
+        $class->new->enqueue( { patron_ids => \@ids } );
+        $page++;
+    }
+}
+
 1;

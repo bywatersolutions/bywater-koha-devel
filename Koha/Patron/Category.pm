@@ -111,7 +111,17 @@ sub store {
     $self->checkprevcheckout('inherit')
         unless defined $self->checkprevcheckout;
 
-    return $self->SUPER::store;
+    my $is_description_changed = $self->in_storage
+        && $self->_result->is_column_changed('description');
+
+    $self = $self->SUPER::store;
+
+    if ( $is_description_changed && C4::Context->preference('ElasticsearchPatronSearch') ) {
+        require Koha::BackgroundJob::UpdateElasticPatronIndex;
+        Koha::BackgroundJob::UpdateElasticPatronIndex->reindex_by_category( $self->categorycode );
+    }
+
+    return $self;
 }
 
 =head3 default_messaging
