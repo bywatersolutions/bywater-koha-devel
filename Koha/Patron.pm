@@ -509,14 +509,14 @@ sub delete {
                 $patron_data->{permissions} = \%granted if %granted;
             }
 
+            $self->_es_delete_patron;
+
             $self->SUPER::delete;
 
             logaction( "MEMBERS", "DELETE", $self->borrowernumber, $patron_data, undef, $patron_data )
                 if C4::Context->preference("BorrowersLog");
         }
     );
-
-    $self->_es_delete_patron();
 
     return $self;
 }
@@ -2867,9 +2867,9 @@ sub anonymize {
     foreach my $col (@columns) {
         $self->_anonymize_column( $col, $mandatory->{ lc $col } );
     }
-    $self->anonymized(1)->store;
+    $self->_es_delete_patron;
 
-    $self->_es_delete_patron();
+    $self->anonymized(1)->store;
 }
 
 =head3 _anonymize_column
