@@ -20,7 +20,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 16;
+use Test::More tests => 17;
 use Test::MockModule;
 use Test::Exception;
 use Test::Warn;
@@ -1546,6 +1546,37 @@ subtest 'Koha::Account::payin_amount() tests' => sub {
     is( $offset->debit_id,   $debit_5->id, "Offset added against debit_5" );
     is( $offset->type,       'APPLY',      "APPLY used for offset_type" );
     is( $offset->amount * 1, -2.50,        'Correct amount offset against debit_5' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'ES patron reindex on account line store' => sub {
+    plan tests => 3;
+
+    $schema->storage->txn_begin;
+
+    my @enqueued;
+    my $job_mock = Test::MockModule->new('Koha::BackgroundJob::UpdateElasticPatronIndex');
+    $job_mock->mock( 'new',     sub { bless {}, $_[0] } );
+    $job_mock->mock( 'enqueue', sub { push @enqueued, $_[1] } );
+
+    t::lib::Mocks::mock_preference( 'ElasticsearchPatronSearch', 1 );
+
+    my $patron = $builder->build_object( { class => 'Koha::Patrons' } );
+
+    @enqueued = ();
+    my $account = $patron->account;
+    $account->add_debit( { amount => 5.00, type => 'OVERDUE', interface => 'test' } );
+
+    is( scalar @enqueued, 1, 'Account line store enqueues a reindex job' );
+    is( $enqueued[0]->{patron_ids}[0], $patron->borrowernumber, 'Correct patron_id' );
+
+    # Disabled syspref
+    t::lib::Mocks::mock_preference( 'ElasticsearchPatronSearch', 0 );
+    @enqueued = ();
+    $account->add_debit( { amount => 3.00, type => 'OVERDUE', interface => 'test' } );
+
+    is( scalar @enqueued, 0, 'No reindex when syspref disabled' );
 
     $schema->storage->txn_rollback;
 };
