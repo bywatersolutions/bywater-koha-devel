@@ -92,9 +92,54 @@
                     <span id="active-filters-list"></span>
                 </div>
 
+                [% IF CAN_user_tools_manage_patron_lists || CAN_user_borrowers_edit_borrowers %]
+                <div class="searchheader" id="searchheader" style="display:none;">
+                    <div>
+                        <a href="#" class="btn btn-link" id="select_all"><i class="fa fa-check"></i> [% t("Select all") | html %]</a>
+                        |
+                        <a href="#" class="btn btn-link" id="clear_all"><i class="fa fa-times"></i> [% t("Clear all") | html %]</a>
+
+                        [% IF CAN_user_tools_manage_patron_lists %]
+                            <div id="patronlist-dropdown" class="btn-group">
+                                <button id="patronlist-menu" type="button" class="btn btn-default btn-sm dropdown-toggle patron-edits disabled" disabled="disabled" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    [% t("Add to patron list") | html %]
+                                </button>
+                                <ul class="dropdown-menu">
+                                    [% FOREACH pl IN patron_lists %]
+                                        <li><a href="#" class="patron-list-add dropdown-item" data-listid="[% pl.patron_list_id | html %]">[% pl.name | html %]</a></li>
+                                    [% END %]
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a href="#" class="patron-list-add dropdown-item" data-listid="new">[% t("New list") | html %]</a></li>
+                                </ul>
+                            </div>
+                        [% END %]
+
+                        [% IF CAN_user_borrowers_merge_borrowers %]
+                            <div class="btn-group">
+                                <button id="merge-patrons" class="btn btn-default btn-sm disabled" disabled="disabled" type="button"><i class="fa fa-compress" aria-hidden="true"></i> [% t("Merge selected patrons") | html %]</button>
+                            </div>
+                        [% END %]
+
+                        [% IF CAN_user_tools_edit_patrons %]
+                            <div class="btn-group">
+                                <button id="batch-mod-patrons" class="btn btn-default btn-sm disabled" disabled="disabled" type="button"><i class="fa-solid fa-pencil" aria-hidden="true"></i> [% t("Batch patron modification") | html %]</button>
+                            </div>
+                        [% END %]
+
+                        <div id="table_search_selections" class="btn-group" style="display:none;">
+                            <span></span>
+                            <a href="#" id="clear-row-selection"><i class="fa fa-times"></i> [% t("Clear") | html %]</a>
+                        </div>
+                    </div>
+                </div>
+                [% END %]
+
                 <table id="patron-search-table" class="table table-striped">
                     <thead>
                         <tr>
+                            [% IF CAN_user_tools_manage_patron_lists || CAN_user_borrowers_edit_borrowers %]
+                            <th class="noExport no-sort"><input type="checkbox" id="select-all-checkbox" /></th>
+                            [% END %]
                             <th>[% t("Card number") | html %]</th>
                             <th>[% t("Name") | html %]</th>
                             <th>[% t("Phone") | html %]</th>
@@ -160,7 +205,7 @@
                         }
 
                         if (data.order && data.order.length) {
-                            var columns = ["cardnumber", "surname", "phone", "date_of_birth", "library_name", "category_description", "expiry_date", "checkouts_count", "account_balance", "staff_notes", null];
+                            var columns = [[% IF CAN_user_tools_manage_patron_lists || CAN_user_borrowers_edit_borrowers %]null, [% END %]"cardnumber", "surname:firstname", "phone", "date_of_birth", "library_name", "category_description", "expiry_date", "checkouts_count", "account_balance", "staff_notes", null];
                             params._order_by = data.order.map(function(e) {
                                 var col = columns[e.column];
                                 if (!col) return null;
@@ -205,6 +250,16 @@
                     }
                 },
                 columns: [
+                    [% IF CAN_user_tools_manage_patron_lists || CAN_user_borrowers_edit_borrowers %]
+                    {
+                        data: "patron_id",
+                        searchable: false,
+                        orderable: false,
+                        render: function(data) {
+                            return '<input type="checkbox" class="select-patron" value="' + data + '" />';
+                        }
+                    },
+                    [% END %]
                     {
                         data: "cardnumber",
                         render: function(data, type, row) {
@@ -393,6 +448,88 @@
                 $("#search-type").val("starts_with");
                 patron_table.DataTable().ajax.reload();
             });
+
+            // Selection handling
+            [% IF CAN_user_tools_manage_patron_lists || CAN_user_borrowers_edit_borrowers %]
+            var selected_patrons = [];
+
+            $("#searchheader").show();
+
+            $("#select_all").on("click", function(e) {
+                e.preventDefault();
+                $(".select-patron").prop("checked", true).each(function() {
+                    var id = $(this).val();
+                    if (selected_patrons.indexOf(id) === -1) selected_patrons.push(id);
+                });
+                updateSelectionState();
+            });
+
+            $("#clear_all").on("click", function(e) {
+                e.preventDefault();
+                $(".select-patron").prop("checked", false);
+                selected_patrons = [];
+                updateSelectionState();
+            });
+
+            $("#select-all-checkbox").on("change", function() {
+                var checked = $(this).prop("checked");
+                $(".select-patron").prop("checked", checked).each(function() {
+                    var id = $(this).val();
+                    if (checked && selected_patrons.indexOf(id) === -1) {
+                        selected_patrons.push(id);
+                    } else if (!checked) {
+                        selected_patrons = selected_patrons.filter(function(v) { return v !== id; });
+                    }
+                });
+                updateSelectionState();
+            });
+
+            $(document).on("change", ".select-patron", function() {
+                var id = $(this).val();
+                if ($(this).prop("checked")) {
+                    if (selected_patrons.indexOf(id) === -1) selected_patrons.push(id);
+                } else {
+                    selected_patrons = selected_patrons.filter(function(v) { return v !== id; });
+                }
+                updateSelectionState();
+            });
+
+            function updateSelectionState() {
+                var count = selected_patrons.length;
+                if (count > 0) {
+                    $(".patron-edits").removeClass("disabled").prop("disabled", false);
+                    $("#merge-patrons").removeClass("disabled").prop("disabled", false);
+                    $("#batch-mod-patrons").removeClass("disabled").prop("disabled", false);
+                    $("#table_search_selections").show().find("span").text(count + __(" selected"));
+                } else {
+                    $(".patron-edits").addClass("disabled").prop("disabled", true);
+                    $("#merge-patrons").addClass("disabled").prop("disabled", true);
+                    $("#batch-mod-patrons").addClass("disabled").prop("disabled", true);
+                    $("#table_search_selections").hide();
+                }
+            }
+
+            $("#merge-patrons").on("click", function() {
+                if (selected_patrons.length < 2) return;
+                window.location = "/cgi-bin/koha/members/merge-patrons.pl?id=" + selected_patrons.join("&id=");
+            });
+
+            $("#batch-mod-patrons").on("click", function() {
+                if (!selected_patrons.length) return;
+                var form = $('<form method="post" action="/cgi-bin/koha/tools/modborrowers.pl"></form>');
+                selected_patrons.forEach(function(id) {
+                    form.append('<input type="hidden" name="borrowernumber" value="' + id + '" />');
+                });
+                form.append('<input type="hidden" name="op" value="show" />');
+                $("body").append(form);
+                form.submit();
+            });
+
+            $("#clear-row-selection").on("click", function(e) {
+                e.preventDefault();
+                $("#clear_all").click();
+            });
+            [% END %]
         });
     </script>
 [% END %]

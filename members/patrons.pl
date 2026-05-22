@@ -21,6 +21,7 @@ use CGI        qw( -utf8 );
 use C4::Auth   qw( get_template_and_user );
 use C4::Output qw( output_html_with_http_headers );
 use C4::Context;
+use Koha::List::Patron qw( GetPatronLists );
 
 my $query = CGI->new;
 
@@ -35,6 +36,7 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 
 $template->param(
     PatronsPerPage => C4::Context->preference("PatronsPerPage") || 20,
+    patron_lists   => [ GetPatronLists() ],
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;
