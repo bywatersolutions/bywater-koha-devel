@@ -43,13 +43,6 @@ Koha::SearchEngine::Elasticsearch::Search::Patrons - Patron search via ES
 
 =cut
 
-# Core fields always included in search
-my @CORE_SEARCH_FIELDS = qw(
-    patron_name surname firstname cardnumber userid
-    email emailpro B_email phone mobile
-    address address2 city state postal_code
-);
-
 # Fields used for facet aggregations
 my @FACET_FIELDS = qw( library_id category_id restricted );
 
@@ -112,7 +105,7 @@ sub search_patrons {
     $body->{size} = $per_page;
 
     # Return only computed fields from _source (rest hydrated from DB)
-    $body->{_source} = [qw( checkouts_count account_balance )];
+    $body->{_source} = [qw( checkouts_count account_balance library_name )];
 
     # Execute
     my $elasticsearch = $self->get_elasticsearch();
@@ -212,7 +205,12 @@ Includes core fields + extended attribute fields visible to the library.
 sub _resolve_search_fields {
     my ( $self, $library ) = @_;
 
-    my @fields = @CORE_SEARCH_FIELDS;
+    # Honor DefaultPatronSearchFields syspref for the "Standard" field set
+    my $default_fields = C4::Context->preference('DefaultPatronSearchFields')
+        || 'firstname|preferred_name|middle_name|surname|othernames|cardnumber|userid';
+    my @fields = split /\|/, $default_fields;
+    # Always include patron_name composite field for cross-field matching
+    push @fields, 'patron_name' unless grep { $_ eq 'patron_name' } @fields;
 
     # Add only searched_by_default extended attribute fields to the default search
     my $attr_types_rs = Koha::Patron::Attribute::Types->search_with_library_limits(
@@ -266,7 +264,7 @@ sub _build_query {
                 should => [
                     {
                         query_string => {
-                            query            => "$escaped*",
+                            query            => "*$escaped*",
                             fields           => $search_fields,
                             analyze_wildcard => \1,
                         },
@@ -318,12 +316,16 @@ sub _build_query {
     for my $field ( keys %$column_filters ) {
         my $value   = $column_filters->{$field};
         my $lc_val  = lc($value);
+        my @fields  = split /:/, $field;
+        my @should;
+        for my $f (@fields) {
+            push @should,
+                { prefix => { "${f}.ci_raw" => $lc_val } },
+                { match_phrase_prefix => { $f => $value } };
+        }
         push @must_clauses, {
             bool => {
-                should => [
-                    { prefix => { "${field}.ci_raw" => $lc_val } },
-                    { match_phrase_prefix => { $field => $value } },
-                ],
+                should               => \@should,
                 minimum_should_match => 1,
             },
         };

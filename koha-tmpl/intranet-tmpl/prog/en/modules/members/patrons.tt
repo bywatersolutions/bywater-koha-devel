@@ -1,6 +1,7 @@
 [% USE raw %]
 [% USE Asset %]
 [% USE Koha %]
+[% USE To %]
 [% USE Branches %]
 [% USE Categories %]
 [% PROCESS 'i18n.inc' %]
@@ -29,68 +30,15 @@
 
 <div class="main container-fluid">
     <div class="row">
-        <div class="col-md-2 order-md-1 order-sm-2" id="facets-container">
-            <div id="search-panel" class="sidebar">
-                <h4>[% t("Search for patron") | html %]</h4>
-                <form id="patron-search-form">
-                    <div class="form-group mb-2">
-                        <input type="text" id="search-query" class="form-control form-control-sm" placeholder="[% t("Search") | html %]" />
-                    </div>
-                    <div class="form-group mb-2">
-                        <label for="search-field" class="form-label">[% t("Search field:") | html %]</label>
-                        <select id="search-field" class="form-select form-select-sm">
-                            <option value="">[% t("Standard") | html %]</option>
-                            <option value="surname">[% t("Surname") | html %]</option>
-                            <option value="cardnumber">[% t("Card number") | html %]</option>
-                            <option value="email">[% t("All emails") | html %]</option>
-                            <option value="phone|mobile">[% t("All phones") | html %]</option>
-                            <option value="address|city|postal_code">[% t("Full address") | html %]</option>
-                            <option value="date_of_birth">[% t("Date of birth") | html %]</option>
-                            <option value="patron_id">[% t("Borrower number") | html %]</option>
-                            [% IF Koha.Preference('ExtendedPatronAttributes') %]
-                                [% FOREACH attribute IN ExtendedAttributeTypes.all( staff_searchable => 1 ) %]
-                                    <option value="ext_attr_[% attribute.code | html %]">[% attribute.description | html %]</option>
-                                [% END %]
-                            [% END %]
-                        </select>
-                    </div>
-                    <div class="form-group mb-2">
-                        <label for="search-type" class="form-label">[% t("Search type:") | html %]</label>
-                        <select id="search-type" class="form-select form-select-sm">
-                            <option value="starts_with">[% t("Starts with") | html %]</option>
-                            <option value="contains" selected>[% t("Contains") | html %]</option>
-                        </select>
-                    </div>
-                    <div class="d-flex gap-1">
-                        <button type="submit" class="btn btn-primary btn-sm">[% t("Search") | html %]</button>
-                        <button type="button" id="clear-search" class="btn btn-default btn-sm">[% t("Clear") | html %]</button>
-                    </div>
-                </form>
-            </div>
-
-            <div id="facets" class="sidebar" style="display:none; margin-top: 1em;">
-                <h4>[% t("Refine search") | html %]</h4>
-                <p><a href="#" id="clear-facets" class="btn btn-link btn-sm" style="display:none;"><i class="fa fa-times"></i> [% t("Clear all filters") | html %]</a></p>
-                <div id="facet-library_id"></div>
-                <div id="facet-category_id"></div>
-            </div>
-        </div>
-
         <div class="col-md-10 order-md-2 order-sm-1">
             <main>
                 [% INCLUDE 'patron-toolbar.inc' %]
 
-                <div id="browse-by-letter" class="mb-2">
-                    <span>[% t("Browse by last name:") | html %]</span>
-                    [% FOREACH letter IN ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'] %]
-                        <a href="#" class="letter-link btn btn-link btn-sm" data-letter="[% letter | html %]">[% letter | html %]</a>
-                    [% END %]
-                </div>
+                [% IF CAN_user_tools_manage_patron_lists %]
+                <div id="patron_list_dialog" class="alert alert-info" style="display:none;"> Added <span class="patrons-length"></span> patrons to <a></a>. </div>
+                [% END %]
 
-                <div id="active-filters" style="display:none; margin-bottom: 1em;">
-                    <span class="label">[% t("Active filters:") | html %]</span>
-                    <span id="active-filters-list"></span>
-                </div>
+                <div class="page-section">
 
                 [% IF CAN_user_tools_manage_patron_lists || CAN_user_borrowers_edit_borrowers %]
                 <div class="searchheader" id="searchheader" style="display:none;">
@@ -134,6 +82,20 @@
                 </div>
                 [% END %]
 
+                <div id="browse-by-letter" class="mb-2">
+                    <span>[% t("Browse by last name:") | html %]</span>
+                    [% FOREACH letter IN ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'] %]
+                        <a href="#" class="letter-link btn btn-link btn-sm" data-letter="[% letter | html %]">[% letter | html %]</a>
+                    [% END %]
+                </div>
+
+                <h3 id="search-description" style="display:none;" class="mb-2"></h3>
+
+                <div id="active-filters" style="display:none; margin-bottom: 1em;">
+                    <span class="label">[% t("Active filters:") | html %]</span>
+                    <span id="active-filters-list"></span>
+                </div>
+
                 <table id="patron-search-table" class="table table-striped">
                     <thead>
                         <tr>
@@ -155,13 +117,114 @@
                     </thead>
                     <tbody></tbody>
                 </table>
+                </div>
+                [% IF CAN_user_tools_edit_patrons %]
+                <form id="patron_batchmod_form" method="post" action="/cgi-bin/koha/tools/modborrowers.pl">
+                    [% INCLUDE 'csrf-token.inc' %]
+                    <input type="hidden" name="op" value="cud-show" />
+                    <textarea style="display:none" id="borrowernumberlist" name="borrowernumberlist"></textarea>
+                </form>
+                [% END %]
             </main>
+        </div>
+        <!-- /.col-md-10 -->
+
+        <div class="col-md-2 order-sm-2 order-md-1">
+            <aside>
+                <form id="patron-search-form" class="patron_search_form">
+                    <fieldset class="brief">
+                        <h3>[% t("Search for patron") | html %]</h3>
+                        <ol>
+                            <li>
+                                <label for="search-query">[% t("Search:") | html %]</label>
+                                <input type="text" id="search-query" class="search_patron_filter focus" />
+                            </li>
+                            <li>
+                                <label for="search-field">[% t("Search field:") | html %]</label>
+                                <select id="search-field">
+                                    <option value="">[% t("Standard") | html %]</option>
+                                    <option value="surname">[% t("Surname") | html %]</option>
+                                    <option value="cardnumber">[% t("Card number") | html %]</option>
+                                    <option value="email">[% t("All emails") | html %]</option>
+                                    <option value="phone|mobile">[% t("All phones") | html %]</option>
+                                    <option value="address|city|postal_code">[% t("Full address") | html %]</option>
+                                    <option value="date_of_birth">[% t("Date of birth") | html %]</option>
+                                    <option value="patron_id">[% t("Borrower number") | html %]</option>
+                                    [% IF Koha.Preference('ExtendedPatronAttributes') %]
+                                        [% FOREACH attribute IN ExtendedAttributeTypes.all( staff_searchable => 1 ) %]
+                                            <option value="ext_attr_[% attribute.code | html %]">[% attribute.description | html %]</option>
+                                        [% END %]
+                                    [% END %]
+                                </select>
+                            </li>
+                            <li>
+                                <label for="search-type">[% t("Search type:") | html %]</label>
+                                <select id="search-type">
+                                    <option value="starts_with" selected>[% t("Starts with") | html %]</option>
+                                    <option value="contains">[% t("Contains") | html %]</option>
+                                </select>
+                            </li>
+                            <li>
+                                <label for="sidebar-category-filter">[% t("Category:") | html %]</label>
+                                <select id="sidebar-category-filter">
+                                    <option value="">[% t("Any") | html %]</option>
+                                    [% FOREACH c IN categories %]
+                                        <option value="[% c.categorycode | html %]">[% c.description | html %]</option>
+                                    [% END %]
+                                </select>
+                            </li>
+                            <li>
+                                <label for="sidebar-library-filter">[% t("Library:") | html %]</label>
+                                <select id="sidebar-library-filter">
+                                    <option value="">[% t("Any") | html %]</option>
+                                    [% FOREACH l IN libraries %]
+                                        <option value="[% l.branchcode | html %]">[% l.branchname | html %]</option>
+                                    [% END %]
+                                </select>
+                            </li>
+                        </ol>
+                    </fieldset>
+                    <fieldset class="action">
+                        <button type="submit" class="btn btn-primary">[% t("Search") | html %]</button>
+                        <button type="button" id="clear-search" class="btn btn-default">[% t("Clear") | html %]</button>
+                    </fieldset>
+                </form>
+            </aside>
+        </div>
+        <!-- /.col-md-2 -->
+    </div>
+</div>
+
+<!-- New Patron List Modal -->
+<div class="modal" id="new-patron-list" tabindex="-1" role="dialog" aria-labelledby="new-patron-listLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title" id="new-patron-listLabel">[% t("Add patrons to a new patron list") | html %]</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="get" id="new-patron-list_form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="new_patron_list" class="required">[% t("Patron list name:") | html %] </label>
+                        <input class="form-control required" type="text" name="new_patron_list" id="new_patron_list" required="required" />
+                        <input type="hidden" name="add_to_patron_list" id="add_to_patron_list" />
+                        <span class="required">[% t("Required") | html %]</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" id="add_to_patron_list_submit" class="btn btn-default approve">[% t("Submit") | html %]</button>
+                    <button type="button" class="btn btn-default deny" data-bs-dismiss="modal">[% t("Cancel") | html %]</button>
+                    [% PROCESS 'members-patron-selections.inc' id="new-patron-list_form" %]
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'datatables.inc' %]
+    [% Asset.js("js/members-patron-selections.js") | $raw %]
     <script>
         var defined_per_page = [% PatronsPerPage | html %];
 
@@ -180,14 +243,47 @@
 
         var logged_in_library_id = "[% Branches.GetLoggedInBranchcode | html %]";
 
+        var libraries = [% To.json(libraries) | $raw %].map(function(e) {
+            e['_id'] = e.branchcode;
+            e['_str'] = e.branchname;
+            return e;
+        });
+        var categories_list = [% To.json(categories) | $raw %].map(function(e) {
+            e['_id'] = e.categorycode;
+            e['_str'] = e.description;
+            return e;
+        });
+        var filters_options = { libraries: libraries, categories: categories_list };
+
         $(document).ready(function() {
             var active_filters = {};
+            var patron_total_count = 0;
+
+            // Pre-fill from header search box params
+            [% IF searchmember %]
+                $("#search-query").val("[% searchmember | html %]");
+            [% END %]
+            [% IF searchfieldstype %]
+                var fieldMap = { "standard": "", "all_emails": "email", "all_phones": "phone|mobile", "full_address": "address|city|postal_code", "borrowernumber": "patron_id" };
+                var mappedField = fieldMap["[% searchfieldstype | html %]"] !== undefined ? fieldMap["[% searchfieldstype | html %]"] : "[% searchfieldstype | html %]";
+                $("#search-field").val(mappedField);
+            [% END %]
+            [% IF searchtype %]
+                $("#search-type").val("[% searchtype | html %]");
+            [% END %]
+            [% IF branchcode_filter %]
+                $("#sidebar-library-filter").val("[% branchcode_filter | html %]");
+            [% END %]
+            [% IF categorycode_filter %]
+                $("#sidebar-category-filter").val("[% categorycode_filter | html %]");
+            [% END %]
 
             var patron_table = $("#patron-search-table").kohaTable({
                 ajax: {
                     url: "/api/v1/search/patrons",
                     dataSrc: function(json) {
                         renderFacets(json.facets);
+                        updateSearchDescription();
                         return json.hits;
                     },
                     data: function(data) {
@@ -203,6 +299,11 @@
                             var searchType = $("#search-type").val();
                             if (searchType) params._match = searchType;
                         }
+
+                        var sidebarLib = $("#sidebar-library-filter").val();
+                        if (sidebarLib) params.library_id = sidebarLib;
+                        var sidebarCat = $("#sidebar-category-filter").val();
+                        if (sidebarCat) params.category_id = sidebarCat;
 
                         if (data.order && data.order.length) {
                             var columns = [[% IF CAN_user_tools_manage_patron_lists || CAN_user_borrowers_edit_borrowers %]null, [% END %]"cardnumber", "surname:firstname", "phone", "date_of_birth", "library_name", "category_description", "expiry_date", "checkouts_count", "account_balance", "staff_notes", null];
@@ -224,9 +325,8 @@
                                 if (col.search && col.search.value && col.data) {
                                     var val = col.search.value.replace(/[\^$]/g, '');
                                     var field = col.data;
-                                    // Multi-field columns (colon-separated) use patron_name
-                                    if (field.indexOf(":") !== -1) field = "patron_name";
-                                    if (field.startsWith("ext_attr_")) {
+
+                                    if (field.startsWith("ext_attr_") || field.indexOf(":") !== -1) {
                                         col_filters_json[field] = val;
                                     } else {
                                         params[field] = val;
@@ -244,7 +344,8 @@
                     },
                     dataFilter: function(data) {
                         var json = JSON.parse(data);
-                        json.recordsTotal = json.total;
+                        if (!patron_total_count) patron_total_count = json.total;
+                        json.recordsTotal = patron_total_count;
                         json.recordsFiltered = json.total;
                         return JSON.stringify(json);
                     }
@@ -263,21 +364,21 @@
                     {
                         data: "cardnumber",
                         render: function(data, type, row) {
-                            return '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '">' + (data || '') + '</a>';
+                            return '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '">' + escape_str(data || '') + '</a>';
                         }
                     },
                     {
-                        data: "surname:firstname",
+                        data: "surname:firstname:address:city",
                         render: function(data, type, row) {
-                            var name = (row.surname || '') + ', ' + (row.firstname || '');
-                            var parts = [row.address, row.city, row.state, row.postal_code].filter(Boolean);
+                            var name = escape_str((row.surname || '') + ', ' + (row.firstname || ''));
+                            var parts = [row.address, row.city, row.state, row.postal_code].filter(Boolean).map(escape_str);
                             var html = '<a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=' + row.patron_id + '" class="patron_name">' + name + '</a>';
                             if (parts.length) html += '<br/>' + parts.join(', ');
-                            if (row.email) html += '<br/>' + __("Email: ") + '<a href="mailto:' + row.email + '">' + row.email + '</a>';
+                            if (row.email) html += '<br/>' + __("Email: ") + '<a href="mailto:' + encodeURI(row.email) + '">' + escape_str(row.email) + '</a>';
                             return html;
                         }
                     },
-                    { data: "phone", defaultContent: "" },
+                    { data: "phone", defaultContent: "", render: function(data) { return escape_str(data || ''); } },
                     {
                         data: "date_of_birth",
                         defaultContent: "",
@@ -286,12 +387,12 @@
                             return '<span class="dateofbirth">' + $date(data) + ' <span class="agehint">(' + __("%s years").format($get_age(data)) + ')</span></span>';
                         }
                     },
-                    { data: "library_id", render: function(data) {
-                        var name = library_map[data] || data || '';
+                    { data: "library_id", searchable: true, dataFilter: "libraries", render: function(data, type, row) {
+                        var name = escape_str(library_map[data] || data || '');
                         if (data === logged_in_library_id) return '<span class="currentlibrary">' + name + '</span>';
                         return name;
                     } },
-                    { data: "category_id", render: function(data) { return category_map[data] || data || ''; } },
+                    { data: "category_id", searchable: true, dataFilter: "categories", render: function(data) { return escape_str(category_map[data] || data || ''); } },
                     {
                         data: "expiry_date",
                         defaultContent: "",
@@ -301,16 +402,30 @@
                             return '<span class="dateexpiry' + cls + '">' + $date(data) + '</span>';
                         }
                     },
-                    { data: "checkouts_count", defaultContent: "0" },
+                    { data: "checkouts_count", defaultContent: "0", orderable: false, render: function(data, type, row) {
+                        if (row.overdues_count) {
+                            return "<span class='overdue'><strong>" + row.overdues_count + "</strong></span> / " + row.checkouts_count;
+                        }
+                        return "0 / " + (row.checkouts_count || 0);
+                    } },
                     {
                         data: "account_balance",
-                        render: function(data) {
-                            if (!data || data == 0) return "0.00";
-                            var cls = data > 0 ? "text-danger" : "";
-                            return '<span class="' + cls + '">' + parseFloat(data).toFixed(2) + '</span>';
+                        render: function(data, type, row) {
+                            var balance = Number(row.account_balance || 0);
+                            var balance_str = balance.format_price();
+                            var r = "<span style='text-align: right; display: block;'><a href=\"/cgi-bin/koha/members/boraccount.pl?borrowernumber=" + row.patron_id + "\">";
+                            if (balance < 0) {
+                                r += "<span class='credit'>" + balance_str + "</span>";
+                            } else if (balance > 0) {
+                                r += "<span class='debit'><strong>" + balance_str + "</strong></span>";
+                            } else {
+                                r += balance_str;
+                            }
+                            r += "</a></span>";
+                            return r;
                         }
                     },
-                    { data: "staff_notes", defaultContent: "" },
+                    { data: "staff_notes", defaultContent: "", render: function(data) { return escape_str(data || ''); } },
                     {
                         data: "patron_id",
                         searchable: false,
@@ -329,7 +444,22 @@
                 ],
                 order: [[1, "asc"]],
                 pageLength: defined_per_page,
-            }, null, 1);
+            }, null, 1, null, filters_options);
+
+            function updateSearchDescription() {
+                var parts = [];
+                var q = $("#search-query").val();
+                var field = $("#search-field").val();
+                if (q) {
+                    var label = field ? $("#search-field option:selected").text() : "Name";
+                    parts.push(label + "=" + q);
+                }
+                if (parts.length) {
+                    $("#search-description").text(__("Patrons found for: ") + parts.join(", ")).show();
+                } else {
+                    $("#search-description").hide();
+                }
+            }
 
             function renderFacets(facets) {
                 if (!facets) return;
@@ -435,6 +565,8 @@
                 $("#search-query").val("");
                 $("#search-field").val("");
                 $("#search-type").val("contains");
+                $("#sidebar-library-filter").val("");
+                $("#sidebar-category-filter").val("");
                 $(".letter-link").removeClass("fw-bold");
                 patron_table.DataTable().ajax.reload();
             });
@@ -448,6 +580,7 @@
                 $("#search-type").val("starts_with");
                 patron_table.DataTable().ajax.reload();
             });
+
 
             // Selection handling
             [% IF CAN_user_tools_manage_patron_lists || CAN_user_borrowers_edit_borrowers %]
@@ -498,14 +631,17 @@
                 var count = selected_patrons.length;
                 if (count > 0) {
                     $(".patron-edits").removeClass("disabled").prop("disabled", false);
-                    $("#merge-patrons").removeClass("disabled").prop("disabled", false);
                     $("#batch-mod-patrons").removeClass("disabled").prop("disabled", false);
-                    $("#table_search_selections").show().find("span").text(count + __(" selected"));
+                    $("#table_search_selections").show().find("span").text(__("Patrons selected: ") + count);
                 } else {
                     $(".patron-edits").addClass("disabled").prop("disabled", true);
-                    $("#merge-patrons").addClass("disabled").prop("disabled", true);
                     $("#batch-mod-patrons").addClass("disabled").prop("disabled", true);
                     $("#table_search_selections").hide();
+                }
+                if (count >= 2) {
+                    $("#merge-patrons").removeClass("disabled").prop("disabled", false);
+                } else {
+                    $("#merge-patrons").addClass("disabled").prop("disabled", true);
                 }
             }
 
@@ -516,14 +652,63 @@
 
             $("#batch-mod-patrons").on("click", function() {
                 if (!selected_patrons.length) return;
-                var form = $('<form method="post" action="/cgi-bin/koha/tools/modborrowers.pl"></form>');
-                selected_patrons.forEach(function(id) {
-                    form.append('<input type="hidden" name="borrowernumber" value="' + id + '" />');
-                });
-                form.append('<input type="hidden" name="op" value="show" />');
-                $("body").append(form);
-                form.submit();
+                $("#borrowernumberlist").val(selected_patrons.join("\n"));
+                $("#patron_batchmod_form").submit();
             });
+
+            $("#patronlist-dropdown").on("click", ".patron-list-add", function(e) {
+                e.preventDefault();
+                if (!selected_patrons.length) {
+                    alert(__("You have not selected any patrons to add to a list!"));
+                    $(".dropdown-menu").removeClass("show");
+                    return false;
+                }
+                var listid = $(this).data("listid");
+                $("#add_to_patron_list").val(listid);
+                if (listid == "new") {
+                    $("#new-patron-list").modal("show");
+                } else {
+                    patronListAdd();
+                }
+            });
+
+            $("#new-patron-list_form").on("submit", function(e) {
+                e.preventDefault();
+                if ($("#new_patron_list").val()) {
+                    var duplicate = false;
+                    $(".patron-list-add").each(function() {
+                        if ($(this).text() == $("#new_patron_list").val()) {
+                            alert(__("You already have a list with that name!"));
+                            duplicate = true;
+                            return false;
+                        }
+                    });
+                    if (duplicate) return false;
+                } else {
+                    alert(__("You must give your new patron list a name!"));
+                    return false;
+                }
+                $("#new-patron-list").modal("hide");
+                patronListAdd();
+            });
+
+            function patronListAdd() {
+                var client = APIClient.patron_list;
+                client.lists.add_patrons({ patron_ids: selected_patrons, new_list_name: $("#new_patron_list").val(), list_id: $("#add_to_patron_list").val() }).then(
+                    function(success) {
+                        $("#patron_list_dialog").show();
+                        $("#patron_list_dialog > span.patrons-length").html(success.patrons_added_to_list);
+                        $("#patron_list_dialog > a").attr("href", "/cgi-bin/koha/patron_lists/list.pl?patron_list_id=" + success.patron_list.patron_list_id);
+                        $("#patron_list_dialog > a").html(escape_str(success.patron_list.name));
+                        if ($("#add_to_patron_list").val() == "new") {
+                            $("#patronlist-dropdown .dropdown-divider").parent().before('<li><a class="patron-list-add dropdown-item" href="#" data-listid="' + success.patron_list.patron_list_id + '">' + escape_str(success.patron_list.name) + '</a></li>');
+                        }
+                    },
+                    function(error) {
+                        alert(__("An error occurred. Patron list could not be updated."));
+                    }
+                );
+            }
 
             $("#clear-row-selection").on("click", function(e) {
                 e.preventDefault();

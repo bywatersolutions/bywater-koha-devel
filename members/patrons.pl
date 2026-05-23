@@ -37,6 +37,11 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
 $template->param(
     PatronsPerPage => C4::Context->preference("PatronsPerPage") || 20,
     patron_lists   => [ GetPatronLists() ],
+    searchmember   => scalar $query->param('searchmember'),
+    searchfieldstype => scalar $query->param('searchfieldstype'),
+    searchtype     => scalar $query->param('searchtype'),
+    branchcode_filter   => scalar $query->param('branchcode_filter'),
+    categorycode_filter => scalar $query->param('categorycode_filter'),
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;

@@ -749,6 +749,7 @@ function patron_autocomplete(node, options) {
     let on_select_callback;
     let on_select_add_to;
     let additional_filters;
+    let source_url;
 
     if (options) {
         if (options["link-to"]) {
@@ -769,10 +770,34 @@ function patron_autocomplete(node, options) {
         if (options["on-remove-callback"]) {
             on_remove_callback = options["on-remove-callback"];
         }
+        if (options["source-url"]) {
+            source_url = options["source-url"];
+        }
     }
     return (node
         .autocomplete({
             source: function (request, response) {
+                if (source_url) {
+                    $.ajax({
+                        data: { q: request.term, _per_page: 10, _match: "starts_with" },
+                        type: "GET",
+                        url: source_url,
+                        success: function (data) {
+                            return response(data.hits || data);
+                        },
+                        error: function (e) {
+                            if (e.state() != "rejected") {
+                                alert(
+                                    __(
+                                        "An error occurred. Check the logs for details."
+                                    )
+                                );
+                            }
+                            return response();
+                        },
+                    });
+                    return;
+                }
                 let q = buildPatronSearchQuery(request.term);
 
                 if (additional_filters) {

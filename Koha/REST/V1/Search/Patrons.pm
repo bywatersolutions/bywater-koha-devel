@@ -85,7 +85,7 @@ sub search {
         if ( my $filters_json = $c->param('filters') ) {
             my $extra = eval { Mojo::JSON::decode_json($filters_json) } // {};
             for my $key ( keys %$extra ) {
-                if ( $key =~ /^ext_attr_/ ) {
+                if ( $key =~ /^ext_attr_/ || $key =~ /:/ ) {
                     $column_filters{$key} = $extra->{$key};
                 } else {
                     $filters{$key} = $extra->{$key};
@@ -132,8 +132,9 @@ sub search {
         my @hits = map {
             my $api = $_->to_api({ user => $user });
             my $es  = $results->{es_data}{ $_->borrowernumber } // {};
-            $api->{checkouts_count} = $es->{checkouts_count} // 0;
             $api->{account_balance} = $es->{account_balance} // 0;
+            $api->{checkouts_count} = $es->{checkouts_count} // 0;
+            $api->{library}         = { library_id => $api->{library_id}, name => $es->{library_name} };
             $api;
         } @patrons;
 
@@ -188,14 +189,9 @@ sub autocomplete {
                 $patrons_rs->as_list;
 
             @suggestions = map {
-                {
-                    patron_id   => $_->borrowernumber,
-                    cardnumber  => $_->cardnumber,
-                    firstname   => $_->firstname,
-                    surname     => $_->surname,
-                    library_id  => $_->branchcode,
-                    category_id => $_->categorycode,
-                }
+                my $api = $_->to_api({ user => $c->stash('koha.user') });
+                $api->{library} = $_->library->to_api;
+                $api;
             } @sorted;
         }
 
