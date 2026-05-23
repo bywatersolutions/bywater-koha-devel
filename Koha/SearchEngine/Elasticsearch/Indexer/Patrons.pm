@@ -249,6 +249,9 @@ sub create_index {
     my $settings      = $self->get_elasticsearch_settings();
     my $elasticsearch = $self->get_elasticsearch();
 
+    my $max_result_window = C4::Context->preference('ElasticsearchPatronMaxResultWindow') || 1_000_000;
+    $settings->{index}{max_result_window} = $max_result_window;
+
     $elasticsearch->indices->create(
         index => $self->index_name,
         body  => { settings => $settings },

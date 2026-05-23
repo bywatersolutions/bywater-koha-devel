@@ -18,7 +18,13 @@ return {
             VALUES ('ElasticsearchIndexStatus_patrons', '0', NULL, 'Elasticsearch patrons index status', 'integer')
         });
 
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type)
+            VALUES ('ElasticsearchPatronMaxResultWindow', '1000000', NULL, 'Maximum result window (from + size) for the Elasticsearch patrons index. Applied at index creation time.', 'integer')
+        });
+
         say $out "Added new system preference 'ElasticsearchPatronSearch'";
         say $out "Added new system preference 'ElasticsearchIndexStatus_patrons'";
+        say $out "Added new system preference 'ElasticsearchPatronMaxResultWindow'";
     },
 };

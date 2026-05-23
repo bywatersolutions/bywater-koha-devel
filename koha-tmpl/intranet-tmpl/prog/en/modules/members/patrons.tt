@@ -402,14 +402,11 @@
                             return '<span class="dateexpiry' + cls + '">' + $date(data) + '</span>';
                         }
                     },
-                    { data: "checkouts_count", defaultContent: "0", orderable: false, render: function(data, type, row) {
-                        if (row.overdues_count) {
-                            return "<span class='overdue'><strong>" + row.overdues_count + "</strong></span> / " + row.checkouts_count;
-                        }
-                        return "0 / " + (row.checkouts_count || 0);
+                    { data: "checkouts_count", defaultContent: "0", searchable: false, orderable: false, render: function(data, type, row) {
+                        return "<span class='overdues-placeholder' data-patron-id='" + row.patron_id + "'><i class='fa fa-spinner fa-spin'></i></span> / " + (row.checkouts_count || 0);
                     } },
                     {
-                        data: "account_balance",
+                        data: "account_balance", searchable: false, orderable: false,
                         render: function(data, type, row) {
                             var balance = Number(row.account_balance || 0);
                             var balance_str = balance.format_price();
@@ -444,6 +441,21 @@
                 ],
                 order: [[1, "asc"]],
                 pageLength: defined_per_page,
+                drawCallback: function() {
+                    $(".overdues-placeholder").each(function() {
+                        var $el = $(this);
+                        var patron_id = $el.data("patron-id");
+                        $.get("/api/v1/patrons/" + patron_id + "/overdues_count", function(count) {
+                            if (count > 0) {
+                                $el.html("<span class='overdue'><strong>" + count + "</strong></span>");
+                            } else {
+                                $el.text("0");
+                            }
+                        }).fail(function() {
+                            $el.text("?");
+                        });
+                    });
+                },
             }, null, 1, null, filters_options);
 
             function updateSearchDescription() {
