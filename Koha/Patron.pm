@@ -4137,7 +4137,11 @@ sub _es_delete_patron {
     return unless C4::Context->preference('ElasticsearchPatronSearch');
     require Koha::SearchEngine::Elasticsearch::Indexer::Patrons;
     my $indexer = Koha::SearchEngine::Elasticsearch::Indexer::Patrons->new();
-    $indexer->delete_patrons( [ $self->borrowernumber ] );
+    try {
+        $indexer->delete_patrons( [ $self->borrowernumber ] );
+    } catch {
+        Koha::Exceptions::Exception->throw("Cannot delete patron: failed to remove from search index. $_");
+    };
 }
 
 1;
