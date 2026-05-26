@@ -429,6 +429,49 @@ sub branch_for_fee_context {
 
 =head2 Internal methods
 
+=head3 store
+
+Override to trigger patron ES reindex for checkouts_count.
+
+=cut
+
+sub store {
+    my ($self) = @_;
+    $self = $self->SUPER::store;
+    $self->_es_reindex_patron;
+    return $self;
+}
+
+=head3 delete
+
+Override to trigger patron ES reindex for checkouts_count.
+
+=cut
+
+sub delete {
+    my ($self) = @_;
+    my $borrowernumber = $self->borrowernumber;
+    $self->SUPER::delete;
+    $self->_es_reindex_patron($borrowernumber);
+    return $self;
+}
+
+=head2 Internal methods
+
+=head3 _es_reindex_patron
+
+Enqueue ES reindex for the patron associated with this checkout.
+
+=cut
+
+sub _es_reindex_patron {
+    my ( $self, $borrowernumber ) = @_;
+    $borrowernumber //= $self->borrowernumber;
+    return unless C4::Context->preference('ElasticsearchPatronSearch');
+    require Koha::BackgroundJob::UpdateElasticPatronIndex;
+    Koha::BackgroundJob::UpdateElasticPatronIndex->new->enqueue( { patron_ids => [$borrowernumber] } );
+}
+
 =head3 _type
 
 =cut

@@ -20,7 +20,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 6;
+use Test::More tests => 7;
 use t::lib::Mocks;
 use t::lib::TestBuilder;
 
@@ -216,6 +216,55 @@ subtest 'booking() tests' => sub {
     my $no_booking = $checkout_no_booking->booking;
     is( $no_booking,      undef, 'booking() returns undef when no booking_id is set' );
     is( ref($no_booking), '',    'booking() returns empty ref when no booking_id is set' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'ES patron reindex on store/delete' => sub {
+    plan tests => 5;
+
+    $schema->storage->txn_begin;
+
+    my @enqueued;
+    my $job_mock = Test::MockModule->new('Koha::BackgroundJob::UpdateElasticPatronIndex');
+    $job_mock->mock( 'new', sub { bless {}, $_[0] } );
+    $job_mock->mock( 'enqueue', sub { push @enqueued, $_[1] } );
+
+    t::lib::Mocks::mock_preference( 'ElasticsearchPatronSearch', 1 );
+
+    my $patron = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $item   = $builder->build_sample_item;
+
+    @enqueued = ();
+    my $checkout = Koha::Checkout->new(
+        {
+            borrowernumber => $patron->borrowernumber,
+            itemnumber     => $item->itemnumber,
+            branchcode     => $patron->branchcode,
+        }
+    )->store;
+
+    is( scalar @enqueued,              1,                       'store enqueues a reindex job' );
+    is( $enqueued[0]->{patron_ids}[0], $patron->borrowernumber, 'Correct patron_id on store' );
+
+    @enqueued = ();
+    $checkout->delete;
+
+    is( scalar @enqueued,              1,                       'delete enqueues a reindex job' );
+    is( $enqueued[0]->{patron_ids}[0], $patron->borrowernumber, 'Correct patron_id on delete' );
+
+    # Disabled syspref
+    t::lib::Mocks::mock_preference( 'ElasticsearchPatronSearch', 0 );
+    @enqueued = ();
+    Koha::Checkout->new(
+        {
+            borrowernumber => $patron->borrowernumber,
+            itemnumber     => $item->itemnumber,
+            branchcode     => $patron->branchcode,
+        }
+    )->store;
+
+    is( scalar @enqueued, 0, 'No reindex when syspref disabled' );
 
     $schema->storage->txn_rollback;
 };

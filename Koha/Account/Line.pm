@@ -1159,7 +1159,11 @@ sub store {
         }
     }
 
-    return $self->SUPER::store();
+    my $result = $self->SUPER::store();
+
+    $self->_es_reindex_patron;
+
+    return $result;
 }
 
 =head2 Internal methods
@@ -1169,6 +1173,20 @@ sub store {
 =head3 _type
 
 =cut
+
+=head3 _es_reindex_patron
+
+Enqueue ES reindex for the patron associated with this account line.
+
+=cut
+
+sub _es_reindex_patron {
+    my ($self) = @_;
+    return unless $self->borrowernumber;
+    return unless C4::Context->preference('ElasticsearchPatronSearch');
+    require Koha::BackgroundJob::UpdateElasticPatronIndex;
+    Koha::BackgroundJob::UpdateElasticPatronIndex->new->enqueue( { patron_ids => [ $self->borrowernumber ] } );
+}
 
 sub _type {
     return 'Accountline';
