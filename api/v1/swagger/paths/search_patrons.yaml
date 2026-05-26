@@ -1,0 +1,196 @@
+---
+"/search/patrons":
+  get:
+    x-mojo-to: Search::Patrons#search
+    operationId: searchPatronsES
+    tags:
+      - patrons
+      - search
+    summary: Search patrons using Elasticsearch
+    produces:
+      - application/json
+    parameters:
+      - name: q
+        in: query
+        description: Free-text search query. If empty, returns all patrons.
+        required: false
+        type: string
+      - name: fields
+        in: query
+        description: Pipe-separated list of fields to search. If empty, searches all searchable fields.
+        required: false
+        type: string
+      - name: _order_by
+        in: query
+        description: "Sort field. Prefix with + or - for direction. Supports extended attribute fields (ext_attr_{CODE})."
+        required: false
+        type: string
+      - name: _page
+        in: query
+        description: Page number
+        required: false
+        type: integer
+        minimum: 1
+      - name: _per_page
+        in: query
+        description: Number of results per page
+        required: false
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      - name: _match
+        in: query
+        description: "Search match type: starts_with or contains"
+        required: false
+        type: string
+        enum:
+          - starts_with
+          - contains
+      - name: library_id
+        in: query
+        description: Filter by library
+        required: false
+        type: string
+      - name: category_id
+        in: query
+        description: Filter by patron category
+        required: false
+        type: string
+      - name: restricted
+        in: query
+        description: Filter by restriction status
+        required: false
+        type: boolean
+      - name: cardnumber
+        in: query
+        description: Search on cardnumber
+        required: false
+        type: string
+      - name: surname
+        in: query
+        description: Search on surname
+        required: false
+        type: string
+      - name: patron_name
+        in: query
+        description: Search on combined name (surname + firstname)
+        required: false
+        type: string
+      - name: firstname
+        in: query
+        description: Search on firstname
+        required: false
+        type: string
+      - name: phone
+        in: query
+        description: Search on phone
+        required: false
+        type: string
+      - name: date_of_birth
+        in: query
+        description: Search on date of birth
+        required: false
+        type: string
+      - name: expiry_date
+        in: query
+        description: Search on expiry date
+        required: false
+        type: string
+      - name: email
+        in: query
+        description: Search on email
+        required: false
+        type: string
+      - name: address
+        in: query
+        description: Search on address
+        required: false
+        type: string
+      - name: city
+        in: query
+        description: Search on city
+        required: false
+        type: string
+      - name: staff_notes
+        in: query
+        description: Search on staff notes
+        required: false
+        type: string
+      - name: filters
+        in: query
+        description: "JSON object of additional filters. Supports extended attribute filters as ext_attr_{CODE}:value pairs."
+        required: false
+        type: string
+      - $ref: "../swagger.yaml#/parameters/request_id_header"
+    responses:
+      "200":
+        description: Search results
+        schema:
+          type: object
+          additionalProperties: false
+          properties:
+            total:
+              type: integer
+              description: Total number of matching patrons
+            hits:
+              type: array
+              items:
+                $ref: "../swagger.yaml#/definitions/patron"
+            facets:
+              type: object
+              description: Aggregated counts for facetable fields
+              properties:
+                branchcode:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      value:
+                        type: string
+                      count:
+                        type: integer
+                categorycode:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      value:
+                        type: string
+                      count:
+                        type: integer
+                debarred:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      value:
+                        type: boolean
+                      count:
+                        type: integer
+      "400":
+        description: |
+          Bad request. Possible `error_code` attribute values:
+
+          * `invalid_query`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: Internal server error
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        - borrowers: "list_borrowers"
