@@ -91,7 +91,11 @@
                 }
             [% END %]
             if ( $("#searchmember").length ) {
+                [% IF Koha.Preference('SearchEngine') == 'Elasticsearch' AND Koha.Preference('ElasticsearchPatronSearch') %]
+                patron_autocomplete($("#searchmember"), { 'link-to': 'patron', 'source-url': '/api/v1/search/patrons' });
+                [% ELSE %]
                 patron_autocomplete($("#searchmember"), { 'link-to': 'patron' });
+                [% END %]
             }
         });
     </script>

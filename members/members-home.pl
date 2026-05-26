@@ -31,6 +31,14 @@ use Koha::Patron::Attribute::Types;
 
 my $query = CGI->new;
 
+# Redirect to ES-powered search when enabled
+if (   C4::Context->preference('SearchEngine') eq 'Elasticsearch'
+    && C4::Context->preference('ElasticsearchPatronSearch') )
+{
+    print $query->redirect('/cgi-bin/koha/members/patrons.pl');
+    exit;
+}
+
 my ( $template, $loggedinuser, $cookie, $flags ) = get_template_and_user(
     {
         template_name => "members/member.tt",
