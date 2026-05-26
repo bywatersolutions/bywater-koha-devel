@@ -1,0 +1,261 @@
+---
+# Patron field mappings for Elasticsearch
+#
+# Types (from field_config.yaml):
+#   ""        - default text (analyzer_standard, with .phrase, .raw, .ci_raw sub-fields)
+#   "stdno"   - standard number (whitespace tokenizer, punctuation removal)
+#   "boolean" - boolean
+#   "integer" - integer
+#   "date"    - date
+#
+# Dynamic extended attribute fields (ext_attr_*) are handled via ES dynamic_templates
+# and are not listed here.
+
+patrons:
+  # Identity - core name fields
+  surname:
+    type: ""
+    sort: true
+    facet: false
+  firstname:
+    type: ""
+    sort: true
+    facet: false
+  preferred_name:
+    type: ""
+    sort: false
+    facet: false
+  middle_name:
+    type: ""
+    sort: false
+    facet: false
+  othernames:
+    type: ""
+    sort: false
+    facet: false
+  initials:
+    type: ""
+    sort: false
+    facet: false
+  title:
+    type: ""
+    sort: false
+    facet: false
+
+  # Identifiers
+  cardnumber:
+    type: stdno
+    sort: true
+    facet: false
+  userid:
+    type: stdno
+    sort: false
+    facet: false
+  patron_id:
+    type: integer
+    sort: false
+    facet: false
+
+  # Composite search field (populated from multiple source fields)
+  patron_name:
+    type: ""
+    sort: true
+    facet: false
+
+  # Classification
+  category_id:
+    type: ""
+    sort: true
+    facet: true
+  library_id:
+    type: ""
+    sort: true
+    facet: true
+
+  # Dates
+  date_of_birth:
+    type: date
+    sort: true
+    facet: false
+  date_enrolled:
+    type: date
+    sort: true
+    facet: false
+  expiry_date:
+    type: date
+    sort: true
+    facet: false
+
+  # Primary address
+  street_number:
+    type: ""
+    sort: false
+    facet: false
+  street_type:
+    type: ""
+    sort: false
+    facet: false
+  address:
+    type: ""
+    sort: false
+    facet: false
+  address2:
+    type: ""
+    sort: false
+    facet: false
+  city:
+    type: ""
+    sort: true
+    facet: true
+  state:
+    type: ""
+    sort: true
+    facet: true
+  postal_code:
+    type: stdno
+    sort: true
+    facet: false
+  country:
+    type: ""
+    sort: false
+    facet: true
+
+  # Contact
+  email:
+    type: ""
+    sort: false
+    facet: false
+  emailpro:
+    type: ""
+    sort: false
+    facet: false
+  B_email:
+    type: ""
+    sort: false
+    facet: false
+  phone:
+    type: stdno
+    sort: false
+    facet: false
+  phonepro:
+    type: stdno
+    sort: false
+    facet: false
+  mobile:
+    type: stdno
+    sort: false
+    facet: false
+  B_phone:
+    type: stdno
+    sort: false
+    facet: false
+  altcontactphone:
+    type: stdno
+    sort: false
+    facet: false
+
+  # Alternate address
+  B_address:
+    type: ""
+    sort: false
+    facet: false
+  B_address2:
+    type: ""
+    sort: false
+    facet: false
+  B_city:
+    type: ""
+    sort: false
+    facet: false
+  B_state:
+    type: ""
+    sort: false
+    facet: false
+  B_zipcode:
+    type: stdno
+    sort: false
+    facet: false
+  B_country:
+    type: ""
+    sort: false
+    facet: false
+
+  # Alternate contact
+  altcontactfirstname:
+    type: ""
+    sort: false
+    facet: false
+  altcontactsurname:
+    type: ""
+    sort: false
+    facet: false
+  altcontactaddress1:
+    type: ""
+    sort: false
+    facet: false
+  altcontactaddress2:
+    type: ""
+    sort: false
+    facet: false
+  altcontactaddress3:
+    type: ""
+    sort: false
+    facet: false
+
+  # Status flags
+  restricted:
+    type: boolean
+    sort: false
+    facet: true
+  incorrect_address:
+    type: boolean
+    sort: false
+    facet: true
+  patron_card_lost:
+    type: boolean
+    sort: false
+    facet: true
+
+  # Computed fields
+  checkouts_count:
+    type: integer
+    sort: true
+    facet: false
+  account_balance:
+    type: number
+    sort: true
+    facet: false
+  library_name:
+    type: ""
+    sort: true
+    facet: false
+  category_description:
+    type: ""
+    sort: true
+    facet: false
+
+  # Custom sort fields
+  statistics_1:
+    type: ""
+    sort: true
+    facet: true
+  statistics_2:
+    type: ""
+    sort: true
+    facet: true
+
+  # Notes (searchable but not sortable)
+  staff_notes:
+    type: ""
+    sort: false
+    facet: false
+  opac_notes:
+    type: ""
+    sort: false
+    facet: false
+
+  # Extended attributes (nested for correlated code+value queries)
+  extended_attributes:
+    type: nested
+    sort: false
+    facet: false
