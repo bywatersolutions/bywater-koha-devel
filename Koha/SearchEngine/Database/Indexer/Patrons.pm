@@ -36,7 +36,7 @@ group and weighted relevance scoring.
 
 my %FIELD_GROUPS = (
     standard     => [qw(surname firstname preferred_name middle_name othernames cardnumber userid)],
-    full_address => [qw(address address2 city state postal_code country)],
+    full_address => [qw(address address2 city state zipcode country)],
     all_emails   => [qw(email emailpro)],
     all_phones   => [qw(phone mobile phonepro)],
 );
@@ -50,7 +50,7 @@ my %DB_TO_FIELD = (
     sort2         => 'statistics_2',
 );
 
-# Individual fields that get their own row
+# Individual fields that get their own row (DB column names)
 my @INDIVIDUAL_FIELDS = qw(
     cardnumber surname firstname preferred_name middle_name othernames userid
     email emailpro phone mobile phonepro
@@ -62,6 +62,12 @@ sub new {
     my ( $class, $params ) = @_;
     return bless $params // {}, $class;
 }
+
+# CLI compatibility stubs
+sub index_exists        { return 1 }
+sub drop_index          { my $self = shift; C4::Context->dbh->do("TRUNCATE TABLE patron_search_index"); return }
+sub create_index        { return }
+sub set_index_status_ok { return }
 
 =head2 index_patrons
 
