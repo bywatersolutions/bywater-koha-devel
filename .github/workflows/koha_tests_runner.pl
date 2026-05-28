@@ -64,6 +64,7 @@ my $prove_cpus              = '';
 my $compare_with            = '';
 my $run_only                = '';
 my $with_coverage           = 0;
+my $files = '';    # explicit list of test files to run with prove, used for sharding the suite across CI jobs
 
 GetOptions(
     'cleanup!'         => \$cleanup,
@@ -89,6 +90,7 @@ GetOptions(
     'run-db-compare-only'     => \$run_db_compare_only,
     'compare-with=s'          => \$compare_with,
     'run-only=s'              => \$run_only,
+    'files=s'                 => \$files,
 ) or die "Error in command line arguments\n";
 
 $with_coverage ||= ( $ENV{COVERAGE} && $ENV{COVERAGE} eq 'yes' );
@@ -181,7 +183,8 @@ my @ktd_flags = (
 check_and_cleanup_existing_instance( $ktd_home, $instance_name, $force_cleanup );
 
 # Selenium support
-if ( $run_all_tests || $run_all_perl_tests || $run_selenium_tests_only || $run_only || $selenium ) {
+# A sharded run ( --files ) may include selenium tests, so bring selenium up too
+if ( $run_all_tests || $run_all_perl_tests || $run_selenium_tests_only || $run_only || $selenium || $files ) {
     push @ktd_flags, '--selenium';
 }
 
@@ -189,7 +192,8 @@ if ( $run_all_tests || $run_all_perl_tests || $run_selenium_tests_only || $run_o
 if ( !$search_engine ) {
 
     # Auto-detect based on test switches that require Elasticsearch
-    if ( $run_all_tests || $run_all_perl_tests || $run_elastic_tests_only ) {
+    # A sharded run ( --files ) may include Elasticsearch tests, so default to es8
+    if ( $run_all_tests || $run_all_perl_tests || $run_elastic_tests_only || $files ) {
         $search_engine = 'es8';    # Default to es8
     } else {
         $search_engine = 'zebra';    # Default to zebra for other tests
@@ -345,6 +349,13 @@ sub wait_ready_with_logs {
 
 sub build_test_command {
 
+    # When given an explicit list of files, run just those with prove instead of
+    # the full run_tests.pl suite. This lets CI shard the suite across parallel jobs,
+    # each shard running its slice of files in its own isolated KTD instance.
+    if ($files) {
+        return "prove --timer $files";
+    }
+
     my @cmd_parts = ( 'perl', '/kohadevbox/misc4dev/run_tests.pl' );
 
     # Determine which tests to run: CLI options first, then ENV, then default
@@ -466,6 +477,12 @@ TEST CONTROL OPTIONS:
 
   --run-only <test_pattern>
       Run only tests matching the specified pattern.
+
+  --files "<file1 file2 ...>"
+      Run only the given space-separated list of test files, directly with prove,
+      instead of the full run_tests.pl suite. Used to shard the suite across
+      parallel CI jobs. The instance is still brought up with selenium and es8 so
+      any test file can run in any shard.
 
   --with-coverage
       Enable coverage reporting (overrides COVERAGE environment variable).
