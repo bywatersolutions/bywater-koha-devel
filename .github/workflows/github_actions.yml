@@ -465,6 +465,53 @@ jobs:
               shell: bash
 
 
+    lock-release-branch:
+        name: Lock release branch after successful build
+        needs: [build-debs]
+        if: |
+            success() &&
+            startsWith(github.event.head_commit.message, 'BWS-PKG - Set bwsbranch to') &&
+            (github.repository == 'bywatersolutions/bywater-koha' ||
+             github.repository == 'bywatersolutions/bywater-koha-future' ||
+             github.repository == 'bywatersolutions/bywater-koha-security')
+        runs-on: ubuntu-latest
+        steps:
+            - name: Mint GitHub App token
+              id: app-token
+              uses: actions/create-github-app-token@v1
+              with:
+                  app-id: ${{ secrets.BRANCH_LOCK_APP_ID }}
+                  private-key: ${{ secrets.BRANCH_LOCK_APP_PRIVATE_KEY }}
+
+            - name: Create ruleset to lock branch
+              env:
+                  GH_TOKEN: ${{ steps.app-token.outputs.token }}
+                  BRANCH: ${{ github.ref_name }}
+                  REPO: ${{ github.repository }}
+              run: |
+                  set -e
+                  cat > /tmp/ruleset.json <<EOF
+                  {
+                    "name": "lock-${BRANCH}",
+                    "target": "branch",
+                    "enforcement": "active",
+                    "conditions": {
+                      "ref_name": {
+                        "include": ["refs/heads/${BRANCH}"],
+                        "exclude": []
+                      }
+                    },
+                    "rules": [
+                      {"type": "update"},
+                      {"type": "deletion"},
+                      {"type": "non_fast_forward"}
+                    ],
+                    "bypass_actors": []
+                  }
+                  EOF
+                  gh api --method POST "repos/${REPO}/rulesets" --input /tmp/ruleset.json
+
+
     build-docker:
         if: false #github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future'
         name: Build Docker image
