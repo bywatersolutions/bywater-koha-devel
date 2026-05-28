@@ -111,8 +111,18 @@ sub new {
 
     # Check for a valid index
     Koha::Exceptions::MissingParameter->throw('No index name provided') unless $params->{index};
+
     my $config = _read_configuration();
+
+    # Use index-specific server if configured (e.g., patrons_server)
+    my $index_server_key = $params->{index} . '_server';
+    if ( $config->{$index_server_key} ) {
+        my $server = $config->{$index_server_key};
+        $config->{nodes} = ref($server) eq 'ARRAY' ? $server : [$server];
+    }
+
     $params->{index_name} = $config->{index_name} . '_' . $params->{index};
+    $params->{_es_config} = $config;
 
     my $self = $class->SUPER::new(@_);
     return $self;
@@ -140,7 +150,7 @@ sub get_elasticsearch {
     my $params = $self->get_elasticsearch_params();
 
 This provides a hashref that contains the parameters for connecting to the
-ElasicSearch servers, in the form:
+ElasticSearch servers, in the form:
 
     {
         'nodes' => ['127.0.0.1:9200', 'anotherserver:9200'],
@@ -153,23 +163,15 @@ This is configured by the following in the C<config> block in koha-conf.xml:
         <server>127.0.0.1:9200</server>
         <server>anotherserver:9200</server>
         <index_name>koha_instance</index_name>
+        <!-- Optional: separate server for the patrons index -->
+        <patrons_server>patron-es:9200</patrons_server>
     </elasticsearch>
 
 =cut
 
 sub get_elasticsearch_params {
     my ($self) = @_;
-
-    my $conf;
-    try {
-        $conf = _read_configuration();
-    } catch {
-        if ( ref($_) eq 'Koha::Exceptions::Config::MissingEntry' ) {
-            croak( $_->message );
-        }
-    };
-
-    return $conf;
+    return $self->{_es_config};
 }
 
 =head2 get_elasticsearch_settings

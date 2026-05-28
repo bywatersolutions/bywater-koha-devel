@@ -373,6 +373,8 @@ __END_SRU_PUBLICSERVER__
      <cxn_pool>Static</cxn_pool>
      <!-- See https://metacpan.org/pod/Search::Elasticsearch#trace_to -->
      <!-- <trace_to>Stderr</trace_to> -->
+     <!-- Optional: dedicated server for the patrons index -->
+     <!-- <patrons_server>localhost:9200</patrons_server> -->
  </elasticsearch>
  <!-- Uncomment the following line if you want to override the Elasticsearch default index settings -->
  <!-- <elasticsearch_index_config>__KOHA_CONF_DIR__/searchengine/elasticsearch/index_config.yaml</elasticsearch_index_config> -->
