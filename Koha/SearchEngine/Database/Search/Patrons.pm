@@ -54,7 +54,7 @@ sub search_patrons {
     my $match          = $args{match}          // 'starts_with';
     my $column_filters = $args{column_filters} // {};
     my $filters        = $args{filters}        // {};
-    my $library        = $args{library};
+    my $restricted_libraries = $args{restricted_libraries} // [];
     my $fields         = $args{fields};
 
     my $dbh = C4::Context->dbh;
@@ -106,10 +106,11 @@ sub search_patrons {
         }
     }
 
-    # IndependentBranches scoping
-    if ( $library && C4::Context->preference('IndependentBranches') ) {
-        push @where, "b.branchcode = ?";
-        push @bind,  $library;
+    # Library scoping
+    if ( @$restricted_libraries ) {
+        my $ph = join ',', ('?') x @$restricted_libraries;
+        push @where, "b.branchcode IN ($ph)";
+        push @bind,  @$restricted_libraries;
     }
 
     # Column filters

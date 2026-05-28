@@ -81,7 +81,7 @@ use Koha::SearchEngine::Indexer::Patrons;
 my $verbose   = 0;
 my $commit    = 1000;
 my $processes = 1;
-my ( $delete, $reset, $help );
+my ( $delete, $reset, $help, $backend );
 my @ids;
 
 $| = 1;
@@ -94,6 +94,7 @@ GetOptions(
     'p|processes=i' => \$processes,
     'v|verbose+'    => \$verbose,
     'h|help'        => \$help,
+    'b|backend=s'   => \$backend,
 ) or pod2usage(2);
 
 pod2usage(1) if $help;
@@ -103,7 +104,20 @@ die "Argument -p|--processes cannot be combined with --id\n"
 
 $delete = 1 if $reset;
 
-my $indexer = Koha::SearchEngine::Indexer::Patrons->new();
+my $indexer;
+if ( $backend ) {
+    if ( $backend eq 'elasticsearch' || $backend eq 'es' ) {
+        require Koha::SearchEngine::Elasticsearch::Indexer::Patrons;
+        $indexer = Koha::SearchEngine::Elasticsearch::Indexer::Patrons->new();
+    } elsif ( $backend eq 'database' || $backend eq 'db' ) {
+        require Koha::SearchEngine::Database::Indexer::Patrons;
+        $indexer = Koha::SearchEngine::Database::Indexer::Patrons->new();
+    } else {
+        die "Unknown backend '$backend'. Use 'elasticsearch' or 'database'.\n";
+    }
+} else {
+    $indexer = Koha::SearchEngine::Indexer::Patrons->new();
+}
 
 # Handle index creation/reset (only in main process)
 if ($delete) {
@@ -165,7 +179,7 @@ my $count       = 0;
 my @batch;
 
 # Re-create indexer in child (fresh ES connection)
-$indexer = Koha::SearchEngine::Indexer::Patrons->new() if $slice_index > 0;
+$indexer = ref($indexer)->new() if $slice_index > 0;
 
 while ( my $patron = $patrons_rs->next ) {
     push @batch, $patron->borrowernumber;
