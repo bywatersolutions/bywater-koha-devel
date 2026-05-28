@@ -445,7 +445,7 @@ sub store {
         }
     );
 
-    $self->_es_index_patron();
+    $self->_search_engine_reindex();
 
     return $self;
 }
@@ -509,7 +509,7 @@ sub delete {
                 $patron_data->{permissions} = \%granted if %granted;
             }
 
-            $self->_es_delete_patron;
+            $self->_search_engine_delete;
 
             $self->SUPER::delete;
 
@@ -2866,7 +2866,7 @@ sub anonymize {
     foreach my $col (@columns) {
         $self->_anonymize_column( $col, $mandatory->{ lc $col } );
     }
-    $self->_es_delete_patron;
+    $self->_search_engine_delete;
 
     $self->anonymized(1)->store;
 }
@@ -4113,26 +4113,26 @@ Kyle M Hall <kyle@bywatersolutions.com>
 Alex Sassmannshausen <alex.sassmannshausen@ptfs-europe.com>
 Martin Renvoize <martin.renvoize@ptfs-europe.com>
 
-=head3 _es_index_patron
+=head3 _search_engine_reindex
 
 Enqueue a background job to index this patron in Elasticsearch (if enabled).
 
 =cut
 
-sub _es_index_patron {
+sub _search_engine_reindex {
     my ($self) = @_;
     return unless C4::Context->preference('ElasticsearchPatronSearch');
     require Koha::BackgroundJob::UpdateElasticPatronIndex;
     Koha::BackgroundJob::UpdateElasticPatronIndex->new->enqueue( { patron_ids => [ $self->borrowernumber ] } );
 }
 
-=head3 _es_delete_patron
+=head3 _search_engine_delete
 
 Remove this patron from the Elasticsearch index (if enabled).
 
 =cut
 
-sub _es_delete_patron {
+sub _search_engine_delete {
     my ($self) = @_;
     return unless C4::Context->preference('ElasticsearchPatronSearch');
     require Koha::SearchEngine::Indexer::Patrons;
