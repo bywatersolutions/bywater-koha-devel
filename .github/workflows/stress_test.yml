@@ -77,7 +77,7 @@ jobs:
               run: |
                 git clone https://${{ secrets.BWS_FORGEJO_KEY }}:${{ secrets.BWS_FORGEJO_KEY }}@git.tools.bywatersolutions.com/ByWaterSolutions/bywater-stress-testers.git /tmp/bywater-stress-testers
                 cd /tmp/bywater-stress-testers
-                git checkout -b origin/gha
+                git checkout gha
                 cd -
 
             - name: Get Koha container IP
@@ -147,7 +147,6 @@ jobs:
                   echo "========================================"
 
             - name: Push stress test results
-              if: always()
               run: |
                   git clone https://x-access-token:${{ secrets.GHA_WORKFLOW_TOKEN }}@github.com/bywatersolutions/koha-stress-test-results.git /tmp/koha-stress-test-results
                   cp /tmp/stress-results/*.json /tmp/koha-stress-test-results/
