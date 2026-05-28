@@ -95,19 +95,19 @@ sub search {
             }
         }
 
-        my $library = $c->stash('koha.user')->branchcode;
+        my @restricted_libraries = $c->stash('koha.user')->libraries_where_can_see_patrons;
 
         my $searcher = Koha::SearchEngine::Elasticsearch::Search::Patrons->new();
         my $results  = $searcher->search_patrons(
-            query          => $q,
-            fields         => $fields ? [ split /\|/, $fields ] : undef,
-            match          => $match,
-            column_filters => $column_filters,
-            page           => $page,
-            per_page       => $per_page,
-            order_by       => $order_by,
-            filters        => $filters,
-            library        => $library,
+            query                => $q,
+            fields               => $fields ? [ split /\|/, $fields ] : undef,
+            match                => $match,
+            column_filters       => $column_filters,
+            page                 => $page,
+            per_page             => $per_page,
+            order_by             => $order_by,
+            filters              => $filters,
+            restricted_libraries => \@restricted_libraries,
         );
 
         # Hydrate patron objects from DB

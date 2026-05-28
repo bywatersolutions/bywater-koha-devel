@@ -80,27 +80,27 @@ Returns hashref: { total => $n, hits => \@patron_ids, facets => \%facets }
 sub search_patrons {
     my ( $self, %args ) = @_;
 
-    my $query_string   = $args{query};
-    my $page           = $args{page}     // 1;
-    my $per_page       = $args{per_page} // 20;
-    my $order_by       = $args{order_by};
-    my $match          = $args{match}          // 'contains';
-    my $column_filters = $args{column_filters} // {};
-    my $filters        = $args{filters}        // {};
-    my $library        = $args{library};
-    my $fields         = $args{fields};
+    my $query_string          = $args{query};
+    my $page                  = $args{page}     // 1;
+    my $per_page              = $args{per_page} // 20;
+    my $order_by              = $args{order_by};
+    my $match                 = $args{match}          // 'contains';
+    my $column_filters        = $args{column_filters} // {};
+    my $filters               = $args{filters}        // {};
+    my $restricted_libraries  = $args{restricted_libraries} // [];
+    my $fields                = $args{fields};
 
     # Resolve search fields
-    my @search_fields = $fields ? @$fields : $self->_resolve_search_fields($library);
+    my @search_fields = $fields ? @$fields : $self->_resolve_search_fields();
 
     # Build the query body
     my $body = $self->_build_query(
-        query_string   => $query_string,
-        search_fields  => \@search_fields,
-        match          => $match,
-        column_filters => $column_filters,
-        filters        => $filters,
-        library        => $library,
+        query_string         => $query_string,
+        search_fields        => \@search_fields,
+        match                => $match,
+        column_filters       => $column_filters,
+        filters              => $filters,
+        restricted_libraries => $restricted_libraries,
     );
 
     # Sorting
@@ -162,7 +162,7 @@ Includes core fields + extended attribute fields visible to the library.
 =cut
 
 sub _resolve_search_fields {
-    my ( $self, $library ) = @_;
+    my ($self) = @_;
 
     # Honor DefaultPatronSearchFields syspref for the "Standard" field set
     my $default_fields = C4::Context->preference('DefaultPatronSearchFields')
@@ -175,7 +175,7 @@ sub _resolve_search_fields {
     # Add only searched_by_default extended attribute fields to the default search
     my $attr_types_rs = Koha::Patron::Attribute::Types->search_with_library_limits(
         { staff_searchable => 1, searched_by_default => 1 },
-        {}, $library
+        {}, undef
     );
 
     while ( my $type = $attr_types_rs->next ) {
@@ -198,12 +198,12 @@ Builds the ES query body with multi_match + filters + aggregations.
 sub _build_query {
     my ( $self, %args ) = @_;
 
-    my $query_string   = $args{query_string};
-    my $search_fields  = $args{search_fields};
-    my $match          = $args{match}          // 'contains';
-    my $column_filters = $args{column_filters} // {};
-    my $filters        = $args{filters};
-    my $library        = $args{library};
+    my $query_string          = $args{query_string};
+    my $search_fields         = $args{search_fields};
+    my $match                 = $args{match}          // 'contains';
+    my $column_filters        = $args{column_filters} // {};
+    my $filters               = $args{filters};
+    my $restricted_libraries  = $args{restricted_libraries} // [];
 
     # Main text query
     my $must;
@@ -270,9 +270,9 @@ sub _build_query {
         }
     }
 
-    # Library scoping (IndependentBranches)
-    if ( $library && C4::Context->preference('IndependentBranches') ) {
-        push @filter_clauses, { term => { 'library_id.facet' => $library } };
+    # Library scoping
+    if ( @$restricted_libraries ) {
+        push @filter_clauses, { terms => { 'library_id.facet' => $restricted_libraries } };
     }
 
     # Column-level field filters (additive, each becomes a must clause)
