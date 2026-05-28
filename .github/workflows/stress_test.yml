@@ -1,12 +1,10 @@
 name: Stress Test
 on:
-    # Auto-run on push disabled while the Forgejo clone of bywater-stress-testers
-    # returns 403 from GitHub-hosted runners. Uncomment to re-enable once fixed.
-    # push:
-    #     branches:
-    #         - "**"
-    #     tags-ignore:
-    #         - "**"
+    push:
+        branches:
+            - "**"
+        tags-ignore:
+            - "**"
     workflow_dispatch:
 
 jobs:
@@ -76,6 +74,10 @@ jobs:
                   sudo apt-get install -y k6
 
             - name: Clone bywater-stress-testers
+              env:
+                  GIT_CONFIG_COUNT: "1"
+                  GIT_CONFIG_KEY_0: "http.https://git.tools.bywatersolutions.com/.extraHeader"
+                  GIT_CONFIG_VALUE_0: "x-dev-ops-external-service: ${{ secrets.BWS_DEVOPS_EXTERNAL_SERVICE }}"
               run: |
                 git clone https://${{ secrets.BWS_FORGEJO_KEY }}:${{ secrets.BWS_FORGEJO_KEY }}@git.tools.bywatersolutions.com/ByWaterSolutions/bywater-stress-testers.git /tmp/bywater-stress-testers
                 cd /tmp/bywater-stress-testers
