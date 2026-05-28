@@ -36,7 +36,7 @@ Koha::REST::V1::Search::Patrons
 
 =head3 search
 
-Controller function for searching patrons via Elasticsearch
+Controller function for searching patrons via the configured search backend.
 
 =cut
 
@@ -44,18 +44,7 @@ sub search {
     my $c = shift->openapi->valid_input or return;
 
     return try {
-        unless ( C4::Context->preference('ElasticsearchPatronSearch') ) {
-            return $c->render(
-                status  => 400,
-                openapi => { error => "ElasticsearchPatronSearch is not enabled" },
-            );
-        }
-
-        my $q = $c->param('q');
-
-        # TODO: Support DBIC-style q= JSON queries ({"surname":{"like":"%smith%"}})
-        # by translating them to ES queries. This would allow kohaTable to work
-        # without a custom data function. See Koha::SearchEngine::Elasticsearch::QueryTranslator.
+        my $q        = $c->param('q');
         my $fields   = $c->param('fields');
         my $order_by = $c->param('_order_by');
         my $match    = $c->param('_match')    // 'contains';
@@ -76,14 +65,14 @@ sub search {
             $column_filters->{$f} = $val if defined $val && $val ne '';
         }
 
-        # Facet filters (from the filters JSON param)
+        # Facet filters
         my $filters = {};
         for my $f (qw( library_id category_id restricted )) {
             my $val = $c->param($f);
             $filters->{$f} = $val if defined $val;
         }
 
-        # JSON filters param (supports ext_attr_{CODE} and others)
+        # JSON filters param (supports ext_attr_{CODE} and colon-separated fields)
         if ( my $filters_json = $c->param('filters') ) {
             my $extra = eval { Mojo::JSON::decode_json($filters_json) } // {};
             for my $key ( keys %$extra ) {
@@ -115,13 +104,14 @@ sub search {
         if ( @{ $results->{hits} } ) {
             my $patrons_rs = Koha::Patrons->search( { borrowernumber => { -in => $results->{hits} } } );
 
-            # Preserve ES result order
+            # Preserve search result order
             my $order = { map { $results->{hits}[$_] => $_ } 0 .. $#{ $results->{hits} } };
             @patrons = sort { ( $order->{ $a->borrowernumber } // 0 ) <=> ( $order->{ $b->borrowernumber } // 0 ) }
                 $patrons_rs->as_list;
         }
 
-        my $user = $c->stash('koha.user');
+        my $user       = $c->stash('koha.user');
+        my $index_data = $results->{index_data} // {};
 
         # Response headers for kohaTable/DataTables compatibility
         $c->res->headers->add( 'X-Total-Count'      => $results->{total} );
@@ -131,11 +121,14 @@ sub search {
         }
 
         my @hits = map {
-            my $api = $_->to_api( { user => $user } );
-            my $es  = $results->{es_data}{ $_->borrowernumber } // {};
-            $api->{account_balance} = $es->{account_balance} // 0;
-            $api->{checkouts_count} = $es->{checkouts_count} // 0;
-            $api->{library}         = { library_id => $api->{library_id}, name => $es->{library_name} };
+            my $api     = $_->to_api( { user => $user } );
+            my $indexed = $index_data->{ $_->borrowernumber } // {};
+            $api->{account_balance} = $indexed->{account_balance} // $_->account->balance + 0;
+            $api->{checkouts_count} = $indexed->{checkouts_count} // $_->checkouts->count;
+            $api->{library} = {
+                library_id => $api->{library_id},
+                name       => $indexed->{library_name} // $_->library->branchname,
+            };
             $api;
         } @patrons;
 

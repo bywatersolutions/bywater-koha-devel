@@ -40,7 +40,7 @@ sub new {
 
 Same interface as Koha::SearchEngine::Elasticsearch::Search::Patrons::search_patrons.
 
-Returns hashref: { total => $n, hits => \@patron_ids, es_data => {}, facets => {} }
+Returns hashref: { total => $n, hits => \@patron_ids, index_data => {}, facets => {} }
 
 =cut
 
@@ -151,7 +151,7 @@ sub search_patrons {
     return {
         total   => $total // 0,
         hits    => $ids // [],
-        es_data => {},
+        index_data => {},
         facets  => {},
     };
 }
