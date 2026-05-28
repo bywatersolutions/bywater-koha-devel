@@ -17,11 +17,11 @@
 
 =head1 NAME
 
-es_patron_index.pl - Manage the Elasticsearch patrons index
+patron_search_index.pl - Manage the patron search index
 
 =head1 SYNOPSIS
 
-B<es_patron_index.pl>
+B<patron_search_index.pl>
 [B<-c|--commit>=C<count>]
 [B<-d|--delete>]
 [B<-r|--reset>]
@@ -76,7 +76,7 @@ use POSIX        qw( ceil );
 use Koha::Script;
 use C4::Context;
 use Koha::Patrons;
-use Koha::SearchEngine::Elasticsearch::Indexer::Patrons;
+use Koha::SearchEngine::Indexer::Patrons;
 
 my $verbose   = 0;
 my $commit    = 1000;
@@ -103,7 +103,7 @@ die "Argument -p|--processes cannot be combined with --id\n"
 
 $delete = 1 if $reset;
 
-my $indexer = Koha::SearchEngine::Elasticsearch::Indexer::Patrons->new();
+my $indexer = Koha::SearchEngine::Indexer::Patrons->new();
 
 # Handle index creation/reset (only in main process)
 if ($delete) {
@@ -165,7 +165,7 @@ my $count       = 0;
 my @batch;
 
 # Re-create indexer in child (fresh ES connection)
-$indexer = Koha::SearchEngine::Elasticsearch::Indexer::Patrons->new() if $slice_index > 0;
+$indexer = Koha::SearchEngine::Indexer::Patrons->new() if $slice_index > 0;
 
 while ( my $patron = $patrons_rs->next ) {
     push @batch, $patron->borrowernumber;
