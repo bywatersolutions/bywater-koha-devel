@@ -1,0 +1,123 @@
+# ZAP Automation Framework plan for Koha.
+#
+# Run with:  zap.sh -cmd -autorun /zap/wrk/koha.yaml
+#
+# Two contexts are scanned from one Koha instance:
+#   * koha-opac  ( http://koha:8080 ) is scanned anonymously, which matches the
+#     threat model for the public catalog.
+#   * koha-staff ( http://koha:8081 ) is scanned authenticated as the KTD
+#     superlibrarian ( koha / koha ) so the scan reaches pages behind login.
+#
+# Koha's login posts login_op=cud-login with a csrf_token. The cud- prefix makes
+# the server validate the token, so a static POST can't log in. csrf_token is in
+# ZAP's default anti-CSRF token list, so ZAP fetches the login page, harvests a
+# fresh token, and substitutes it into the login request below. If a run shows it
+# never logs in, the token name likely needs registering as an anti-CSRF token.
+
+env:
+    contexts:
+        - name: koha-opac
+          urls:
+              - "http://koha:8080"
+          includePaths:
+              - "http://koha:8080/.*"
+          excludePaths:
+              - ".*logout.*"
+
+        - name: koha-staff
+          urls:
+              - "http://koha:8081"
+          includePaths:
+              - "http://koha:8081/.*"
+          # Authenticated as a superlibrarian the spider can reach everything,
+          # so keep it away from links that would break its own session or fire
+          # legacy GET-based destructive actions. Writes are mostly POST cud-
+          # actions the spider won't trigger, but logout and branch switching
+          # would end the scan early.
+          excludePaths:
+              - ".*logout.*"
+              - ".*set-library.pl.*"
+              - ".*op=cud-.*"
+              - ".*/svc/.*"
+          # Browser-based auth drives the bundled headless Firefox to fill and
+          # submit the real login form. Koha's login posts login_op=cud-login
+          # with a session-bound csrf_token, so a static form POST can't log in,
+          # a real browser submission handles the token and any JS the way a user
+          # would. The username/password fields are auto-detected from the form.
+          authentication:
+              method: browser
+              parameters:
+                  loginPageUrl: "http://koha:8081/cgi-bin/koha/mainpage.pl"
+                  browserId: firefox-headless
+                  loginPageWait: 5
+              verification:
+                  method: response
+                  loggedInRegex: 'id="logout"'
+                  loggedOutRegex: 'name="login_password"'
+          sessionManagement:
+              method: cookie
+          users:
+              - name: koha
+                credentials:
+                    username: koha
+                    password: koha
+    parameters:
+        failOnError: true
+        failOnWarning: false
+        progressToStdout: true
+
+jobs:
+    # Drop the recurring passive noise that drowned out real findings. These were
+    # the IGNORE entries from the old rules.tsv, ported to the Automation
+    # Framework. Marking them False Positive removes them from the report. Revisit
+    # this list as the scan is tuned; a filtered rule is no longer looked at.
+    - type: alertFilter
+      alertFilters:
+          - ruleId: 10015 # Incomplete or No Cache-control Header
+            newRisk: "False Positive"
+          - ruleId: 10020 # Missing Anti-clickjacking Header
+            newRisk: "False Positive"
+          - ruleId: 10021 # X-Content-Type-Options Header Missing
+            newRisk: "False Positive"
+          - ruleId: 10038 # CSP Header Not Set
+            newRisk: "False Positive"
+          - ruleId: 10063 # Permissions Policy Header Not Set
+            newRisk: "False Positive"
+          - ruleId: 10036 # Server Leaks Version Information via Server Header
+            newRisk: "False Positive"
+          - ruleId: 10037 # Server Leaks Information via X-Powered-By
+            newRisk: "False Positive"
+          - ruleId: 10027 # Information Disclosure - Suspicious Comments
+            newRisk: "False Positive"
+          - ruleId: 10094 # Base64 Disclosure
+            newRisk: "False Positive"
+          - ruleId: 10096 # Timestamp Disclosure
+            newRisk: "False Positive"
+          - ruleId: 10109 # Modern Web Application
+            newRisk: "False Positive"
+          - ruleId: 10049 # Storable / Non-Storable Content
+            newRisk: "False Positive"
+
+    - type: spider
+      parameters:
+          context: koha-opac
+          url: "http://koha:8080"
+          maxDuration: 5
+
+    - type: spider
+      parameters:
+          context: koha-staff
+          user: koha
+          url: "http://koha:8081"
+          maxDuration: 5
+
+    - type: passiveScan-wait
+      parameters:
+          maxDuration: 5
+
+    - type: report
+      parameters:
+          template: traditional-html
+          reportDir: /zap/wrk
+          reportFile: koha-zap-report.html
+          reportTitle: "Koha ZAP Baseline"

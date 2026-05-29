@@ -11,6 +11,10 @@ on:
         # Weekly, Sunday 06:00 UTC
         - cron: "0 6 * * 0"
     workflow_dispatch:
+    # TEMPORARY: run on push to the dev branch while iterating. Remove before final.
+    push:
+        branches:
+            - security-scanning
 
 permissions:
     contents: read
@@ -28,7 +32,7 @@ jobs:
             # Trivy doesn't parse cpanfile, so Perl deps aren't covered here.
             # Only fixable HIGH/CRITICAL issues are reported to keep noise down.
             - name: Run Trivy filesystem scan
-              uses: aquasecurity/trivy-action@0.28.0
+              uses: aquasecurity/trivy-action@0.35.0
               with:
                   scan-type: fs
                   scan-ref: .
@@ -40,7 +44,7 @@ jobs:
 
             - name: Upload Trivy SARIF
               uses: github/codeql-action/upload-sarif@v3
-              if: always()
+              if: always() && hashFiles('trivy-results.sarif') != ''
               with:
                   sarif_file: trivy-results.sarif
                   category: trivy-fs
@@ -73,19 +77,90 @@ jobs:
             - uses: actions/checkout@v4
 
             # Run the gitleaks binary directly rather than gitleaks-action, which
-            # requires a paid license for organization repos. Scan the checked-out
-            # tree ( --no-git ) to start; history scanning can be enabled later.
+            # requires a paid license for organization repos. The "dir" subcommand
+            # scans the checked-out tree ( history scanning can be added later ).
             # --exit-code 0 keeps the job green; triage happens in the Security tab.
             - name: Run gitleaks
               run: |
-                  docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:latest \
-                      detect --source=/repo --no-git --redact \
-                      --report-format sarif --report-path /repo/gitleaks.sarif \
-                      --exit-code 0
+                  docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 \
+                      dir /repo --redact --exit-code 0 \
+                      --report-format sarif --report-path /repo/gitleaks.sarif
 
             - name: Upload gitleaks SARIF
               uses: github/codeql-action/upload-sarif@v3
-              if: always()
+              if: always() && hashFiles('gitleaks.sarif') != ''
               with:
                   sarif_file: gitleaks.sarif
                   category: gitleaks
+
+    zap-baseline:
+        name: ZAP baseline scan
+        if: startsWith(github.repository, 'bywatersolutions/bywater-koha')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Export variables needed by koha-testing-docker
+              run: |
+                  echo "LOCAL_USER_ID=$(id -u)" >> $GITHUB_ENV
+                  echo "SYNC_REPO=." >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
+
+            - name: Set up koha-testing-docker
+              run: |
+                  sudo sysctl -w vm.max_map_count=262144
+                  wget -O docker-compose.yml https://gitlab.com/koha-community/koha-testing-docker/raw/25.11/docker-compose.yml
+                  mkdir -p env
+                  wget -O env/defaults.env https://gitlab.com/koha-community/koha-testing-docker/raw/25.11/env/defaults.env
+                  cp env/defaults.env .env
+                  docker compose pull
+                  docker compose -f docker-compose.yml -p koha up --detach
+
+            # Poll the OPAC from a container on Koha's own docker network rather
+            # than guessing a fixed boot time. Koha isn't published to the host,
+            # so the scan and this check both reach it as http://koha:8080.
+            - name: Wait for Koha to come up
+              run: |
+                  for i in $(seq 1 60); do
+                      if docker run --rm --network koha_kohanet curlimages/curl:latest \
+                              -sf http://koha:8080 -o /dev/null; then
+                          echo "Koha is up after $((i * 10))s"
+                          exit 0
+                      fi
+                      echo "waiting for Koha... ($i)"
+                      sleep 10
+                  done
+                  echo "Koha did not come up in time"
+                  docker logs koha-koha-1 2>&1 | tail -50
+                  exit 1
+
+            # The Automation Framework plan ( contexts, form auth, alert filters )
+            # lives in .zap/koha.yaml. Copy it into a world-writable dir so the
+            # zap container ( uid 1000 ) can write its HTML report alongside it.
+            # Run the scan first, before the secondary image scan, so an image
+            # scan hiccup can't block the main event.
+            - name: Prepare ZAP working directory
+              run: |
+                  mkdir -p zap-out
+                  cp .zap/koha.yaml zap-out/koha.yaml
+                  chmod -R 777 zap-out
+
+            - name: Run ZAP scan
+              run: |
+                  docker run --rm --network koha_kohanet \
+                      -v "$(pwd)/zap-out:/zap/wrk:rw" \
+                      ghcr.io/zaproxy/zaproxy:weekly \
+                      zap.sh -cmd -autorun /zap/wrk/koha.yaml
+
+            - name: Upload ZAP report
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: zap-scan-report
+                  path: zap-out/koha-zap-report.html
+
+            - name: Post scan cleanup
+              if: always()
+              run: |
+                  docker compose down || true
+                  docker volume prune -f || true
