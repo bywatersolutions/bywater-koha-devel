@@ -1,0 +1,91 @@
+name: Security Scanning
+
+# Static / dependency / secret scanning for the bywater-koha* repos. This runs
+# on a schedule and on demand rather than on every push, so it stays off the
+# critical path for packaging builds. Findings are uploaded as SARIF to the
+# repository Security tab for triage. No Slack notifications are wired in here
+# on purpose, so iterating on this workflow stays quiet.
+
+on:
+    schedule:
+        # Weekly, Sunday 06:00 UTC
+        - cron: "0 6 * * 0"
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    security-events: write
+
+jobs:
+    trivy-fs:
+        name: Trivy - dependency vulnerabilities
+        if: startsWith(github.repository, 'bywatersolutions/bywater-koha')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            # Scans yarn.lock for known-vulnerable JavaScript dependencies.
+            # Trivy doesn't parse cpanfile, so Perl deps aren't covered here.
+            # Only fixable HIGH/CRITICAL issues are reported to keep noise down.
+            - name: Run Trivy filesystem scan
+              uses: aquasecurity/trivy-action@0.28.0
+              with:
+                  scan-type: fs
+                  scan-ref: .
+                  scanners: vuln
+                  severity: HIGH,CRITICAL
+                  ignore-unfixed: true
+                  format: sarif
+                  output: trivy-results.sarif
+
+            - name: Upload Trivy SARIF
+              uses: github/codeql-action/upload-sarif@v3
+              if: always()
+              with:
+                  sarif_file: trivy-results.sarif
+                  category: trivy-fs
+
+    codeql-js:
+        name: CodeQL - JavaScript/TypeScript
+        if: startsWith(github.repository, 'bywatersolutions/bywater-koha')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            # CodeQL has no Perl support, so this covers the Vue apps and the
+            # legacy jQuery, but not C4/ or Koha/.
+            - name: Initialize CodeQL
+              uses: github/codeql-action/init@v3
+              with:
+                  languages: javascript-typescript
+                  config-file: ./.github/codeql/codeql-config.yml
+
+            - name: Perform CodeQL analysis
+              uses: github/codeql-action/analyze@v3
+              with:
+                  category: "/language:javascript-typescript"
+
+    gitleaks:
+        name: Gitleaks - secret scan
+        if: startsWith(github.repository, 'bywatersolutions/bywater-koha')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            # Run the gitleaks binary directly rather than gitleaks-action, which
+            # requires a paid license for organization repos. Scan the checked-out
+            # tree ( --no-git ) to start; history scanning can be enabled later.
+            # --exit-code 0 keeps the job green; triage happens in the Security tab.
+            - name: Run gitleaks
+              run: |
+                  docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:latest \
+                      detect --source=/repo --no-git --redact \
+                      --report-format sarif --report-path /repo/gitleaks.sarif \
+                      --exit-code 0
+
+            - name: Upload gitleaks SARIF
+              uses: github/codeql-action/upload-sarif@v3
+              if: always()
+              with:
+                  sarif_file: gitleaks.sarif
+                  category: gitleaks
