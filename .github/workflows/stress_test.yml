@@ -1,10 +1,12 @@
 name: Stress Test
 on:
-    push:
-        branches:
-            - "**"
-        tags-ignore:
-            - "**"
+    # Auto-run on push disabled while the Forgejo clone of bywater-stress-testers
+    # returns 403 from GitHub-hosted runners. Uncomment to re-enable once fixed.
+    # push:
+    #     branches:
+    #         - "**"
+    #     tags-ignore:
+    #         - "**"
     workflow_dispatch:
 
 jobs:
