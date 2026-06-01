@@ -488,6 +488,12 @@ Patrons:
            class: integer
          - characters long.
      -
+         - pref: EmptyPatronSearches
+           choices:
+               1: "Allow"
+               0: "Don't allow"
+         - "patron searches with no search criteria. Empty searches can be slow and resource-intensive in databases with large numbers of patrons."
+     -
          - pref: RequireStrongPassword
            choices:
                1: "Require"

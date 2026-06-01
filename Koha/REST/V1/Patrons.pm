@@ -47,6 +47,22 @@ sub list {
 
     return try {
 
+        unless ( C4::Context->preference('EmptyPatronSearches') ) {
+            my $has_search_criteria = 0;
+            $has_search_criteria = 1 if grep { defined && $_ ne '' } @{ $c->req->every_param('q') };
+            $has_search_criteria = 1 if $c->param('restricted');
+
+            unless ($has_search_criteria) {
+                return $c->render(
+                    status  => 422,
+                    openapi => {
+                        error      => 'Empty patron searches are not allowed',
+                        error_code => 'empty_search_not_allowed',
+                    }
+                );
+            }
+        }
+
         my $query      = {};
         my $restricted = $c->param('restricted');
         $c->req->params->remove('restricted');

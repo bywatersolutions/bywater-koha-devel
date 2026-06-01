@@ -263,6 +263,7 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('EmailPatronWhenHoldIsPlaced', '0'),
 ('EmailPurchaseSuggestions','0'),
 ('EmailSMSSendDriverFromAddress', ''),
+('EmptyPatronSearches','1'),
 ('EnableAdvancedCatalogingEditor','0'),
 ('EnableBooking','1'),
 ('EnableBorrowerFiles','0'),

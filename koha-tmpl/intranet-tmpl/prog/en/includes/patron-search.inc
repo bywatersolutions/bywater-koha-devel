@@ -346,9 +346,28 @@
             [% END %]
 
             $(document).ready(function(){
-
                 let parent_block = $("#[% search_results_block_id | html %]");
                 let patron_search_form = get_patron_search_form();
+
+                let search_patron_filter_btn = patron_search_form.find(".search_patron_filter_btn");
+
+                [% UNLESS Koha.Preference('EmptyPatronSearches') %]
+                    let search_criteria_inputs = patron_search_form.find(".search_patron_filter, .categorycode_filter, .branchcode_filter, select[name='sort1_filter'], select[name='sort2_filter']");
+
+                    let toggle_search_patron_filter_btn = function() {
+                        let has_criteria = false;
+                        search_criteria_inputs.each(function() {
+                            if ( $(this).val() ) {
+                                has_criteria = true;
+                                return false;
+                            }
+                        });
+                        search_patron_filter_btn.prop('disabled', !has_criteria);
+                    };
+
+                    toggle_search_patron_filter_btn();
+                    search_criteria_inputs.on("input change", toggle_search_patron_filter_btn);
+                [% END %]
 
                 parent_block.find(".info").hide();
                 parent_block.find(".error").hide();
@@ -496,6 +515,27 @@
                                 first_draw = 0;
                             [% END %]
                             return json.data;
+                        },
+                        error: function(xhr, error, thrown) {
+                            if (xhr.status === 422) {
+                                // Directly manipulate tbody instead of clear().draw(), that causes an infinite loop
+                                var tbody = table_node.find('tbody');
+                                tbody.empty();
+
+                                // Hide the "Processing..." model
+                                $(".dt-processing").hide();
+
+                                // Display a message to the librarian
+                                var colCount = table_node.find('thead th').length;
+                                tbody.append(
+                                    '<tr class="error-row"><td colspan="' + colCount + '" style="text-align:center;">' +
+                                    _("Empty patron search, please add a search term") +
+                                    '</td></tr>'
+                                );
+
+                                // Re-enable the patron search button
+                                patron_search_form.find(".search_patron_filter_btn").prop({disabled: false});
+                            }
                         }
                     },
                     [% IF open_on_row_click OR preview_on_name_click OR remember_selections %]

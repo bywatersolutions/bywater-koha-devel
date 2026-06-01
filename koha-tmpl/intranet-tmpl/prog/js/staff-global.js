@@ -1081,6 +1081,10 @@ function getScrollto(target, elemid) {
 }
 
 function validatePatronSearch(form) {
+    if (emptyPatronSearches) {
+        return true;
+    }
+
     const searchTerm = form.searchmember.value.trim();
     const branchSelected =
         form.branchcode_filter && form.branchcode_filter.value !== "";
