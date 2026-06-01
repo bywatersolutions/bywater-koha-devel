@@ -122,6 +122,8 @@ INSERT INTO systempreferences ( `variable`, `value` ) VALUES
 ('Babeltheque','0'),
 ('Babeltheque_url_js',''),
 ('Babeltheque_url_update',''),
+('BackgroundJobsDefaultMaxRetries','3'),
+('BackgroundJobsRetryDelay','30'),
 ('BarcodeSeparators','\\s\\r\\n'),
 ('BasketConfirmations','1'),
 ('BatchCheckouts','0'),

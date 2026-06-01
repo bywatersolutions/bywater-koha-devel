@@ -198,6 +198,16 @@ Administration:
                 STOMP: "STOMP"
                 polling: "polling"
             - as the preferred job worker notification method. STOMP (default) requires RabbitMQ running. Polling will be used as a fallback if RabbitMQ is not accessible.
+        -
+            - "Retry a failed background job up to "
+            - pref: BackgroundJobsDefaultMaxRetries
+              class: integer
+            - "times by default. Set to 0 to disable retries."
+        -
+            - "Wait an extra "
+            - pref: BackgroundJobsRetryDelay
+              class: integer
+            - "seconds before each successive retry of a failed background job. The first retry runs immediately, the second waits this long, the third twice as long, and so on."
     Google OpenID Connect:
         -
             - "Use Google OpenID Connect login in the OPAC: "

@@ -1083,10 +1083,16 @@ CREATE TABLE `background_jobs` (
   `enqueued_on` datetime DEFAULT NULL,
   `started_on` datetime DEFAULT NULL,
   `ended_on` datetime DEFAULT NULL,
+  `max_retries` int(11) DEFAULT NULL COMMENT 'maximum number of times this job may be retried after a failure',
+  `retries` int(11) NOT NULL DEFAULT 0 COMMENT 'number of times this job has already been retried, 0 for the original attempt',
+  `previous_job_id` int(11) DEFAULT NULL COMMENT 'the job this job is a retry of, if any',
+  `not_before` datetime DEFAULT NULL COMMENT 'the job should not be processed before this time, used for the retry cooldown',
   PRIMARY KEY (`id`),
   KEY `borrowernumber` (`borrowernumber`),
   KEY `queue` (`queue`),
-  KEY `status` (`status`)
+  KEY `status` (`status`),
+  KEY `previous_job_id` (`previous_job_id`),
+  CONSTRAINT `background_jobs_ibfk_1` FOREIGN KEY (`previous_job_id`) REFERENCES `background_jobs` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
