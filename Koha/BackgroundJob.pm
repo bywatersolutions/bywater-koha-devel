@@ -125,6 +125,10 @@ sub enqueue {
     my $job_queue   = $params->{job_queue}   // 'default';
     my $json        = $self->json;
 
+    my $max_retries = $params->{max_retries};
+    $max_retries //= $self->default_max_retries;
+    $max_retries //= C4::Context->preference('BackgroundJobsDefaultMaxRetries');
+
     $job_context = {%$job_context};
 
     # session_id must not be logged
@@ -145,6 +149,7 @@ sub enqueue {
             context        => $json_context,
             enqueued_on    => dt_from_string,
             borrowernumber => $borrowernumber,
+            max_retries    => $max_retries,
         }
     )->store;
 
@@ -352,6 +357,19 @@ Return the job type of the job. Must be a string.
 
 sub job_type { croak "This method must be subclassed" }
 
+=head3 default_max_retries
+
+    my $max = $job->default_max_retries;
+
+The default number of times a failed job of this type may be retried, used when
+L</enqueue> isn't given an explicit C<max_retries>. Returns undef by default,
+meaning "fall back to the BackgroundJobsDefaultMaxRetries syspref". Subclasses
+may override to set a per-type default.
+
+=cut
+
+sub default_max_retries { return; }
+
 =head3 messages
 
 Messages let during the processing of the job.
@@ -408,6 +426,72 @@ Cancel a job.
 sub cancel {
     my ($self) = @_;
     $self->status('cancelled')->store;
+}
+
+=head3 can_retry
+
+    if ( $job->can_retry ) { ... }
+
+Returns true if the job has a C<max_retries> set and hasn't reached it yet.
+
+=cut
+
+sub can_retry {
+    my ($self) = @_;
+    return $self->max_retries && $self->retries < $self->max_retries ? 1 : 0;
+}
+
+=head3 retry
+
+    my $new_job = $job->retry;
+
+Enqueue a new job that retries this one. The failed job is left untouched so its
+messages and report are kept as history, and the new job points back at it
+through C<previous_job_id>. The retry count is incremented and a progressive
+cooldown is applied through C<not_before>: the first retry runs immediately and
+each following retry waits C<BackgroundJobsRetryDelay> seconds longer.
+
+Returns the new L<Koha::BackgroundJob>, or undef if the job can't be retried.
+
+=cut
+
+sub retry {
+    my ( $self, $params ) = @_;
+
+    return unless $self->can_retry;
+
+    my $args = $params->{job_args} // $self->decoded_data // {};
+
+    # Shallow copy so adding and removing job_id below doesn't mutate the caller's args
+    my $job_args = {%$args};
+    delete $job_args->{job_id};
+
+    my $retries = $self->retries;
+    my $delay   = C4::Context->preference('BackgroundJobsRetryDelay') // 30;
+
+    my $not_before = dt_from_string->add( seconds => $delay * $retries );
+
+    my $new_job = Koha::BackgroundJob->new(
+        {
+            status          => 'new',
+            type            => $self->type,
+            queue           => $self->queue,
+            size            => $self->size,
+            data            => $self->json->encode($job_args),
+            context         => $self->context,
+            enqueued_on     => dt_from_string,
+            borrowernumber  => $self->borrowernumber,
+            max_retries     => $self->max_retries,
+            retries         => $retries + 1,
+            previous_job_id => $self->id,
+            not_before      => $not_before,
+        }
+    )->store;
+
+    $job_args->{job_id} = $new_job->id;
+    $new_job->_publish($job_args);
+
+    return $new_job;
 }
 
 =head2 Internal methods

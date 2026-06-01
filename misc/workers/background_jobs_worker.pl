@@ -61,6 +61,7 @@ use Parallel::ForkManager;
 use Time::HiRes;
 
 use C4::Context;
+use Koha::DateUtils qw( dt_from_string );
 use Koha::Logger;
 use Koha::BackgroundJobs;
 use C4::Context;
@@ -193,6 +194,14 @@ while (1) {
             Time::HiRes::sleep(0.5);
             next;
         }
+        if ( $job->not_before && dt_from_string( $job->not_before ) > dt_from_string ) {
+
+            # the retry cooldown hasn't elapsed yet, put it back and try again shortly
+            $conn->nack( { frame => $frame, requeue => 'true' } );
+            Time::HiRes::sleep(0.5);
+            next;
+        }
+
         $conn->ack( { frame => $frame } );
 
         $pm->start and next;
@@ -201,7 +210,13 @@ while (1) {
         $pm->finish;
 
     } else {
-        my $jobs = Koha::BackgroundJobs->search( { status => 'new', queue => \@queues } );
+        my $jobs = Koha::BackgroundJobs->search(
+            {
+                status => 'new',
+                queue  => \@queues,
+                -or    => [ not_before => undef, not_before => { '<=' => \'NOW()' } ],
+            }
+        );
         while ( my $job = $jobs->next ) {
             my $args = try {
                 $job->json->decode( $job->data );
@@ -235,5 +250,6 @@ sub process_job {
         Koha::Logger->get( { interface => 'worker' } )
             ->warn( sprintf "Uncaught exception processing job id=%s: %s", $job->id, $_ );
         $job->status('failed')->store;
+        $job->retry( { job_args => $args } ) if $job->can_retry;
     };
 }
