@@ -150,18 +150,36 @@ sub enqueue {
 
     $job_args->{job_id} = $self->id;
 
-    my $conn = $self->connect;
-    return $self->id unless $conn;
+    $self->_publish($job_args);
 
-    $json_args = $json->encode($job_args);
+    return $self->id;
+}
+
+=head3 _publish
+
+    $self->_publish( $job_args );
+
+Notify the message broker that a job is ready to be processed. Shared by
+L</enqueue> and L</retry>. Does nothing when no broker is configured, in which
+case the job is picked up by the database-polling worker instead.
+
+=cut
+
+sub _publish {
+    my ( $self, $job_args ) = @_;
+
+    my $conn = $self->connect;
+    return $self unless $conn;
+
     try {
         # This namespace is wrong, it must be a vhost instead.
         # But to do so it needs to be created on the server => much more work when a new Koha instance is created.
         # Also, here we just want the Koha instance's name, but it's not in the config...
         # Picking a random id (memcached_namespace) from the config
         my $namespace    = C4::Context->config('memcached_namespace');
-        my $encoded_args = Encode::encode_utf8($json_args);           # FIXME We should better leave this to Net::Stomp?
-        my $destination  = sprintf( "/queue/%s-%s", $namespace, $job_queue );
+        my $destination  = sprintf( "/queue/%s-%s", $namespace, $self->queue );
+        my $json_args    = $self->json->encode($job_args);
+        my $encoded_args = Encode::encode_utf8($json_args);    # FIXME We should better leave this to Net::Stomp?
         $conn->send_with_receipt(
             {
                 destination    => $destination, body => $encoded_args, persistent => 'true',
@@ -177,7 +195,7 @@ sub enqueue {
         }
     };
 
-    return $self->id;
+    return $self;
 }
 
 =head3 process
