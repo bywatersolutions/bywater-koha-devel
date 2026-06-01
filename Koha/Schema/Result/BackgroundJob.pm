@@ -95,6 +95,37 @@ JSON-serialized context information for the job
   datetime_undef_if_invalid: 1
   is_nullable: 1
 
+=head2 max_retries
+
+  data_type: 'integer'
+  is_nullable: 1
+
+maximum number of times this job may be retried after a failure
+
+=head2 retries
+
+  data_type: 'integer'
+  default_value: 0
+  is_nullable: 0
+
+number of times this job has already been retried, 0 for the original attempt
+
+=head2 previous_job_id
+
+  data_type: 'integer'
+  is_foreign_key: 1
+  is_nullable: 1
+
+the job this job is a retry of, if any
+
+=head2 not_before
+
+  data_type: 'datetime'
+  datetime_undef_if_invalid: 1
+  is_nullable: 1
+
+the job should not be processed before this time, used for the retry cooldown
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -139,6 +170,18 @@ __PACKAGE__->add_columns(
     datetime_undef_if_invalid => 1,
     is_nullable => 1,
   },
+  "max_retries",
+  { data_type => "integer", is_nullable => 1 },
+  "retries",
+  { data_type => "integer", default_value => 0, is_nullable => 0 },
+  "previous_job_id",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
+  "not_before",
+  {
+    data_type => "datetime",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -153,9 +196,46 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("id");
 
+=head1 RELATIONS
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2022-06-30 14:53:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:t95CnrIOd1CBL5qaEez7dQ
+=head2 background_jobs
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::BackgroundJob>
+
+=cut
+
+__PACKAGE__->has_many(
+  "background_jobs",
+  "Koha::Schema::Result::BackgroundJob",
+  { "foreign.previous_job_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 previous_job
+
+Type: belongs_to
+
+Related object: L<Koha::Schema::Result::BackgroundJob>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "previous_job",
+  "Koha::Schema::Result::BackgroundJob",
+  { id => "previous_job_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "SET NULL",
+    on_update     => "CASCADE",
+  },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-06-01 18:16:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7e+GQQD3nO3iLHACEBMY8g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
