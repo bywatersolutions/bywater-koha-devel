@@ -19,13 +19,14 @@ use Modern::Perl;
 use utf8;
 use Encode;
 
-use Test::More tests => 7;
+use Test::More tests => 9;
 use Test::NoWarnings;
 use Test::MockModule;
 use Test::Exception;
 use Test::Warn;
 
 use Koha::Database;
+use Koha::DateUtils qw( dt_from_string );
 use Koha::BackgroundJobs;
 use Koha::BackgroundJob::BatchUpdateItem;
 use Koha::BackgroundJob::MARCImportCommitBatch;
@@ -342,4 +343,111 @@ subtest 'connect' => sub {
         is( $job, undef, "Return undef if unable to connect when using stomp" );
 
     };
+};
+
+subtest 'can_retry() and retry() tests' => sub {
+
+    plan tests => 20;
+
+    $schema->storage->txn_begin;
+
+    # 'polling' keeps enqueue() and retry() from needing a running message broker
+    t::lib::Mocks::mock_preference( 'JobsNotificationMethod',          'polling' );
+    t::lib::Mocks::mock_preference( 'BackgroundJobsDefaultMaxRetries', 3 );
+    t::lib::Mocks::mock_preference( 'BackgroundJobsRetryDelay',        60 );
+
+    my $job_id = t::lib::Koha::BackgroundJob::BatchTest->new->enqueue( { size => 1, a => 1, b => 2 } );
+    my $job    = Koha::BackgroundJobs->find($job_id);
+    is( $job->max_retries, 3, 'enqueue() falls back to BackgroundJobsDefaultMaxRetries when nothing else is given' );
+    is( $job->retries,     0, 'a newly enqueued job has retries = 0' );
+
+    my $module = Test::MockModule->new('t::lib::Koha::BackgroundJob::BatchTest');
+    $module->mock( 'default_max_retries', sub { return 5; } );
+    my $typed_job_id = t::lib::Koha::BackgroundJob::BatchTest->new->enqueue( { size => 1, a => 1, b => 2 } );
+    my $typed_job    = Koha::BackgroundJobs->find($typed_job_id);
+    is( $typed_job->max_retries, 5, 'enqueue() prefers the job type default over the syspref' );
+    $module->unmock('default_max_retries');
+
+    $job->set( { max_retries => 2, retries => 0 } )->store;
+    ok( $job->can_retry, 'can_retry() is true when retries < max_retries' );
+    $job->set( { retries => 2 } )->store;
+    ok( !$job->can_retry, 'can_retry() is false when retries == max_retries' );
+    $job->set( { max_retries => undef, retries => 0 } )->store;
+    ok( !$job->can_retry, 'can_retry() is false when max_retries is not set' );
+    $job->set( { max_retries => 0 } )->store;
+    ok( !$job->can_retry, 'can_retry() is false when max_retries is 0' );
+
+    is( $job->retry, undef, 'retry() returns undef when the job cannot be retried' );
+
+    $job->set( { max_retries => 3, retries => 0, queue => 'long_tasks' } )->store;
+    my $retry = $job->retry;
+    isa_ok( $retry, 'Koha::BackgroundJob', 'retry() returns a Koha::BackgroundJob' );
+    isnt( $retry->id, $job->id, 'retry() creates a new job row instead of reusing the failed one' );
+    is( $retry->previous_job_id, $job->id, 'the retry points back at the job it is retrying' );
+    is(
+        Koha::BackgroundJobs->find( $retry->previous_job_id )->id,
+        $job->id, 'previous_job_id resolves to the original job'
+    );
+    is( $retry->retries,     1,            'the first retry has retries = 1' );
+    is( $retry->max_retries, 3,            'the retry keeps the same max_retries' );
+    is( $retry->status,      'new',        'the retry is enqueued with status new' );
+    is( $retry->type,        $job->type,   'the retry keeps the same job type' );
+    is( $retry->queue,       'long_tasks', 'the retry keeps the same queue' );
+
+    ok(
+        !$retry->not_before
+            || dt_from_string( $retry->not_before ) <= dt_from_string->add( seconds => 1 ),
+        'the first retry has no real cooldown'
+    );
+    my $retry2 = $retry->retry;
+    is( $retry2->retries, 2, 'the second retry has retries = 2' );
+    cmp_ok(
+        dt_from_string( $retry2->not_before )->epoch, '>=', dt_from_string->epoch + 50,
+        'the second retry is held back by roughly BackgroundJobsRetryDelay seconds'
+    );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'default_max_retries() policy tests' => sub {
+
+    # Jobs that aren't safe to re-run automatically override default_max_retries to 0
+    my @no_automatic_retry = qw(
+        Koha::BackgroundJob::BatchUpdateAuthority
+        Koha::BackgroundJob::BatchUpdateBiblio
+        Koha::BackgroundJob::BatchUpdateItem
+        Koha::BackgroundJob::CreateEHoldingsFromBiblios
+        Koha::BackgroundJob::ErmSushiHarvester
+        Koha::BackgroundJob::ImportKBARTFile
+        Koha::BackgroundJob::MARCImportCommitBatch
+        Koha::BackgroundJob::MARCImportRevertBatch
+        Koha::BackgroundJob::PseudonymizeStatistic
+        Koha::BackgroundJob::StageMARCForImport
+    );
+
+    # Jobs that are safe to re-run don't override it, so they inherit the base ( undef ) and fall back to the syspref.
+    # Together with the list above this covers every Koha::BackgroundJob subclass, so the retry policy of each is explicit.
+    my @inherits_default = qw(
+        Koha::BackgroundJob::BatchCancelHold
+        Koha::BackgroundJob::BatchDeleteAuthority
+        Koha::BackgroundJob::BatchDeleteBiblio
+        Koha::BackgroundJob::BatchDeleteItem
+        Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue
+        Koha::BackgroundJob::TestTransport
+        Koha::BackgroundJob::UpdateElasticIndex
+    );
+
+    plan tests => 1 + 2 * scalar(@no_automatic_retry) + 2 * scalar(@inherits_default);
+
+    is( Koha::BackgroundJob->default_max_retries, undef, 'The base class sets no default, so the syspref applies' );
+
+    for my $class (@no_automatic_retry) {
+        use_ok($class);
+        is( $class->default_max_retries, 0, "$class opts out of automatic retries" );
+    }
+
+    for my $class (@inherits_default) {
+        use_ok($class);
+        is( $class->default_max_retries, undef, "$class inherits the base default and falls back to the syspref" );
+    }
 };
