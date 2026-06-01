@@ -55,6 +55,14 @@ sub job_type {
     return 'stage_marc_for_import';
 }
 
+=head3 default_max_retries
+
+Re-running would stage the records a second time, so a failed job isn't retried automatically.
+
+=cut
+
+sub default_max_retries { return 0; }
+
 =head3 process
 
 Stage the MARC records for import.

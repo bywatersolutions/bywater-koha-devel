@@ -46,6 +46,14 @@ sub job_type {
     return 'marc_import_revert_batch';
 }
 
+=head3 default_max_retries
+
+Re-running a partial revert could leave the batch inconsistent, so a failed job isn't retried automatically.
+
+=cut
+
+sub default_max_retries { return 0; }
+
 =head3 process
 
 Revert a batch

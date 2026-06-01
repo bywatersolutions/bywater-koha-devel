@@ -41,6 +41,14 @@ sub job_type {
     return 'erm_sushi_harvester';
 }
 
+=head3 default_max_retries
+
+Re-harvesting could record the usage statistics twice, so a failed job isn't retried automatically.
+
+=cut
+
+sub default_max_retries { return 0; }
+
 =head3 process
 
 Koha::BackgroundJob->find($id)->process(

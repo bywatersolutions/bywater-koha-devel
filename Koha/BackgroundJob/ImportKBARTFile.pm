@@ -45,6 +45,14 @@ sub job_type {
     return 'import_from_kbart_file';
 }
 
+=head3 default_max_retries
+
+Re-running would import the file's titles again, so a failed job isn't retried automatically.
+
+=cut
+
+sub default_max_retries { return 0; }
+
 =head3 process
 
 Process the import.

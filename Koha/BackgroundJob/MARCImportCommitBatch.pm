@@ -46,6 +46,14 @@ sub job_type {
     return 'marc_import_commit_batch';
 }
 
+=head3 default_max_retries
+
+Re-running would import the staged records again, so a failed job isn't retried automatically.
+
+=cut
+
+sub default_max_retries { return 0; }
+
 =head3 process
 
 Commit the records

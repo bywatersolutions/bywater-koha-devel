@@ -47,11 +47,25 @@ sub job_type {
     return 'create_eholdings_from_biblios';
 }
 
+=head3 default_max_retries
+
+Re-running would create the e-holdings a second time, so a failed job isn't retried automatically.
+
+=cut
+
+sub default_max_retries { return 0; }
+
 my $fix_coverage = sub {
     my $coverage  = shift || q{};
     my @coverages = split '-', $coverage;
     return ( $coverages[0], ( @coverages > 1 ? $coverages[1] : q{} ) );
 };
+
+=head3 _get_unimarc_mapping
+
+Build the eHoldings title field mapping from a UNIMARC biblio record.
+
+=cut
 
 sub _get_unimarc_mapping {
     my ($biblio)          = @_;
@@ -116,6 +130,12 @@ sub _get_unimarc_mapping {
         access_type                     => $access_type,
     };
 }
+
+=head3 _get_marc21_mapping
+
+Build the eHoldings title field mapping from a MARC21 biblio record.
+
+=cut
 
 sub _get_marc21_mapping {
     my ($biblio)          = @_;

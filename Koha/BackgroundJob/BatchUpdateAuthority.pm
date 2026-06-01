@@ -46,6 +46,14 @@ sub job_type {
     return 'batch_authority_record_modification';
 }
 
+=head3 default_max_retries
+
+Batch modifications aren't idempotent, so a failed job isn't retried automatically.
+
+=cut
+
+sub default_max_retries { return 0; }
+
 =head3 process
 
 Process the modification.
