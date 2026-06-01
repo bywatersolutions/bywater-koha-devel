@@ -53,4 +53,23 @@ properties:
       - string
       - "null"
     format: date-time
+  max_retries:
+    description: maximum number of times this job may be retried after a failure
+    type:
+      - integer
+      - "null"
+  retries:
+    description: number of times this job has already been retried
+    type: integer
+  previous_job_id:
+    description: identifier of the job this job is a retry of
+    type:
+      - integer
+      - "null"
+  not_before_date:
+    description: the job should not be processed before this date
+    type:
+      - string
+      - "null"
+    format: date-time
 additionalProperties: false

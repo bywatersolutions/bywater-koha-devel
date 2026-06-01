@@ -643,6 +643,7 @@ sub to_api_mapping {
         ended_on       => 'ended_date',
         enqueued_on    => 'enqueued_date',
         started_on     => 'started_date',
+        not_before     => 'not_before_date',
     };
 }
 
