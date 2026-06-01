@@ -75,7 +75,7 @@ $mocked_letters->mock(
 
 subtest 'list() tests' => sub {
 
-    plan tests => 3;
+    plan tests => 4;
 
     $schema->storage->txn_begin;
     unauthorized_access_tests( 'GET', undef, undef );
@@ -279,6 +279,42 @@ subtest 'list() tests' => sub {
             ->tx->res->json;
 
         is( scalar @{$res}, 1, 'Only one patron returned' );
+
+        $schema->storage->txn_rollback;
+    };
+
+    subtest 'EmptyPatronSearches tests' => sub {
+
+        plan tests => 9;
+
+        $schema->storage->txn_begin;
+
+        my $librarian = $builder->build_object(
+            {
+                class => 'Koha::Patrons',
+                value => { flags => 2**4 }    # borrowers flag
+            }
+        );
+        my $password = 'thePassword123';
+        $librarian->set_password( { password => $password, skip_validation => 1 } );
+        my $userid = $librarian->userid;
+
+        t::lib::Mocks::mock_preference( 'EmptyPatronSearches', 0 );
+
+        $t->get_ok("//$userid:$password@/api/v1/patrons")
+            ->status_is( 422, 'Empty search rejected when EmptyPatronSearches is disabled' )
+            ->json_is( '/error_code' => 'empty_search_not_allowed' );
+
+        $t->get_ok( "//$userid:$password@/api/v1/patrons?q=" . encode_json( { cardnumber => $librarian->cardnumber } ) )
+            ->status_is( 200, 'Search with a query is allowed' );
+
+        $t->get_ok( "//$userid:$password@/api/v1/patrons?restricted=" . Mojo::JSON->true )
+            ->status_is( 200, 'restricted is treated as a search criterion' );
+
+        t::lib::Mocks::mock_preference( 'EmptyPatronSearches', 1 );
+
+        $t->get_ok("//$userid:$password@/api/v1/patrons")
+            ->status_is( 200, 'Empty search allowed when EmptyPatronSearches is enabled' );
 
         $schema->storage->txn_rollback;
     };
