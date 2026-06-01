@@ -93,6 +93,18 @@
                         <label for="job_ended_on">Ended: </label>
                         [% job.ended_on | $KohaDates with_hours = 1 %]
                     </li>
+                    [% IF job.max_retries %]
+                        <li>
+                            <label>Retries: </label>
+                            [% job.retries | html %] / [% job.max_retries | html %]
+                        </li>
+                    [% END %]
+                    [% IF job.previous_job_id %]
+                        <li>
+                            <label>Retry of: </label>
+                            <a href="/cgi-bin/koha/admin/background_jobs.pl?op=view&amp;id=[% job.previous_job_id | uri %]">Job #[% job.previous_job_id | html %]</a>
+                        </li>
+                    [% END %]
                 </ol>
             </fieldset>
             <div class="page-section">
