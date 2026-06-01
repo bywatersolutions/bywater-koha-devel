@@ -79,15 +79,11 @@ sub search_patrons {
             $escaped =~ s/([+\-><()~*"@])/\\$1/g;
             push @bind, @search_groups, "*${escaped}*";
         } else {
-            # starts_with: prefix match via LIKE on the index content
-            push @where, qq{
-                b.borrowernumber IN (
-                    SELECT psi.patron_id FROM patron_search_index psi
-                    WHERE psi.field_group IN ($group_placeholders)
-                      AND psi.content LIKE ?
-                )
-            };
-            push @bind, @search_groups, "$query%";
+            # starts_with: LIKE prefix on borrowers columns directly
+            my @like_fields = qw(surname firstname preferred_name middle_name othernames cardnumber userid email);
+            my @or = map { "b.$_ LIKE ?" } @like_fields;
+            push @where, '(' . join( ' OR ', @or ) . ')';
+            push @bind, map { "$query%" } @like_fields;
         }
     }
 
