@@ -273,6 +273,7 @@ if ( $op =~ /cud-save/ ) {
 
         if ( $redirect eq 'purchase_suggestions' ) {
             print $input->redirect("/cgi-bin/koha/members/purchase-suggestions.pl?borrowernumber=$borrowernumber");
+            exit;
         }
     }
 } elsif ( $op eq 'add_form' ) {
@@ -518,6 +519,7 @@ $template->param(
     filter_archived => $filter_archived,
     "op"            => $op,
     reasonsloop     => $reasonsloop,
+    redirect        => $redirect,
 );
 
 if ( defined($returnsuggested) and $returnsuggested ne "no_one" ) {
