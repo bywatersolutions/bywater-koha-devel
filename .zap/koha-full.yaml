@@ -1,0 +1,135 @@
+# ZAP Automation Framework plan for Koha, full active scan.
+#
+# Run with:  zap.sh -cmd -autorun /zap/wrk/koha-full.yaml
+#
+# This is the active-scan counterpart to koha.yaml. On top of spidering and
+# passive scanning it runs ZAP's active scanner, which sends real attack
+# payloads ( injection, XSS, path traversal, and so on ) at every in-scope
+# parameter. It is much slower than the baseline, so each active scan is capped
+# with maxScanDurationInMins to keep a run bounded. Raise the caps for a deeper
+# scan.
+#
+# Two contexts are scanned from one Koha instance: the OPAC ( koha:8080 )
+# anonymously, and the staff client ( koha:8081 ) as the KTD superlibrarian.
+#
+# The staff context has no ZAP authentication block on purpose. Browser-based
+# auth logs in fine once, but the active scanner re-authenticates constantly,
+# and those mid-scan headless-Firefox logins fail in CI ( proxyConnectFailure )
+# and destabilise the whole scan. Instead the workflow logs in once with curl,
+# captures the CGISESSID, and injects it as a fixed Cookie header on every
+# staff request via a ZAP replacer rule ( see the security workflow ). No
+# browser runs during the scan, so there is nothing to re-authenticate.
+#
+# The staff context still excludes logout, branch switching, cud- write
+# actions, and the legacy svc endpoints so the active scanner can't end the
+# session or fire a state-changing request.
+
+env:
+    contexts:
+        - name: koha-opac
+          urls:
+              - "http://koha:8080"
+          includePaths:
+              - "http://koha:8080/.*"
+          excludePaths:
+              - ".*logout.*"
+
+        - name: koha-staff
+          urls:
+              - "http://koha:8081"
+          includePaths:
+              - "http://koha:8081/.*"
+          excludePaths:
+              - ".*logout.*"
+              - ".*set-library.pl.*"
+              - ".*op=cud-.*"
+              - ".*/svc/.*"
+    parameters:
+        # Don't fail the job on a plan error. The active scan is best-effort
+        # coverage and the deliverable is the uploaded HTML report for triage,
+        # not a pass/fail gate. A long active scan can also log the odd transient
+        # error that shouldn't red the build.
+        failOnError: false
+        failOnWarning: false
+        progressToStdout: true
+
+jobs:
+    # Same passive-rule noise filter as the baseline plan. Keep the two lists in
+    # sync; a filtered rule is no longer looked at.
+    - type: alertFilter
+      alertFilters:
+          - ruleId: 10015 # Incomplete or No Cache-control Header
+            newRisk: "False Positive"
+          - ruleId: 10020 # Missing Anti-clickjacking Header
+            newRisk: "False Positive"
+          - ruleId: 10021 # X-Content-Type-Options Header Missing
+            newRisk: "False Positive"
+          - ruleId: 10038 # CSP Header Not Set
+            newRisk: "False Positive"
+          - ruleId: 10063 # Permissions Policy Header Not Set
+            newRisk: "False Positive"
+          - ruleId: 10036 # Server Leaks Version Information via Server Header
+            newRisk: "False Positive"
+          - ruleId: 10037 # Server Leaks Information via X-Powered-By
+            newRisk: "False Positive"
+          - ruleId: 10027 # Information Disclosure - Suspicious Comments
+            newRisk: "False Positive"
+          - ruleId: 10094 # Base64 Disclosure
+            newRisk: "False Positive"
+          - ruleId: 10096 # Timestamp Disclosure
+            newRisk: "False Positive"
+          - ruleId: 10109 # Modern Web Application
+            newRisk: "False Positive"
+          - ruleId: 10049 # Storable / Non-Storable Content
+            newRisk: "False Positive"
+
+    - type: spider
+      parameters:
+          context: koha-opac
+          url: "http://koha:8080"
+          maxDuration: 5
+
+    - type: spider
+      parameters:
+          context: koha-staff
+          url: "http://koha:8081"
+          maxDuration: 5
+
+    # Import the REST API definition so the scanner reaches /api/v1, which the
+    # HTML spider never links to. Requests run as the staff user via the injected
+    # session cookie. Importing fires a request at every operation to seed the
+    # site tree, and the active scan then attacks them, so this exercises
+    # mutating ( POST/PUT/DELETE ) endpoints. That is only acceptable because the
+    # scan runs against a throwaway koha-testing-docker instance that is
+    # destroyed afterwards. Don't point this plan at data you care about.
+    - type: openapi
+      parameters:
+          apiUrl: "http://koha:8081/api/v1/"
+          targetUrl: "http://koha:8081"
+          context: koha-staff
+
+    # The active scan is the slow part. maxScanDurationInMins caps the whole
+    # scan and maxRuleDurationInMins caps any single rule, so one slow rule
+    # can't run away. Bump these for deeper coverage at the cost of run time.
+    - type: activeScan
+      parameters:
+          context: koha-opac
+          maxScanDurationInMins: 20
+          maxRuleDurationInMins: 5
+
+    - type: activeScan
+      parameters:
+          context: koha-staff
+          maxScanDurationInMins: 20
+          maxRuleDurationInMins: 5
+
+    - type: passiveScan-wait
+      parameters:
+          maxDuration: 5
+
+    - type: report
+      parameters:
+          template: traditional-html
+          reportDir: /zap/wrk
+          reportFile: koha-zap-full-report.html
+          reportTitle: "Koha ZAP Full Scan"

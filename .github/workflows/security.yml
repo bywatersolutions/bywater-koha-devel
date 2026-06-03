@@ -122,3 +122,283 @@ jobs:
               with:
                   name: cpan-audit-report
                   path: cpan-audit.txt
+
+    zap-baseline:
+        name: ZAP baseline scan
+        if: startsWith(github.repository, 'bywatersolutions/bywater-koha')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Export variables needed by koha-testing-docker
+              run: |
+                  echo "LOCAL_USER_ID=$(id -u)" >> $GITHUB_ENV
+                  echo "SYNC_REPO=." >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
+
+            - name: Set up koha-testing-docker
+              run: |
+                  sudo sysctl -w vm.max_map_count=262144
+                  wget -O docker-compose.yml https://gitlab.com/koha-community/koha-testing-docker/raw/25.11/docker-compose.yml
+                  mkdir -p env
+                  wget -O env/defaults.env https://gitlab.com/koha-community/koha-testing-docker/raw/25.11/env/defaults.env
+                  cp env/defaults.env .env
+                  docker compose pull
+                  docker compose -f docker-compose.yml -p koha up --detach
+                  # Pre-pull the scanner image now so the scan can start the moment
+                  # the readiness gate passes, with no long image pull in between.
+                  # KTD can bounce Koha's plack during init, and a pull-sized gap
+                  # between "Koha is up" and the scan is enough to hit that window.
+                  docker pull ghcr.io/zaproxy/zaproxy:weekly
+
+            # Wait for koha-testing-docker to finish initialising. KTD restarts
+            # plack partway through setup ( reset_plack.pl ), so a plain port
+            # check can pass and then connection-refuse moments later, mid-scan.
+            # The container logs a definitive marker once init is done and plack
+            # is stable, so gate on that instead of on a port responding.
+            - name: Wait for Koha to be ready
+              run: |
+                  for i in $(seq 1 90); do
+                      if docker logs koha-koha-1 2>&1 | grep -q "has started up and is ready to be enjoyed"; then
+                          echo "KTD ready after ~$((i * 10))s"
+                          exit 0
+                      fi
+                      echo "waiting for KTD init to finish... ($i)"
+                      sleep 10
+                  done
+                  echo "KTD did not become ready in time"
+                  docker logs koha-koha-1 2>&1 | tail -80
+                  exit 1
+
+            # The Automation Framework plan ( contexts, alert filters ) lives in
+            # .zap/koha.yaml. Copy it into a world-writable dir so the zap
+            # container ( uid 1000 ) can write its HTML report alongside it.
+            - name: Prepare ZAP working directory
+              run: |
+                  mkdir -p zap-out
+                  cp .zap/koha.yaml zap-out/koha.yaml
+                  chmod -R 777 zap-out
+
+            # Log in to the staff client once and capture the session cookie, the
+            # same way the full scan does. The retry loop also serves as the
+            # readiness gate for the staff interface ( http://koha:8081 ), which
+            # can lag the OPAC: it keeps trying until a login actually succeeds.
+            - name: Authenticate to Koha staff
+              run: |
+                  cookie=$(docker run --rm --network koha_kohanet curlimages/curl:latest sh -c '
+                      base=http://koha:8081
+                      jar=/tmp/cj
+                      i=0
+                      while [ $i -lt 40 ]; do
+                          i=$((i + 1))
+                          rm -f "$jar"
+                          # Both interfaces must be serving before we scan. KTD can
+                          # bounce plack during init, so gate on a live OPAC too,
+                          # otherwise a spider seed URL gets connection-refused.
+                          curl -sf http://koha:8080 -o /dev/null 2>/dev/null || { echo "waiting for opac... ($i)" >&2; sleep 10; continue; }
+                          page=$(curl -s -c "$jar" "$base/cgi-bin/koha/mainpage.pl" || true)
+                          csrf=$(echo "$page" | grep -o "name=\"csrf_token\" value=\"[^\"]*\"" | head -1 | sed "s/.*value=\"//;s/\"//")
+                          if [ -n "$csrf" ]; then
+                              curl -s -b "$jar" -c "$jar" -o /dev/null \
+                                  --data-urlencode "login_userid=koha" \
+                                  --data-urlencode "login_password=koha" \
+                                  --data-urlencode "login_op=cud-login" \
+                                  --data-urlencode "koha_login_context=intranet" \
+                                  --data-urlencode "csrf_token=$csrf" \
+                                  "$base/cgi-bin/koha/mainpage.pl" || true
+                              sess=$(grep CGISESSID "$jar" | awk "{print \$7}" | tail -1)
+                              if [ -n "$sess" ] && curl -s -b "CGISESSID=$sess" "$base/cgi-bin/koha/mainpage.pl" | grep -q "id=\"logout\""; then
+                                  echo "$sess"
+                                  exit 0
+                              fi
+                          fi
+                          echo "waiting for staff login to come up... ($i)" >&2
+                          sleep 10
+                      done
+                      exit 1
+                  ')
+                  if [ -z "$cookie" ]; then
+                      echo "Failed to obtain a Koha staff session cookie"
+                      exit 1
+                  fi
+                  echo "Got staff session cookie (${#cookie} chars)"
+                  echo "::add-mask::$cookie"
+                  echo "KOHA_STAFF_COOKIE=$cookie" >> $GITHUB_ENV
+
+            # Inject the staff session cookie on every staff request via a ZAP
+            # replacer rule, scoped to koha:8081 so OPAC stays anonymous.
+            - name: Run ZAP scan
+              run: |
+                  docker run --rm --network koha_kohanet \
+                      -v "$(pwd)/zap-out:/zap/wrk:rw" \
+                      ghcr.io/zaproxy/zaproxy:weekly \
+                      zap.sh -cmd \
+                      -config 'replacer.full_list(0).description=koha-staff-session' \
+                      -config 'replacer.full_list(0).enabled=true' \
+                      -config 'replacer.full_list(0).matchtype=REQ_HEADER' \
+                      -config 'replacer.full_list(0).matchstr=Cookie' \
+                      -config 'replacer.full_list(0).regex=false' \
+                      -config "replacer.full_list(0).replacement=CGISESSID=${KOHA_STAFF_COOKIE}" \
+                      -config 'replacer.full_list(0).url=http://koha:8081.*' \
+                      -autorun /zap/wrk/koha.yaml
+
+            - name: Upload ZAP report
+              uses: actions/upload-artifact@v6
+              if: always()
+              with:
+                  name: zap-baseline-report
+                  path: zap-out/koha-zap-report.html
+
+            - name: Post scan cleanup
+              if: always()
+              run: |
+                  docker compose down || true
+                  docker volume prune -f || true
+
+    zap-full:
+        name: ZAP full scan
+        if: startsWith(github.repository, 'bywatersolutions/bywater-koha')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - name: Export variables needed by koha-testing-docker
+              run: |
+                  echo "LOCAL_USER_ID=$(id -u)" >> $GITHUB_ENV
+                  echo "SYNC_REPO=." >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
+
+            - name: Set up koha-testing-docker
+              run: |
+                  sudo sysctl -w vm.max_map_count=262144
+                  wget -O docker-compose.yml https://gitlab.com/koha-community/koha-testing-docker/raw/25.11/docker-compose.yml
+                  mkdir -p env
+                  wget -O env/defaults.env https://gitlab.com/koha-community/koha-testing-docker/raw/25.11/env/defaults.env
+                  cp env/defaults.env .env
+                  docker compose pull
+                  docker compose -f docker-compose.yml -p koha up --detach
+                  # Pre-pull the scanner image now so the scan can start the moment
+                  # the readiness gate passes, with no long image pull in between.
+                  # KTD can bounce Koha's plack during init, and a pull-sized gap
+                  # between "Koha is up" and the scan is enough to hit that window.
+                  docker pull ghcr.io/zaproxy/zaproxy:weekly
+
+            # Wait for koha-testing-docker to finish initialising. KTD restarts
+            # plack partway through setup ( reset_plack.pl ), so a plain port
+            # check can pass and then connection-refuse moments later, mid-scan.
+            # The container logs a definitive marker once init is done and plack
+            # is stable, so gate on that instead of on a port responding.
+            - name: Wait for Koha to be ready
+              run: |
+                  for i in $(seq 1 90); do
+                      if docker logs koha-koha-1 2>&1 | grep -q "has started up and is ready to be enjoyed"; then
+                          echo "KTD ready after ~$((i * 10))s"
+                          exit 0
+                      fi
+                      echo "waiting for KTD init to finish... ($i)"
+                      sleep 10
+                  done
+                  echo "KTD did not become ready in time"
+                  docker logs koha-koha-1 2>&1 | tail -80
+                  exit 1
+
+            # Same setup as the baseline job, but it runs the koha-full.yaml plan
+            # which adds ZAP's active scanner. This is the slow job, so it lives
+            # apart from the baseline and writes its own report.
+            - name: Prepare ZAP working directory
+              run: |
+                  mkdir -p zap-out
+                  cp .zap/koha-full.yaml zap-out/koha-full.yaml
+                  chmod -R 777 zap-out
+
+            # Log in to the staff client once and capture the session cookie.
+            # Koha's login posts login_op=cud-login with a session-bound
+            # csrf_token, so we fetch the login page, harvest the token, post the
+            # credentials, and read the resulting CGISESSID out of the cookie
+            # jar. The active scan injects this cookie ( below ) instead of using
+            # ZAP's browser-based auth, which can't re-authenticate reliably
+            # mid-scan in the headless container.
+            - name: Authenticate to Koha staff
+              run: |
+                  cookie=$(docker run --rm --network koha_kohanet curlimages/curl:latest sh -c '
+                      base=http://koha:8081
+                      jar=/tmp/cj
+                      i=0
+                      while [ $i -lt 40 ]; do
+                          i=$((i + 1))
+                          rm -f "$jar"
+                          # Both interfaces must be serving before we scan. KTD can
+                          # bounce plack during init, so gate on a live OPAC too,
+                          # otherwise a spider seed URL gets connection-refused.
+                          curl -sf http://koha:8080 -o /dev/null 2>/dev/null || { echo "waiting for opac... ($i)" >&2; sleep 10; continue; }
+                          page=$(curl -s -c "$jar" "$base/cgi-bin/koha/mainpage.pl" || true)
+                          csrf=$(echo "$page" | grep -o "name=\"csrf_token\" value=\"[^\"]*\"" | head -1 | sed "s/.*value=\"//;s/\"//")
+                          if [ -n "$csrf" ]; then
+                              curl -s -b "$jar" -c "$jar" -o /dev/null \
+                                  --data-urlencode "login_userid=koha" \
+                                  --data-urlencode "login_password=koha" \
+                                  --data-urlencode "login_op=cud-login" \
+                                  --data-urlencode "koha_login_context=intranet" \
+                                  --data-urlencode "csrf_token=$csrf" \
+                                  "$base/cgi-bin/koha/mainpage.pl" || true
+                              sess=$(grep CGISESSID "$jar" | awk "{print \$7}" | tail -1)
+                              if [ -n "$sess" ] && curl -s -b "CGISESSID=$sess" "$base/cgi-bin/koha/mainpage.pl" | grep -q "id=\"logout\""; then
+                                  echo "$sess"
+                                  exit 0
+                              fi
+                          fi
+                          echo "waiting for staff login to come up... ($i)" >&2
+                          sleep 10
+                      done
+                      exit 1
+                  ')
+                  if [ -z "$cookie" ]; then
+                      echo "Failed to obtain a Koha staff session cookie"
+                      exit 1
+                  fi
+                  echo "Got staff session cookie (${#cookie} chars)"
+                  echo "::add-mask::$cookie"
+                  echo "KOHA_STAFF_COOKIE=$cookie" >> $GITHUB_ENV
+
+            # Inject the staff session cookie on every staff request via a ZAP
+            # replacer rule, scoped to koha:8081 so OPAC stays anonymous. With
+            # the cookie always present the scan is authenticated without ZAP
+            # launching a browser, so there is no mid-scan re-auth to fail.
+            # The full active scan is best-effort: ZAP exits non-zero whenever it
+            # logs a plan error, and importing Koha's OpenAPI spec always logs a
+            # few ( the spec has arrays declared without an items schema ). The
+            # import still succeeds and the scan still runs, so treat the run as
+            # successful as long as it produced a report; only a missing report
+            # is a real failure ( e.g. Koha never came up ).
+            - name: Run ZAP scan
+              run: |
+                  docker run --rm --network koha_kohanet \
+                      -v "$(pwd)/zap-out:/zap/wrk:rw" \
+                      ghcr.io/zaproxy/zaproxy:weekly \
+                      zap.sh -cmd \
+                      -config 'replacer.full_list(0).description=koha-staff-session' \
+                      -config 'replacer.full_list(0).enabled=true' \
+                      -config 'replacer.full_list(0).matchtype=REQ_HEADER' \
+                      -config 'replacer.full_list(0).matchstr=Cookie' \
+                      -config 'replacer.full_list(0).regex=false' \
+                      -config "replacer.full_list(0).replacement=CGISESSID=${KOHA_STAFF_COOKIE}" \
+                      -config 'replacer.full_list(0).url=http://koha:8081.*' \
+                      -autorun /zap/wrk/koha-full.yaml || true
+                  if [ ! -f zap-out/koha-zap-full-report.html ]; then
+                      echo "ZAP produced no report; treating as a real failure"
+                      exit 1
+                  fi
+                  echo "ZAP full scan completed and produced a report."
+
+            - name: Upload ZAP report
+              uses: actions/upload-artifact@v6
+              if: always()
+              with:
+                  name: zap-full-report
+                  path: zap-out/koha-zap-full-report.html
+
+            - name: Post scan cleanup
+              if: always()
+              run: |
+                  docker compose down || true
+                  docker volume prune -f || true

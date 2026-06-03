@@ -1,0 +1,99 @@
+# ZAP Automation Framework plan for Koha, baseline ( passive ) scan.
+#
+# Run with:  zap.sh -cmd -autorun /zap/wrk/koha.yaml
+#
+# Two contexts are scanned from one Koha instance:
+#   * koha-opac  ( http://koha:8080 ) is scanned anonymously, which matches the
+#     threat model for the public catalog.
+#   * koha-staff ( http://koha:8081 ) is scanned as the KTD superlibrarian so
+#     the scan reaches pages behind login.
+#
+# This plan only spiders and passively scans, so it is fast. The active-scan
+# counterpart is koha-full.yaml.
+#
+# The staff context has no ZAP authentication block on purpose. The workflow
+# logs in once with curl, captures the CGISESSID, and injects it as a fixed
+# Cookie header on every staff request via a ZAP replacer rule ( see the
+# security workflow ). This is the same mechanism the full scan uses, so both
+# plans authenticate the same way and neither depends on ZAP's browser-based
+# auth, which can't re-authenticate reliably in the headless container.
+
+env:
+    contexts:
+        - name: koha-opac
+          urls:
+              - "http://koha:8080"
+          includePaths:
+              - "http://koha:8080/.*"
+          excludePaths:
+              - ".*logout.*"
+
+        - name: koha-staff
+          urls:
+              - "http://koha:8081"
+          includePaths:
+              - "http://koha:8081/.*"
+          excludePaths:
+              - ".*logout.*"
+              - ".*set-library.pl.*"
+              - ".*op=cud-.*"
+              - ".*/svc/.*"
+    parameters:
+        failOnError: true
+        failOnWarning: false
+        progressToStdout: true
+
+jobs:
+    # Drop the recurring passive noise that drowned out real findings. These were
+    # the IGNORE entries from the old rules.tsv, ported to the Automation
+    # Framework. Marking them False Positive removes them from the report. Revisit
+    # this list as the scan is tuned; a filtered rule is no longer looked at.
+    - type: alertFilter
+      alertFilters:
+          - ruleId: 10015 # Incomplete or No Cache-control Header
+            newRisk: "False Positive"
+          - ruleId: 10020 # Missing Anti-clickjacking Header
+            newRisk: "False Positive"
+          - ruleId: 10021 # X-Content-Type-Options Header Missing
+            newRisk: "False Positive"
+          - ruleId: 10038 # CSP Header Not Set
+            newRisk: "False Positive"
+          - ruleId: 10063 # Permissions Policy Header Not Set
+            newRisk: "False Positive"
+          - ruleId: 10036 # Server Leaks Version Information via Server Header
+            newRisk: "False Positive"
+          - ruleId: 10037 # Server Leaks Information via X-Powered-By
+            newRisk: "False Positive"
+          - ruleId: 10027 # Information Disclosure - Suspicious Comments
+            newRisk: "False Positive"
+          - ruleId: 10094 # Base64 Disclosure
+            newRisk: "False Positive"
+          - ruleId: 10096 # Timestamp Disclosure
+            newRisk: "False Positive"
+          - ruleId: 10109 # Modern Web Application
+            newRisk: "False Positive"
+          - ruleId: 10049 # Storable / Non-Storable Content
+            newRisk: "False Positive"
+
+    - type: spider
+      parameters:
+          context: koha-opac
+          url: "http://koha:8080"
+          maxDuration: 5
+
+    - type: spider
+      parameters:
+          context: koha-staff
+          url: "http://koha:8081"
+          maxDuration: 5
+
+    - type: passiveScan-wait
+      parameters:
+          maxDuration: 5
+
+    - type: report
+      parameters:
+          template: traditional-html
+          reportDir: /zap/wrk
+          reportFile: koha-zap-report.html
+          reportTitle: "Koha ZAP Baseline"
