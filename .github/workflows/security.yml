@@ -1,0 +1,124 @@
+name: Security Scanning
+
+# Static / dependency / secret / dynamic scanning for the bywater-koha* repos.
+# This runs on every push, on a weekly schedule, and on demand. Static findings
+# are uploaded as SARIF to the repository Security tab; the ZAP HTML reports are
+# uploaded as build artifacts. No Slack notifications are wired in here on
+# purpose, so iterating on this workflow stays quiet.
+
+on:
+    push:
+    schedule:
+        # Weekly, Sunday 06:00 UTC
+        - cron: "0 6 * * 0"
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    security-events: write
+
+jobs:
+    trivy-fs:
+        name: Trivy - dependency vulnerabilities
+        if: startsWith(github.repository, 'bywatersolutions/bywater-koha')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            # Scans yarn.lock for known-vulnerable JavaScript dependencies.
+            # Trivy doesn't parse cpanfile, so Perl deps aren't covered here.
+            # Only fixable HIGH/CRITICAL issues are reported to keep noise down.
+            # trivyignores points at .github/.trivyignore ( BWS-only ), which
+            # suppresses CVEs in transitive build/dev-time deps that don't ship
+            # to browsers.
+            - name: Run Trivy filesystem scan
+              uses: aquasecurity/trivy-action@0.35.0
+              with:
+                  scan-type: fs
+                  scan-ref: .
+                  scanners: vuln
+                  severity: HIGH,CRITICAL
+                  ignore-unfixed: true
+                  trivyignores: .github/.trivyignore
+                  format: sarif
+                  output: trivy-results.sarif
+
+            - name: Upload Trivy SARIF
+              uses: github/codeql-action/upload-sarif@v4
+              if: always() && hashFiles('trivy-results.sarif') != ''
+              with:
+                  sarif_file: trivy-results.sarif
+                  category: trivy-fs
+
+    codeql-js:
+        name: CodeQL - JavaScript/TypeScript
+        if: startsWith(github.repository, 'bywatersolutions/bywater-koha')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            # CodeQL has no Perl support, so this covers the Vue apps and the
+            # legacy jQuery, but not C4/ or Koha/.
+            - name: Initialize CodeQL
+              uses: github/codeql-action/init@v4
+              with:
+                  languages: javascript-typescript
+                  config-file: ./.github/codeql/codeql-config.yml
+
+            - name: Perform CodeQL analysis
+              uses: github/codeql-action/analyze@v4
+              with:
+                  category: "/language:javascript-typescript"
+
+    gitleaks:
+        name: Gitleaks - secret scan
+        if: startsWith(github.repository, 'bywatersolutions/bywater-koha')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            # Run the gitleaks binary directly rather than gitleaks-action, which
+            # requires a paid license for organization repos. The "dir" subcommand
+            # scans the checked-out tree ( history scanning can be added later ).
+            # --exit-code 0 keeps the job green; triage happens in the Security tab.
+            # --config points at .github/gitleaks.toml ( BWS-only ), which keeps
+            # the default rules and allowlists known false positives.
+            - name: Run gitleaks
+              run: |
+                  docker run --rm -v "${{ github.workspace }}:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 \
+                      dir /repo --config /repo/.github/gitleaks.toml --redact --exit-code 0 \
+                      --report-format sarif --report-path /repo/gitleaks.sarif
+
+            - name: Upload gitleaks SARIF
+              uses: github/codeql-action/upload-sarif@v4
+              if: always() && hashFiles('gitleaks.sarif') != ''
+              with:
+                  sarif_file: gitleaks.sarif
+                  category: gitleaks
+
+    cpan-audit:
+        name: cpan-audit - Perl dependency advisories
+        if: startsWith(github.repository, 'bywatersolutions/bywater-koha')
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            # CodeQL and Trivy don't cover Perl, which is most of Koha. CPAN::Audit
+            # checks the modules declared in cpanfile against its bundled CPAN
+            # security advisory database. cpanfile lists minimum versions, so this
+            # can over-report ( an advisory range may include the declared minimum
+            # even when the running version is patched ), so findings are uploaded
+            # for triage rather than failing the build.
+            - name: Run CPAN::Audit against cpanfile
+              run: |
+                  docker run --rm -v "${{ github.workspace }}:/repo:ro" -w /repo perl:5.40 bash -c '
+                      cpanm --notest --quiet CPAN::Audit >/dev/null 2>&1
+                      cpan-audit deps . --no-color
+                  ' | tee cpan-audit.txt || true
+
+            - name: Upload cpan-audit report
+              uses: actions/upload-artifact@v6
+              if: always() && hashFiles('cpan-audit.txt') != ''
+              with:
+                  name: cpan-audit-report
+                  path: cpan-audit.txt

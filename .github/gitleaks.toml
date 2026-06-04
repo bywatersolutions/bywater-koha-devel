@@ -1,0 +1,30 @@
+# Gitleaks configuration for the BWS security scan.
+#
+# This lives under .github ( BWS-only, not part of community Koha ) and is
+# passed to gitleaks with --config from the Security Scanning workflow.
+#
+# It keeps the full default rule set and only allowlists known false positives:
+# dummy credentials in test fixtures and curl -u examples in the API docs. Keep
+# allowlist entries tight ( specific files ) so real secrets elsewhere are still
+# caught.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Known false positives: test fixtures and API-doc examples"
+targetRules = ["generic-api-key", "curl-auth-user"]
+paths = [
+    # Dummy credentials used by tests, not real secrets
+    '''t/db_dependent/selenium/00-onboarding\.t''',
+    '''t/db_dependent/Koha/Auth/TwoFactorAuth\.t''',
+    # i18n key handling flagged by the generic-api-key heuristic
+    '''koha-tmpl/intranet-tmpl/prog/js/vue/composables/base-element\.js''',
+    # "curl -u user:password" usage examples in the OpenAPI docs
+    '''api/v1/swagger/swagger\.yaml''',
+    # Generated build artifacts ( minified bundles, not source ). A fresh CI
+    # checkout doesn't contain these, but a tree that has been built does.
+    '''koha-tmpl/intranet-tmpl/prog/js/vue/dist/''',
+    '''koha-tmpl/opac-tmpl/bootstrap/js/vue/''',
+    '''api/v1/swagger/swagger_bundle\.json''',
+]

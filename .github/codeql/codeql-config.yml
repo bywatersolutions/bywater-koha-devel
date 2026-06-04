@@ -1,0 +1,14 @@
+name: "Koha CodeQL config"
+
+# CodeQL would otherwise flag bundled third-party JavaScript ( DataTables,
+# jQuery plugins, minified vendor bundles ) that we don't maintain, which is
+# where most of the noise comes from. Keep analysis on Koha's own code.
+paths-ignore:
+    - koha-tmpl/intranet-tmpl/lib
+    - koha-tmpl/opac-tmpl/lib
+    - "**/*.min.js"
+    - "**/node_modules"
+    # Gettext.js is a bundled third-party i18n library, not Koha's own code. It
+    # produces a pile of low-value "useless regexp escape" alerts that drown out
+    # findings in code we maintain.
+    - "**/Gettext.js"

@@ -1,0 +1,83 @@
+# Trivy ignore file for the BWS security scan ( BWS-only, under .github ).
+# Passed to trivy-action via the `trivyignores` input.
+#
+# Every entry below is a known-vulnerable JavaScript package that reaches Koha
+# only as a TRANSITIVE BUILD/DEV-TIME dependency: the OpenAPI docs bundler
+# ( @redocly/cli -> redoc -> dompurify ), the asset build chain ( webpack /
+# rspack / gulp / cypress -> handlebars, protobufjs, immutable, picomatch,
+# brace-expansion, tmp, fast-uri, postcss, etc. ). None of them are shipped to
+# browsers ( verified absent from the built Vue bundles under
+# koha-tmpl/*/js/vue/dist ), so they are not reachable in a deployed Koha.
+#
+# This is a point-in-time list. New advisories in these packages will surface
+# as fresh alerts ( on purpose ) for re-triage; do not blanket-ignore by
+# package. If any of these ever becomes a runtime/shipped dependency, drop it
+# from this file and treat it as a real finding.
+
+# postcss ( build: CSS pipeline )
+CVE-2021-23382
+CVE-2023-44270
+CVE-2026-41305
+
+# dompurify ( build: @redocly/cli -> redoc, API-doc rendering )
+CVE-2026-0540
+CVE-2026-41238
+CVE-2026-41239
+CVE-2026-41240
+GHSA-39q2-94rc-95cp
+GHSA-cj63-jhhr-wcxv
+GHSA-cjmm-f4jc-qw8r
+GHSA-h8r8-wccr-v5f2
+
+# immutable ( build: webpack/rspack )
+CVE-2026-29063
+
+# yaml ( build: config parsing )
+CVE-2026-33532
+
+# picomatch ( build: glob matching )
+CVE-2026-33671
+CVE-2026-33672
+
+# brace-expansion ( build: glob matching )
+CVE-2026-33750
+
+# handlebars ( build: template/asset tooling )
+CVE-2026-33916
+CVE-2026-33937
+CVE-2026-33938
+CVE-2026-33939
+CVE-2026-33940
+CVE-2026-33941
+GHSA-442j-39wm-28r2
+GHSA-7rx3-28cr-v5wh
+
+# protobufjs ( build tooling )
+CVE-2026-41242
+CVE-2026-44288
+CVE-2026-44289
+CVE-2026-44290
+CVE-2026-44291
+CVE-2026-44292
+CVE-2026-44293
+CVE-2026-44294
+CVE-2026-45740
+
+# fast-xml-parser ( build tooling )
+CVE-2026-41650
+
+# uuid ( build tooling )
+CVE-2026-41907
+
+# tmp ( build tooling )
+CVE-2026-44705
+
+# js-cookie ( build: not in shipped bundles )
+CVE-2026-46625
+
+# fast-uri ( build: ajv/schema tooling )
+CVE-2026-6321
+CVE-2026-6322
+
+# qs ( build tooling )
+CVE-2026-8723
