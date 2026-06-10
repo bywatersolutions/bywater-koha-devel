@@ -20,7 +20,7 @@ use Modern::Perl;
 use Test::Exception;
 use Test::MockModule;
 use Test::NoWarnings;
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 use Koha::Report;
 use Koha::Reports;
