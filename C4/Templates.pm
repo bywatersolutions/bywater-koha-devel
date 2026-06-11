@@ -89,7 +89,12 @@ sub new {
         }
     ) or die Template->error();
 
-    $Template::Stash::PRIVATE = undef; ## Enable access to private methods like _result/_resultset
+    # Enable access to private methods like _result/_resultset in templates.
+    # no warnings 'once' silences the spurious single-use package variable warning.
+    {
+        no warnings 'once';
+        $Template::Stash::PRIVATE = undef;
+    }
 
     my $self = {
         TEMPLATE => $template,
