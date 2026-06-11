@@ -173,7 +173,7 @@ jobs:
               if: always()
               uses: slackapi/slack-github-action@v3
               with:
-                  webhook: ${{ secrets.SLACK_WEBHOOK_URL_DEVOPS }}
+                  webhook: ${{ secrets.SLACK_DEVOPS_WEBHOOK }}
                   webhook-type: incoming-webhook
                   payload: |
                       text: "Stress Test *${{ job.status }}*: ${{ github.ref_name }} — ${{ github.workflow }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
