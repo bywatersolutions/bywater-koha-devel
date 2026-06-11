@@ -239,7 +239,7 @@ print "Running tests: $test_cmd\n";
 my $test_exit_code = 0;
 eval {
     run_cmd(
-        qq{export KTD_HOME=$ktd_home && export PATH=\$KTD_HOME/bin:\$PATH && ktd --name $instance_name --shell --run "source ~/.bashrc && $test_cmd"},
+        qq{export KTD_HOME=$ktd_home && export PATH=\$KTD_HOME/bin:\$PATH && ktd --name $instance_name --shell --run "source ~/.bashrc && CUSTOM_PACKAGE=1 $test_cmd"},
         { exit_on_error => 1, real_time => 1, env => $ktd_env }
     );
 };

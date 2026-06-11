@@ -149,20 +149,18 @@ jobs:
                   sudo apt-get install -y cpanminus
                   sudo cpanm Modern::Perl IPC::Cmd
 
-                  # Tests that manage their own Plack lifecycle ( they restart Plack to point
-                  # the UI at a mocked search config ). That restart fails against an
-                  # already-running KTD instance, so they can't run under bare prove here.
-                  # They still run via the legacy full-suite path; we just skip them in shards.
-                  #
-                  # Tests BWS keeps in the tree but does not run in CI: the selenium tests
-                  # ( flaky / need a browser ) and t/00-check-atomic-updates.t ( fails because
-                  # BWS keeps atomicupdate files rather than folding them in ).
+                  # Tests excluded from the shards. These are infrastructure/environment
+                  # limitations, not customization failures, and they currently run nowhere
+                  # else ( there is no full-suite job ) -- revisit if that changes:
+                  #   - search_utf8.t restarts Plack itself, which fails against a live KTD.
+                  #   - the selenium tests below are flaky here / need a browser.
+                  # ( t/00-check-atomic-updates.t is NOT listed: it self-skips because the
+                  #   test run sets CUSTOM_PACKAGE=1 -- see koha_tests_runner.pl. )
                   EXCLUDE=$(printf '%s\n' \
                       't/db_dependent/www/search_utf8.t' \
                       't/db_dependent/selenium/basic_workflow.t' \
                       't/db_dependent/selenium/patrons_search.t' \
-                      't/db_dependent/selenium/system_preferences_search.t' \
-                      't/00-check-atomic-updates.t')
+                      't/db_dependent/selenium/system_preferences_search.t')
 
                   # Tests that drive the live search UI and rely on Zebra ( they use
                   # t::lib::Mocks::Zebra ). They run in a dedicated Zebra shard; every es8
@@ -181,7 +179,14 @@ jobs:
                       ENGINE_ARG=""
                   fi
 
-                  echo "Excluded from sharding ( run via full suite only ): $(echo $EXCLUDE | tr '\n' ' ')"
+                  # Run the fast xt security/correctness checks once, on the first es8 shard.
+                  # They scan the tree ( no DB needed ) and guard our custom code against
+                  # missing output filters, auth checks, CSRF tokens and form op fields.
+                  if [ "$SHARD" != "zebra" ] && [ "$SHARD_INDEX" = "0" ]; then
+                      FILES="$FILES xt/find-missing-filters.t xt/find-missing-auth_checks.t xt/find-missing-csrf.t xt/find-missing-op-in-forms.t"
+                  fi
+
+                  echo "Excluded from the shards ( not run anywhere ): $(echo $EXCLUDE | tr '\n' ' ')"
                   echo "Shard '${SHARD}' (engine ${ENGINE}) -- $(echo $FILES | wc -w) test files:"
                   echo "$FILES" | tr ' ' '\n'
 
