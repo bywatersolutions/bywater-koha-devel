@@ -169,16 +169,3 @@ jobs:
                   rm -f docker-compose.yml
                   rm -rf env .env
 
-            - name: Notify Slack
-              if: always()
-              uses: slackapi/slack-github-action@v3
-              with:
-                  webhook: ${{ secrets.SLACK_WEBHOOK_URL_DEVOPS }}
-                  webhook-type: incoming-webhook
-                  payload: |
-                      text: "Stress Test *${{ job.status }}*: ${{ github.ref_name }} — ${{ github.workflow }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
-                      blocks:
-                        - type: "section"
-                          text:
-                            type: "mrkdwn"
-                            text: "Stress Test *${{ job.status }}*\n*Ref:* `${{ github.ref_name }}`\n*Workflow:* ${{ github.workflow }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
