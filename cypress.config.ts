@@ -8,6 +8,9 @@ export default defineConfig({
     defaultCommandTimeout: 10000,
     requestTimeout: 10000,
 
+    // Retry failed specs in CI ( runMode ) to absorb the occasional flakiness for CI runs
+    retries: { runMode: 2, openMode: 0 },
+
     e2e: {
         setupNodeEvents(on, config) {
             return require("./t/cypress/plugins/index.js")(on, config);
