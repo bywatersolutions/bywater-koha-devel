@@ -109,16 +109,22 @@ jobs:
     unit-test-perl:
         # Fast builds will skip unit tests and go straight to building a debian package
         if: (!contains(github.event.head_commit.message, '[FAST]')) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security' || github.repository == 'bywatersolutions/bywater-koha-devel')
-        name: Run Perl unit tests (shard ${{ matrix.name }})
+        name: Run Perl unit tests (${{ matrix.koha_image }} shard ${{ matrix.shard.name }})
         needs: [check-repo]
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
+                # Every shard runs on both OS bases we support: Debian 12 ( bookworm,
+                # Perl 5.36 ) and Debian 13 ( trixie, Perl 5.40 ). The trixie cells guard
+                # against the Perl 5.40 import-method warning regression ( Koha bug 41077 ):
+                # a custom module that imports from a not-yet-loaded package warns under
+                # 5.40, and our Test::NoWarnings-based tests fail when it does.
+                koha_image: [25.11-bookworm, 25.11-trixie]
                 # Four es8 shards hold the bulk of the suite. A separate Zebra shard runs
                 # the few tests that drive the live search UI and need Zebra ( they use
                 # t::lib::Mocks::Zebra ), which can't share an es8 instance with the rest.
-                include:
+                shard:
                     - { name: "0", engine: es8, index: 0, total: 4 }
                     - { name: "1", engine: es8, index: 1, total: 4 }
                     - { name: "2", engine: es8, index: 2, total: 4 }
@@ -132,7 +138,7 @@ jobs:
                   KOHA_BRANCH=${GITHUB_REF##*/}
                   echo "BRANCH: $KOHA_BRANCH"
                   echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
-                  echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=${{ matrix.koha_image }}" >> $GITHUB_ENV
 
             - name: Setup Debug Session
               if: env.DEBUG_SESSION == 'true'
@@ -140,10 +146,10 @@ jobs:
 
             - name: Run tests
               env:
-                  SHARD: ${{ matrix.name }}
-                  ENGINE: ${{ matrix.engine }}
-                  SHARD_INDEX: ${{ matrix.index }}
-                  SHARD_TOTAL: ${{ matrix.total }}
+                  SHARD: ${{ matrix.shard.name }}
+                  ENGINE: ${{ matrix.shard.engine }}
+                  SHARD_INDEX: ${{ matrix.shard.index }}
+                  SHARD_TOTAL: ${{ matrix.shard.total }}
               run: |
                   sudo apt-get update
                   sudo apt-get install -y cpanminus
