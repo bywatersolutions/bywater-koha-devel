@@ -209,9 +209,15 @@ jobs:
     unit-test-cypress:
         # Fast builds will skip unit tests and go straight to building a debian package
         if: (!contains(github.event.head_commit.message, '[FAST]')) && (github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' || github.repository == 'bywatersolutions/bywater-koha-security' || github.repository == 'bywatersolutions/bywater-koha-devel')
-        name: Run Cypress tests
+        name: Run Cypress tests (${{ matrix.koha_image }})
         needs: [check-repo]
         runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                # Cypress is frontend/JS, so the OS base rarely matters, but run both Debian
+                # 12 ( bookworm ) and Debian 13 ( trixie ) to catch node / asset / browser drift.
+                koha_image: [25.11-bookworm, 25.11-trixie]
         steps:
             - uses: actions/checkout@v1
 
@@ -220,7 +226,7 @@ jobs:
                   KOHA_BRANCH=${GITHUB_REF##*/}
                   echo "BRANCH: $KOHA_BRANCH"
                   echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
-                  echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
+                  echo "KOHA_IMAGE=${{ matrix.koha_image }}" >> $GITHUB_ENV
 
             - name: Setup Debug Session
               if: env.DEBUG_SESSION == 'true'
