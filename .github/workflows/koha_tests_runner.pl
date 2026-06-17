@@ -225,12 +225,32 @@ print "Pulling docker images...\n";
 my $ktd_pull_cmd = "export KTD_HOME=$ktd_home && export PATH=\$KTD_HOME/bin:\$PATH && ktd $ktd_flags pull -q";
 run_cmd( $ktd_pull_cmd, { exit_on_error => 1, real_time => 0, env => $ktd_env } );
 
-my $ktd_up_cmd = "export KTD_HOME=$ktd_home && export PATH=\$KTD_HOME/bin:\$PATH && ktd $ktd_flags up -d";
-run_cmd( $ktd_up_cmd, { exit_on_error => 1, real_time => $verbose, env => $ktd_env } );
+my $ktd_up_cmd   = "export KTD_HOME=$ktd_home && export PATH=\$KTD_HOME/bin:\$PATH && ktd $ktd_flags up -d";
+my $ktd_down_cmd = "export KTD_HOME=$ktd_home && export PATH=\$KTD_HOME/bin:\$PATH && ktd --name $instance_name down";
 
-# Wait for KTD to be ready while capturing logs
-print "Waiting for KTD instance to be ready (timeout: ${warmup_timeout}s)...\n";
-wait_ready_with_logs( $ktd_home, $instance_name, $log_file, $warmup_timeout );
+# Bring KTD up, retrying the bring-up if the instance does not warm up in time
+# ( e.g. Elasticsearch is slow to start, which times out wait-ready ). Only the
+# bring-up is retried -- the test run below is single-attempt -- so a real test
+# failure still fails on its first run instead of being masked by a retry.
+my $max_bringup_attempts = 3;
+my $ready                = 0;
+for my $attempt ( 1 .. $max_bringup_attempts ) {
+    print "Bringing up KTD instance ( attempt $attempt of $max_bringup_attempts )...\n";
+    my $ok = eval {
+        run_cmd( $ktd_up_cmd, { exit_on_error => 1, real_time => $verbose, env => $ktd_env } );
+        print "Waiting for KTD instance to be ready (timeout: ${warmup_timeout}s)...\n";
+        wait_ready_with_logs( $ktd_home, $instance_name, $log_file, $warmup_timeout );
+        1;
+    };
+    if ($ok) { $ready = 1; last; }
+    warn "KTD bring-up attempt $attempt failed: $@";
+    if ( $attempt < $max_bringup_attempts ) {
+        print "Tearing down the half-started instance before retrying...\n";
+        run_cmd( $ktd_down_cmd, { real_time => $verbose, env => $ktd_env } );
+    }
+}
+die "KTD instance failed to become ready after $max_bringup_attempts attempts\n"
+    unless $ready;
 
 # Build test command based on TEST_SUITE
 my $test_cmd = build_test_command();
