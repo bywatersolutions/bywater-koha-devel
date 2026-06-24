@@ -24,6 +24,7 @@ export default defineConfig({
             "t/cypress/integration/KohaTable/Holdings_spec.ts",
             "t/cypress/integration/Toolbar_spec.ts",
             "t/cypress/integration/Tools/ManageMarcImport_spec.ts",
+            "t/cypress/integration/Circulation/bookingsModalDatePicker_spec.ts",
         ],
         supportFile: "t/cypress/support/e2e.js",
         env: {
