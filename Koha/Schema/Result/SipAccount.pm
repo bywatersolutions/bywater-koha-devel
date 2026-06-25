@@ -42,12 +42,6 @@ Foreign key to sip_institutions.sip_institution_id
   data_type: 'text'
   is_nullable: 1
 
-=head2 patron_branchcode_in_ao
-
-  data_type: 'tinyint'
-  default_value: 0
-  is_nullable: 1
-
 =head2 allow_additional_materials_checkout
 
   data_type: 'tinyint'
@@ -232,6 +226,12 @@ Foreign key to cash_registers.id
   data_type: 'tinyint'
   is_nullable: 1
 
+=head2 patron_branchcode_in_ao
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 1
+
 =head2 show_checkin_message
 
   data_type: 'tinyint'
@@ -258,8 +258,6 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "ae_field_template",
   { data_type => "text", is_nullable => 1 },
-  "patron_branchcode_in_ao",
-  { data_type => "tinyint", default_value => 0, is_nullable => 1 },
   "allow_additional_materials_checkout",
   { data_type => "tinyint", is_nullable => 1 },
   "allow_empty_passwords",
@@ -324,6 +322,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "send_patron_home_library_in_af",
   { data_type => "tinyint", is_nullable => 1 },
+  "patron_branchcode_in_ao",
+  { data_type => "tinyint", default_value => 0, is_nullable => 1 },
   "show_checkin_message",
   { data_type => "tinyint", is_nullable => 1 },
   "show_outstanding_amount",
@@ -506,9 +506,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-05-24 16:32:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7xlHxjcI/Du780Cz05dbDw
-
+# Created by DBIx::Class::Schema::Loader v0.07051 @ 2026-06-25 13:38:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GmiA6O5lp7vnbFNjiFfwcg
 
 __PACKAGE__->add_columns(
     '+allow_additional_materials_checkout' => { is_boolean => 1 }
