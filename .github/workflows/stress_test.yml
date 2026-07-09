@@ -74,15 +74,8 @@ jobs:
                   sudo apt-get install -y k6
 
             - name: Clone bywater-stress-testers
-              env:
-                  GIT_CONFIG_COUNT: "1"
-                  GIT_CONFIG_KEY_0: "http.https://git.tools.bywatersolutions.com/.extraHeader"
-                  GIT_CONFIG_VALUE_0: "x-dev-ops-external-service: ${{ secrets.BWS_DEVOPS_EXTERNAL_SERVICE }}"
               run: |
-                git clone https://${{ secrets.BWS_FORGEJO_KEY }}:${{ secrets.BWS_FORGEJO_KEY }}@git.tools.bywatersolutions.com/ByWaterSolutions/bywater-stress-testers.git /tmp/bywater-stress-testers
-                cd /tmp/bywater-stress-testers
-                git checkout gha
-                cd -
+                git clone --depth 1 https://github.com/bywatersolutions/bywater-stress-testers.git /tmp/bywater-stress-testers
 
             - name: Get Koha container IP
               id: koha_ip
@@ -130,6 +123,10 @@ jobs:
                   RESULTS_TO_CLICK: "3"
                   NO_CONNECTION_REUSE: ""
                   THINK_TIME: "1"
+                  # Stream results to the Grafana Cloud project "GitHub Actions - Automated Stress Testing"
+                  K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
+                  CLOUD_PROJECT_ID: "8048175"
+                  CLOUD_TEST_NAME: "Koha OPAC Stress - CI"
               run: |
                   K6_SCRIPT="/tmp/bywater-stress-testers/benchmarks/koha_opac_http.js"
                   VERSION_LABEL="${{ github.ref_name }}"
@@ -140,10 +137,15 @@ jobs:
                   for i in $(seq 1 "${RUNS}"); do
                     OUTPUT_FILE="${RESULTS_DIR}/${VERSION_LABEL}-run${i}.json"
                     echo "========================================"
-                    echo "Run ${i}/${RUNS} -> ${OUTPUT_FILE}"
+                    echo "Run ${i}/${RUNS} -> ${OUTPUT_FILE} (+ Grafana Cloud)"
                     echo "========================================"
                     OUTPUT_FILE="${OUTPUT_FILE}" \
-                      k6 run "${K6_SCRIPT}"
+                      k6 run --out cloud \
+                        --tag koha_version="${{ steps.koha_version.outputs.FULL_VERSION }}" \
+                        --tag git_ref="${VERSION_LABEL}" \
+                        --tag commit="${{ github.sha }}" \
+                        --tag run="${i}" \
+                        "${K6_SCRIPT}"
                   done
 
                   echo "========================================"
