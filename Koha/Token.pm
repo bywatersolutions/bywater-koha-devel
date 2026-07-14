@@ -111,7 +111,7 @@ sub generate {
     if ( $params->{type} && $params->{type} eq 'CSRF' ) {
         $self->{lasttoken} = _gen_csrf($params);
     } elsif ( $params->{type} && $params->{type} eq 'JWT' ) {
-        $self->{lasttoken} = _gen_jwt($params);
+        $self->{lasttoken} = $self->encode_claims( { id => $params->{id} } );
     } else {
         $self->{lasttoken} = _gen_rand($params);
     }
@@ -144,8 +144,7 @@ sub generate_csrf {
 sub generate_jwt {
     my ( $self, $params ) = @_;
     return if !$params->{id};
-    $params = _add_default_jwt_params($params);
-    return $self->generate( { %$params, type => 'JWT' } );
+    return $self->encode_claims( { id => $params->{id} } );
 }
 
 =head2 check
@@ -164,7 +163,9 @@ sub check {
     if ( $params->{type} && $params->{type} eq 'CSRF' ) {
         return _chk_csrf($params);
     } elsif ( $params->{type} && $params->{type} eq 'JWT' ) {
-        return _chk_jwt($params);
+        return if !$params->{id} || !$params->{token};
+        my $claims = $self->decode_claims( $params->{token} );
+        return 1 if $claims && exists $claims->{id} && $claims->{id} eq $params->{id};
     }
     return;
 }
@@ -203,8 +204,10 @@ sub check_csrf {
 
 sub check_jwt {
     my ( $self, $params ) = @_;
-    $params = _add_default_jwt_params($params);
-    return $self->check( { %$params, type => 'JWT' } );
+    return if !$params->{id} || !$params->{token};
+    my $claims = $self->decode_claims( $params->{token} );
+    return 1 if $claims && exists $claims->{id} && $claims->{id} eq $params->{id};
+    return;
 }
 
 =head2 decode_jwt
@@ -217,8 +220,9 @@ sub check_jwt {
 
 sub decode_jwt {
     my ( $self, $params ) = @_;
-    $params = _add_default_jwt_params($params);
-    return _decode_jwt($params);
+    return if !$params->{token};
+    my $claims = $self->decode_claims( $params->{token} );
+    return $claims->{id};
 }
 
 =head2 encode_claims
@@ -331,34 +335,6 @@ sub _add_default_jwt_params {
     my $pw = C4::Context->config('pass');
     $params->{secret} //= md5_base64( Encode::encode( 'UTF-8', $pw ) ),
         return $params;
-}
-
-sub _gen_jwt {
-    my ($params) = @_;
-    return if !$params->{id} || !$params->{secret};
-
-    return Mojo::JWT->new(
-        claims => { id => $params->{id} },
-        secret => $params->{secret}
-    )->encode;
-}
-
-sub _chk_jwt {
-    my ($params) = @_;
-    return if !$params->{id} || !$params->{secret} || !$params->{token};
-
-    my $claims = Mojo::JWT->new( secret => $params->{secret} )->decode( $params->{token} );
-
-    return 1 if exists $claims->{id} && $claims->{id} eq $params->{id};
-}
-
-sub _decode_jwt {
-    my ($params) = @_;
-    return if !$params->{token} || !$params->{secret};
-
-    my $claims = Mojo::JWT->new( secret => $params->{secret} )->decode( $params->{token} );
-
-    return $claims->{id};
 }
 
 =head1 AUTHOR
