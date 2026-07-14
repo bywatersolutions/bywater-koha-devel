@@ -112,7 +112,7 @@ sub generate {
     if ( $params->{type} && $params->{type} eq 'CSRF' ) {
         $self->{lasttoken} = _gen_csrf($params);
     } elsif ( $params->{type} && $params->{type} eq 'JWT' ) {
-        $self->{lasttoken} = _gen_jwt($params);
+        $self->{lasttoken} = $self->encode_claims( { id => $params->{id} } );
     } else {
         $self->{lasttoken} = _gen_rand($params);
     }
@@ -149,8 +149,10 @@ sub generate_csrf {
 sub generate_jwt {
     my ( $self, $params ) = @_;
     return if !$params->{id};
-    $params = _add_default_jwt_params($params);
-    return $self->generate( { %$params, type => 'JWT' } );
+    return $self->encode_claims(
+        { id => $params->{id} },
+        ( $params->{expires} ? { expires => $params->{expires} } : () ),
+    );
 }
 
 =head2 check
@@ -169,7 +171,9 @@ sub check {
     if ( $params->{type} && $params->{type} eq 'CSRF' ) {
         return _chk_csrf($params);
     } elsif ( $params->{type} && $params->{type} eq 'JWT' ) {
-        return _chk_jwt($params);
+        return if !$params->{id} || !$params->{token};
+        my $claims = $self->decode_claims( $params->{token} );
+        return 1 if $claims && exists $claims->{id} && $claims->{id} eq $params->{id};
     }
     return;
 }
@@ -208,8 +212,10 @@ sub check_csrf {
 
 sub check_jwt {
     my ( $self, $params ) = @_;
-    $params = _add_default_jwt_params($params);
-    return $self->check( { %$params, type => 'JWT' } );
+    return if !$params->{id} || !$params->{token};
+    my $claims = $self->decode_claims( $params->{token} );
+    return 1 if $claims && exists $claims->{id} && $claims->{id} eq $params->{id};
+    return;
 }
 
 =head2 decode_jwt
@@ -222,27 +228,34 @@ sub check_jwt {
 
 sub decode_jwt {
     my ( $self, $params ) = @_;
-    $params = _add_default_jwt_params($params);
-    return _decode_jwt($params);
+    return if !$params->{token};
+    my $claims = $self->decode_claims( $params->{token} );
+    return $claims->{id};
 }
 
 =head2 encode_claims
 
     my $jwt = $tokenizer->encode_claims($hashref);
+    my $jwt = $tokenizer->encode_claims($hashref, { expires => time + 300 });
 
 Encodes an arbitrary hashref as a signed JWT. Uses the default Koha secret
 (database password). Unlike C<generate_jwt>, this method supports any claims
 structure, not just a single C<id> value.
 
+Pass an C<expires> epoch timestamp in the options hashref to have the token
+carry a standard JWT C<exp> claim; C<decode_claims> will then reject the
+token once that time has passed. Omit it for a token with no expiry.
+
 =cut
 
 sub encode_claims {
-    my ( $self, $claims ) = @_;
+    my ( $self, $claims, $options ) = @_;
     my $params = _add_default_jwt_params( {} );
 
     return Mojo::JWT->new(
         claims => $claims,
         secret => $params->{secret},
+        ( $options && $options->{expires} ? ( expires => $options->{expires} ) : () ),
     )->encode;
 }
 
@@ -253,13 +266,23 @@ sub encode_claims {
 Decodes a JWT and returns the full claims hashref. Uses the default Koha
 secret (database password).
 
+Decoding is wrapped so that an expired, tampered or malformed token is
+logged and treated as invalid (returns undef) rather than throwing, which
+would otherwise propagate uncaught to callers.
+
 =cut
 
 sub decode_claims {
     my ( $self, $token ) = @_;
     my $params = _add_default_jwt_params( {} );
 
-    return Mojo::JWT->new( secret => $params->{secret} )->decode($token);
+    my $claims = eval { Mojo::JWT->new( secret => $params->{secret} )->decode($token) };
+    if ($@) {
+        Koha::Logger->get->warn("decode_claims failed to decode token: $@");
+        return;
+    }
+
+    return $claims;
 }
 
 # --- Internal routines ---
@@ -385,69 +408,6 @@ sub _add_default_jwt_params {
     my $pw = C4::Context->config('pass');
     $params->{secret} //= md5_base64( Encode::encode( 'UTF-8', $pw ) ),
         return $params;
-}
-
-=head3 _gen_jwt
-
-    my $token = _gen_jwt( $params );
-
-Generates a JWT carrying the given C<id> claim, signed with C<secret>. When
-an C<expires> epoch timestamp is supplied, the token carries a standard JWT
-C<exp> claim. Returns undef if C<id> or C<secret> is missing.
-
-=cut
-
-sub _gen_jwt {
-    my ($params) = @_;
-    return if !$params->{id} || !$params->{secret};
-
-    return Mojo::JWT->new(
-        claims => { id => $params->{id} },
-        secret => $params->{secret},
-        ( $params->{expires} ? ( expires => $params->{expires} ) : () ),
-    )->encode;
-}
-
-=head3 _chk_jwt
-
-    my $is_valid = _chk_jwt( $params );
-
-Checks a JWT against the given C<id> and C<secret>. Decoding is wrapped so
-that an expired, tampered or malformed token is logged and treated as
-invalid rather than throwing. Returns true when the token's C<id> claim
-matches, false or undef otherwise.
-
-=cut
-
-sub _chk_jwt {
-    my ($params) = @_;
-    return if !$params->{id} || !$params->{secret} || !$params->{token};
-
-    my $claims = eval { Mojo::JWT->new( secret => $params->{secret} )->decode( $params->{token} ) };
-    if ($@) {
-        Koha::Logger->get->warn("check_jwt failed to decode token: $@");
-        return;
-    }
-
-    return 1 if exists $claims->{id} && $claims->{id} eq $params->{id};
-}
-
-=head3 _decode_jwt
-
-    my $id = _decode_jwt( $params );
-
-Decodes a JWT signed with C<secret> and returns its C<id> claim. Returns
-undef if C<token> or C<secret> is missing.
-
-=cut
-
-sub _decode_jwt {
-    my ($params) = @_;
-    return if !$params->{token} || !$params->{secret};
-
-    my $claims = Mojo::JWT->new( secret => $params->{secret} )->decode( $params->{token} );
-
-    return $claims->{id};
 }
 
 =head1 AUTHOR
