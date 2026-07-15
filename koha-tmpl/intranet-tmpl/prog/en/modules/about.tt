@@ -96,6 +96,24 @@
                 <td>[% kohaVersion | html %][% IF kohaCodename %]<strong>[% kohaCodename | html %]</strong>[% END %]</td>
             </tr>
             <tr>
+                <th scope="row">BWS branch: </th>
+                <td>[% bwsbranch | html %]</td>
+            </tr>
+            <tr>
+                <th scope="row">Outbound IP</th>
+                <td>
+                    [% outbound_ip | html %]
+                    <span class="hint">If a third party service is asking for the IP address of your Koha server in order to add it to an Allow List, this is the ip address they need.</span>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row">Inbound IP</th>
+                <td>
+                    [% inbound_ip | html %]
+                    <span class="hint">If a third party service is asking for the IP address of your Koha server in order to add it to connect to it, this is the ip address they need.</span>
+                </td>
+            </tr>
+            <tr>
                 <th scope="row">OS version ('uname -a'): </th>
                 <td>[% osVersion | html %]</td>
             </tr>
@@ -478,24 +496,6 @@
                 <h2>Warnings regarding the system configuration</h2>
                 <table>
                     <caption>Preferences and parameters</caption>
-                    <tr>
-                        <th scope="row">BWS branch: </th>
-                        <td>[% bwsbranch | html %]</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Outbound IP</th>
-                        <td>
-                            [% outbound_ip | html %]
-                            <span class="hint">If a third party service is asking for the IP address of your Koha server in order to add it to an Allow List, this is the ip address they need.</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Inbound IP</th>
-                        <td>
-                            [% inbound_ip | html %]
-                            <span class="hint">If a third party service is asking for the IP address of your Koha server in order to add it to connect to it, this is the ip address they need.</span>
-                        </td>
-                    </tr>
                     [% IF (warnFastCataloging) %]
                         <tr>
                             <th scope="row"><strong>Warning</strong> </th>
