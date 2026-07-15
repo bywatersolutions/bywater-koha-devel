@@ -62,8 +62,6 @@ sub get_availability {
         $availability->set_context( item => $item );
         $availability->set_context( user => $user );
 
-        $c->attach_module_policy( 'Checkin', { library => $library_id } );
-
         return $c->render(
             status  => 200,
             openapi => $availability->to_api,
@@ -84,7 +82,7 @@ sub add {
     my $body        = $c->req->json;
     my $item_id     = $body->{item_id};
     my $barcode     = $body->{external_id};
-    my $library_id  = $body->{library_id};
+    my $library_id  = $body->{library_id} // $user->branchcode;
     my $exemptfine  = $body->{exempt_fine};
     my $return_date = $body->{return_date};
     my $dropboxmode = $body->{dropbox_mode};
@@ -94,11 +92,26 @@ sub add {
         # Enforce writeoff permission for exempt_fine
         if ($exemptfine) {
             unless ( $user->has_permission( { updatecharges => 'writeoff' } ) ) {
+                $c->attach_module_policy( 'Checkin', { library => $library_id } );
                 return $c->render(
                     status  => 403,
                     openapi => {
                         error      => 'Fine exemption requires updatecharges.writeoff permission',
                         error_code => 'no_permission_for_exempt_fine',
+                    }
+                );
+            }
+        }
+
+        # Enforce SpecifyReturnDate preference for return_date
+        if ($return_date) {
+            unless ( C4::Context->preference('SpecifyReturnDate') ) {
+                $c->attach_module_policy( 'Checkin', { library => $library_id } );
+                return $c->render(
+                    status  => 403,
+                    openapi => {
+                        error      => 'Return date override is not enabled',
+                        error_code => 'return_date_not_allowed',
                     }
                 );
             }
@@ -154,24 +167,32 @@ sub add {
 
         if ( $availability->needs_confirmation ) {
 
-            $availability->set_context( item => $item );
-            $availability->set_context( user => $user );
+            # NotIssued alone does not require confirmation — matches
+            # the staff interface behavior (just shows a message)
+            my $confirmations = $availability->confirmations;
+            my @keys          = keys %$confirmations;
+            my $only_not_issued = ( scalar @keys == 1 && $keys[0] eq 'NotIssued' );
 
-            my $confirmed = 0;
+            unless ($only_not_issued) {
+                $availability->set_context( item => $item );
+                $availability->set_context( user => $user );
 
-            if ( my $token = $c->param('confirmation') ) {
-                $confirmed = $availability->check_token($token);
-            }
+                my $confirmed = 0;
 
-            unless ($confirmed) {
-                return $c->render(
-                    status  => 412,
-                    openapi => {
-                        error      => 'Confirmation required',
-                        error_code => 'confirmation_required',
-                        %{ $availability->to_api },
-                    }
-                );
+                if ( my $token = $c->param('confirmation') ) {
+                    $confirmed = $availability->check_token($token);
+                }
+
+                unless ($confirmed) {
+                    return $c->render(
+                        status  => 412,
+                        openapi => {
+                            error      => 'Confirmation required',
+                            error_code => 'confirmation_required',
+                            %{ $availability->to_api },
+                        }
+                    );
+                }
             }
         }
 
@@ -199,10 +220,8 @@ sub add {
             $msg;
         } @{ $checkin->object_messages };
 
-        my $response = $c->objects->to_api($checkin);
+        my $response = $c->objects->find( Koha::Checkins->new, $checkin->id );
         $response->{messages} = \@messages if @messages;
-
-        $c->attach_module_policy( 'Checkin', { library => $library_id } );
 
         return $c->render(
             status  => 200,
@@ -252,9 +271,29 @@ sub hold_cancellation {
         unless $checkin->hold_id;
 
     my $body = $c->req->json // {};
+    my $user = $c->stash('koha.user');
+
+    # Enforce writeoff permission for forgive_hold_fees
+    if ( $body->{forgive_hold_fees} ) {
+        unless ( $user->has_permission( { updatecharges => 'writeoff' } ) ) {
+            $c->attach_module_policy( 'Checkin', { library => $checkin->library_id } );
+            return $c->render(
+                status  => 403,
+                openapi => {
+                    error      => 'Forgiving hold fees requires updatecharges.writeoff permission',
+                    error_code => 'no_permission_for_forgive_hold_fees',
+                }
+            );
+        }
+    }
 
     return try {
-        $checkin->cancel_hold( { reason => $body->{reason} } );
+        $checkin->cancel_hold(
+            {
+                reason            => $body->{reason},
+                forgive_hold_fees => $body->{forgive_hold_fees} ? 1 : 0,
+            }
+        );
         return $c->_render_checkin_response($checkin);
     } catch {
         $c->unhandled_exception($_);
@@ -343,10 +382,9 @@ sub _render_checkin_response {
 
     $checkin->discard_changes;
 
-    my $response = $c->objects->to_api($checkin);
+    my $response = $c->objects->find( Koha::Checkins->new, $checkin->id );
 
-    $c->attach_module_policy( 'Checkin', { library => $checkin->library_id } );
-    $c->res->headers->location( "/api/v1/checkins/" . $checkin->id );
+    $c->res->headers->location( $c->req->url->to_string . '/' . $checkin->id );
 
     return $c->render(
         status  => 201,
