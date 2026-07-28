@@ -169,6 +169,7 @@ recommends 'Net::SFTP::Foreign', '1.73';
 recommends 'Net::Server', '0.97';
 recommends 'Net::Z3950::SimpleServer', '1.15';
 recommends 'PDF::FromHTML', '0.31';
+recommends 'Plack::Middleware::ServerStatus::Lite', '0.36';
 recommends 'Pod::Coverage', '0.23';
 recommends 'SMS::Send', '0.05';
 recommends 'Selenium::Remote::Driver', '1.27';

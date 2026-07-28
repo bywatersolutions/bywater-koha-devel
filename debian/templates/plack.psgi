@@ -38,6 +38,7 @@ use Koha::DateUtils;
 use Koha::Logger;
 
 use Log::Log4perl;
+use Module::Load::Conditional qw( can_load );
 use CGI qw(-utf8 ); # we will loose -utf8 under plack, otherwise
 {
     no warnings 'redefine';
@@ -80,6 +81,17 @@ builder {
     enable "+Koha::Middleware::UserEnv";
     enable "+Koha::Middleware::SetEnv";
     enable "+Koha::Middleware::RealIP";
+
+    # Show Starman worker status at /server-status when Plack::Middleware::ServerStatus::Lite is installed
+    if ( can_load( modules => { 'Plack::Middleware::ServerStatus::Lite' => undef } ) ) {
+        my ($instance) = ( $ENV{KOHA_CONF} // '' ) =~ m{^/etc/koha/sites/([^/]+)/koha-conf\.xml$};
+        if ( $instance && -w "/var/run/koha/$instance" ) {
+            enable 'ServerStatus::Lite',
+                path       => '/server-status',
+                allow      => [ '127.0.0.1', '::1' ],
+                scoreboard => "/var/run/koha/$instance/plack-scoreboard";
+        }
+    }
 
     mount '/opac'          => builder {
         #NOTE: it is important that these are relative links
