@@ -20,8 +20,7 @@ fi
 
 #DEBHELPER#
 
-# BWS-CUSTOM - Removing koha-upgrade-schema from post install tasks
-#koha-upgrade-schema $(koha-list)
+koha-upgrade-schema $(koha-list)
 
 # Generate a config file if one doesn't exist already
 if [ ! -e $CONFIG ]; then
@@ -288,8 +287,8 @@ done
 
 db_stop
 
-#rabbitmq-plugins enable rabbitmq_stomp
-#service rabbitmq-server restart
+rabbitmq-plugins enable rabbitmq_stomp
+service rabbitmq-server restart
 
 # Bug 35242: Force memcache restart after koha install/upgrade
 service memcached restart
