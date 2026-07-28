@@ -22,10 +22,10 @@ Depends: ${misc:Depends},
  apache2,
  apache2-mpm-itk | libapache2-mpm-itk,
  idzebra-2.0,
- memcached,
- rabbitmq-server
+ memcached
 Suggests: mysql-server | virtual-mysql-server,
  letsencrypt,
+ rabbitmq-server,
 Homepage: http://koha-community.org/
 Description: integrated (physical) library management system
  Koha is an Integrated Library Management system for real-world libraries
@@ -66,7 +66,6 @@ Depends: ${misc:Depends},
  mysql-server | virtual-mysql-server,
  perl-doc,
  pwgen,
- rabbitmq-server,
  sudo,
  fonts-dejavu | ttf-dejavu,
  unzip,
