@@ -139,6 +139,11 @@ jobs:
                   echo "BRANCH: $KOHA_BRANCH"
                   echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
                   echo "KOHA_IMAGE=${{ matrix.koha_image }}" >> $GITHUB_ENV
+                  # misc4dev reads debian/koha-common.install, which bug 40901 removes.
+                  # Until koha-misc4dev MR !92 is merged, KTD can't start on this branch.
+                  echo "DEBUG_GIT_REPO_MISC4DEV=yes" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_URL=https://gitlab.com/koha-community/koha-misc4dev.git" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_BRANCH=issue_105" >> $GITHUB_ENV
 
             - name: Setup Debug Session
               if: env.DEBUG_SESSION == 'true'
@@ -227,6 +232,11 @@ jobs:
                   echo "BRANCH: $KOHA_BRANCH"
                   echo "KOHA_BRANCH=$KOHA_BRANCH" >> $GITHUB_ENV
                   echo "KOHA_IMAGE=${{ matrix.koha_image }}" >> $GITHUB_ENV
+                  # misc4dev reads debian/koha-common.install, which bug 40901 removes.
+                  # Until koha-misc4dev MR !92 is merged, KTD can't start on this branch.
+                  echo "DEBUG_GIT_REPO_MISC4DEV=yes" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_URL=https://gitlab.com/koha-community/koha-misc4dev.git" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_BRANCH=issue_105" >> $GITHUB_ENV
 
             - name: Setup Debug Session
               if: env.DEBUG_SESSION == 'true'
@@ -261,6 +271,11 @@ jobs:
                   echo "KOHA_IMAGE=25.11" >> $GITHUB_ENV
                   echo "LOCAL_USER_ID=$(id -u)" >> $GITHUB_ENV
                   echo "SYNC_REPO=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+                  # misc4dev reads debian/koha-common.install, which bug 40901 removes.
+                  # Until koha-misc4dev MR !92 is merged, KTD can't start on this branch.
+                  echo "DEBUG_GIT_REPO_MISC4DEV=yes" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_URL=https://gitlab.com/koha-community/koha-misc4dev.git" >> $GITHUB_ENV
+                  echo "DEBUG_GIT_REPO_MISC4DEV_BRANCH=issue_105" >> $GITHUB_ENV
 
             - name: Clone koha-testing-docker
               run: |
@@ -275,6 +290,9 @@ jobs:
               run: |
                   export PATH=$KTD_HOME/bin:$PATH
                   cp $KTD_HOME/env/defaults.env $KTD_HOME/.env
+                  echo "DEBUG_GIT_REPO_MISC4DEV=yes" >> $KTD_HOME/.env
+                  echo "DEBUG_GIT_REPO_MISC4DEV_URL=https://gitlab.com/koha-community/koha-misc4dev.git" >> $KTD_HOME/.env
+                  echo "DEBUG_GIT_REPO_MISC4DEV_BRANCH=issue_105" >> $KTD_HOME/.env
                   ktd --proxy --name dbic-check --search-engine zebra pull -q
                   ktd --proxy --name dbic-check --search-engine zebra up -d
                   ktd --name dbic-check --wait-ready 300
