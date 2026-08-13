@@ -140,6 +140,8 @@ subtest 'scalar context and mutually exclusive authentication tests' => sub {
 subtest 'store() and _post_store_trigger() tests' => sub {
     plan tests => 2;
 
+    $schema->storage->txn_begin;
+
     my $transport = $builder->build_object(
         {
             class => 'Koha::File::Transports',
@@ -155,6 +157,8 @@ subtest 'store() and _post_store_trigger() tests' => sub {
 
     lives_ok { $transport->store } 'store() should complete without error';
     is( $post_store_called, 1, '_post_store_trigger() should be called' );
+
+    $schema->storage->txn_rollback;
 };
 
 subtest '_write_key_file() tests' => sub {
@@ -200,6 +204,8 @@ subtest '_write_key_file() tests' => sub {
 subtest 'connect() tests' => sub {
     plan tests => 2;
 
+    $schema->storage->txn_begin;
+
     my $transport = $builder->build_object(
         {
             class => 'Koha::File::Transports',
@@ -209,10 +215,15 @@ subtest 'connect() tests' => sub {
 
     can_ok( $transport, 'connect' );
     dies_ok { $transport->connect } 'connect() should die without proper setup';
+
+    $schema->storage->txn_rollback;
 };
 
 subtest 'upload_file() tests' => sub {
     plan tests => 1;
+
+    $schema->storage->txn_begin;
+
     my $transport = $builder->build_object(
         {
             class => 'Koha::File::Transports',
@@ -221,6 +232,8 @@ subtest 'upload_file() tests' => sub {
     );
 
     can_ok( $transport, 'upload_file' );
+
+    $schema->storage->txn_rollback;
 };
 
 subtest 'upload_file() copy_file_attrs tests' => sub {
@@ -272,6 +285,9 @@ subtest 'upload_file() copy_file_attrs tests' => sub {
 
 subtest 'download_file() tests' => sub {
     plan tests => 1;
+
+    $schema->storage->txn_begin;
+
     my $transport = $builder->build_object(
         {
             class => 'Koha::File::Transports',
@@ -280,10 +296,15 @@ subtest 'download_file() tests' => sub {
     );
 
     can_ok( $transport, 'download_file' );
+
+    $schema->storage->txn_rollback;
 };
 
 subtest 'change_directory() tests' => sub {
     plan tests => 1;
+
+    $schema->storage->txn_begin;
+
     my $transport = $builder->build_object(
         {
             class => 'Koha::File::Transports',
@@ -292,6 +313,8 @@ subtest 'change_directory() tests' => sub {
     );
 
     can_ok( $transport, 'change_directory' );
+
+    $schema->storage->txn_rollback;
 };
 
 subtest 'list_files() tests' => sub {

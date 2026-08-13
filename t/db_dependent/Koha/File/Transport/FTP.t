@@ -89,6 +89,8 @@ subtest 'scalar context in authentication tests' => sub {
 subtest 'connect() tests' => sub {
     plan tests => 1;
 
+    $schema->storage->txn_begin;
+
     my $transport = $builder->build_object(
         {
             class => 'Koha::File::Transports',
@@ -97,10 +99,15 @@ subtest 'connect() tests' => sub {
     );
 
     can_ok( $transport, 'connect' );
+
+    $schema->storage->txn_rollback;
 };
 
 subtest 'upload_file() tests' => sub {
     plan tests => 1;
+
+    $schema->storage->txn_begin;
+
     my $transport = $builder->build_object(
         {
             class => 'Koha::File::Transports',
@@ -109,10 +116,15 @@ subtest 'upload_file() tests' => sub {
     );
 
     can_ok( $transport, 'upload_file' );
+
+    $schema->storage->txn_rollback;
 };
 
 subtest 'download_file() tests' => sub {
     plan tests => 1;
+
+    $schema->storage->txn_begin;
+
     my $transport = $builder->build_object(
         {
             class => 'Koha::File::Transports',
@@ -121,10 +133,15 @@ subtest 'download_file() tests' => sub {
     );
 
     can_ok( $transport, 'download_file' );
+
+    $schema->storage->txn_rollback;
 };
 
 subtest 'change_directory() tests' => sub {
     plan tests => 1;
+
+    $schema->storage->txn_begin;
+
     my $transport = $builder->build_object(
         {
             class => 'Koha::File::Transports',
@@ -133,6 +150,8 @@ subtest 'change_directory() tests' => sub {
     );
 
     can_ok( $transport, 'change_directory' );
+
+    $schema->storage->txn_rollback;
 };
 
 subtest 'list_files() tests' => sub {
