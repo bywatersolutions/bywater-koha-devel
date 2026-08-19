@@ -1168,8 +1168,8 @@ sub SendQueuedMessages {
 
                 _update_message_to_address( $message->{'message_id'}, $message->{to_address} );
                 my $rv = _send_message_by_email(
-                    $message, $params->{'username'}, $params->{'password'},
-                    $params->{'method'}
+                    $message, $params->{'username'}, $params->{'password'}, $params->{'method'},
+                    $smtp_transports
                 );
                 $count_messages++ if $rv;
             } else {
