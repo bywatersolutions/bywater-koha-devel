@@ -93,6 +93,7 @@ Description: Perl dep. for koha
 Package: koha-core
 Architecture: all
 Replaces: koha-common (<< 26.11)
+Breaks: koha-common (<< ${binary:Version})
 Description: integrated (physical) library management system
  Koha is an Integrated Library Management system for real-world libraries
  (the kinds with books).
@@ -139,6 +140,7 @@ Depends: ${misc:Depends}, systemd, koha-core
 Provides: koha-init
 Conflicts: koha-sysv
 Replaces: koha-common (<< 26.11), koha-sysv
+Breaks: koha-common (<< ${binary:Version})
 Description: systemd units for Koha ILS
  Koha is an Integrated Library Management system for real-world libraries
  (the kinds with books).
@@ -157,6 +159,7 @@ Depends: ${misc:Depends}, daemon, koha-core
 Provides: koha-init
 Conflicts: koha-systemd
 Replaces: koha-common (<< 26.11), koha-systemd
+Breaks: koha-common (<< ${binary:Version})
 Description: SysV init scripts for Koha ILS
  Koha is an Integrated Library Management system for real-world libraries
  (the kinds with books).
