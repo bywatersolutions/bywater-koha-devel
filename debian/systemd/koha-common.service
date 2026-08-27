@@ -11,7 +11,6 @@ RemainAfterExit=yes
 # re-discover ES indexers on every start, like the SysV init script did.
 ExecStartPre=-/usr/sbin/koha-systemd-ctl sync-es-indexers
 ExecStart=/bin/true
-ExecStop=/bin/systemctl stop koha.target
 
 [Install]
 WantedBy=multi-user.target
