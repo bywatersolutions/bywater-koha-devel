@@ -23,6 +23,13 @@ case "$1" in
                 systemctl disable koha-common.service || true
             fi
 
+            # Read USE_INDEXER_DAEMON the way the koha-* scripts do
+            if [ -r /etc/default/koha-core ]; then
+                . /etc/default/koha-core
+            elif [ -r /etc/default/koha-common ]; then
+                . /etc/default/koha-common
+            fi
+
             for instance in $(koha-list --enabled 2>/dev/null); do
                 # Core services: always enable
                 systemctl enable koha-zebra@${instance}.service 2>/dev/null || true
@@ -47,10 +54,19 @@ case "$1" in
                 if koha-list --enabled --z3950 2>/dev/null | grep -qx "$instance"; then
                     systemctl enable koha-z3950@${instance}.service 2>/dev/null || true
                 fi
+                # The Zebra indexer runs for every instance when
+                # USE_INDEXER_DAEMON is set, ES instances included. An ES
+                # instance can still serve Z39.50/SRU from zebrasrv, and with
+                # an indexer daemon expected the rebuild_zebra cron skips
+                # incremental indexing, so a missing indexer silently freezes
+                # the Zebra index. The SysV init script started it for every
+                # instance and started the ES indexer in addition, not
+                # instead.
+                if [ "$USE_INDEXER_DAEMON" = "yes" ]; then
+                    systemctl enable koha-indexer@${instance}.service 2>/dev/null || true
+                fi
                 if koha-list --enabled --elasticsearch 2>/dev/null | grep -qx "$instance"; then
                     systemctl enable koha-es-indexer@${instance}.service 2>/dev/null || true
-                else
-                    systemctl enable koha-indexer@${instance}.service 2>/dev/null || true
                 fi
             done
             systemctl enable koha.target 2>/dev/null || true
