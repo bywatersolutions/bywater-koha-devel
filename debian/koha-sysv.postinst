@@ -4,6 +4,16 @@ set -e
 
 case "$1" in
     configure)
+        # Install the init script by hand rather than shipping it at
+        # /etc/init.d/koha-common directly. The old monolithic koha-common
+        # shipped that path as a conffile, and dpkg refuses to let
+        # koha-sysv overwrite a path still registered to koha-common,
+        # even as an obsolete conffile. The price is that this file is
+        # no longer a conffile, local modifications to it are overwritten
+        # on koha-sysv upgrades.
+        cp /usr/share/koha-sysv/koha-sysv.init /etc/init.d/koha-common
+        chmod 755 /etc/init.d/koha-common
+
         # Bug 18250: Correct startup order of koha-common and memcached.
         # On non-systemd systems only: force the rc.d ordering.
         # On systemd hosts, systemd-sysv-generator wraps /etc/init.d/koha-common

@@ -2,6 +2,12 @@
 
 set -e
 
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    # Remove the init script postinst installed
+    rm -f /etc/init.d/koha-common
+    update-rc.d koha-common remove >/dev/null || true
+fi
+
 if [ "$1" = "purge" ]; then
     # Disable the service on systemd systems
     if [ -d /run/systemd/system ]; then
