@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+    remove|purge)
+        # Clean up the compat symlink postinst created
+        if [ -L /etc/default/koha-common ] && \
+           [ "$(readlink /etc/default/koha-common)" = "koha-core" ]; then
+            rm -f /etc/default/koha-common
+        fi
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

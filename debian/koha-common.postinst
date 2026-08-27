@@ -4,4 +4,19 @@ set -e
 
 #DEBHELPER#
 
+case "$1" in
+    configure)
+        # The compat symlink is created here rather than shipped in
+        # koha-core's links file. The old monolithic koha-common shipped
+        # this path as a conffile, and dpkg refuses to let koha-core
+        # overwrite a path that is still registered to koha-common, even
+        # as an obsolete conffile. koha-common depends on koha-core and
+        # so configures after it, and the rm_conffile above has cleared
+        # the path by the time this runs.
+        if [ ! -e /etc/default/koha-common ]; then
+            ln -s koha-core /etc/default/koha-common
+        fi
+        ;;
+esac
+
 exit 0
