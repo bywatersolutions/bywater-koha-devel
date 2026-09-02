@@ -1,0 +1,29 @@
+[Unit]
+Description=Koha Zebra indexer daemon for %i
+PartOf=koha@%i.target
+Requires=koha-create-dirs@%i.service
+After=koha@%i.target koha-zebra@%i.service koha-create-dirs@%i.service
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=%i-koha
+Group=%i-koha
+WorkingDirectory=/var/lib/koha/%i
+Environment=KOHA_CONF=/etc/koha/sites/%i/koha-conf.xml
+Environment=KOHA_HOME=/usr/share/koha
+Environment=PERL5LIB=/usr/share/koha/lib
+ExecStartPre=+/usr/sbin/koha-generate-env indexer %i
+EnvironmentFile=-/run/koha/%i/indexer.env
+ExecStart=/usr/share/koha/bin/migration_tools/rebuild_zebra.pl -daemon -sleep ${INDEXER_TIMEOUT}
+Slice=koha-%i.slice
+ProtectSystem=full
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+Restart=on-failure
+RestartSec=30s
+
+[Install]
+WantedBy=koha@%i.target

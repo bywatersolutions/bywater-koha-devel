@@ -1,0 +1,12 @@
+[Unit]
+Description=Koha ILS resource control
+Documentation=man:systemd.resource-control(5)
+
+[Slice]
+# Last-ditch protection for the rest of the system. Normal Koha load never
+# approaches these, a runaway does. Percentages are relative to installed
+# physical memory. Per-instance koha-<name>.slice children are created
+# implicitly by the units' Slice=koha-%i.slice and can be tuned with
+# drop-ins, as can this slice.
+MemoryMax=90%
+MemorySwapMax=50%

@@ -1,0 +1,7 @@
+rm_conffile /etc/init.d/koha-common 26.11~
+rm_conffile /etc/default/koha-common 26.11~
+rm_conffile /etc/logrotate.d/koha-common 26.11~
+rm_conffile /etc/cron.d/koha-common 26.11~
+rm_conffile /etc/cron.daily/koha-common 26.11~
+rm_conffile /etc/cron.hourly/koha-common 26.11~
+rm_conffile /etc/cron.monthly/koha-common 26.11~

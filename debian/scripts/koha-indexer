@@ -47,6 +47,8 @@ $scriptname -h|--help
     --start               Start the indexer daemon for the specified instances
     --stop                Stop the indexer daemon for the specified instances
     --restart             Restart the indexer daemon for the specified instances
+    --enable              Enable the indexer daemon for the specified instances
+    --disable             Disable the indexer daemon for the specified instances
     --status              Show the status of the indexer for the specified instances
     --quiet|-q            Make the script quiet about non existent instance names
                           (useful for calling from another scripts).
@@ -58,94 +60,56 @@ EOF
 start_indexer()
 {
     local name=$1
-
-    if ! is_indexer_running $name; then
-        export KOHA_CONF="/etc/koha/sites/$name/koha-conf.xml"
-
-        DAEMONOPTS="--name=$name-koha-indexer \
-            --errlog=/var/log/koha/$name/indexer-error.log \
-            --output=/var/log/koha/$name/indexer-output.log \
-            --pidfiles=/var/run/koha/$name/ \
-            --verbose=1 --respawn --delay=30 \
-            --user=$name-koha.$name-koha"
-
-        log_daemon_msg "Starting Koha indexing daemon for $name"
-
-        if daemon $DAEMONOPTS -- $INDEXER_DAEMON $INDEXER_PARAMS; then
-            log_end_msg 0
-        else
-            log_end_msg 1
-        fi
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl start indexer "$name"
     else
-        log_daemon_msg "Error: Indexer already running for $name"
-        log_end_msg 1
+        _sysv_start_indexer "$name"
     fi
 }
 
 stop_indexer()
 {
     local name=$1
-
-    if is_indexer_running $name; then
-        export KOHA_CONF="/etc/koha/sites/$name/koha-conf.xml"
-
-        DAEMONOPTS="--name=$name-koha-indexer \
-            --errlog=/var/log/koha/$name/indexer-error.log \
-            --output=/var/log/koha/$name/indexer-output.log \
-            --pidfiles=/var/run/koha/$name/ \
-            --verbose=1 --respawn --delay=30 \
-            --user=$name-koha.$name-koha"
-
-        log_daemon_msg "Stopping Koha indexing daemon for $name"
-
-        if daemon $DAEMONOPTS --stop -- $INDEXER_DAEMON $INDEXER_PARAMS; then
-            log_end_msg 0
-        else
-            log_end_msg 1
-        fi
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl stop indexer "$name"
     else
-        log_daemon_msg "Error: Indexer not running for $name"
-        log_end_msg 1
+        _sysv_stop_indexer "$name"
     fi
 }
 
 restart_indexer()
 {
     local name=$1
-
-    if is_indexer_running $name; then
-        export KOHA_CONF="/etc/koha/sites/$name/koha-conf.xml"
-
-        DAEMONOPTS="--name=$name-koha-indexer \
-            --errlog=/var/log/koha/$name/indexer-error.log \
-            --output=/var/log/koha/$name/indexer-output.log \
-            --pidfiles=/var/run/koha/$name/ \
-            --verbose=1 --respawn --delay=30 \
-            --user=$name-koha.$name-koha"
-
-        log_daemon_msg "Restarting Koha indexing daemon for $name"
-
-        if daemon $DAEMONOPTS --restart -- $INDEXER_DAEMON $INDEXER_PARAMS; then
-            log_end_msg 0
-        else
-            log_end_msg 1
-        fi
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl restart indexer "$name"
     else
-        log_warning_msg "Indexer not running for $name."
-        start_indexer $name
+        _sysv_restart_indexer "$name"
+    fi
+}
+
+enable_indexer()
+{
+    local name=$1
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl enable indexer "$name"
+    fi
+}
+
+disable_indexer()
+{
+    local name=$1
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl disable indexer "$name"
     fi
 }
 
 indexer_status()
 {
     local name=$1
-
-    if is_indexer_running ${name}; then
-        log_daemon_msg "Indexer running for ${name}"
-        log_end_msg 0
+    if [ "$(koha_init_backend)" = "systemd" ]; then
+        koha_service_ctl status indexer "$name"
     else
-        log_daemon_msg "Indexer not running for ${name}"
-        log_end_msg 3
+        _sysv_indexer_status "$name"
     fi
 }
 
@@ -178,6 +142,12 @@ while [ $# -gt 0 ]; do
             shift ;;
         --restart)
             set_action "restart"
+            shift ;;
+        --enable)
+            set_action "enable"
+            shift ;;
+        --disable)
+            set_action "disable"
             shift ;;
         --status)
             set_action "status"
@@ -231,6 +201,12 @@ if [ $# -gt 0 ]; then
                     ;;
                 "restart")
                     restart_indexer $name
+                    ;;
+                "enable")
+                    enable_indexer $name
+                    ;;
+                "disable")
+                    disable_indexer $name
                     ;;
                 "status")
                     indexer_status $name
