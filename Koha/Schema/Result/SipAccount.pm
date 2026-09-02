@@ -42,12 +42,6 @@ Foreign key to sip_institutions.sip_institution_id
   data_type: 'text'
   is_nullable: 1
 
-=head2 patron_branchcode_in_ao
-
-  data_type: 'tinyint'
-  default_value: 0
-  is_nullable: 1
-
 =head2 allow_additional_materials_checkout
 
   data_type: 'tinyint'
@@ -265,8 +259,6 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "ae_field_template",
   { data_type => "text", is_nullable => 1 },
-  "patron_branchcode_in_ao",
-  { data_type => "tinyint", default_value => 0, is_nullable => 1 },
   "allow_additional_materials_checkout",
   { data_type => "tinyint", is_nullable => 1 },
   "allow_empty_passwords",
@@ -515,9 +507,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-08-11 14:14:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:X188nmexWCwsij/WO44ljA
-
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-09-02 18:42:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3nyXqMp3Fkii5UuxA5rWOA
 
 __PACKAGE__->add_columns(
     '+allow_additional_materials_checkout' => { is_boolean => 1 }
