@@ -13,6 +13,14 @@ if [ -r $CONFIG ]; then
     . $CONFIG
 fi
 
+# Create the system directories here instead of shipping them in the package.
+# dpkg unpacks a shipped directory right over an admin symlink on a fresh
+# install, orphaning data relocated to another volume. 'mkdir -p' follows an
+# existing symlink and leaves relocated directories alone.
+for dir in /etc/koha/sites /var/cache/koha /var/lib/koha /var/log/koha /var/lock/koha /var/spool/koha; do
+    mkdir -p "$dir"
+done
+
 conf=/etc/mysql/koha-common.cnf
 if [ ! -e "$conf" ] && [ ! -L "$conf" ]; then
     ln -s debian.cnf "$conf"
