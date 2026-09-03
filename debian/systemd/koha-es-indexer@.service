@@ -22,7 +22,7 @@ ProtectSystem=full
 ProtectHome=yes
 PrivateTmp=yes
 NoNewPrivileges=yes
-Restart=on-failure
+Restart=always
 RestartSec=5s
 
 [Install]
