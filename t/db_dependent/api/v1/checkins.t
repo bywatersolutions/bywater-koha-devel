@@ -3,13 +3,16 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Test::Mojo;
+use Mojo::JSON;
 use t::lib::Mocks;
 use t::lib::TestBuilder;
 
 use C4::Circulation qw( AddIssue );
 use Koha::Database;
+use Koha::Account;
+use Koha::DateUtils qw( dt_from_string );
 
 my $schema  = Koha::Database->schema;
 my $builder = t::lib::TestBuilder->new;
@@ -107,7 +110,7 @@ subtest 'add' => sub {
     # Missing parameters
     $t->post_ok( "//$userid:$password\@/api/v1/checkins" => json => { library_id => $library->branchcode } )
         ->status_is(400)
-        ->json_is( '/error_code' => 'MISSING_OR_WRONG_PARAMETERS' );
+        ->json_is( '/error_code' => 'missing_item_identifier' );
 
     # Item not found
     $t->post_ok(
@@ -125,7 +128,7 @@ subtest 'add' => sub {
         }
         )
         ->status_is(412)
-        ->json_is( '/error_code' => 'CONFIRMATION_REQUIRED' )
+        ->json_is( '/error_code' => 'confirmation_required' )
         ->json_has('/confirms/NotIssued')
         ->json_has('/confirmation_token');
 
@@ -135,7 +138,7 @@ subtest 'add' => sub {
             item_id    => $item->id,
             library_id => $library->branchcode,
         }
-    )->status_is(412)->json_is( '/error_code' => 'CONFIRMATION_REQUIRED' );
+    )->status_is(412)->json_is( '/error_code' => 'confirmation_required' );
 
     # Not checked out — with valid token
     my $token = $t->tx->res->json('/confirmation_token');
@@ -192,7 +195,98 @@ subtest 'add' => sub {
             item_id    => $withdrawn_item->id,
             library_id => $library->branchcode,
         }
-    )->status_is(403)->json_is( '/error_code' => 'CHECKIN_NOT_AUTHORIZED' );
+    )->status_is(403)->json_is( '/error_code' => 'checkin_blocked' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'checkin blocked if exempt fine requested but permissions do not allow' => sub {
+
+    plan tests => 10;
+
+    $schema->storage->txn_begin;
+
+    my $password = 'thePassword123';
+
+    # A librarian with circulate_remaining_permissions but WITHOUT
+    # updatecharges/writeoff
+    my $plain_librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 2**1 } } );
+    $plain_librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $plain_userid = $plain_librarian->userid;
+
+    # A librarian with circulate_remaining_permissions AND the granular
+    # updatecharges/writeoff permission
+    my $writeoff_librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 2**1 } } );
+    $writeoff_librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $writeoff_userid = $writeoff_librarian->userid;
+    $builder->build(
+        {
+            source => 'UserPermission',
+            value  => {
+                borrowernumber => $writeoff_librarian->borrowernumber,
+                module_bit     => 10,                                    # updatecharges
+                code           => 'writeoff',
+            }
+        }
+    );
+
+    my $patron  = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    t::lib::Mocks::mock_userenv( { branchcode => $library->branchcode } );
+
+    # Helper: check the item out and slap an outstanding OVERDUE fine on it,
+    # so the return has a real fine that exempt_fine would forgive.
+    my $charge_overdue = sub {
+        my ($item) = @_;
+        AddIssue( $patron, $item->barcode, dt_from_string->subtract( days => 14 ) );
+        my $line = Koha::Account->new( { patron_id => $patron->borrowernumber } )->add_debit(
+            {
+                amount     => 5,
+                type       => 'OVERDUE',
+                item_id    => $item->id,
+                interface  => 'commandline',
+                library_id => $library->branchcode,
+            }
+        );
+        $line->status('UNRETURNED')->store;
+        return $line;
+    };
+
+    # Scenario 1: exempt_fine requested WITHOUT the writeoff permission
+    my $item1     = $builder->build_sample_item( { library => $library->branchcode } );
+    my $overdue_1 = $charge_overdue->($item1);
+
+    $t->post_ok(
+        "//$plain_userid:$password\@/api/v1/checkins" => json => {
+            item_id     => $item1->id,
+            library_id  => $library->branchcode,
+            exempt_fine => Mojo::JSON->true,
+        }
+    )->status_is(403)->json_is( '/error_code' => 'no_permission_for_exempt_fine' );
+
+    $overdue_1->discard_changes;
+    is( $overdue_1->amountoutstanding + 0, 5, 'The fine is left outstanding when the operator lacks writeoff' );
+
+    # The item was not checked in either, since the request was rejected
+    ok( Koha::Checkouts->find( { itemnumber => $item1->id } ), 'The item remains checked out' );
+
+    # Scenario 2: exempt_fine requested WITH the writeoff permission
+    my $item2     = $builder->build_sample_item( { library => $library->branchcode } );
+    my $overdue_2 = $charge_overdue->($item2);
+
+    $t->post_ok(
+        "//$writeoff_userid:$password\@/api/v1/checkins" => json => {
+            item_id     => $item2->id,
+            library_id  => $library->branchcode,
+            exempt_fine => Mojo::JSON->true,
+        }
+    )->status_is(200)->json_has('/checkin_id');
+
+    $overdue_2->discard_changes;
+    is( $overdue_2->amountoutstanding + 0, 0, 'The fine is forgiven when the operator holds writeoff' );
+
+    ok( !Koha::Checkouts->find( { itemnumber => $item2->id } ), 'The item was checked in' );
 
     $schema->storage->txn_rollback;
 };
