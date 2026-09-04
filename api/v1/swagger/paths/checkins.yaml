@@ -57,6 +57,9 @@
     tags:
       - checkins
     summary: Check in (return) an item
+    description: |
+      Exactly one of `item_id` or `external_id` must be provided.
+      Passing both simultaneously is not allowed.
     parameters:
       - name: body
         in: body
@@ -67,16 +70,22 @@
           properties:
             item_id:
               type: integer
-              description: Internal item identifier
+              description: Internal item identifier. Mutually exclusive with external_id.
             external_id:
               type: string
-              description: Item barcode
+              description: Item barcode. Mutually exclusive with item_id.
             library_id:
               type: string
               description: Library where the return takes place
             exempt_fine:
               type: boolean
               description: Exempt fines on this return
+            return_date:
+              type: string
+              description: Override return date (ISO 8601 datetime)
+            dropbox_mode:
+              type: boolean
+              description: Use book drop mode (calculate return date as last open day)
           additionalProperties: false
       - name: confirmation
         in: query
@@ -118,7 +127,8 @@
         description: |
           Bad request. Possible `error_code` attribute values:
 
-          * `MISSING_OR_WRONG_PARAMETERS`
+          * `missing_item_identifier` - Neither item_id nor external_id provided
+          * `mutually_exclusive_parameters` - Both item_id and external_id provided
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "401":
@@ -127,9 +137,16 @@
           $ref: "../swagger.yaml#/definitions/error"
       "403":
         description: |
-          Checkin not authorized. Possible `error_code` attribute values:
+          Checkin blocked or forbidden. Possible `error_code` attribute values:
 
-          * `CHECKIN_NOT_AUTHORIZED`
+          * `checkin_blocked` - Item has blockers preventing checkin.
+            Possible keys in the `blockers` object:
+            - `blocked_withdrawn` - Item is withdrawn (BlockReturnOfWithdrawnItems enabled)
+            - `blocked_lost` - Item is lost (BlockReturnOfLostItems enabled)
+            - `wrong_branch` - Item cannot be returned at this branch (AllowReturnToBranch policy).
+              Value is an object with `wrong_branch` and `right_branch` keys.
+          * `no_permission_for_exempt_fine` - updatecharges.writeoff permission required
+          * `return_date_not_allowed` - Return date override requires the SpecifyReturnDate preference
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
@@ -140,7 +157,8 @@
         description: |
           Confirmation required. Possible `error_code` attribute values:
 
-          * `CONFIRMATION_REQUIRED`
+          * `confirmation_required` - Staff must confirm before checkin proceeds.
+            Response includes a `confirmation_token` JWT to pass back on retry.
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":
