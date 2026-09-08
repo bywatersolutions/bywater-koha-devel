@@ -51,14 +51,14 @@ subtest 'get_availability' => sub {
     # Item not found
     $t->get_ok("//$userid:$password\@/api/v1/checkins/availability?item_id=999999999")->status_is(404);
 
-    # Item not checked out — NotIssued confirmation + token
+    # Item not checked out — not_issued confirmation + token
     $t->get_ok( "//$userid:$password\@/api/v1/checkins/availability?item_id="
             . $item->id
             . "&library_id="
             . $library->branchcode )
         ->status_is(200)
         ->json_is( '/blockers' => {} )
-        ->json_has('/confirms/NotIssued')
+        ->json_has('/confirms/not_issued')
         ->json_has('/confirmation_token');
 
     # Item checked out — no confirmations, no token
@@ -78,7 +78,7 @@ subtest 'get_availability' => sub {
     $t->get_ok( "//$userid:$password\@/api/v1/checkins/availability?item_id="
             . $withdrawn_item->id
             . "&library_id="
-            . $library->branchcode )->status_is(200)->json_has('/blockers/BlockedWithdrawn');
+            . $library->branchcode )->status_is(200)->json_has('/blockers/blocked_withdrawn');
 
     $schema->storage->txn_rollback;
 };
@@ -132,7 +132,7 @@ subtest 'add' => sub {
         )
         ->status_is(412)
         ->json_is( '/error_code' => 'confirmation_required' )
-        ->json_has('/confirms/NotIssued')
+        ->json_has('/confirms/not_issued')
         ->json_has('/confirmation_token');
 
     # Not checked out — with invalid token
@@ -383,7 +383,7 @@ subtest 'add - post-checkin messages' => sub {
     ok( ( grep { $_->{message} eq 'was_lost' } @$messages ), 'was_lost message present' );
 
     # Check in item not checked out - our add() requires confirmation for
-    # the NotIssued case (we keep the 24401 confirmation flow), so it
+    # the not_issued case (we keep the 24401 confirmation flow), so it
     # returns 412 with a confirmation_required error rather than checking
     # in directly.
     my $free_item = $builder->build_sample_item( { library => $library->branchcode } );
