@@ -2495,7 +2495,7 @@ sub AddReturn {
 
     # Handle BlockedWithdrawn blocker first - this was the earliest early
     # return in the original code, before any status updates ran
-    if ( !$availability->available && $availability->blockers->{BlockedWithdrawn} ) {
+    if ( !$availability->available && $availability->blockers->{blocked_withdrawn} ) {
         $messages->{'withdrawn'} = 1;
 
         # Record local use even when blocked, if preference is on
@@ -2574,15 +2574,21 @@ sub AddReturn {
     if ( !$availability->available ) {
         my $blockers = $availability->blockers;
 
-        if ( $blockers->{Wrongbranch} ) {
-            $messages->{'Wrongbranch'} = $blockers->{Wrongbranch};
+        if ( $blockers->{wrong_branch} ) {
+
+            # Preserve AddReturn's legacy $messages->{Wrongbranch} structure
+            # (consumed by SIP) while the availability object uses snake_case.
+            $messages->{'Wrongbranch'} = {
+                Wrongbranch => $blockers->{wrong_branch}->{wrong_branch},
+                Rightbranch => $blockers->{wrong_branch}->{right_branch},
+            };
             $doreturn = 0;
             my $indexer = Koha::SearchEngine::Indexer->new( { index => $Koha::SearchEngine::BIBLIOS_INDEX } );
             $indexer->index_records( $item->biblionumber, "specialUpdate", "biblioserver" );
             _attach_messages_to_checkin( $checkin_record, $messages );
             return ( $doreturn, $messages, $issue, $patron_unblessed, $checkin_record );
         }
-        if ( $blockers->{BlockedLost} ) {
+        if ( $blockers->{blocked_lost} ) {
             $doreturn = 0;
         }
     }
