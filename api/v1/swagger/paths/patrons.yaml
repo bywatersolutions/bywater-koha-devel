@@ -381,6 +381,7 @@
             - checkouts+count
             - overdues+count
             - account_balance
+            - notification_summary
             - library
         collectionFormat: csv
     responses:
@@ -515,6 +516,7 @@
           enum:
             - +strings
             - extended_attributes
+            - notification_summary
             - library
         collectionFormat: csv
     produces:
