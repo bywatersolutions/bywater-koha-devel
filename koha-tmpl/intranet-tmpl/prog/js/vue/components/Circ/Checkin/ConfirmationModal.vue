@@ -14,15 +14,29 @@
 
                 <div class="modal-body">
                     <!-- Item info (not shown for transfers - they render their own) -->
-                    <p v-if="itemTitle && item._action_type !== 'transfer'">
+                    <h3 v-if="itemTitle && item._action_type !== 'transfer'">
                         <a
                             v-if="biblioId"
                             :href="`/cgi-bin/koha/catalogue/detail.pl?biblionumber=${biblioId}`"
                         >
-                            {{ itemBarcode }}: {{ itemTitle }}
+                            {{ itemTitle }}
                         </a>
-                        <span v-else>{{ itemBarcode }}</span>
-                    </p>
+                        <span v-else>{{ itemTitle }}</span>
+                        <div v-if="itemBarcode" class="hold-found-barcode">
+                            (<a
+                                v-if="biblioId"
+                                :href="`/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=${biblioId}${itemId ? `&itemnumber=${itemId}` : ''}`"
+                                >{{ itemBarcode }}</a
+                            ><span v-else>{{ itemBarcode }}</span>)
+                        </div>
+                    </h3>
+
+                    <!-- Patron note recorded on the checkout (issue.note) -->
+                    <div v-if="patronNote" class="alert alert-info patron-note">
+                        <h4>{{ $__("Patron note") }}</h4>
+                        <p v-if="patronNoteDate">{{ patronNoteDate }}</p>
+                        <p>{{ patronNote }}</p>
+                    </div>
 
                     <!-- Pre-checkin confirmation: CircConfirmItemParts -->
                     <template v-if="isPreCheckin">
@@ -52,10 +66,7 @@
                     <!-- Post-checkin: Hold found -->
                     <template v-if="item._action_type === 'hold'">
                         <h4>{{ $__("Hold for:") }}</h4>
-                        <ul
-                            v-if="item.hold && item.hold.patron"
-                            class="list-unstyled"
-                        >
+                        <ul v-if="item.hold && item.hold.patron">
                             <li>
                                 <strong>
                                     <a
@@ -123,13 +134,18 @@
                             {{ holdPatronDescription }}
                         </p>
 
-                        <p v-if="holdLibrary">
+                        <h4 v-if="holdLibrary">
                             <strong>{{
                                 needsTransfer
                                     ? $__("Transfer to:")
-                                    : $__("Hold at:")
+                                    : $__("Hold at")
                             }}</strong>
                             {{ holdLibrary }}
+                        </h4>
+
+                        <p v-if="checkinLibrary">
+                            <strong>{{ $__("Checked in at:") }}</strong>
+                            {{ checkinLibrary }}
                         </p>
                     </template>
 
@@ -164,7 +180,6 @@
                             class="alert alert-warning"
                         >
                             <h5>{{ $__("Check in message") }}</h5>
-                            <p>{{ itemBarcode }}: {{ itemTitle }}</p>
                             <p
                                 v-for="msg in item.messages.filter(
                                     m =>
@@ -276,29 +291,12 @@
                             <i class="fa fa-times"></i>
                             {{ $__("Ignore (I)") }}
                         </button>
-                        <select
-                            v-if="holdCancellationReasons.length"
-                            v-model="selectedCancelReason"
-                            class="form-select form-select-sm d-inline-block"
-                            style="width: auto"
-                        >
-                            <option value="">
-                                {{ $__("No reason given") }}
-                            </option>
-                            <option
-                                v-for="reason in holdCancellationReasons"
-                                :key="reason.authorised_value"
-                                :value="reason.authorised_value"
-                            >
-                                {{ reason.description }}
-                            </option>
-                        </select>
                         <button
                             type="button"
                             class="btn btn-danger"
                             :disabled="confirming"
                             accesskey="x"
-                            @click="cancelHold"
+                            @click="$emit('open-cancel-hold', item)"
                         >
                             <i class="fa fa-trash-can"></i>
                             {{ $__("Cancel hold (X)") }}
@@ -328,6 +326,7 @@
                             {{ $__("Print slip and transfer (P)") }}
                         </button>
                         <button
+                            v-if="isNonBlockingTransfer"
                             type="button"
                             class="btn btn-default deny"
                             :disabled="confirming"
@@ -410,29 +409,18 @@ export default {
             default: false,
         },
     },
-    emits: ["confirm", "dismiss", "resolve", "resolve-claim"],
+    emits: ["confirm", "dismiss", "resolve", "resolve-claim", "open-cancel-hold"],
     setup(props, { emit }) {
         const store = useCheckinStore();
         const { policy } = storeToRefs(store);
 
-        const autoConfirmTimer = ref(null);
-        const holdCancellationReasons = ref([]);
-        const selectedCancelReason = ref("");
-
-        // Fetch HOLD_CANCELLATION authorised values once
-        APIClient.authorised_values.values
-            .get("HOLD_CANCELLATION")
-            .then(reasons => {
-                holdCancellationReasons.value = reasons || [];
-            })
-            .catch(() => {});
-
-        function cancelHold() {
-            emit("resolve", props.item, "cancel_hold", {
-                reason: selectedCancelReason.value || undefined,
-            });
-            selectedCancelReason.value = "";
+        // Resolve a library code to its name (falls back to the code)
+        function libraryName(branchcode) {
+            if (!branchcode) return "";
+            return store.libraries[branchcode] || branchcode;
         }
+
+        const autoConfirmTimer = ref(null);
 
         // Non-blocking transfer: muted style when transfers_block is false
         const isNonBlockingTransfer = computed(
@@ -485,6 +473,8 @@ export default {
             () => props.item?.item?.biblio?.biblio_id || null
         );
 
+        const itemId = computed(() => props.item?.item?.item_id || null);
+
         const modalTitle = computed(() => {
             if (!props.item) return "";
             if (isPreCheckin.value) return $__("Please confirm check in");
@@ -495,14 +485,14 @@ export default {
                     m => m.message === "wrong_transfer"
                 );
                 if (wrongTransfer) {
-                    const dest = wrongTransfer.payload?.to_library || "";
+                    const dest = libraryName(wrongTransfer.payload?.to_library);
                     return $__(
                         "Wrong transfer detected, please return item to: %s"
                     ).replace("%s", dest);
                 }
                 return $__("Please return this item to: %s").replace(
                     "%s",
-                    transferInfo.value?.to_library || ""
+                    libraryName(transferInfo.value?.to_library)
                 );
             }
             if (props.item._action_type === "recall")
@@ -532,8 +522,20 @@ export default {
         });
 
         const holdLibrary = computed(() => {
-            return holdInfo.value?.library_id || "";
+            return libraryName(holdInfo.value?.library_id);
         });
+
+        // The library the item was checked in at (for the "Checked in at" line)
+        const checkinLibrary = computed(() => {
+            return libraryName(props.item?.library_id);
+        });
+
+        // Patron note recorded on the checkout (issues.note), surfaced via the
+        // embedded `checkout` object on the checkin response.
+        const patronNote = computed(() => props.item?.checkout?.note || "");
+        const patronNoteDate = computed(
+            () => props.item?.checkout?.note_date || ""
+        );
 
         const needsTransfer = computed(() => {
             if (!props.item || props.item._action_type !== "hold") return false;
@@ -635,19 +637,20 @@ export default {
             itemBarcode,
             itemTitle,
             biblioId,
+            itemId,
             modalTitle,
             holdInfo,
             holdPatronDescription,
             holdLibrary,
+            checkinLibrary,
+            patronNote,
+            patronNoteDate,
             needsTransfer,
             transferInfo,
             recallInfo,
             formatWarning,
             formatTransferTrigger,
             formatMessage,
-            holdCancellationReasons,
-            selectedCancelReason,
-            cancelHold,
             printAndResolveHold,
             printAndResolveTransfer,
             printAndResolveRecall,
