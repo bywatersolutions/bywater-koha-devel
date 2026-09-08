@@ -46,6 +46,8 @@ definitions:
     $ref: ./definitions/checkin.yaml
   checkin_availability:
     $ref: ./definitions/checkin_availability.yaml
+  checkin_policy:
+    $ref: ./definitions/checkin_policy.yaml
   circ-rule-kind:
     $ref: ./definitions/circ-rule-kind.yaml
   city:
@@ -182,6 +184,10 @@ definitions:
     $ref: ./definitions/message.yaml
   message_patch:
     $ref: ./definitions/message_patch.yaml
+  module_policy:
+    $ref: ./definitions/module_policy.yaml
+  module_policy_global:
+    $ref: ./definitions/module_policy_global.yaml
   order:
     $ref: ./definitions/order.yaml
   order_claim:
@@ -361,6 +367,16 @@ paths:
     $ref: ./paths/checkins.yaml#/~1checkins
   "/checkins/availability":
     $ref: "./paths/checkins.yaml#/~1checkins~1availability"
+  "/checkins/{checkin_id}/hold_confirmation":
+    $ref: "./paths/checkins.yaml#/~1checkins~1{checkin_id}~1hold_confirmation"
+  "/checkins/{checkin_id}/hold_cancellation":
+    $ref: "./paths/checkins.yaml#/~1checkins~1{checkin_id}~1hold_cancellation"
+  "/checkins/{checkin_id}/transfer_confirmation":
+    $ref: "./paths/checkins.yaml#/~1checkins~1{checkin_id}~1transfer_confirmation"
+  "/checkins/{checkin_id}/transfer_cancellation":
+    $ref: "./paths/checkins.yaml#/~1checkins~1{checkin_id}~1transfer_cancellation"
+  "/checkins/{checkin_id}/recall_confirmation":
+    $ref: "./paths/checkins.yaml#/~1checkins~1{checkin_id}~1recall_confirmation"
   /checkouts:
     $ref: ./paths/checkouts.yaml#/~1checkouts
   "/checkouts/{checkout_id}":

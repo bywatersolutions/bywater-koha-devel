@@ -103,6 +103,7 @@ sub add {
                     openapi => {
                         error      => 'Fine exemption requires updatecharges.writeoff permission',
                         error_code => 'no_permission_for_exempt_fine',
+                        policy     => $c->module_policy( 'Checkin', { library => $library_id } ),
                     }
                 );
             }
@@ -116,6 +117,7 @@ sub add {
                     openapi => {
                         error      => 'Return date override is not enabled',
                         error_code => 'return_date_not_allowed',
+                        policy     => $c->module_policy( 'Checkin', { library => $library_id } ),
                     }
                 );
             }
@@ -228,6 +230,166 @@ sub add {
     } catch {
         $c->unhandled_exception($_);
     };
+}
+
+=head3 hold_confirmation
+
+POST /checkins/{checkin_id}/hold_confirmation
+
+=cut
+
+sub hold_confirmation {
+    my $c = shift->openapi->valid_input or return;
+
+    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
+    return $c->render_resource_not_found("Checkin") unless $checkin;
+
+    return $c->render( status => 400, openapi => { error => "No hold associated with this checkin" } )
+        unless $checkin->hold_id;
+
+    return try {
+        $checkin->confirm_hold;
+        return $c->_render_checkin_response($checkin);
+    } catch {
+        $c->unhandled_exception($_);
+    };
+}
+
+=head3 hold_cancellation
+
+POST /checkins/{checkin_id}/hold_cancellation
+
+=cut
+
+sub hold_cancellation {
+    my $c = shift->openapi->valid_input or return;
+
+    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
+    return $c->render_resource_not_found("Checkin") unless $checkin;
+
+    return $c->render( status => 400, openapi => { error => "No hold associated with this checkin" } )
+        unless $checkin->hold_id;
+
+    my $body = $c->req->json // {};
+    my $user = $c->stash('koha.user');
+
+    # Enforce writeoff permission for forgive_hold_fees
+    if ( $body->{forgive_hold_fees} ) {
+        unless ( $user->has_permission( { updatecharges => 'writeoff' } ) ) {
+            return $c->render(
+                status  => 403,
+                openapi => {
+                    error      => 'Forgiving hold fees requires updatecharges.writeoff permission',
+                    error_code => 'no_permission_for_forgive_hold_fees',
+                    policy     => $c->module_policy( 'Checkin', { library => $checkin->library_id } ),
+                }
+            );
+        }
+    }
+
+    return try {
+        $checkin->cancel_hold(
+            {
+                reason            => $body->{reason},
+                forgive_hold_fees => $body->{forgive_hold_fees} ? 1 : 0,
+            }
+        );
+        return $c->_render_checkin_response($checkin);
+    } catch {
+        $c->unhandled_exception($_);
+    };
+}
+
+=head3 transfer_confirmation
+
+POST /checkins/{checkin_id}/transfer_confirmation
+
+=cut
+
+sub transfer_confirmation {
+    my $c = shift->openapi->valid_input or return;
+
+    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
+    return $c->render_resource_not_found("Checkin") unless $checkin;
+
+    return $c->render( status => 400, openapi => { error => "No transfer associated with this checkin" } )
+        unless $checkin->transfer_id;
+
+    return try {
+        $checkin->confirm_transfer;
+        return $c->_render_checkin_response($checkin);
+    } catch {
+        $c->unhandled_exception($_);
+    };
+}
+
+=head3 transfer_cancellation
+
+POST /checkins/{checkin_id}/transfer_cancellation
+
+=cut
+
+sub transfer_cancellation {
+    my $c = shift->openapi->valid_input or return;
+
+    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
+    return $c->render_resource_not_found("Checkin") unless $checkin;
+
+    return $c->render( status => 400, openapi => { error => "No transfer associated with this checkin" } )
+        unless $checkin->transfer_id;
+
+    return try {
+        $checkin->cancel_transfer;
+        return $c->_render_checkin_response($checkin);
+    } catch {
+        $c->unhandled_exception($_);
+    };
+}
+
+=head3 recall_confirmation
+
+POST /checkins/{checkin_id}/recall_confirmation
+
+=cut
+
+sub recall_confirmation {
+    my $c = shift->openapi->valid_input or return;
+
+    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
+    return $c->render_resource_not_found("Checkin") unless $checkin;
+
+    return $c->render( status => 400, openapi => { error => "No recall associated with this checkin" } )
+        unless $checkin->recall_id;
+
+    return try {
+        $checkin->confirm_recall;
+        return $c->_render_checkin_response($checkin);
+    } catch {
+        $c->unhandled_exception($_);
+    };
+}
+
+=head2 Internal methods
+
+=head3 _render_checkin_response
+
+Renders the standard checkin response with Location header.
+
+=cut
+
+sub _render_checkin_response {
+    my ( $c, $checkin ) = @_;
+
+    $checkin->discard_changes;
+
+    my $response = $c->objects->find( Koha::Checkins->new, $checkin->id );
+
+    $c->res->headers->location( $c->req->url->to_string . '/' . $checkin->id );
+
+    return $c->render(
+        status  => 201,
+        openapi => $response,
+    );
 }
 
 1;
