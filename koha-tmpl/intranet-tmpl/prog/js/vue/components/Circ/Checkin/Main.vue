@@ -94,6 +94,14 @@
             @dismiss="onDismiss"
             @resolve="onResolve"
             @resolve-claim="onResolveClaimFromModal"
+            @open-cancel-hold="onOpenCancelHold"
+        />
+
+        <HoldCancellationModal
+            :visible="showHoldCancellationModal"
+            :cancelling="processing"
+            @confirm="onConfirmHoldCancellation"
+            @close="showHoldCancellationModal = false"
         />
 
         <ResolveClaimModal
@@ -129,6 +137,7 @@ import BarcodeInput from "./BarcodeInput.vue";
 import CheckedInItems from "./CheckedInItems.vue";
 import CheckinOptions from "./CheckinOptions.vue";
 import ConfirmationModal from "./ConfirmationModal.vue";
+import HoldCancellationModal from "./HoldCancellationModal.vue";
 import ResolveClaimModal from "./ResolveClaimModal.vue";
 import BundleVerificationModal from "./BundleVerificationModal.vue";
 import { $__ } from "@koha-vue/i18n";
@@ -139,6 +148,7 @@ export default {
         CheckedInItems,
         CheckinOptions,
         ConfirmationModal,
+        HoldCancellationModal,
         ResolveClaimModal,
         BundleVerificationModal,
     },
@@ -161,6 +171,8 @@ export default {
         const showBundleModal = ref(false);
         const bundleItemId = ref(null);
         const bundleBarcode = ref("");
+        const showHoldCancellationModal = ref(false);
+        const holdCancellationItem = ref(null);
 
         const checkinOptions = reactive({
             dropbox_mode: false,
@@ -440,6 +452,23 @@ export default {
             _advanceModal();
         }
 
+        // Open the secondary hold-cancellation pop-up for the active item
+        function onOpenCancelHold(item) {
+            holdCancellationItem.value = item;
+            showHoldCancellationModal.value = true;
+        }
+
+        // Confirm from the secondary pop-up: cancel the hold via the API and
+        // resolve the main modal
+        async function onConfirmHoldCancellation(params = {}) {
+            const item = holdCancellationItem.value;
+            showHoldCancellationModal.value = false;
+            holdCancellationItem.value = null;
+            if (!item) return;
+            await store.resolveAction(item, "cancel_hold", params);
+            _advanceModal();
+        }
+
         function _advanceModal() {
             activeModalItem.value = null;
             setTimeout(() => {
@@ -472,6 +501,9 @@ export default {
             showBundleModal,
             bundleItemId,
             bundleBarcode,
+            showHoldCancellationModal,
+            onOpenCancelHold,
+            onConfirmHoldCancellation,
             barcodeInputRef,
             checkinOptionsRef,
             checkinOptions,
