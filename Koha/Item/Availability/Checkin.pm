@@ -149,6 +149,16 @@ sub check {
         $result->add_blocker( BlockedLost => 1 );
     }
 
+    # Multi-part item requires staff confirmation before checkin
+    if ( C4::Context->preference("CircConfirmItemParts") && $item->materials ) {
+        $result->add_confirmation( item_parts => $item->materials );
+    }
+
+    # Bundle items require content verification before checkin
+    if ( $item->is_bundle ) {
+        $result->add_confirmation( items_bundle => 1 );
+    }
+
     return $result;
 }
 
