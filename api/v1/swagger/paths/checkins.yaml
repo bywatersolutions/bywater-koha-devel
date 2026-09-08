@@ -22,6 +22,10 @@
     responses:
       "200":
         description: Checkin availability information
+        headers:
+          X-Koha-Module-Policy:
+            description: JWT containing current module policy capabilities
+            type: string
         schema:
           $ref: "../swagger.yaml#/definitions/checkin_availability"
       "400":
@@ -86,6 +90,13 @@
             dropbox_mode:
               type: boolean
               description: Use book drop mode (calculate return date as last open day)
+            verified_bundle_barcodes:
+              type:
+                - array
+                - "null"
+              items:
+                type: string
+              description: Barcodes of items verified as present in the bundle (only for bundle items)
           additionalProperties: false
       - name: confirmation
         in: query
@@ -106,10 +117,12 @@
             - debits
             - desk
             - hold
+            - hold.patron
             - item
             - item.biblio
             - library
             - recall
+            - recall.patron
             - restriction
             - transfer
             - user
@@ -121,6 +134,10 @@
     responses:
       "200":
         description: Item checked in
+        headers:
+          X-Koha-Module-Policy:
+            description: JWT containing current module policy capabilities
+            type: string
         schema:
           $ref: "../swagger.yaml#/definitions/checkin"
       "400":
@@ -158,9 +175,12 @@
           Confirmation required. Possible `error_code` attribute values:
 
           * `confirmation_required` - Staff must confirm before checkin proceeds.
+            Possible keys in the `confirms` object:
+            - `item_parts` - Item has accompanying materials (CircConfirmItemParts enabled).
+              Value is the materials description string.
             Response includes a `confirmation_token` JWT to pass back on retry.
         schema:
-          $ref: "../swagger.yaml#/definitions/error"
+          $ref: "../swagger.yaml#/definitions/checkin_availability"
       "500":
         description: |
           Internal server error. Possible `error_code` attribute values:
@@ -175,3 +195,288 @@
     x-koha-authorization:
       permissions:
         circulate: circulate_remaining_permissions
+"/checkins/{checkin_id}/hold_confirmation":
+  post:
+    x-mojo-to: Checkins#hold_confirmation
+    operationId: confirmCheckinHold
+    tags:
+      - checkins
+    summary: Confirm the hold found during checkin
+    description: |
+      Sets the trapped hold to waiting (or initiates transfer to pickup
+      branch if different from checkin library).
+    parameters:
+      - $ref: "#/parameters/checkin_id_pp"
+      - $ref: "#/parameters/checkin_embed_header"
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Hold confirmed
+        headers:
+          Location:
+            description: URI of the updated checkin resource
+            type: string
+          X-Koha-Module-Policy:
+            description: JWT containing current module policy capabilities
+            type: string
+        schema:
+          $ref: "../swagger.yaml#/definitions/checkin"
+      "400":
+        description: Bad request. No hold associated with this checkin
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Checkin not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: Internal server error
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        circulate: circulate_remaining_permissions
+"/checkins/{checkin_id}/hold_cancellation":
+  post:
+    x-mojo-to: Checkins#hold_cancellation
+    operationId: cancelCheckinHold
+    tags:
+      - checkins
+    summary: Cancel the hold found during checkin
+    parameters:
+      - $ref: "#/parameters/checkin_id_pp"
+      - name: body
+        in: body
+        required: false
+        schema:
+          type: object
+          properties:
+            reason:
+              type:
+                - string
+                - "null"
+              description: Cancellation reason (authorised value from HOLD_CANCELLATION)
+          additionalProperties: false
+      - $ref: "#/parameters/checkin_embed_header"
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Hold cancelled
+        headers:
+          Location:
+            description: URI of the updated checkin resource
+            type: string
+          X-Koha-Module-Policy:
+            description: JWT containing current module policy capabilities
+            type: string
+        schema:
+          $ref: "../swagger.yaml#/definitions/checkin"
+      "400":
+        description: Bad request. No hold associated with this checkin
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Checkin not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: Internal server error
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        circulate: circulate_remaining_permissions
+"/checkins/{checkin_id}/transfer_confirmation":
+  post:
+    x-mojo-to: Checkins#transfer_confirmation
+    operationId: confirmCheckinTransfer
+    tags:
+      - checkins
+    summary: Confirm the transfer and set it in transit
+    parameters:
+      - $ref: "#/parameters/checkin_id_pp"
+      - $ref: "#/parameters/checkin_embed_header"
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Transfer confirmed
+        headers:
+          Location:
+            description: URI of the updated checkin resource
+            type: string
+          X-Koha-Module-Policy:
+            description: JWT containing current module policy capabilities
+            type: string
+        schema:
+          $ref: "../swagger.yaml#/definitions/checkin"
+      "400":
+        description: Bad request. No transfer associated with this checkin
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Checkin not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: Internal server error
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        circulate: circulate_remaining_permissions
+"/checkins/{checkin_id}/transfer_cancellation":
+  post:
+    x-mojo-to: Checkins#transfer_cancellation
+    operationId: cancelCheckinTransfer
+    tags:
+      - checkins
+    summary: Cancel the pending transfer
+    parameters:
+      - $ref: "#/parameters/checkin_id_pp"
+      - $ref: "#/parameters/checkin_embed_header"
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Transfer cancelled
+        headers:
+          Location:
+            description: URI of the updated checkin resource
+            type: string
+          X-Koha-Module-Policy:
+            description: JWT containing current module policy capabilities
+            type: string
+        schema:
+          $ref: "../swagger.yaml#/definitions/checkin"
+      "400":
+        description: Bad request. No transfer associated with this checkin
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Checkin not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: Internal server error
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        circulate: circulate_remaining_permissions
+"/checkins/{checkin_id}/recall_confirmation":
+  post:
+    x-mojo-to: Checkins#recall_confirmation
+    operationId: confirmCheckinRecall
+    tags:
+      - checkins
+    summary: Confirm the recall (set waiting or start transfer)
+    parameters:
+      - $ref: "#/parameters/checkin_id_pp"
+      - $ref: "#/parameters/checkin_embed_header"
+    produces:
+      - application/json
+    responses:
+      "201":
+        description: Recall confirmed
+        headers:
+          Location:
+            description: URI of the updated checkin resource
+            type: string
+          X-Koha-Module-Policy:
+            description: JWT containing current module policy capabilities
+            type: string
+        schema:
+          $ref: "../swagger.yaml#/definitions/checkin"
+      "400":
+        description: Bad request. No recall associated with this checkin
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Access forbidden
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Checkin not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: Internal server error
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        circulate: circulate_remaining_permissions
+parameters:
+  checkin_id_pp:
+    name: checkin_id
+    in: path
+    description: Internal checkin identifier
+    required: true
+    type: integer
+  checkin_embed_header:
+    name: x-koha-embed
+    in: header
+    required: false
+    description: Embed list sent as a request header
+    type: array
+    items:
+      type: string
+      enum:
+        - checkout
+        - claim
+        - credits
+        - debits
+        - desk
+        - hold
+        - hold.patron
+        - item
+        - item.biblio
+        - library
+        - recall
+        - recall.patron
+        - restriction
+        - transfer
+        - transfer.to_library
+        - user
+    collectionFormat: csv
