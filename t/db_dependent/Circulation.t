@@ -8195,6 +8195,11 @@ subtest '_attach_messages_to_checkin() tests' => sub {
     my $library = $builder->build_object( { class => 'Koha::Libraries' } );
     my $item    = $builder->build_sample_item( { library => $library->branchcode } );
 
+    # This test exercises the $messages -> object_messages translation only;
+    # ensure the itemtype has no checkinmsg so the independent
+    # item_type_checkinmsg message does not fire and skew the count.
+    Koha::ItemTypes->find( $item->effective_itemtype )->checkinmsg(undef)->store;
+
     my $checkin = Koha::Checkin->new(
         {
             item_id    => $item->itemnumber,
