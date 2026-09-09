@@ -272,7 +272,7 @@
                     >
                         <button
                             v-if="checkin._action_type === 'claim'"
-                            class="btn btn-xs btn-outline-warning"
+                            class="btn btn-xs btn-outline-primary"
                             :title="$__('Resolve claim')"
                             @click="$emit('resolve-claim', checkin)"
                         >
