@@ -27,7 +27,8 @@
                                 v-if="biblioId"
                                 :href="`/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=${biblioId}${itemId ? `&itemnumber=${itemId}` : ''}`"
                                 >{{ itemBarcode }}</a
-                            ><span v-else>{{ itemBarcode }}</span>)
+                            ><span v-else>{{ itemBarcode }}</span
+                            >)
                         </div>
                     </h3>
 
@@ -37,6 +38,28 @@
                         <p v-if="patronNoteDate">{{ patronNoteDate }}</p>
                         <p>{{ patronNote }}</p>
                     </div>
+
+                    <!-- Blocked: item cannot be checked in (e.g. wrong branch) -->
+                    <template v-if="isBlocked">
+                        <p>
+                            <strong>{{ $__("NOT CHECKED IN") }}</strong>
+                        </p>
+                        <p v-if="blockedReason">{{ blockedReason }}</p>
+
+                        <!-- Note about accompanying materials -->
+                        <div
+                            v-if="item.item && item.item.materials_notes"
+                            id="materials"
+                            class="alert alert-info"
+                        >
+                            <span class="mats_spec_label">{{
+                                $__("Note about the accompanying materials:")
+                            }}</span>
+                            <span class="mats_spec_message">{{
+                                item.item.materials_notes
+                            }}</span>
+                        </div>
+                    </template>
 
                     <!-- Pre-checkin confirmation: CircConfirmItemParts -->
                     <template v-if="isPreCheckin">
@@ -129,11 +152,21 @@
                                 {{ $__("Patron's address is in doubt") }}
                             </li>
                             <li
-                                v-if="patronNotified(item.hold.patron, 'hold_fill_transports')"
+                                v-if="
+                                    patronNotified(
+                                        item.hold.patron,
+                                        'hold_fill_transports'
+                                    )
+                                "
                                 class="notification_method"
                             >
                                 <span>{{ $__("Patron notification:") }}</span>
-                                {{ notificationTransports(item.hold.patron, 'hold_fill_transports') }}
+                                {{
+                                    notificationTransports(
+                                        item.hold.patron,
+                                        "hold_fill_transports"
+                                    )
+                                }}
                             </li>
                             <li v-else class="notification_method none">
                                 {{ $__("Patron is not notified.") }}
@@ -259,11 +292,21 @@
                                 >
                             </li>
                             <li
-                                v-if="patronNotified(item.recall.patron, 'recall_waiting_transports')"
+                                v-if="
+                                    patronNotified(
+                                        item.recall.patron,
+                                        'recall_waiting_transports'
+                                    )
+                                "
                                 class="notification_method"
                             >
                                 <span>{{ $__("Patron notification:") }}</span>
-                                {{ notificationTransports(item.recall.patron, 'recall_waiting_transports') }}
+                                {{
+                                    notificationTransports(
+                                        item.recall.patron,
+                                        "recall_waiting_transports"
+                                    )
+                                }}
                             </li>
                             <li v-else class="notification_method none">
                                 {{ $__("Patron is not notified.") }}
@@ -307,6 +350,14 @@
                                 )
                             }}
                         </p>
+                        <div
+                            v-for="(box, idx) in claimCheckinMessages"
+                            :key="idx"
+                            class="alert"
+                            :class="box.alertClass"
+                        >
+                            {{ box.text }}
+                        </div>
                     </template>
 
                     <!-- Warnings -->
@@ -320,6 +371,19 @@
                 </div>
 
                 <div class="modal-footer">
+                    <!-- Blocked: only an acknowledge button -->
+                    <template v-if="isBlocked">
+                        <button
+                            type="button"
+                            class="btn btn-primary approve"
+                            accesskey="o"
+                            @click="$emit('dismiss', item)"
+                        >
+                            <i class="fa fa-check"></i>
+                            {{ $__("OK") }}
+                        </button>
+                    </template>
+
                     <!-- Pre-checkin confirmation buttons -->
                     <template v-if="isPreCheckin">
                         <button
@@ -466,7 +530,7 @@
                     <template v-if="item._action_type === 'claim'">
                         <button
                             type="button"
-                            class="btn btn-warning"
+                            class="btn btn-primary approve"
                             accesskey="y"
                             @click="$emit('resolve-claim', item)"
                         >
@@ -476,11 +540,11 @@
                         <button
                             type="button"
                             class="btn btn-default deny"
-                            accesskey="n"
+                            accesskey="i"
                             @click="$emit('dismiss', item)"
                         >
                             <i class="fa fa-times"></i>
-                            {{ $__("Dismiss (N)") }}
+                            {{ $__("Ignore (I)") }}
                         </button>
                     </template>
                 </div>
@@ -495,7 +559,11 @@ import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useCheckinStore } from "../../../stores/checkin.js";
 import { $__ } from "@koha-vue/i18n";
-import { printHoldSlip, printTransferSlip } from "./slip-printer.js";
+import {
+    holdSlipUrl,
+    openSlipWindow,
+    printTransferSlip,
+} from "./slip-printer.js";
 import { APIClient } from "../../../fetch/api-client.js";
 
 export default {
@@ -509,7 +577,13 @@ export default {
             default: false,
         },
     },
-    emits: ["confirm", "dismiss", "resolve", "resolve-claim", "open-cancel-hold"],
+    emits: [
+        "confirm",
+        "dismiss",
+        "resolve",
+        "resolve-claim",
+        "open-cancel-hold",
+    ],
     setup(props, { emit }) {
         const store = useCheckinStore();
         const { policy } = storeToRefs(store);
@@ -547,9 +621,7 @@ export default {
         function notificationTransports(patron, key = "hold_fill_transports") {
             const ns = patron && patron.notification_summary;
             if (!ns || !Array.isArray(ns[key]) || !ns[key].length) return "";
-            return (
-                ns[key].map(t => _transportLabels[t] || t).join(", ") + "."
-            );
+            return ns[key].map(t => _transportLabels[t] || t).join(", ") + ".";
         }
 
         function mainContactMethod(patron) {
@@ -602,6 +674,31 @@ export default {
             () => props.item && props.item._status === "pending_confirmation"
         );
 
+        const isBlocked = computed(
+            () => props.item && props.item._status === "blocked"
+        );
+
+        // Human-readable explanation for a blocked check-in, mirroring the
+        // legacy returns.pl wrong-branch / blocked-item modal body.
+        const blockedReason = computed(() => {
+            const blockers = (props.item && props.item.blockers) || {};
+            if (blockers.wrong_branch) {
+                return $__(
+                    "This item must be checked in at following library: %s"
+                ).replace(
+                    "%s",
+                    libraryName(blockers.wrong_branch.right_branch)
+                );
+            }
+            if (blockers.blocked_withdrawn) {
+                return $__("This item is withdrawn and cannot be checked in.");
+            }
+            if (blockers.blocked_lost) {
+                return $__("This item is lost and cannot be checked in.");
+            }
+            return "";
+        });
+
         const itemBarcode = computed(
             () => props.item?.item?.external_id || props.item?._barcode || ""
         );
@@ -616,6 +713,7 @@ export default {
 
         const modalTitle = computed(() => {
             if (!props.item) return "";
+            if (isBlocked.value) return $__("Cannot check in");
             if (isPreCheckin.value) return $__("Please confirm check in");
             if (props.item._action_type === "hold") return $__("Hold found");
             if (props.item._action_type === "transfer") {
@@ -753,12 +851,51 @@ export default {
             return labels[msg.message] || msg.message.replace(/_/g, " ");
         }
 
+        // Check-in messages shown inside the return-claim modal (a claim
+        // checkin actually returns the item, so lost/fee messages apply).
+        const claimCheckinMessages = computed(() => {
+            const labels = {
+                was_lost: {
+                    text: $__("Item was lost, now found."),
+                    alertClass: "alert-info",
+                },
+                lost_item_fee_remains: {
+                    text: $__(
+                        "Any lost item fees for this item will remain on the patron's account."
+                    ),
+                    alertClass: "alert-warning",
+                },
+                processing_fee_remains: {
+                    text: $__(
+                        "Any processing fees for this item will remain on the patron's account."
+                    ),
+                    alertClass: "alert-warning",
+                },
+                lost_item_fee_refunded: {
+                    text: $__(
+                        "A refund for the lost item charge has been applied to the borrowing patron's account."
+                    ),
+                    alertClass: "alert-info",
+                },
+                processing_fee_refunded: {
+                    text: $__(
+                        "A refund for the lost item processing charge has been applied to the borrowing patron's account."
+                    ),
+                    alertClass: "alert-info",
+                },
+            };
+            const messages = (props.item && props.item.messages) || [];
+            return messages
+                .filter(m => labels[m.message])
+                .map(m => labels[m.message]);
+        });
+
         function printAndResolveHold() {
             const reserveId = holdInfo.value?.reserve_id || props.item?.hold_id;
-            if (reserveId) {
-                printHoldSlip(reserveId);
-            }
-            emit("resolve", props.item, "confirm_hold", { print: true });
+            emit("resolve", props.item, "confirm_hold", {
+                print: true,
+                slip: _pendingHoldSlip(reserveId),
+            });
         }
 
         function printAndResolveTransfer() {
@@ -773,15 +910,25 @@ export default {
         function printAndResolveRecall() {
             const reserveId =
                 recallInfo.value?.reserve_id || props.item?.hold_id;
-            if (reserveId) {
-                printHoldSlip(reserveId);
-            }
-            emit("resolve", props.item, "confirm_recall", { print: true });
+            emit("resolve", props.item, "confirm_recall", {
+                print: true,
+                slip: _pendingHoldSlip(reserveId),
+            });
+        }
+
+        // Bug 42505: open the popup now, while the click gesture is active, so
+        // it is not blocked. The slip is only loaded into it once the hold has
+        // been confirmed, so waitingdate/expirationdate are up to date.
+        function _pendingHoldSlip(reserveId) {
+            if (!reserveId) return null;
+            return { window: openSlipWindow(), url: holdSlipUrl(reserveId) };
         }
 
         return {
             isNonBlockingTransfer,
             isPreCheckin,
+            isBlocked,
+            blockedReason,
             itemBarcode,
             itemTitle,
             biblioId,
@@ -800,6 +947,7 @@ export default {
             formatWarning,
             formatTransferTrigger,
             formatMessage,
+            claimCheckinMessages,
             printAndResolveHold,
             printAndResolveTransfer,
             printAndResolveRecall,

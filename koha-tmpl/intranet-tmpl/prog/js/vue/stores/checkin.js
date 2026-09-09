@@ -34,7 +34,8 @@ export const useCheckinStore = defineStore("checkin", () => {
         checkins.value.filter(
             c =>
                 c._status === "pending_confirmation" ||
-                c._status === "needs_action"
+                c._status === "needs_action" ||
+                c._status === "blocked"
         )
     );
 
@@ -100,6 +101,7 @@ export const useCheckinStore = defineStore("checkin", () => {
                     checkin_id: null,
                     item: data.item || null,
                     checkout: null,
+                    blockers: data.blockers || {},
                     messages: [
                         {
                             message: data.error_code || "checkin_blocked",
