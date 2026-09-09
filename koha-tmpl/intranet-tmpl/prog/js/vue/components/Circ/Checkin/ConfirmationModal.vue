@@ -197,14 +197,70 @@
 
                     <!-- Post-checkin: Recall found -->
                     <template v-if="item._action_type === 'recall'">
-                        <h4>{{ $__("Recall found") }}</h4>
-                        <div v-if="recallInfo" class="mb-3">
-                            <p v-if="recallInfo.needs_transfer">
-                                <strong>{{
-                                    $__("Transfer required for recall")
-                                }}</strong>
-                            </p>
-                        </div>
+                        <h4>{{ $__("Recall placed by:") }}</h4>
+                        <ul v-if="item.recall && item.recall.patron">
+                            <li>
+                                <strong>
+                                    <a
+                                        :href="`/cgi-bin/koha/circ/circulation.pl?borrowernumber=${item.recall.patron.patron_id}`"
+                                    >
+                                        {{ item.recall.patron.surname }},
+                                        {{ item.recall.patron.firstname }}
+                                    </a>
+                                </strong>
+                                <span
+                                    v-if="item.recall.patron.category_id"
+                                    class="patron-category"
+                                >
+                                    — {{ item.recall.patron.category_id }}
+                                </span>
+                            </li>
+                            <li
+                                v-if="
+                                    item.recall.patron.address ||
+                                    item.recall.patron.city
+                                "
+                            >
+                                {{
+                                    [
+                                        item.recall.patron.address,
+                                        item.recall.patron.city,
+                                        item.recall.patron.state,
+                                        item.recall.patron.postal_code,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(", ")
+                                }}
+                            </li>
+                            <li v-if="item.recall.patron.phone">
+                                {{ item.recall.patron.phone }}
+                            </li>
+                            <li v-if="item.recall.patron.email">
+                                <a
+                                    :href="`mailto:${item.recall.patron.email}`"
+                                    >{{ item.recall.patron.email }}</a
+                                >
+                            </li>
+                        </ul>
+
+                        <p
+                            v-if="item.recall && item.recall.notes"
+                            class="recall-notes"
+                        >
+                            <strong>{{ $__("Notes:") }}</strong>
+                            {{ item.recall.notes }}
+                        </p>
+
+                        <p v-if="recallInfo && recallInfo.needs_transfer">
+                            <strong>{{
+                                $__("Transfer required for recall")
+                            }}</strong>
+                        </p>
+
+                        <h4 v-if="recallLibrary">
+                            <strong>{{ $__("Recall at") }}</strong>
+                            {{ recallLibrary }}
+                        </h4>
                     </template>
 
                     <!-- Post-checkin: Return claim -->
@@ -359,6 +415,16 @@
                         >
                             <i class="fa fa-print"></i>
                             {{ $__("Print slip and confirm (P)") }}
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-default deny"
+                            :disabled="confirming"
+                            accesskey="i"
+                            @click="$emit('dismiss', item)"
+                        >
+                            <i class="fa fa-times"></i>
+                            {{ $__("Ignore (I)") }}
                         </button>
                     </template>
 
@@ -530,6 +596,11 @@ export default {
             return libraryName(props.item?.library_id);
         });
 
+        // The recall's pickup library (for the "Recall at" line)
+        const recallLibrary = computed(() => {
+            return libraryName(props.item?.recall?.pickup_library_id);
+        });
+
         // Patron note recorded on the checkout (issues.note), surfaced via the
         // embedded `checkout` object on the checkin response.
         const patronNote = computed(() => props.item?.checkout?.note || "");
@@ -647,6 +718,7 @@ export default {
             holdPatronDescription,
             holdLibrary,
             checkinLibrary,
+            recallLibrary,
             patronNote,
             patronNoteDate,
             needsTransfer,
