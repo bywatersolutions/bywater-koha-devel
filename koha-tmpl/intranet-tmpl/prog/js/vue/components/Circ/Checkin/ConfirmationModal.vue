@@ -128,6 +128,23 @@
                             >
                                 {{ $__("Patron's address is in doubt") }}
                             </li>
+                            <li
+                                v-if="patronNotified(item.hold.patron, 'hold_fill_transports')"
+                                class="notification_method"
+                            >
+                                <span>{{ $__("Patron notification:") }}</span>
+                                {{ notificationTransports(item.hold.patron, 'hold_fill_transports') }}
+                            </li>
+                            <li v-else class="notification_method none">
+                                {{ $__("Patron is not notified.") }}
+                            </li>
+                            <li
+                                v-if="mainContactMethod(item.hold.patron)"
+                                id="main_contact_method"
+                            >
+                                {{ $__("Main contact method:") }}
+                                {{ mainContactMethod(item.hold.patron) }}
+                            </li>
                         </ul>
                         <p v-else-if="holdInfo">
                             <strong>{{ $__("Hold for:") }}</strong>
@@ -240,6 +257,23 @@
                                     :href="`mailto:${item.recall.patron.email}`"
                                     >{{ item.recall.patron.email }}</a
                                 >
+                            </li>
+                            <li
+                                v-if="patronNotified(item.recall.patron, 'recall_waiting_transports')"
+                                class="notification_method"
+                            >
+                                <span>{{ $__("Patron notification:") }}</span>
+                                {{ notificationTransports(item.recall.patron, 'recall_waiting_transports') }}
+                            </li>
+                            <li v-else class="notification_method none">
+                                {{ $__("Patron is not notified.") }}
+                            </li>
+                            <li
+                                v-if="mainContactMethod(item.recall.patron)"
+                                id="main_contact_method"
+                            >
+                                {{ $__("Main contact method:") }}
+                                {{ mainContactMethod(item.recall.patron) }}
                             </li>
                         </ul>
 
@@ -486,6 +520,45 @@ export default {
             return store.libraries[branchcode] || branchcode;
         }
 
+        // Notification helpers, driven by the patron's notification_summary
+        // embed (Bug 43486). Mirrors the legacy returns.pl display. The hold
+        // modal uses the Hold_Filled transports; the recall modal uses the
+        // Recall_Waiting transports (the notice that fires when a recall is
+        // set waiting on checkin).
+        const _transportLabels = {
+            email: $__("Email"),
+            phone: $__("Phone"),
+            sms: $__("SMS"),
+        };
+        const _contactMethodLabels = {
+            phone: $__("Primary phone"),
+            phonepro: $__("Secondary phone"),
+            mobile: $__("Other phone"),
+            email: $__("Primary email"),
+            emailpro: $__("Secondary email"),
+            fax: $__("Fax"),
+        };
+
+        function patronNotified(patron, key = "hold_fill_transports") {
+            const ns = patron && patron.notification_summary;
+            return !!(ns && Array.isArray(ns[key]) && ns[key].length);
+        }
+
+        function notificationTransports(patron, key = "hold_fill_transports") {
+            const ns = patron && patron.notification_summary;
+            if (!ns || !Array.isArray(ns[key]) || !ns[key].length) return "";
+            return (
+                ns[key].map(t => _transportLabels[t] || t).join(", ") + "."
+            );
+        }
+
+        function mainContactMethod(patron) {
+            const ns = patron && patron.notification_summary;
+            const method = ns && ns.primary_contact_method;
+            if (!method) return "";
+            return _contactMethodLabels[method] || method;
+        }
+
         const autoConfirmTimer = ref(null);
 
         // Non-blocking transfer: muted style when transfers_block is false
@@ -730,6 +803,9 @@ export default {
             printAndResolveHold,
             printAndResolveTransfer,
             printAndResolveRecall,
+            patronNotified,
+            notificationTransports,
+            mainContactMethod,
             $__,
         };
     },
@@ -744,5 +820,21 @@ export default {
 
 .non-blocking .modal-dialog {
     pointer-events: auto;
+}
+
+/* Match the legacy returns.pl notification boxes */
+.notification_method,
+#main_contact_method {
+    background-color: #ffe;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: inline-block;
+    list-style-type: none;
+    margin: 0.5em 0;
+    padding: 0.1em 0.3em;
+}
+
+.notification_method.none {
+    background-color: #eee;
 }
 </style>
