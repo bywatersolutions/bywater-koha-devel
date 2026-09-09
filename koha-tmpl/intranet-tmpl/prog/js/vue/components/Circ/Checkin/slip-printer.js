@@ -6,12 +6,16 @@
 const SLIP_WINDOW_OPTIONS =
     "width=750,height=500,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes";
 
-export function printHoldSlip(reserveId) {
-    window.open(
-        `/cgi-bin/koha/circ/hold-transfer-slip.pl?reserve_id=${reserveId}`,
-        "slip_window",
-        SLIP_WINDOW_OPTIONS
-    );
+export function holdSlipUrl(reserveId) {
+    return `/cgi-bin/koha/circ/hold-transfer-slip.pl?reserve_id=${reserveId}`;
+}
+
+/**
+ * Open an empty slip window. Must be called synchronously from a user gesture
+ * so the browser does not block it; load the slip into it later (bug 42505).
+ */
+export function openSlipWindow() {
+    return window.open("", "slip_window", SLIP_WINDOW_OPTIONS);
 }
 
 export function printTransferSlip(itemId, branchcode) {
