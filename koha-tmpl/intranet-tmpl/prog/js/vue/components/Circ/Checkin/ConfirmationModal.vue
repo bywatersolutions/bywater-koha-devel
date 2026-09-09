@@ -595,6 +595,10 @@ export default {
         }
 
         function formatMessage(msg) {
+            // The item type checkin message carries its text in the payload
+            if (msg.message === "item_type_checkinmsg") {
+                return msg.payload?.text || "";
+            }
             const labels = {
                 not_issued: $__("Not checked out."),
                 local_use: $__("Local use recorded"),
