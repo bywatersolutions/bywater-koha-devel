@@ -352,7 +352,7 @@ subtest 'add - return_date and dropbox_mode' => sub {
 
 subtest 'add - post-checkin messages' => sub {
 
-    plan tests => 7;
+    plan tests => 9;
 
     $schema->storage->txn_begin;
 
@@ -394,6 +394,15 @@ subtest 'add - post-checkin messages' => sub {
             library_id => $library->branchcode,
         }
     )->status_is(412)->json_is( '/error_code' => 'confirmation_required' );
+
+    # ... unless the caller overrides the not_issued confirmation, in which
+    # case the check-in is recorded directly (matching the legacy behaviour).
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => { 'x-koha-override' => 'not_issued' } => json => {
+            item_id    => $free_item->id,
+            library_id => $library->branchcode,
+        }
+    )->status_is( 200, 'not_issued confirmation overridden -> checked in directly' );
 
     $schema->storage->txn_rollback;
 };

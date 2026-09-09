@@ -167,6 +167,7 @@ sub add {
                     error      => 'Checkin blocked',
                     error_code => 'checkin_blocked',
                     blockers   => $availability->blockers,
+                    item       => $item->to_api( { embed => { biblio => {} } } ),
                 }
             );
         }
@@ -180,6 +181,27 @@ sub add {
 
             if ( my $token = $c->param('confirmation') ) {
                 $confirmed = $availability->check_token($token);
+            }
+
+            # A caller may opt out of specific confirmations via x-koha-override.
+            # The 'not_issued' confirmation (item was not checked out) can be
+            # overridden so the check-in is recorded directly - matching the
+            # legacy returns page, which never prompts for a not-issued item.
+            #
+            # NOTE: overrides are handled here in the controller, consistent
+            # with the other REST endpoints (checkouts, holds, ...). Once a
+            # Koha::Circulation->checkin business-logic method exists, the
+            # overrides should be passed down to it so the domain layer owns
+            # this decision instead of the controller.
+            unless ($confirmed) {
+                my $overrides     = $c->stash('koha.overrides') // {};
+                my @confirmations = keys %{ $availability->confirmations };
+                if (   $overrides->{not_issued}
+                    && scalar(@confirmations) == 1
+                    && $confirmations[0] eq 'not_issued' )
+                {
+                    $confirmed = 1;
+                }
             }
 
             unless ($confirmed) {
