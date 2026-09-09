@@ -56,10 +56,11 @@
                                         v-else-if="bi.lost_status"
                                         class="text-danger"
                                     >
+                                        <i class="fa fa-exclamation-circle"></i>
                                         {{ $__("Lost") }}
                                     </span>
-                                    <span v-else>
-                                        {{ $__("Present") }}
+                                    <span v-else class="text-muted">
+                                        {{ $__("Not verified") }}
                                     </span>
                                 </td>
                             </tr>

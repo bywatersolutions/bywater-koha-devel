@@ -38,6 +38,28 @@
                         <p>{{ patronNote }}</p>
                     </div>
 
+                    <!-- Blocked: item cannot be checked in (e.g. wrong branch) -->
+                    <template v-if="isBlocked">
+                        <p>
+                            <strong>{{ $__("NOT CHECKED IN") }}</strong>
+                        </p>
+                        <p v-if="blockedReason">{{ blockedReason }}</p>
+
+                        <!-- Note about accompanying materials -->
+                        <div
+                            v-if="item.item && item.item.materials_notes"
+                            id="materials"
+                            class="alert alert-info"
+                        >
+                            <span class="mats_spec_label">{{
+                                $__("Note about the accompanying materials:")
+                            }}</span>
+                            <span class="mats_spec_message">{{
+                                item.item.materials_notes
+                            }}</span>
+                        </div>
+                    </template>
+
                     <!-- Pre-checkin confirmation: CircConfirmItemParts -->
                     <template v-if="isPreCheckin">
                         <div
@@ -307,6 +329,14 @@
                                 )
                             }}
                         </p>
+                        <div
+                            v-for="(box, idx) in claimCheckinMessages"
+                            :key="idx"
+                            class="alert"
+                            :class="box.alertClass"
+                        >
+                            {{ box.text }}
+                        </div>
                     </template>
 
                     <!-- Warnings -->
@@ -320,6 +350,19 @@
                 </div>
 
                 <div class="modal-footer">
+                    <!-- Blocked: only an acknowledge button -->
+                    <template v-if="isBlocked">
+                        <button
+                            type="button"
+                            class="btn btn-primary approve"
+                            accesskey="o"
+                            @click="$emit('dismiss', item)"
+                        >
+                            <i class="fa fa-check"></i>
+                            {{ $__("OK") }}
+                        </button>
+                    </template>
+
                     <!-- Pre-checkin confirmation buttons -->
                     <template v-if="isPreCheckin">
                         <button
@@ -466,7 +509,7 @@
                     <template v-if="item._action_type === 'claim'">
                         <button
                             type="button"
-                            class="btn btn-warning"
+                            class="btn btn-primary approve"
                             accesskey="y"
                             @click="$emit('resolve-claim', item)"
                         >
@@ -476,11 +519,11 @@
                         <button
                             type="button"
                             class="btn btn-default deny"
-                            accesskey="n"
+                            accesskey="i"
                             @click="$emit('dismiss', item)"
                         >
                             <i class="fa fa-times"></i>
-                            {{ $__("Dismiss (N)") }}
+                            {{ $__("Ignore (I)") }}
                         </button>
                     </template>
                 </div>
@@ -602,6 +645,28 @@ export default {
             () => props.item && props.item._status === "pending_confirmation"
         );
 
+        const isBlocked = computed(
+            () => props.item && props.item._status === "blocked"
+        );
+
+        // Human-readable explanation for a blocked check-in, mirroring the
+        // legacy returns.pl wrong-branch / blocked-item modal body.
+        const blockedReason = computed(() => {
+            const blockers = (props.item && props.item.blockers) || {};
+            if (blockers.wrong_branch) {
+                return $__(
+                    "This item must be checked in at following library: %s"
+                ).replace("%s", libraryName(blockers.wrong_branch.right_branch));
+            }
+            if (blockers.blocked_withdrawn) {
+                return $__("This item is withdrawn and cannot be checked in.");
+            }
+            if (blockers.blocked_lost) {
+                return $__("This item is lost and cannot be checked in.");
+            }
+            return "";
+        });
+
         const itemBarcode = computed(
             () => props.item?.item?.external_id || props.item?._barcode || ""
         );
@@ -616,6 +681,7 @@ export default {
 
         const modalTitle = computed(() => {
             if (!props.item) return "";
+            if (isBlocked.value) return $__("Cannot check in");
             if (isPreCheckin.value) return $__("Please confirm check in");
             if (props.item._action_type === "hold") return $__("Hold found");
             if (props.item._action_type === "transfer") {
@@ -753,6 +819,45 @@ export default {
             return labels[msg.message] || msg.message.replace(/_/g, " ");
         }
 
+        // Check-in messages shown inside the return-claim modal (a claim
+        // checkin actually returns the item, so lost/fee messages apply).
+        const claimCheckinMessages = computed(() => {
+            const labels = {
+                was_lost: {
+                    text: $__("Item was lost, now found."),
+                    alertClass: "alert-info",
+                },
+                lost_item_fee_remains: {
+                    text: $__(
+                        "Any lost item fees for this item will remain on the patron's account."
+                    ),
+                    alertClass: "alert-warning",
+                },
+                processing_fee_remains: {
+                    text: $__(
+                        "Any processing fees for this item will remain on the patron's account."
+                    ),
+                    alertClass: "alert-warning",
+                },
+                lost_item_fee_refunded: {
+                    text: $__(
+                        "A refund for the lost item charge has been applied to the borrowing patron's account."
+                    ),
+                    alertClass: "alert-info",
+                },
+                processing_fee_refunded: {
+                    text: $__(
+                        "A refund for the lost item processing charge has been applied to the borrowing patron's account."
+                    ),
+                    alertClass: "alert-info",
+                },
+            };
+            const messages = (props.item && props.item.messages) || [];
+            return messages
+                .filter(m => labels[m.message])
+                .map(m => labels[m.message]);
+        });
+
         function printAndResolveHold() {
             const reserveId = holdInfo.value?.reserve_id || props.item?.hold_id;
             if (reserveId) {
@@ -782,6 +887,8 @@ export default {
         return {
             isNonBlockingTransfer,
             isPreCheckin,
+            isBlocked,
+            blockedReason,
             itemBarcode,
             itemTitle,
             biblioId,
@@ -800,6 +907,7 @@ export default {
             formatWarning,
             formatTransferTrigger,
             formatMessage,
+            claimCheckinMessages,
             printAndResolveHold,
             printAndResolveTransfer,
             printAndResolveRecall,

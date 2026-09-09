@@ -112,6 +112,7 @@
           type: string
           enum:
             - checkout
+            - checkout.patron
             - claim
             - credits
             - debits
@@ -128,6 +129,16 @@
             - restriction
             - transfer
             - user
+        collectionFormat: csv
+      - name: x-koha-override
+        in: header
+        required: false
+        description: Overrides list sent as a request header
+        type: array
+        items:
+          type: string
+          enum:
+            - not_issued
         collectionFormat: csv
     consumes:
       - application/json
@@ -466,6 +477,7 @@ parameters:
       type: string
       enum:
         - checkout
+        - checkout.patron
         - claim
         - credits
         - debits

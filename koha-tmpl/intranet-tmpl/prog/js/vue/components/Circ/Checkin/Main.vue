@@ -300,13 +300,21 @@ export default {
                     });
                 }
                 if (msg.message === "patron_has_waiting_holds" && msg.payload) {
+                    const p = latest.checkout && latest.checkout.patron;
+                    const patronName = p
+                        ? p.firstname
+                            ? `${p.surname}, ${p.firstname}`
+                            : p.surname
+                        : $__("Patron");
                     detailed.push({
                         text: $__(
-                            'Patron has %s hold(s) waiting for pickup. <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=%s">Check out to this patron</a>'
+                            '%s has %s hold(s) waiting for pickup. <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=%s">Check out to this patron</a>'
                         )
+                            .replace("%s", patronName)
                             .replace("%s", msg.payload.waiting_count)
                             .replace("%s", msg.payload.patron_id),
                         alertClass: "alert-info",
+                        priority: 10,
                     });
                 }
                 // return_claim is handled by the row (yellow + resolve button)
@@ -320,7 +328,16 @@ export default {
                     });
                 }
             }
-            return detailed;
+            // Show the most important alerts first (e.g. waiting holds), while
+            // keeping the original order for boxes of equal priority.
+            return detailed
+                .map((box, index) => ({ box, index }))
+                .sort(
+                    (a, b) =>
+                        (b.box.priority || 0) - (a.box.priority || 0) ||
+                        a.index - b.index
+                )
+                .map(entry => entry.box);
         });
 
         // Refocus barcode input when focus leaves to non-interactive elements
