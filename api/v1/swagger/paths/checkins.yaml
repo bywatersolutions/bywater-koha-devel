@@ -118,11 +118,13 @@
             - desk
             - hold
             - hold.patron
+            - hold.patron.notification_summary
             - item
             - item.biblio
             - library
             - recall
             - recall.patron
+            - recall.patron.notification_summary
             - restriction
             - transfer
             - user
@@ -470,11 +472,13 @@ parameters:
         - desk
         - hold
         - hold.patron
+        - hold.patron.notification_summary
         - item
         - item.biblio
         - library
         - recall
         - recall.patron
+        - recall.patron.notification_summary
         - restriction
         - transfer
         - transfer.to_library
