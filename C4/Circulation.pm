@@ -5494,6 +5494,21 @@ sub _attach_messages_to_checkin {
         $checkin->add_message( { message => 'processing_fee_refunded', type => 'info' } );
     }
 
+    # When the item was lost but its charges were not otherwise resolved,
+    # warn that the fees remain (mirrors the legacy returns.pl messages).
+    if ( $messages->{WasLost} && !C4::Context->preference('BlockReturnOfLostItems') ) {
+        unless ( $messages->{LostItemFeeRefunded}
+            || $messages->{LostItemFeeCharged}
+            || $messages->{LostItemFeeRestored}
+            || $messages->{LostItemPaymentNotRefunded} )
+        {
+            $checkin->add_message( { message => 'lost_item_fee_remains', type => 'warning' } );
+        }
+        unless ( $messages->{ProcessingFeeRefunded} ) {
+            $checkin->add_message( { message => 'processing_fee_remains', type => 'warning' } );
+        }
+    }
+
     # Item status messages
     if ( $messages->{NotIssued} ) {
         $checkin->add_message( { message => 'not_issued', type => 'info' } );
