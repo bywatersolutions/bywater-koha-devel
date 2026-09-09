@@ -235,6 +235,18 @@ export default {
                     ),
                     alertClass: "alert-info",
                 },
+                lost_item_fee_remains: {
+                    text: $__(
+                        "Any lost item fees for this item will remain on the patron's account."
+                    ),
+                    alertClass: "alert-warning",
+                },
+                processing_fee_remains: {
+                    text: $__(
+                        "Any processing fees for this item will remain on the patron's account."
+                    ),
+                    alertClass: "alert-warning",
+                },
                 was_lost: {
                     text: $__("Item was lost, now found."),
                     alertClass: "alert-info",
