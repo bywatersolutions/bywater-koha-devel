@@ -17,7 +17,7 @@ export class CheckinAPIClient {
                     body,
                     headers: {
                         "x-koha-embed":
-                            "item,item.biblio,checkout,hold,hold.patron,transfer,recall",
+                            "item,item.biblio,checkout,hold,hold.patron,transfer,recall,recall.patron",
                     },
                     return_response: true,
                     mark_submitting: false,
