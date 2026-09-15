@@ -56,6 +56,7 @@ use Try::Tiny;
 use Pod::Usage;
 use Getopt::Long;
 use List::MoreUtils qw( natatime );
+use Scalar::Util    qw( blessed );
 use Time::HiRes;
 
 use C4::Context;
@@ -261,7 +262,7 @@ sub commit {
                 $auth_indexer->update_index( \@auth_chunk );
             } catch {
                 $logger->warn( sprintf "Update of elastic index failed with: %s", $_ );
-                if ( ref($_) eq 'Search::Elasticsearch::Error::NoNodes' ) {
+                if ( is_no_nodes_error($_) ) {
                     $no_nodes = 1;
                     $auth_indexer =
                         Koha::SearchEngine::Indexer->new( { index => $Koha::SearchEngine::AUTHORITIES_INDEX } );
@@ -278,7 +279,7 @@ sub commit {
                 $biblio_indexer->update_index( \@bib_chunk );
             } catch {
                 $logger->warn( sprintf "Update of elastic index failed with: %s", $_ );
-                if ( ref($_) eq 'Search::Elasticsearch::Error::NoNodes' ) {
+                if ( is_no_nodes_error($_) ) {
                     $no_nodes = 1;
                     $biblio_indexer =
                         Koha::SearchEngine::Indexer->new( { index => $Koha::SearchEngine::BIBLIOS_INDEX } );
@@ -313,4 +314,17 @@ sub commit {
             ended_on => \'NOW()',
         }
     );
+}
+
+# The indexer wraps the Search::Elasticsearch error in a Koha::Exceptions::Elasticsearch::BadResponse
+# that carries the original error type, so a raw NoNodes error is never what we catch here
+sub is_no_nodes_error {
+    my ($error) = @_;
+
+    return 0 unless blessed $error;
+    return 1 if $error->isa('Search::Elasticsearch::Error::NoNodes');
+    return 1
+        if $error->isa('Koha::Exceptions::Elasticsearch::BadResponse')
+        && ( $error->type // q{} ) eq 'NoNodes';
+    return 0;
 }
