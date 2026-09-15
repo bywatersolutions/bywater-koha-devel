@@ -943,16 +943,28 @@ if ( $tab eq 'database' ) {
 
 my $bwsbranch_filename = '/usr/share/koha/bin/bwsbranch';
 if ( -r $bwsbranch_filename ) {
-    my $bwsbranch = read_file( $bwsbranch_filename );
+    my $bwsbranch = read_file($bwsbranch_filename);
     $template->param( bwsbranch => $bwsbranch );
+}
+
+my $bws_server_info_filename = '/etc/koha/bws_server_info.yml';
+if ( -r $bws_server_info_filename ) {
+    my $bws_server_info = YAML::XS::LoadFile($bws_server_info_filename);
+
+    # The upgrade play stores the time in UTC, show it in the library's time zone and date format
+    $bws_server_info->{last_upgrade_at} =
+        output_pref( { dt => dt_from_string( $bws_server_info->{last_upgrade_at}, 'iso' ) } )
+        if $bws_server_info->{last_upgrade_at};
+
+    $template->param( bws_server_info => $bws_server_info );
 }
 
 my $url = C4::Context->preference('staffClientBaseURL');
 $url =~ s|https://||;
 $url =~ s|http://||;
 $template->param(
-    inbound_ip => qx{dig $url +short | grep '^[.0-9]*\$'},
-    outbound_ip  => qx{curl ipinfo.io/ip},
+    inbound_ip  => qx{dig $url +short | grep '^[.0-9]*\$'},
+    outbound_ip => qx{curl ipinfo.io/ip},
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;
