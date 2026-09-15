@@ -152,6 +152,25 @@
                     <span class="hint">If a third party service is asking for the IP address of your Koha server in order to add it to connect to it, this is the ip address they need.</span>
                 </td>
             </tr>
+            [% IF bws_server_info.last_upgrade_at %]
+                <tr>
+                    <th scope="row">Date of last update: </th>
+                    <td>
+                        [% bws_server_info.last_upgrade_at | html %]
+                        <span class="hint">Upgraded from [% bws_server_info.last_upgrade_from | html %] to [% bws_server_info.last_upgrade_to | html %]</span>
+                    </td>
+                </tr>
+            [% END %]
+            [% IF bws_server_info.ps_group %]
+                <tr>
+                    <th scope="row">Update group: </th>
+                    <td>[% bws_server_info.ps_group | html %]</td>
+                </tr>
+            [% END %]
+            <tr>
+                <th scope="row">When is my next update? </th>
+                <td><a href="https://help.bywatersolutions.com/portal/en/kb/articles/koha-upgrades" target="_blank">Click here</a> for the upgrade calendar and more info about the upgrade schedule.</td>
+            </tr>
             <tr>
                 <th scope="row">OS version ('uname -a'): </th>
                 <td>[% osVersion | html %]</td>
