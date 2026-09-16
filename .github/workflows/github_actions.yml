@@ -678,14 +678,14 @@ jobs:
 
     set-default-branch:
       name: Set default branch
-      if: startsWith( github.ref, 'refs/heads/bywater-v' ) && github.repository == 'bywatersolutions/bywater-koha'
+      if: startsWith( github.ref, 'refs/heads/bywater-v' ) && ( github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' )
       needs: [build-debs, is-a-mark]
       runs-on: ubuntu-latest
       steps:
         - run: |
               KOHA_BRANCH=${GITHUB_REF##*/}
               echo "KOHA_BRANCH: $KOHA_BRANCH";
-              gh repo edit bywatersolutions/bywater-koha --default-branch $KOHA_BRANCH
+              gh repo edit ${{ github.repository }} --default-branch $KOHA_BRANCH
           env:
             GITHUB_TOKEN: ${{ secrets.OUR_GITHUB_TOKEN }}
             BRANCH: ${GITHUB_REF##*/}
