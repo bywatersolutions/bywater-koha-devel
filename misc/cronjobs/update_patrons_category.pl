@@ -35,7 +35,7 @@ update_patrons_category.pl - Given a set of parameters update selected patrons f
 
 update_patrons_category.pl -f=categorycode -t=categorycode
                           [-b=branchcode] [--too_old] [--too_young] [-fo=X] [-fu=X]
-                          [-rb=date] [-ra=date] [-v]
+                          [-rb=date] [-ra=date] [-v] [--update-expiry]
                           [--field column=value ...]
 
 update_patrons_category.pl --help | --man
@@ -52,6 +52,7 @@ Options:
    -ra=date --regafter      update if registration date is after a given date
    -d --field name=value    where <name> is a column in the borrowers table, patrons will be updated if the field is equal to given <value>
    --where <conditions>     where clause to add to the query
+   --update-expiry          set the expiration date to match the new category
    -v -verbose              verbose mode
    -c --confirm             commit changes to db, no action will be taken unless this switch is included
    -b --branch <branchname> only deal with patrons from this library/branch
@@ -132,6 +133,12 @@ e.g.
 --where 'email IS NULL'
 will update all patrons with no value for email
 
+=item B<--update-expiry>
+
+Also set the expiration date of each updated patron to the expiration date the new
+category gives a patron enrolled today. This is the same as ticking "Reset expiration
+date to category default" when changing a patron's category in the staff interface.
+
 =back
 
 =head1 DESCRIPTION
@@ -147,6 +154,8 @@ C<update_patron_categories.pl> -b=<branchcode> -f=<categorycode> -t=<categorycod
 C<update_patron_categories.pl> -b=<branchcode> -f=<categorycode> -t=<categorycode>  --too_old --confirm  - Processes a single branch, and updates the patron categories from fromcat to tocat for patrons over the age range of fromcat.
 
 C<update_patron_categories.pl> -f=<categorycode> -t=<categorycode> -v  - Processes all branches, shows all messages, and reports the patrons who would be affected. Takes no action on the database.
+
+C<update_patron_categories.pl> -f=<categorycode> -t=<categorycode> --too_old --update-expiry --confirm  - Processes all branches, updates the patron categories for patrons over the age range set by -f, and gives those patrons the expiration date of the category set by -t.
 
 =cut
 
@@ -169,6 +178,7 @@ my $reg_aft;
 my $branch_lim;
 my %fields;
 my @where;
+my $update_expiry = 0;
 
 my $command_line_options = join( " ", @ARGV );
 cronlogaction( { info => $command_line_options } );
@@ -189,6 +199,7 @@ GetOptions(
     'b|branch=s'      => \$branch_lim,
     'd|field=s'       => \%fields,
     'where=s'         => \@where,
+    'update-expiry'   => \$update_expiry,
 );
 
 pod2usage(1) if $help;
@@ -228,6 +239,11 @@ my $cat_from = Koha::Patron::Categories->find($fromcat);
 my $cat_to   = Koha::Patron::Categories->find($tocat);
 die "Categories not found" unless $cat_from && $cat_to;
 
+# Every updated patron gets the same new expiration date, the one the 'to' category gives a patron enrolled today
+my $new_expiry = $update_expiry ? $cat_to->get_expiry_date : undef;
+$new_expiry = dt_from_string($new_expiry)->ymd if $new_expiry;
+die "Category $tocat has no enrollment period, cannot set expiration dates" if $update_expiry && !$new_expiry;
+
 $params{"me.categorycode"} = $fromcat;
 $params{"me.branchcode"}   = $branch_lim if $branch_lim;
 
@@ -248,6 +264,10 @@ while ( my ( $key, $value ) = each %fields ) {
     $verbose and print "    Borrower column $key is $value\n";
     $value = undef if lc($value) eq 'null';
     $params{ "me." . $key } = $value;
+}
+
+if ( $verbose && $new_expiry ) {
+    print "Expiration date will be set to $new_expiry\n";
 }
 
 my $where_literal  = join ' AND ', @where;
@@ -280,7 +300,7 @@ if ($verbose) {
     $target_patrons->reset;
 }
 if ($doit) {
-    $actually_updated = $target_patrons->update_category_to( { category => $tocat } );
+    $actually_updated = $target_patrons->update_category_to( { category => $tocat, update_expiry => $update_expiry } );
 }
 
 $verbose and print "$patrons_found found, $actually_updated updated\n";

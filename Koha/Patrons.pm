@@ -450,22 +450,35 @@ sub search_patrons_to_update_category {
 =head3 update_category_to
 
     Koha::Patrons->search->update_category_to( {
-            category   => $to_category,
+            category      => $to_category,
+            update_expiry => $update_expiry,
         });
 
 Update supplied patrons from current category to another and take care of guarantor info.
 To make sure all the conditions are met, the caller has the responsibility to
 call search_patrons_to_update to filter the Koha::Patrons set
 
+If update_expiry is passed, the expiration date of each patron is also set to the
+expiration date the new category gives a patron enrolled today.
+
 =cut
 
 sub update_category_to {
     my ( $self, $params ) = @_;
     my $counter = 0;
+
+    # The new expiration date is the same for every patron, so only calculate it once
+    my $dateexpiry =
+        $params->{update_expiry}
+        ? Koha::Patron::Categories->find( $params->{category} )->get_expiry_date
+        : undef;
+
     while ( my $patron = $self->next ) {
         $patron->discard_changes;
         $counter++;
-        $patron->categorycode( $params->{category} )->store();
+        $patron->categorycode( $params->{category} );
+        $patron->dateexpiry($dateexpiry) if $dateexpiry;
+        $patron->store();
     }
     return $counter;
 }
