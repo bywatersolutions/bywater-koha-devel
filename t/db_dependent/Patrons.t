@@ -18,7 +18,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 19;
+use Test::More tests => 20;
 use Test::Warn;
 
 use C4::Context;
@@ -358,6 +358,58 @@ subtest "Update patron categories" => sub {
     );
     $adult1->discard_changes;
     is( $adult1->userid, $userid_before, "Patron userid not changed by updated" );
+};
+
+subtest "Update patron categories with update_expiry" => sub {
+    plan tests => 4;
+
+    my $enrolmentperiod = 36;
+    my $from_category   = $builder->build(
+        {
+            source => 'Category',
+            value  => { category_type => 'C', enrolmentperiod => 12, enrolmentperioddate => undef }
+        }
+    )->{categorycode};
+    my $to_category = $builder->build(
+        {
+            source => 'Category',
+            value  => {
+                category_type       => 'A',
+                enrolmentperiod     => $enrolmentperiod,
+                enrolmentperioddate => undef,
+            }
+        }
+    )->{categorycode};
+
+    my $dateexpiry = '2020-01-01';
+    my $untouched  = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => { categorycode => $from_category, dateexpiry => $dateexpiry }
+        }
+    );
+    my $renewed = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => { categorycode => $from_category, dateexpiry => $dateexpiry }
+        }
+    );
+
+    Koha::Patrons->search( { borrowernumber => $untouched->borrowernumber } )
+        ->update_category_to( { category => $to_category } );
+    $untouched->discard_changes;
+    is( $untouched->categorycode, $to_category, 'Patron was moved to the new category' );
+    is( $untouched->dateexpiry,   $dateexpiry,  'Expiration date is left alone when update_expiry is not passed' );
+
+    Koha::Patrons->search( { borrowernumber => $renewed->borrowernumber } )
+        ->update_category_to( { category => $to_category, update_expiry => 1 } );
+    $renewed->discard_changes;
+    is( $renewed->categorycode, $to_category, 'Patron was moved to the new category' );
+    is(
+        $renewed->dateexpiry,
+        dt_from_string->add( months => $enrolmentperiod, end_of_month => 'limit' )->ymd,
+        'Expiration date was set from the enrollment period of the new category'
+    );
 };
 
 $schema->storage->txn_rollback();
