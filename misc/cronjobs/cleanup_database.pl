@@ -32,6 +32,7 @@ use constant DEFAULT_JOBS_PURGETYPES              => qw{ update_elastic_index };
 use constant DEFAULT_JOBS_UNFINISHED_PURGEDAYS    => 365;
 use constant DEFAULT_JOBS_UNFINISHED_PURGETYPES   => qw{ update_elastic_index };
 use constant DEFAULT_EDIFACT_MSG_PURGEDAYS        => 365;
+use constant DEFAULT_SYSTEM_MESSAGES_PURGEDAYS    => 30;
 use constant DEFAULT_ILLREQUESTS_PURGEDAYS        => 30;
 
 use Getopt::Long qw( GetOptions );
@@ -60,6 +61,7 @@ use Koha::Patron::Debarments qw( DelDebarment );
 use Koha::Patron::Messages;
 use Koha::PseudonymizedTransactions;
 use Koha::Statistics;
+use Koha::SystemMessages;
 use Koha::UploadedFiles;
 
 sub usage {
@@ -138,6 +140,8 @@ Usage: $0
    --reports DAYS          Purge reports data saved more than DAYS days ago. The data is created by running runreport.pl with the --store-results option.
    --edifact-messages DAYS   Purge process and failed EDIFACT messages handled more than DAYS days.
                              Defaults to 365 days if no days specified.
+   --system-messages DAYS  Purge system messages cleared more than DAYS days ago.
+                           Defaults to 30 days if no days specified.
    --illrequests-status STATUS Specify which ILL request statuses to remove. Repeatable.
    --illrequests-days DAYS   Purge ILL requests older than DAYS days.
                              Defaults to 30 days if omitted. Requires at least one --illrequests-status.
@@ -191,6 +195,7 @@ my $jobs_days;
 my @jobs_types;
 my $reports;
 my $edifact_msg_days;
+my $system_messages_days;
 my $illrequests_days;
 my @illrequests_statuses;
 
@@ -245,6 +250,7 @@ GetOptions(
     'jobs-days:i'                => \$jobs_days,
     'reports:i'                  => \$reports,
     'edifact-messages:i'         => \$edifact_msg_days,
+    'system-messages:i'          => \$system_messages_days,
     'illrequests-days:i'         => \$illrequests_days,
     'illrequests-status:s'       => \@illrequests_statuses,
 ) || usage(1);
@@ -264,7 +270,9 @@ $jobs_unfinished_days = DEFAULT_JOBS_UNFINISHED_PURGEDAYS
 $jobs_days             = DEFAULT_JOBS_PURGEDAYS               if defined($jobs_days)   && $jobs_days == 0;
 @jobs_types            = (DEFAULT_JOBS_PURGETYPES)            if $jobs_days            && @jobs_types == 0;
 $edifact_msg_days      = DEFAULT_EDIFACT_MSG_PURGEDAYS        if defined($edifact_msg_days) && $edifact_msg_days == 0;
-$illrequests_days      = DEFAULT_ILLREQUESTS_PURGEDAYS        if defined($illrequests_days) && $illrequests_days == 0;
+$system_messages_days  = DEFAULT_SYSTEM_MESSAGES_PURGEDAYS
+    if defined($system_messages_days) && $system_messages_days == 0;
+$illrequests_days = DEFAULT_ILLREQUESTS_PURGEDAYS if defined($illrequests_days) && $illrequests_days == 0;
 
 @statistics_types = ( @statistics_types, @Koha::Statistic::pseudonymization_types ) if defined($statistics_type_pseudo);
 @statistics_types = keys %{ { map { $_, 1 } @statistics_types } };    # remove duplicate types
@@ -320,6 +328,7 @@ unless ( $sessions
     || $jobs_days
     || $jobs_unfinished_days
     || $reports
+    || $system_messages_days
     || $edifact_msg_days
     || $illrequests_days
     || @illrequests_statuses )
@@ -882,6 +891,25 @@ if ($edifact_msg_days) {
         say $confirm
             ? sprintf( "Done with purging %d EDIFACT messages",       $count )
             : sprintf( "%d EDIFACT messages would have been removed", $count );
+    }
+}
+
+if ($system_messages_days) {
+    print "Purging system messages cleared more than $system_messages_days days ago.\n" if $verbose;
+    my $messages = Koha::SystemMessages->search( { cleared_date => { '!=' => undef } } )->filter_by_last_update(
+        {
+            timestamp_column_name => 'cleared_date',
+            days                  => $system_messages_days,
+        }
+    );
+    my $count = $messages->count;
+    $messages->delete if $confirm;
+    if ($verbose) {
+        say $confirm
+            ? sprintf "Done with purging %d system messages cleared more than %d days ago.", $count,
+            $system_messages_days
+            : sprintf "%d system messages cleared more than %d days ago would have been purged.", $count,
+            $system_messages_days;
     }
 }
 
