@@ -646,5 +646,12 @@
     [%- CASE 'manage_record_sources' -%]
         <span class="sub_permission manage_record_sources_subpermission"> Manage record sources </span>
         <span class="permissioncode">([% name | html %])</span>
+        [%# system_messages %]
+    [%- CASE 'view_system_messages' -%]
+        <span class="sub_permission view_system_messages_subpermission"> View system messages </span>
+        <span class="permissioncode">([% name | html %])</span>
+    [%- CASE 'manage_system_messages' -%]
+        <span class="sub_permission manage_system_messages_subpermission"> Manage system messages </span>
+        <span class="permissioncode">([% name | html %])</span>
     [%- END -%]
 [%- END -%]

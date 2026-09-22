@@ -6826,6 +6826,26 @@ CREATE TABLE `suggestions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `system_messages`
+--
+
+DROP TABLE IF EXISTS `system_messages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `system_messages` (
+  `system_message_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'primary key',
+  `component` varchar(80) NOT NULL COMMENT 'area of Koha that reported the message',
+  `message` mediumtext NOT NULL COMMENT 'message text',
+  `occurrences` int(11) NOT NULL DEFAULT 1 COMMENT 'number of times this message has been reported since it was first seen',
+  `created_date` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'when this message was first reported',
+  `updated_date` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'when this message was last reported',
+  `cleared_date` datetime DEFAULT NULL COMMENT 'when this message was cleared, NULL while it is still showing',
+  PRIMARY KEY (`system_message_id`),
+  KEY `system_messages_cleared_date_idx` (`cleared_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `systempreferences`
 --
 
