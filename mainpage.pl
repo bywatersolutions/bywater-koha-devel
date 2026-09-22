@@ -34,6 +34,7 @@ use Koha::BiblioFrameworks;
 use Koha::ProblemReports;
 use Koha::Quotes;
 use Koha::Suggestions;
+use Koha::SystemMessages;
 use Koha::BackgroundJobs;
 use Koha::CurbsidePickups;
 use Koha::Tickets;
@@ -126,6 +127,10 @@ unless ( $logged_in_user->has_permission( { parameters => 'manage_background_job
     my $already_ran_jobs =
         Koha::BackgroundJobs->search( { borrowernumber => $logged_in_user->borrowernumber } )->count ? 1 : 0;
     $template->param( already_ran_jobs => $already_ran_jobs );
+}
+
+if ( $logged_in_user->has_permission( { parameters => [ 'view_system_messages', 'manage_system_messages' ] } ) ) {
+    $template->param( uncleared_system_messages => Koha::SystemMessages->search( { cleared_date => undef } )->count );
 }
 
 $template->param(
