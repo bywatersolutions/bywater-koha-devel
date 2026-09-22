@@ -496,6 +496,27 @@ modules:
               cannot_be_toggled: 1
               cannot_be_modified: 1
 
+    system_messages:
+      table_system_messages:
+        default_display_length: 20
+        columns:
+            -
+              columnname: component
+            -
+              columnname: message
+            -
+              columnname: occurrences
+            -
+              columnname: created_date
+            -
+              columnname: updated_date
+            -
+              columnname: cleared_date
+            -
+              columnname: actions
+              cannot_be_toggled: 1
+              cannot_be_modified: 1
+
   catalogue:
     detail:
       holdings_table:

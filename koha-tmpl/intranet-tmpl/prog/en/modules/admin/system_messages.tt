@@ -1,0 +1,208 @@
+[% USE raw %]
+[% USE Koha %]
+[% USE Asset %]
+[% USE TablesSettings %]
+[% PROCESS 'i18n.inc' %]
+[% SET footerjs = 1 %]
+[% INCLUDE 'doc-head-open.inc' %]
+<title
+    >[% FILTER collapse %]
+        [% t("System messages") | html %]
+        &rsaquo; [% t("Administration") | html %] &rsaquo; [% t("Koha") | html %]
+    [% END %]</title
+>
+[% INCLUDE 'doc-head-close.inc' %]
+</head>
+
+<body id="admin_system_messages" class="admin">
+[% WRAPPER 'header.inc' %]
+    [% INCLUDE 'prefs-admin-search.inc' %]
+[% END %]
+
+[% WRAPPER 'sub-header.inc' %]
+    [% WRAPPER breadcrumbs %]
+        [% WRAPPER breadcrumb_item %]
+            <a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a>
+        [% END %]
+        [% WRAPPER breadcrumb_item bc_active = 1 %]
+            <span>System messages</span>
+        [% END %]
+    [% END #/ WRAPPER breadcrumbs %]
+[% END #/ WRAPPER sub-header.inc %]
+
+[% WRAPPER 'main-container.inc' aside='admin-menu' %]
+
+    [% IF CAN_user_parameters_manage_system_messages %]
+        <div id="toolbar" class="btn-toolbar">
+            <button type="button" class="btn btn-default" id="clear_all"><i class="fa fa-fw fa-check"></i> Clear all</button>
+        </div>
+    [% END %]
+
+    <h1>System messages</h1>
+
+    <div class="page-section">
+        <fieldset class="action">
+            <label for="show_cleared"><input type="checkbox" id="show_cleared" /> Show cleared messages</label>
+        </fieldset>
+        <table id="table_system_messages">
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Message</th>
+                    <th>Occurrences</th>
+                    <th>First reported</th>
+                    <th>Last reported</th>
+                    <th>Cleared</th>
+                    <th data-class-name="actions no-export">Actions</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+[% END %]
+
+[% MACRO jsinclude BLOCK %]
+    [% Asset.js("js/admin-menu.js") | $raw %]
+    [% INCLUDE 'datatables.inc' %]
+    [% INCLUDE 'js-date-format.inc' %]
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
+        var table_settings = [% TablesSettings.GetTableSettings( 'admin', 'system_messages', 'table_system_messages', 'json' ) | $raw %];
+        Koha.addPermissions({
+            CAN_user_parameters_manage_system_messages: [% CAN_user_parameters_manage_system_messages ? 1 : 0 | html %],
+        });
+    </script>
+    <script nonce="[% Koha.CSPNonce | $raw %]">
+        document.addEventListener("DOMContentLoaded", function () {
+            const show_cleared = document.getElementById("show_cleared");
+            const clear_all = document.getElementById("clear_all");
+            const client = APIClient.system_message;
+
+            const default_filters = {
+                cleared_date: function () {
+                    if (show_cleared.checked) {
+                        return;
+                    }
+                    return { "=": null };
+                },
+            };
+            const external_filter_nodes = {
+                show_cleared: "#show_cleared",
+            };
+
+            const table = $("#table_system_messages").kohaTable(
+                {
+                    ajax: {
+                        url: "/api/v1/system_messages",
+                    },
+                    order: [[4, "desc"]],
+                    columnDefs: [
+                        {
+                            targets: [0, 1],
+                            render: function (data, type, row, meta) {
+                                if (type == "display") {
+                                    return data != null ? data.escapeHtml() : "";
+                                }
+                                return data;
+                            },
+                        },
+                        {
+                            targets: [3, 4, 5],
+                            render: function (data, type, row, meta) {
+                                if (type == "display") {
+                                    return data != null ? $datetime(data) : "";
+                                }
+                                return data;
+                            },
+                        },
+                    ],
+                    columns: [
+                        {
+                            data: "component",
+                            searchable: true,
+                            orderable: true,
+                        },
+                        {
+                            data: "message",
+                            searchable: true,
+                            orderable: true,
+                        },
+                        {
+                            data: "occurrences",
+                            searchable: false,
+                            orderable: true,
+                        },
+                        {
+                            data: "created_date",
+                            searchable: false,
+                            orderable: true,
+                        },
+                        {
+                            data: "updated_date",
+                            searchable: false,
+                            orderable: true,
+                        },
+                        {
+                            data: "cleared_date",
+                            searchable: false,
+                            orderable: true,
+                        },
+                        {
+                            data: function (row, type, val, meta) {
+                                if (row.cleared_date || !Koha.permissions.CAN_user_parameters_manage_system_messages) {
+                                    return "";
+                                }
+                                return '<button type="button" class="btn btn-default btn-xs clear_message" data-system-message-id="%s"><i class="fa fa-fw fa-check" aria-hidden="true"></i> %s</button>'.format(
+                                    row.system_message_id,
+                                    _("Clear")
+                                );
+                            },
+                            searchable: false,
+                            orderable: false,
+                        },
+                    ],
+                },
+                table_settings,
+                1,
+                default_filters,
+                null,
+                external_filter_nodes
+            );
+
+            function reload_table() {
+                table.DataTable().ajax.reload(null, false);
+            }
+
+            show_cleared.addEventListener("change", function () {
+                table.DataTable().draw();
+            });
+
+            document.getElementById("table_system_messages").addEventListener("click", function (event) {
+                const button = event.target.closest(".clear_message");
+                if (!button) {
+                    return;
+                }
+                client.system_messages.clear(button.dataset.systemMessageId).then(
+                    success => {
+                        reload_table();
+                    },
+                    error => {
+                        console.warn("Something wrong happened: %s".format(error));
+                    }
+                );
+            });
+
+            if (clear_all) {
+                clear_all.addEventListener("click", function () {
+                    client.system_messages.clear_all().then(
+                        success => {
+                            reload_table();
+                        },
+                        error => {
+                            console.warn("Something wrong happened: %s".format(error));
+                        }
+                    );
+                });
+            }
+        });
+    </script>
+[% END %]
+[% INCLUDE 'intranet-bottom.inc' %]

@@ -35,6 +35,8 @@
     can_user_acquisition_marc_order_manage="[% CAN_user_acquisition_marc_order_manage | html %]"
     can_user_parameters_manage_smtp_servers="[% CAN_user_parameters_manage_smtp_servers | html %]"
     can_user_parameters_manage_file_transports="[% CAN_user_parameters_manage_file_transports | html %]"
+    can_user_parameters_view_system_messages="[% CAN_user_parameters_view_system_messages | html %]"
+    can_user_parameters_manage_system_messages="[% CAN_user_parameters_manage_system_messages | html %]"
     can_user_parameters_manage_search_targets="[% CAN_user_parameters_manage_search_targets | html %]"
     can_user_parameters_manage_didyoumean="[% CAN_user_parameters_manage_didyoumean | html %]"
     can_user_parameters_manage_column_config="[% CAN_user_parameters_manage_column_config | html %]"

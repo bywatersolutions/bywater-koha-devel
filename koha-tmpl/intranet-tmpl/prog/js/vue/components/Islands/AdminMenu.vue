@@ -420,6 +420,8 @@
                 can_user_parameters_manage_identity_providers ||
                 can_user_parameters_manage_smtp_servers ||
                 can_user_parameters_manage_file_transports ||
+                can_user_parameters_view_system_messages ||
+                can_user_parameters_manage_system_messages ||
                 can_user_parameters_manage_search_targets ||
                 can_user_parameters_manage_didyoumean ||
                 can_user_parameters_manage_column_config ||
@@ -469,6 +471,18 @@
                         :ref="el => templateRefs.push(el)"
                         href="/cgi-bin/koha/admin/file_transports.pl"
                         >{{ $__("File transports") }}</a
+                    >
+                </li>
+                <li
+                    v-if="
+                        can_user_parameters_view_system_messages ||
+                        can_user_parameters_manage_system_messages
+                    "
+                >
+                    <a
+                        :ref="el => templateRefs.push(el)"
+                        href="/cgi-bin/koha/admin/system_messages.pl"
+                        >{{ $__("System messages") }}</a
                     >
                 </li>
                 <li v-if="can_user_parameters_manage_didyoumean">
@@ -591,6 +605,8 @@ export default {
         can_user_acquisition_marc_order_manage: Number,
         can_user_parameters_manage_smtp_servers: Number,
         can_user_parameters_manage_file_transports: Number,
+        can_user_parameters_view_system_messages: Number,
+        can_user_parameters_manage_system_messages: Number,
         can_user_parameters_manage_search_targets: Number,
         can_user_parameters_manage_didyoumean: Number,
         can_user_parameters_manage_column_config: Number,

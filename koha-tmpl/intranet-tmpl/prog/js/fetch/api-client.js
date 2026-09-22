@@ -204,6 +204,9 @@ export const APIClient = {
     sysprefs: createClientProxy(
         () => import("./system-preferences-api-client.js")
     ),
+    system_message: createClientProxy(
+        () => import("./system-message-api-client.js")
+    ),
     ticket: createClientProxy(() => import("./ticket-api-client.js")),
     default: createClientProxy(() => import("./default-api-client.js")),
 };
