@@ -20,7 +20,7 @@
 
 use Modern::Perl;
 use Test::NoWarnings;
-use Test::More tests => 33;
+use Test::More tests => 34;
 use Test::MockModule;
 use Test::Warn;
 
@@ -44,6 +44,7 @@ use Koha::AdditionalContents;
 use Koha::Serial;
 use Koha::Subscription;
 use Koha::Suggestion;
+use Koha::SystemMessages;
 use Koha::Checkout;
 use Koha::Patrons;
 use Koha::Notice::Messages;
@@ -1335,6 +1336,50 @@ subtest '_process_letter croaks on parsing error' => sub {
     my $tt_template = q|[% IF %]|;
     eval { process_letter( { template => $tt_template, %$params } ) };
     like( $@, qr{^ERROR PROCESSING TEMPLATE: } );
+};
+
+subtest 'A template that fails to render records a system message' => sub {
+    plan tests => 6;
+
+    Koha::SystemMessages->search->delete;
+
+    my $code = 'TEST_RENDER_FAIL';
+    reset_template( { template => '[% checkout.biblio.title %]', code => $code } );
+
+    my $checkout = $builder->build_object( { class => 'Koha::Checkouts' } );
+    my $render   = sub {
+        return GetPreparedLetter(
+            module      => 'test_module',
+            letter_code => $code,
+            branchcode  => '',
+            tables      => { issues => $checkout->itemnumber },
+        );
+    };
+
+    eval { $render->() };
+    like(
+        $@,
+        qr{^ERROR PROCESSING TEMPLATE: undef error - The method Koha::Checkout->biblio is not covered by tests!},
+        'GetPreparedLetter still croaks'
+    );
+
+    my $messages = Koha::SystemMessages->search( { component => 'Notices', cleared_date => undef } );
+    is( $messages->count, 1, 'One system message recorded' );
+    my $message = $messages->next;
+    like(
+        $message->message,
+        qr{^Notice template TEST_RENDER_FAIL \( test_module \) for library 'all', transport email, language default failed to render: undef error - The method Koha::Checkout->biblio is not covered by tests!},
+        'Message names the template and the error'
+    );
+    unlike( $message->message, qr{\n}, 'Only the first line of the error is kept' );
+
+    eval { $render->() };
+    $message->discard_changes;
+    is( $message->occurrences, 2, 'A repeat failure bumps the existing message' );
+    is(
+        Koha::SystemMessages->search( { component => 'Notices', cleared_date => undef } )->count, 1,
+        'Still one message'
+    );
 };
 
 sub reset_template {
