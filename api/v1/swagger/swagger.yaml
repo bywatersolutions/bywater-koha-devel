@@ -222,6 +222,8 @@ definitions:
     $ref: ./definitions/suggestion.yaml
   syspref:
     $ref: ./definitions/syspref.yaml
+  system_message:
+    $ref: ./definitions/system_message.yaml
   ticket:
     $ref: ./definitions/ticket.yaml
   ticket_update:
@@ -697,6 +699,12 @@ paths:
     $ref: "./paths/suggestions.yaml#/~1suggestions~1managers"
   /sysprefs:
     $ref: ./paths/sysprefs.yaml#/~1sysprefs
+  /system_messages:
+    $ref: ./paths/system_messages.yaml#/~1system_messages
+  /system_messages/clear:
+    $ref: ./paths/system_messages.yaml#/~1system_messages~1clear
+  "/system_messages/{system_message_id}/clear":
+    $ref: "./paths/system_messages.yaml#/~1system_messages~1{system_message_id}~1clear"
   "/tickets":
     $ref: "./paths/tickets.yaml#/~1tickets"
   "/tickets/{ticket_id}":
@@ -1137,6 +1145,12 @@ parameters:
     name: suggestion_id
     required: true
     type: integer
+  system_message_id_pp:
+    description: Internal system message identifier
+    in: path
+    name: system_message_id
+    required: true
+    type: integer
   ticket_id_pp:
     description: Internal ticket identifier
     in: path
@@ -1532,6 +1546,9 @@ tags:
   - description: "Manage system preferences\n"
     name: sysprefs
     x-displayName: System preferences
+  - description: "Manage system messages\n"
+    name: system_messages
+    x-displayName: System messages
   - description: "Manage file transport configurations\n"
     name: file_transports
     x-displayName: File transports

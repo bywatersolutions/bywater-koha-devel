@@ -1,0 +1,143 @@
+---
+/system_messages:
+  get:
+    x-mojo-to: SystemMessages#list
+    operationId: listSystemMessages
+    summary: List system messages
+    tags:
+      - system_messages
+    parameters:
+      - $ref: "../swagger.yaml#/parameters/match"
+      - $ref: "../swagger.yaml#/parameters/order_by"
+      - $ref: "../swagger.yaml#/parameters/page"
+      - $ref: "../swagger.yaml#/parameters/per_page"
+      - $ref: "../swagger.yaml#/parameters/q_param"
+      - $ref: "../swagger.yaml#/parameters/q_body"
+      - $ref: "../swagger.yaml#/parameters/request_id_header"
+    consumes:
+      - application/json
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: A list of system messages
+        schema:
+          type: array
+          items:
+            $ref: "../swagger.yaml#/definitions/system_message"
+      "400":
+        description: |
+          Bad request. Possible `error_code` attribute values:
+
+            * `invalid_query`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Not allowed
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        parameters:
+          - view_system_messages
+          - manage_system_messages
+/system_messages/clear:
+  put:
+    x-mojo-to: SystemMessages#clear_all
+    operationId: clearSystemMessages
+    summary: Clear all system messages
+    description: Marks every uncleared system message as cleared. Cleared messages are kept until cleanup_database.pl purges them.
+    tags:
+      - system_messages
+    produces:
+      - application/json
+    responses:
+      "204":
+        description: All system messages cleared
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Not allowed
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        parameters: manage_system_messages
+"/system_messages/{system_message_id}/clear":
+  put:
+    x-mojo-to: SystemMessages#clear
+    operationId: clearSystemMessage
+    summary: Clear a system message
+    tags:
+      - system_messages
+    parameters:
+      - $ref: "../swagger.yaml#/parameters/system_message_id_pp"
+    produces:
+      - application/json
+    responses:
+      "200":
+        description: The cleared system message
+        schema:
+          $ref: "../swagger.yaml#/definitions/system_message"
+      "400":
+        description: Bad request
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "401":
+        description: Authentication required
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "403":
+        description: Not allowed
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: System message not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "500":
+        description: |
+          Internal server error. Possible `error_code` attribute values:
+
+          * `internal_server_error`
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "503":
+        description: Under maintenance
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+    x-koha-authorization:
+      permissions:
+        parameters: manage_system_messages
