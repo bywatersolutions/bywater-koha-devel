@@ -61,6 +61,7 @@ use Koha::Patrons;
 use Koha::SMS::Providers;
 use Koha::SMTP::Servers;
 use Koha::Subscriptions;
+use Koha::SystemMessages;
 use Koha::Template::Plugin::KohaDates;
 
 use constant SERIALIZED_EMAIL_CONTENT_TYPE => 'message/rfc822';
@@ -648,27 +649,52 @@ sub GetPreparedLetter {
         return Koha::Template::Plugin::KohaDates->strftime(@_);
     };
 
-    $letter->{content} = _process_tt(
-        {
-            content    => $letter->{content},
-            lang       => $lang,
-            loops      => $loops,
-            objects    => $objects,
-            substitute => $substitute,
-            tables     => $tables,
-        }
-    );
+    try {
+        $letter->{content} = _process_tt(
+            {
+                content    => $letter->{content},
+                lang       => $lang,
+                loops      => $loops,
+                objects    => $objects,
+                substitute => $substitute,
+                tables     => $tables,
+            }
+        );
 
-    $letter->{title} = _process_tt(
-        {
-            content    => $letter->{title},
-            lang       => $lang,
-            loops      => $loops,
-            objects    => $objects,
-            substitute => $substitute,
-            tables     => $tables,
+        $letter->{title} = _process_tt(
+            {
+                content    => $letter->{title},
+                lang       => $lang,
+                loops      => $loops,
+                objects    => $objects,
+                substitute => $substitute,
+                tables     => $tables,
+            }
+        );
+    } catch {
+        my $error = $_;
+
+        # Ad hoc letters like the notice editor preview have no code, only stored templates are worth reporting
+        if ( $letter->{code} ) {
+
+            # Only the first line is useful, the rest is a stack trace
+            my ($summary) = split /\n/, $error;
+            $summary =~ s/^ERROR PROCESSING TEMPLATE: //;
+
+            Koha::SystemMessages->add(
+                {
+                    component => 'Notices',
+                    message   => sprintf(
+                        "Notice template %s ( %s ) for library '%s', transport %s, language %s failed to render: %s",
+                        $letter->{code},                   $letter->{module}, $letter->{branchcode} || 'all',
+                        $letter->{message_transport_type}, $letter->{lang},   $summary
+                    ),
+                }
+            );
         }
-    );
+
+        die $error;
+    };
 
     if (%$substitute) {
         while ( my ( $token, $val ) = each %$substitute ) {
