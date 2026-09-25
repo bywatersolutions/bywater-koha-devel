@@ -361,7 +361,7 @@ subtest "Update patron categories" => sub {
 };
 
 subtest "Update patron categories with update_expiry" => sub {
-    plan tests => 4;
+    plan tests => 6;
 
     my $enrolmentperiod = 36;
     my $from_category   = $builder->build(
@@ -395,6 +395,15 @@ subtest "Update patron categories with update_expiry" => sub {
         }
     );
 
+    # Already expires further out than the new category would give
+    my $long_dateexpiry = dt_from_string->add( years => 18 )->ymd;
+    my $long_membership = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => { categorycode => $from_category, dateexpiry => $long_dateexpiry }
+        }
+    );
+
     Koha::Patrons->search( { borrowernumber => $untouched->borrowernumber } )
         ->update_category_to( { category => $to_category } );
     $untouched->discard_changes;
@@ -409,6 +418,15 @@ subtest "Update patron categories with update_expiry" => sub {
         $renewed->dateexpiry,
         dt_from_string->add( months => $enrolmentperiod, end_of_month => 'limit' )->ymd,
         'Expiration date was set from the enrollment period of the new category'
+    );
+
+    Koha::Patrons->search( { borrowernumber => $long_membership->borrowernumber } )
+        ->update_category_to( { category => $to_category, update_expiry => 1 } );
+    $long_membership->discard_changes;
+    is( $long_membership->categorycode, $to_category, 'Patron was moved to the new category' );
+    is(
+        $long_membership->dateexpiry, $long_dateexpiry,
+        'Expiration date already further out than the new category is not shortened'
     );
 };
 
