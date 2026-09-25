@@ -502,7 +502,9 @@ To make sure all the conditions are met, the caller has the responsibility to
 call search_patrons_to_update to filter the Koha::Patrons set
 
 If update_expiry is passed, the expiration date of each patron is also set to the
-expiration date the new category gives a patron enrolled today.
+expiration date the new category gives a patron enrolled today. Patrons who already
+expire later than that keep the date they have, a category change never shortens a
+membership.
 
 =cut
 
@@ -516,11 +518,19 @@ sub update_category_to {
         ? Koha::Patron::Categories->find( $params->{category} )->get_expiry_date
         : undef;
 
+    # get_expiry_date gives a DateTime for enrolmentperiod but a date string for enrolmentperioddate
+    $dateexpiry = dt_from_string($dateexpiry) if $dateexpiry;
+
     while ( my $patron = $self->next ) {
         $patron->discard_changes;
         $counter++;
         $patron->categorycode( $params->{category} );
-        $patron->dateexpiry($dateexpiry) if $dateexpiry;
+
+        # Only ever push the expiration date out, a category change should not shorten a membership
+        $patron->dateexpiry($dateexpiry)
+            if $dateexpiry
+            && ( !$patron->dateexpiry || $dateexpiry > dt_from_string( $patron->dateexpiry ) );
+
         $patron->store();
     }
     return $counter;

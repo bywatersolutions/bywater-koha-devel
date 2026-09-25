@@ -139,6 +139,9 @@ Also set the expiration date of each updated patron to the expiration date the n
 category gives a patron enrolled today. This is the same as ticking "Reset expiration
 date to category default" when changing a patron's category in the staff interface.
 
+Patrons who already expire later than that keep the date they have, so moving a patron
+into a category with a shorter enrollment period never cuts their membership short.
+
 =back
 
 =head1 DESCRIPTION
@@ -267,7 +270,7 @@ while ( my ( $key, $value ) = each %fields ) {
 }
 
 if ( $verbose && $new_expiry ) {
-    print "Expiration date will be set to $new_expiry\n";
+    print "Expiration date will be set to $new_expiry for patrons expiring before then\n";
 }
 
 my $where_literal  = join ' AND ', @where;
