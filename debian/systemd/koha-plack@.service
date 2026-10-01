@@ -39,7 +39,52 @@ OOMPolicy=continue
 ProtectSystem=full
 ProtectHome=yes
 PrivateTmp=yes
-NoNewPrivileges=yes
+# No NoNewPrivileges here, unlike the other units. The task scheduler
+# ( tools/scheduler.pl ) queues reports with at, which is setuid and setgid
+# daemon, and NoNewPrivileges makes the kernel ignore those bits. Every other
+# setuid, setgid and file capability binary a Debian server usually carries is
+# made inaccessible instead, so at is the only one plack can run. A package
+# upgrade that replaces one of them drops its mask until plack restarts.
+# SystemCallFilter=, RestrictSUIDSGID=, PrivateDevices=, ProtectKernel*= and
+# the other settings that imply NoNewPrivileges break the scheduler the same way.
+InaccessiblePaths=-/usr/bin/su
+InaccessiblePaths=-/usr/bin/sudo
+InaccessiblePaths=-/usr/bin/pkexec
+InaccessiblePaths=-/usr/bin/mount
+InaccessiblePaths=-/usr/bin/umount
+InaccessiblePaths=-/usr/bin/passwd
+InaccessiblePaths=-/usr/bin/chsh
+InaccessiblePaths=-/usr/bin/chfn
+InaccessiblePaths=-/usr/bin/gpasswd
+InaccessiblePaths=-/usr/bin/newgrp
+InaccessiblePaths=-/usr/bin/fusermount
+InaccessiblePaths=-/usr/bin/fusermount3
+InaccessiblePaths=-/usr/bin/newuidmap
+InaccessiblePaths=-/usr/bin/newgidmap
+InaccessiblePaths=-/usr/lib/openssh/ssh-keysign
+InaccessiblePaths=-/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+InaccessiblePaths=-/usr/lib/polkit-1/polkit-agent-helper-1
+InaccessiblePaths=-/usr/sbin/mount.nfs
+InaccessiblePaths=-/usr/sbin/mount.cifs
+InaccessiblePaths=-/usr/sbin/exim4
+InaccessiblePaths=-/usr/sbin/pppd
+InaccessiblePaths=-/usr/bin/crontab
+InaccessiblePaths=-/usr/bin/chage
+InaccessiblePaths=-/usr/bin/expiry
+InaccessiblePaths=-/usr/bin/ssh-agent
+InaccessiblePaths=-/usr/bin/wall
+InaccessiblePaths=-/usr/bin/write.ul
+InaccessiblePaths=-/usr/bin/dotlockfile
+InaccessiblePaths=-/usr/bin/plocate
+InaccessiblePaths=-/usr/bin/mlocate
+InaccessiblePaths=-/usr/sbin/unix_chkpwd
+InaccessiblePaths=-/usr/sbin/postdrop
+InaccessiblePaths=-/usr/sbin/postqueue
+InaccessiblePaths=-/usr/bin/ping
+InaccessiblePaths=-/usr/bin/arping
+InaccessiblePaths=-/usr/bin/clockdiff
+InaccessiblePaths=-/usr/bin/mtr-packet
+InaccessiblePaths=-/usr/bin/fping
 Restart=always
 RestartSec=5s
 
