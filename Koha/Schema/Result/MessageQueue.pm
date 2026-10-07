@@ -121,6 +121,22 @@ Foreign key to the letters table
   data_type: 'mediumtext'
   is_nullable: 1
 
+=head2 send_attempts
+
+  data_type: 'integer'
+  default_value: 0
+  is_nullable: 0
+
+number of times a temporary failure prevented Koha from sending this message
+
+=head2 retry_after
+
+  data_type: 'datetime'
+  datetime_undef_if_invalid: 1
+  is_nullable: 1
+
+do not try to send this message again before this time
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -172,6 +188,14 @@ __PACKAGE__->add_columns(
   { data_type => "mediumtext", is_nullable => 1 },
   "failure_code",
   { data_type => "mediumtext", is_nullable => 1 },
+  "send_attempts",
+  { data_type => "integer", default_value => 0, is_nullable => 0 },
+  "retry_after",
+  {
+    data_type => "datetime",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -244,8 +268,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07049 @ 2023-09-18 14:26:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:eJFHJ3sXu+kLt+uW4ILPIA
+# Created by DBIx::Class::Schema::Loader v0.07053 @ 2026-10-07 16:10:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XSiLqAYEyjcMQ9G5vg59rQ
 
 =head2 koha_object_class
 
