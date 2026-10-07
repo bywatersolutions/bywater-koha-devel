@@ -5005,6 +5005,8 @@ CREATE TABLE `message_queue` (
   `reply_address` longtext DEFAULT NULL,
   `content_type` mediumtext DEFAULT NULL,
   `failure_code` mediumtext DEFAULT NULL,
+  `send_attempts` int(11) NOT NULL DEFAULT 0 COMMENT 'number of times a temporary failure prevented Koha from sending this message',
+  `retry_after` datetime DEFAULT NULL COMMENT 'do not try to send this message again before this time',
   PRIMARY KEY (`message_id`),
   KEY `borrowernumber` (`borrowernumber`),
   KEY `message_transport_type` (`message_transport_type`),
