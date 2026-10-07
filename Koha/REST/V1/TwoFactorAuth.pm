@@ -67,7 +67,7 @@ sub send_otp_token {
 
         if ( $message->{status} eq 'sent' ) {
             return $c->render( status => 200, openapi => {} );
-        } elsif ( $message->{status} eq 'failed' ) {
+        } else {
             return $c->render( status => 400, openapi => { error => 'email_not_sent' } );
         }
     } catch {
