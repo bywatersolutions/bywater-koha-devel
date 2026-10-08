@@ -472,9 +472,11 @@ jobs:
             - name: Clean out old docker images, just in case
               run: docker system prune -a
 
+            # Pinned to the last bookworm build of koha/koha-dpkg:main. The trixie rebuild ( 2026-10-08 ) still
+            # uses apt-key to trust the Koha repo, which trixie removed, so koha-perldeps can't be installed.
             - name: Run koha-dpkg-docker
               run: |
-                  docker run --volume=${{ steps.extracted_variables.outputs.KOHACLONE }}:/koha --volume=/tmp/debs:/debs --privileged --env VERSION="${{ steps.extracted_variables.outputs.MMM_VERSION }}~${{ steps.extracted_variables.outputs.SHORTNAME }}~${{ steps.extracted_variables.outputs.MARK }}" --env RELEASE="${{ steps.extracted_variables.outputs.MAJOR_MINOR_VERSION }}" --env DEB_BUILD_OPTIONS="nocheck" koha/koha-dpkg:main
+                  docker run --volume=${{ steps.extracted_variables.outputs.KOHACLONE }}:/koha --volume=/tmp/debs:/debs --privileged --env VERSION="${{ steps.extracted_variables.outputs.MMM_VERSION }}~${{ steps.extracted_variables.outputs.SHORTNAME }}~${{ steps.extracted_variables.outputs.MARK }}" --env RELEASE="${{ steps.extracted_variables.outputs.MAJOR_MINOR_VERSION }}" --env DEB_BUILD_OPTIONS="nocheck" koha/koha-dpkg@sha256:531e193b6bfcb55b1988a4ac6172eba6296cd0b7a96a4b31e226e5da8ca3e3fd
 
             - name: List file in debs dir
               run: ls -alh /tmp/debs
