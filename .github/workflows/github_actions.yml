@@ -331,7 +331,7 @@ jobs:
               if: failure()
 
     release-notes: # This container checks out the branch on it's own, so no need for the GitHub checkout action
-        if: github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-security'
+        if: needs.build-debs.result == 'success' && needs.is-a-mark.result == 'success' && !cancelled() && ( github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-security' )
         name: Build release notes
         needs: [build-debs, is-a-mark]
         runs-on: ubuntu-latest
@@ -348,7 +348,7 @@ jobs:
                   docker run --env DEBUG=1 --env UPLOAD=1 --env GITHUB_TOKEN=${{ secrets.OUR_GITHUB_TOKEN }} --env KOHA_BRANCH=$KOHA_BRANCH quay.io/bywatersolutions/bywater-koha-release-notes-generator
 
     release-notes-notify-general: # Message #general only for bywater releases
-        if: contains(github.ref, 'bywater-v')
+        if: needs.release-notes.result == 'success' && !cancelled() && contains(github.ref, 'bywater-v')
         name: Notify general channel about new release notes
         needs: release-notes
         runs-on: ubuntu-latest
@@ -366,6 +366,7 @@ jobs:
                   curl -X POST -H 'Content-type: application/json' --data '{ "blocks": [{"type": "section","text": {  "type": "mrkdwn","text": "@here, new release notes are here! https://github.com/bywatersolutions/bywater-koha-release-notes/blob/master/${{ steps.extracted_variables.outputs.KOHA_BRANCH }}.md"}}]}' ${{ secrets.SLACK_GENERAL_WEBHOOK }}
 
     release-notes-notify-slack-channel: # Message #release-notes for all codebases
+        if: needs.release-notes.result == 'success' && !cancelled()
         name: Notify release-notes channel about new release notes
         needs: release-notes
         runs-on: ubuntu-latest
@@ -383,7 +384,7 @@ jobs:
                   curl -X POST -H 'Content-type: application/json' --data '{ "blocks": [{"type": "section","text": {  "type": "mrkdwn","text": "@here, new release notes are here! https://github.com/bywatersolutions/bywater-koha-release-notes/blob/master/${{ steps.extracted_variables.outputs.KOHA_BRANCH }}.md"}}]}' ${{ secrets.SLACK_RELEASE_NOTES_WEBHOOK }}
 
     auto-rebase:
-        if: startsWith( github.ref, 'refs/heads/bywater-v' ) && github.repository == 'bywatersolutions/bywater-koha'
+        if: needs.build-debs.result == 'success' && needs.is-a-mark.result == 'success' && !cancelled() && startsWith( github.ref, 'refs/heads/bywater-v' ) && github.repository == 'bywatersolutions/bywater-koha'
         name: Rebase custom codebases
         needs: [build-debs, is-a-mark]
         runs-on: ubuntu-latest
@@ -563,7 +564,7 @@ jobs:
         name: Lock release branch after successful build
         needs: [build-debs]
         if: |
-            success() &&
+            needs.build-debs.result == 'success' && !cancelled() &&
             startsWith(github.event.head_commit.message, 'BWS-PKG - Set bwsbranch to') &&
             (github.repository == 'bywatersolutions/bywater-koha' ||
              github.repository == 'bywatersolutions/bywater-koha-future' ||
@@ -683,7 +684,7 @@ jobs:
 
     set-default-branch:
       name: Set default branch
-      if: startsWith( github.ref, 'refs/heads/bywater-v' ) && ( github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' )
+      if: needs.build-debs.result == 'success' && needs.is-a-mark.result == 'success' && !cancelled() && startsWith( github.ref, 'refs/heads/bywater-v' ) && ( github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' )
       needs: [build-debs, is-a-mark]
       runs-on: ubuntu-latest
       steps:
