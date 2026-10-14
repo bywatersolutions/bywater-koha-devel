@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 use File::Basename qw(dirname);
-use Test::More tests => 105;
+use Test::More tests => 107;
 use Test::NoWarnings;
 
 use Test::MockModule;
@@ -27,6 +27,8 @@ use Test::Warn;
 use Test::Exception;
 
 use Email::Sender::Failure;
+use Email::Sender::Failure::Permanent;
+use Email::Sender::Failure::Temporary;
 
 use MARC::Record;
 
@@ -1823,6 +1825,296 @@ subtest 'Virtual method ->strftime in notices' => sub {
     $expected_output =~ s/10=12/10=17\/12\/2024/;
     $expected_output =~ s/11=.{10}/11=12/;
     is( $get_letter->()->{content}, $expected_output, 'Check generated content for us dateformat' );
+};
+
+subtest 'Test temporary SMTP failure handling in SendQueuedMessages' => sub {
+    plan tests => 31;
+
+    my $dbh = C4::Context->dbh;
+    $dbh->do(q|DELETE FROM message_queue|);
+
+    my $patron = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => {
+                branchcode => $library->{branchcode},
+                email      => 'patron@example.org',
+            }
+        }
+    );
+    my $message_id = C4::Letters::EnqueueLetter(
+        {
+            letter => {
+                content      => 'a message',
+                metadata     => 'metadata',
+                code         => 'TEST_MESSAGE',
+                content_type => 'text/plain',
+                title        => 'message title',
+            },
+            borrowernumber         => $patron->borrowernumber,
+            to_address             => undef,
+            message_transport_type => 'email',
+            from_address           => 'from@example.com',
+        }
+    );
+
+    # A 421 at the EHLO stage reaches Koha as a plain failure without a response code
+    my $send_or_die_calls = 0;
+    my $mocked_koha_email = Test::MockModule->new('Koha::Email');
+    $mocked_koha_email->mock(
+        'send_or_die',
+        sub {
+            $send_or_die_calls++;
+            Email::Sender::Failure->throw('unable to establish SMTP connection to (smtp.example.org) port 587');
+        }
+    );
+
+    my $sent;
+    warnings_like {
+        $sent = C4::Letters::SendQueuedMessages( { message_id => $message_id } );
+    }
+    [ qr/unable to establish SMTP connection/, qr/is unavailable/ ], 'The connection failure is logged';
+    is( $sent, 0, 'Nothing was sent' );
+    my $notice = Koha::Notice::Messages->find($message_id);
+    is( $notice->status,        'pending', 'Message is still pending after a connection failure' );
+    is( $notice->send_attempts, 1,         'One attempt recorded' );
+    my ($minutes_until_retry) = $dbh->selectrow_array(
+        q|SELECT TIMESTAMPDIFF(MINUTE, NOW(), retry_after) FROM message_queue WHERE message_id = ?|, undef,
+        $message_id
+    );
+    ok( $minutes_until_retry >= 9 && $minutes_until_retry <= 10, 'First retry is scheduled 10 minutes out' );
+
+    # The message is skipped while it waits out the delay
+    $send_or_die_calls = 0;
+    C4::Letters::SendQueuedMessages( { message_id => $message_id } );
+    is( $send_or_die_calls,                                       0, 'No attempt is made before retry_after' );
+    is( Koha::Notice::Messages->find($message_id)->send_attempts, 1, 'Attempt count is unchanged' );
+
+    # A 4xx response after connecting is a temporary failure too
+    $mocked_koha_email->mock(
+        'send_or_die',
+        sub {
+            Email::Sender::Failure::Temporary->throw(
+                { message => '421 4.7.0 Try again later, closing connection', code => 421 } );
+        }
+    );
+    $dbh->do(
+        q|UPDATE message_queue SET retry_after = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE message_id = ?|, undef,
+        $message_id
+    );
+    warnings_like {
+        C4::Letters::SendQueuedMessages( { message_id => $message_id } );
+    }
+    [ qr/Try again later/, qr/is unavailable/ ], 'The 421 is logged';
+    $notice = Koha::Notice::Messages->find($message_id);
+    is( $notice->status,        'pending', 'Message is still pending after a 421' );
+    is( $notice->send_attempts, 2,         'Second attempt recorded' );
+    ($minutes_until_retry) = $dbh->selectrow_array(
+        q|SELECT TIMESTAMPDIFF(MINUTE, NOW(), retry_after) FROM message_queue WHERE message_id = ?|, undef,
+        $message_id
+    );
+    ok( $minutes_until_retry >= 29 && $minutes_until_retry <= 30, 'Second retry is scheduled 30 minutes out' );
+
+    # Once the delays run out the message is marked failed
+    {
+        local @C4::Letters::SMTP_RETRY_DELAYS = ( 1, 2 );
+        $dbh->do(
+            q|UPDATE message_queue SET retry_after = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE message_id = ?|, undef,
+            $message_id
+        );
+        warnings_like {
+            C4::Letters::SendQueuedMessages( { message_id => $message_id } );
+        }
+        [ qr/Try again later/, qr/is unavailable/ ], 'The last failure is logged';
+    }
+    $notice = Koha::Notice::Messages->find($message_id);
+    is( $notice->status,        'failed',   'Message is marked failed once the retries are used up' );
+    is( $notice->send_attempts, 3,          'Third and final attempt recorded' );
+    is( $notice->failure_code,  'SENDMAIL', 'Failure code is the usual one once Koha gives up' );
+
+    # Resending starts the schedule over
+    C4::Letters::ResendMessage($message_id);
+    $notice = Koha::Notice::Messages->find($message_id);
+    is( $notice->status,        'pending', 'Resent message is pending again' );
+    is( $notice->send_attempts, 0,         'Attempt count is reset by the resend' );
+    is( $notice->retry_after,   undef,     'retry_after is cleared by the resend' );
+    is( $notice->failure_code,  '',        'Failure code is cleared by the resend' );
+
+    # A permanent failure is still marked failed right away
+    $mocked_koha_email->mock(
+        'send_or_die',
+        sub {
+            Email::Sender::Failure::Permanent->throw( { message => '550 5.1.1 No such user', code => 550 } );
+        }
+    );
+    warning_like {
+        C4::Letters::SendQueuedMessages( { message_id => $message_id } );
+    }
+    qr/No such user/, 'The permanent failure is logged';
+    $notice = Koha::Notice::Messages->find($message_id);
+    is( $notice->status,        'failed',   'Permanent failure marks the message failed' );
+    is( $notice->failure_code,  'SENDMAIL', 'Permanent failure keeps the SENDMAIL failure code' );
+    is( $notice->send_attempts, 0,          'Permanent failure does not count as a retry' );
+
+    # So is anything that is not an SMTP failure at all
+    C4::Letters::ResendMessage($message_id);
+    $mocked_koha_email->mock( 'send_or_die', sub { die "Something went wrong"; } );
+    warning_like {
+        C4::Letters::SendQueuedMessages( { message_id => $message_id } );
+    }
+    qr/Something went wrong/, 'The exception is logged';
+    $notice = Koha::Notice::Messages->find($message_id);
+    is( $notice->status,       'failed',   'Unhandled exception marks the message failed' );
+    is( $notice->failure_code, 'SENDMAIL', 'Unhandled exception keeps the SENDMAIL failure code' );
+
+    # A deferred message goes out normally once the mail server is back
+    C4::Letters::ResendMessage($message_id);
+    $dbh->do(
+        q|UPDATE message_queue SET send_attempts = 2, retry_after = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE message_id = ?|,
+        undef, $message_id
+    );
+    $mocked_koha_email->unmock('send_or_die');
+    warning_like {
+        $sent = C4::Letters::SendQueuedMessages( { message_id => $message_id } );
+    }
+    qr/Fake send_or_die/, 'Message is sent once the delay has passed';
+    is( $sent, 1, 'One message sent' );
+    $notice = Koha::Notice::Messages->find($message_id);
+    is( $notice->status,       'sent', 'Message is marked sent' );
+    is( $notice->failure_code, '',     'Failure code is cleared once the message is sent' );
+};
+
+subtest 'Test unavailable SMTP server handling in SendQueuedMessages' => sub {
+    plan tests => 9;
+
+    my $dbh = C4::Context->dbh;
+    $dbh->do(q|DELETE FROM message_queue|);
+
+    my $patron = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => {
+                branchcode => $library->{branchcode},
+                email      => 'patron@example.org',
+            }
+        }
+    );
+    my $message = {
+        letter => {
+            content      => 'a message',
+            metadata     => 'metadata',
+            code         => 'TEST_MESSAGE',
+            content_type => 'text/plain',
+            title        => 'message title',
+        },
+        borrowernumber         => $patron->borrowernumber,
+        to_address             => undef,
+        message_transport_type => 'email',
+        from_address           => 'from@example.com',
+    };
+    my @message_ids = map { C4::Letters::EnqueueLetter($message) } 1 .. 3;
+
+    my $send_or_die_calls = 0;
+    my $mocked_koha_email = Test::MockModule->new('Koha::Email');
+    $mocked_koha_email->mock(
+        'send_or_die',
+        sub {
+            $send_or_die_calls++;
+            Email::Sender::Failure->throw('unable to establish SMTP connection to (smtp.example.org) port 587');
+        }
+    );
+
+    warnings_like {
+        C4::Letters::SendQueuedMessages( { type => 'email' } );
+    }
+    [ qr/unable to establish SMTP connection/, qr/is unavailable/ ],
+        'The connection failure and the unavailable server are each logged once';
+    is( $send_or_die_calls, 1, 'Only one connection attempt was made for the whole run' );
+    is(
+        Koha::Notice::Messages->search(
+            {
+                message_id    => \@message_ids,
+                status        => 'pending',
+                send_attempts => 1,
+                retry_after   => { '!=' => undef },
+            }
+        )->count,
+        3,
+        'All three messages were deferred with one attempt recorded'
+    );
+
+    # A 4xx response about one message does not take the server down for the others
+    $dbh->do(q|UPDATE message_queue SET retry_after = DATE_SUB(NOW(), INTERVAL 1 MINUTE)|);
+    $send_or_die_calls = 0;
+    $mocked_koha_email->mock(
+        'send_or_die',
+        sub {
+            $send_or_die_calls++;
+            Email::Sender::Failure::Temporary->throw(
+                {
+                    message => '450 4.2.1 The user you are trying to contact is receiving mail too quickly',
+                    code    => 450
+                }
+            );
+        }
+    );
+    warnings_like {
+        C4::Letters::SendQueuedMessages( { type => 'email' } );
+    }
+    [ (qr/receiving mail too quickly/) x 3 ], 'Each 450 is logged on its own';
+    is( $send_or_die_calls, 3, 'Every message was still tried after a 450' );
+    is(
+        Koha::Notice::Messages->search( { message_id => \@message_ids, send_attempts => 2 } )->count, 3,
+        'Each message recorded its own second attempt'
+    );
+
+    # Other SMTP servers are still tried in the same run
+    my $other_server  = $builder->build_object( { class => 'Koha::SMTP::Servers', value => { is_default => 0 } } );
+    my $other_library = $builder->build_object(
+        {
+            class => 'Koha::Libraries',
+            value => {
+                branchemail      => 'branchemail@address.com',
+                branchreplyto    => 'branchreplyto@address.com',
+                branchreturnpath => 'branchreturnpath@address.com',
+            }
+        }
+    );
+    $other_library->smtp_server( { smtp_server => $other_server } );
+    my $other_patron = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => {
+                branchcode => $other_library->branchcode,
+                email      => 'other@example.org',
+            }
+        }
+    );
+    my @new_message_ids = (
+        C4::Letters::EnqueueLetter($message),
+        C4::Letters::EnqueueLetter( { %$message, borrowernumber => $other_patron->borrowernumber } ),
+    );
+    $send_or_die_calls = 0;
+    $mocked_koha_email->mock(
+        'send_or_die',
+        sub {
+            $send_or_die_calls++;
+            Email::Sender::Failure->throw('unable to establish SMTP connection to (smtp.example.org) port 587');
+        }
+    );
+    warnings_like {
+        C4::Letters::SendQueuedMessages( { type => 'email' } );
+    }
+    [
+        qr/unable to establish SMTP connection/, qr/is unavailable/,
+        qr/unable to establish SMTP connection/, qr/is unavailable/
+    ],
+        'Each server is tried once and logged as unavailable';
+    is( $send_or_die_calls, 2, 'One connection attempt per SMTP server' );
+    is(
+        Koha::Notice::Messages->search( { message_id => \@new_message_ids, send_attempts => 1 } )->count, 2,
+        'Both messages were deferred'
+    );
 };
 
 $schema->storage->txn_rollback;
