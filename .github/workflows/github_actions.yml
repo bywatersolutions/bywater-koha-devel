@@ -692,6 +692,10 @@ jobs:
               KOHA_BRANCH=${GITHUB_REF##*/}
               echo "KOHA_BRANCH: $KOHA_BRANCH";
               gh repo edit ${{ github.repository }} --default-branch $KOHA_BRANCH
+              for PR in $(gh api --paginate "repos/${{ github.repository }}/pulls?state=open" --jq ".[] | select(.base.ref != \"$KOHA_BRANCH\") | .number"); do
+                  echo "Retargeting PR #$PR to $KOHA_BRANCH"
+                  gh api --method PATCH "repos/${{ github.repository }}/pulls/$PR" -f base="$KOHA_BRANCH" > /dev/null
+              done
           env:
             GITHUB_TOKEN: ${{ secrets.OUR_GITHUB_TOKEN }}
             BRANCH: ${GITHUB_REF##*/}
