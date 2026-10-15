@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 use File::Basename qw(dirname);
-use Test::More tests => 107;
+use Test::More tests => 108;
 use Test::NoWarnings;
 
 use Test::MockModule;
@@ -1258,6 +1258,60 @@ subtest 'Test SMS handling in SendQueuedMessages' => sub {
 
     $schema->resultset('MessageQueue')->search( { borrowernumber => $borrowernumber, status => 'sent' } )->delete()
         ;    #clear borrower queue
+};
+
+subtest 'Test SMTP transport reuse in SendQueuedMessages' => sub {
+
+    plan tests => 4;
+
+    t::lib::Mocks::mock_preference( 'SMSSendDriver',                 'Email' );
+    t::lib::Mocks::mock_preference( 'EmailSMSSendDriverFromAddress', '' );
+
+    my $transport_count    = 0;
+    my $mocked_smtp_server = Test::MockModule->new('Koha::SMTP::Server');
+    $mocked_smtp_server->mock(
+        'transport',
+        sub {
+            $transport_count++;
+            return 'fake_transport';
+        }
+    );
+
+    my $sms_pro = $builder->build_object( { class => 'Koha::SMS::Providers', value => { domain => 'example.org' } } );
+    my $patron  = $builder->build_object(
+        {
+            class => 'Koha::Patrons',
+            value => {
+                branchcode      => $library->{branchcode},
+                smsalertnumber  => '5555555555',
+                sms_provider_id => $sms_pro->id,
+            }
+        }
+    );
+
+    for my $i ( 1 .. 2 ) {
+        C4::Letters::EnqueueLetter(
+            {
+                borrowernumber         => $patron->borrowernumber,
+                from_address           => 'from@example.com',
+                message_transport_type => 'sms',
+                letter                 => {
+                    content => "Test SMS $i",
+                    title   => "Test SMS $i",
+                    code    => 'TEST_SMS_REUSE',
+                },
+            }
+        );
+    }
+
+    warnings_like { C4::Letters::SendQueuedMessages( { borrowernumber => $patron->borrowernumber } ) }
+    [ qr|Fake send_or_die|, qr|Fake send_or_die| ],
+        'Both SMS messages were sent via email';
+
+    is( $transport_count, 1, 'Only one SMTP transport was created for multiple SMS messages sent via email' );
+
+    # Put the SMS driver back for the subtests that follow
+    t::lib::Mocks::mock_preference( 'SMSSendDriver', 'AU::Test' );
 };
 
 subtest 'Test guarantor handling in SendQueuedMessages' => sub {
