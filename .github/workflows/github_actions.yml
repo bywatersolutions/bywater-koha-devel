@@ -74,7 +74,7 @@ jobs:
                 fi
 
     is-a-mark:
-        if: "contains(github.event.head_commit.message, ' - Set bwsbranch to')"
+        if: "contains(github.event.head_commit.message, format(' - Set bwsbranch to {0}', github.ref_name))"
         name: Check for mark
         needs: [check-repo]
         runs-on: ubuntu-latest
@@ -565,7 +565,7 @@ jobs:
         needs: [build-debs]
         if: |
             needs.build-debs.result == 'success' && !cancelled() &&
-            startsWith(github.event.head_commit.message, 'BWS-PKG - Set bwsbranch to') &&
+            startsWith(github.event.head_commit.message, format('BWS-PKG - Set bwsbranch to {0}', github.ref_name)) &&
             (github.repository == 'bywatersolutions/bywater-koha' ||
              github.repository == 'bywatersolutions/bywater-koha-future' ||
              github.repository == 'bywatersolutions/bywater-koha-security')
@@ -687,18 +687,78 @@ jobs:
       if: needs.build-debs.result == 'success' && needs.is-a-mark.result == 'success' && !cancelled() && startsWith( github.ref, 'refs/heads/bywater-v' ) && ( github.repository == 'bywatersolutions/bywater-koha' || github.repository == 'bywatersolutions/bywater-koha-future' )
       needs: [build-debs, is-a-mark]
       runs-on: ubuntu-latest
+      permissions:
+        contents: write
+      env:
+        GITHUB_TOKEN: ${{ secrets.OUR_GITHUB_TOKEN }}
+        BRANCH: ${GITHUB_REF##*/}
       steps:
-        - run: |
+        - name: Work out the next mark
+          run: |
               KOHA_BRANCH=${GITHUB_REF##*/}
               echo "KOHA_BRANCH: $KOHA_BRANCH";
-              gh repo edit ${{ github.repository }} --default-branch $KOHA_BRANCH
-              for PR in $(gh api --paginate "repos/${{ github.repository }}/pulls?state=open" --jq ".[] | select(.base.ref != \"$KOHA_BRANCH\") | .number"); do
-                  echo "Retargeting PR #$PR to $KOHA_BRANCH"
-                  gh api --method PATCH "repos/${{ github.repository }}/pulls/$PR" -f base="$KOHA_BRANCH" > /dev/null
-              done
+              PREFIX=${KOHA_BRANCH%-*}-
+              # 10# keeps bash from reading marks 08 and 09 as octal
+              NEXT_BRANCH=${PREFIX}$(printf '%02d' $((10#${KOHA_BRANCH##*-} + 1)))
+              echo "NEXT_BRANCH: $NEXT_BRANCH"
+              echo "PREFIX=$PREFIX" >> $GITHUB_ENV
+              echo "NEXT_BRANCH=$NEXT_BRANCH" >> $GITHUB_ENV
+
+        # Use the workflow's own token so the new branch doesn't start another run of this workflow
+        - name: Create the next mark branch
+          run: |
+              if ! gh api "repos/${{ github.repository }}/branches/$NEXT_BRANCH" --silent 2>/dev/null; then
+                  gh api --method POST "repos/${{ github.repository }}/git/refs" -f ref="refs/heads/$NEXT_BRANCH" -f sha="$GITHUB_SHA" > /dev/null
+              fi
           env:
-            GITHUB_TOKEN: ${{ secrets.OUR_GITHUB_TOKEN }}
-            BRANCH: ${GITHUB_REF##*/}
+            GH_TOKEN: ${{ github.token }}
+
+        - name: Set default branch
+          run: gh repo edit ${{ github.repository }} --default-branch $NEXT_BRANCH
+
+        - name: Retarget pull requests against earlier marks
+          run: |
+              for PR in $(gh api --paginate "repos/${{ github.repository }}/pulls?state=open" --jq ".[] | select(.base.ref | startswith(\"$PREFIX\")) | select(.base.ref != \"$NEXT_BRANCH\") | .number"); do
+                  echo "Retargeting PR #$PR to $NEXT_BRANCH"
+                  gh api --method PATCH "repos/${{ github.repository }}/pulls/$PR" -f base="$NEXT_BRANCH" > /dev/null
+              done
+
+        # A pull request against another Koha version would show every custom commit of that version, so its own commits get rebased onto the new branch
+        - name: Find pull requests against other Koha versions
+          id: other_versions
+          run: |
+              gh api --paginate "repos/${{ github.repository }}/pulls?state=open" \
+                  --jq ".[] | select(.base.ref | startswith(\"bywater-v\")) | select(.base.ref | startswith(\"$PREFIX\") | not) | [.number, .base.ref, .head.repo.full_name, .head.ref, .head.sha] | @tsv" > other_version_prs.tsv
+              cat other_version_prs.tsv
+              echo "count=$(wc -l < other_version_prs.tsv)" >> $GITHUB_OUTPUT
+
+        - name: Clone the repository
+          if: steps.other_versions.outputs.count != '0'
+          run: |
+              git clone --quiet "https://x-access-token:$GITHUB_TOKEN@github.com/${{ github.repository }}.git" koha
+              git -C koha config user.name "github-actions[bot]"
+              git -C koha config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+        - name: Rebase pull requests against other Koha versions
+          if: steps.other_versions.outputs.count != '0'
+          run: |
+              while IFS=$'\t' read -r -u 3 PR BASE HEAD_REPO HEAD_REF HEAD_SHA; do
+                  echo "Rebasing PR #$PR from $BASE onto $NEXT_BRANCH"
+                  git -C koha checkout --quiet --force --detach "$GITHUB_SHA"
+                  git -C koha fetch --quiet origin "pull/$PR/head"
+                  COMMITS=$(gh api --paginate "repos/${{ github.repository }}/pulls/$PR/commits" --jq '.[].sha')
+                  if git -C koha cherry-pick --empty=drop $COMMITS; then
+                      gh api --method PATCH "repos/${{ github.repository }}/pulls/$PR" -f base="$NEXT_BRANCH" > /dev/null
+                      if git -C koha push --quiet --force-with-lease="refs/heads/$HEAD_REF:$HEAD_SHA" "https://x-access-token:$GITHUB_TOKEN@github.com/$HEAD_REPO.git" "HEAD:refs/heads/$HEAD_REF"; then
+                          gh api --method POST "repos/${{ github.repository }}/issues/$PR/comments" -f body="Rebased onto $NEXT_BRANCH and retargeted. Reset your local copy of $HEAD_REF before pushing to it again." > /dev/null
+                          continue
+                      fi
+                      gh api --method PATCH "repos/${{ github.repository }}/pulls/$PR" -f base="$BASE" > /dev/null
+                  else
+                      git -C koha cherry-pick --abort || true
+                  fi
+                  gh api --method POST "repos/${{ github.repository }}/issues/$PR/comments" -f body="This pull request could not be rebased onto $NEXT_BRANCH automatically. Please rebase it by hand and change its base branch to $NEXT_BRANCH." > /dev/null
+              done 3< other_version_prs.tsv
 
     zap-scan-baseline-opac:
         name: ZAP Scan - Baseline - OPAC
