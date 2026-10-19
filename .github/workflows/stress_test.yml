@@ -41,6 +41,8 @@ jobs:
                   echo "LOCAL_USER_ID=$LOCAL_USER_ID" >> .env
                   echo "SYNC_REPO=$SYNC_REPO" >> .env
                   echo "KOHA_IMAGE=$KOHA_IMAGE" >> .env
+                  echo "PLACK_MAX_REQUESTS=50" >> .env
+                  echo "PLACK_WORKERS=6" >> .env
                   docker compose pull
                   docker compose -f docker-compose.yml -p koha up --detach
 
