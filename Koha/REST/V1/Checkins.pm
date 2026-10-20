@@ -26,8 +26,10 @@ use C4::Context;
 use Koha::Checkouts;
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Items;
+use Koha::Libraries;
 
-use Try::Tiny qw( catch try );
+use Scalar::Util qw( blessed );
+use Try::Tiny    qw( catch try );
 
 =head1 NAME
 
@@ -396,13 +398,46 @@ sub transfer_confirmation {
     my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
     return $c->render_resource_not_found("Checkin") unless $checkin;
 
-    return $c->render( status => 400, openapi => { error => "No transfer associated with this checkin" } )
-        unless $checkin->transfer_id;
+    my $body = $c->req->json // {};
+
+    # No transfer yet (AutomaticItemReturn disabled): the destination is required
+    unless ( $checkin->transfer_id ) {
+        return $c->render( status => 400, openapi => { error => "No transfer associated with this checkin" } )
+            unless $body->{to_library_id};
+
+        return $c->render( status => 400, openapi => { error => "Library not found" } )
+            unless Koha::Libraries->find( $body->{to_library_id} );
+    }
 
     return try {
-        $checkin->confirm_transfer;
+        $checkin->confirm_transfer(
+            {
+                to_library_id => $body->{to_library_id},
+                reason        => $body->{reason},
+            }
+        );
         return $c->_render_checkin_response($checkin);
     } catch {
+        if ( blessed $_ ) {
+            if ( $_->isa('Koha::Exceptions::Item::Transfer::Limit') ) {
+                return $c->render(
+                    status  => 409,
+                    openapi => {
+                        error      => 'Transfer not allowed by the branch transfer limits',
+                        error_code => 'transfer_limit',
+                    }
+                );
+            }
+            if ( $_->isa('Koha::Exceptions::Item::Transfer::InQueue') ) {
+                return $c->render(
+                    status  => 409,
+                    openapi => {
+                        error      => 'The item already has a pending transfer',
+                        error_code => 'transfer_in_queue',
+                    }
+                );
+            }
+        }
         $c->unhandled_exception($_);
     };
 }

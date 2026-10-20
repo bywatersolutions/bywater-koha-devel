@@ -222,6 +222,10 @@
                             <span v-else>{{ itemBarcode }}</span>
                         </p>
 
+                        <h4 v-if="isTransferQuestion">
+                            {{ $__("Transfer now?") }}
+                        </h4>
+
                         <!-- Reason for transfer -->
                         <div
                             v-if="transferInfo && transferInfo.trigger"
@@ -505,7 +509,7 @@
                             {{ $__("Print slip and transfer (P)") }}
                         </button>
                         <button
-                            v-if="isNonBlockingTransfer"
+                            v-if="isNonBlockingTransfer || isTransferQuestion"
                             type="button"
                             class="btn btn-default deny"
                             :disabled="confirming"
@@ -663,6 +667,18 @@ export default {
                 props.item &&
                 props.item._action_type === "transfer" &&
                 !policy.value.transfers_block
+        );
+
+        // The item needs a transfer that was not created (AutomaticItemReturn
+        // disabled): staff decide whether to transfer it now
+        const isTransferQuestion = computed(
+            () =>
+                props.item &&
+                props.item._action_type === "transfer" &&
+                !props.item.transfer_id &&
+                (props.item.messages || []).some(
+                    m => m.message === "needs_transfer"
+                )
         );
 
         const isPreCheckin = computed(
@@ -939,6 +955,7 @@ export default {
 
         return {
             isNonBlockingTransfer,
+            isTransferQuestion,
             isPreCheckin,
             isBlocked,
             blockedReason,

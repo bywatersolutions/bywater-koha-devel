@@ -525,7 +525,7 @@ subtest 'add - post-return processing' => sub {
 
 subtest 'sub-resource confirmation endpoints' => sub {
 
-    plan tests => 24;
+    plan tests => 32;
 
     $schema->storage->txn_begin;
 
@@ -625,6 +625,29 @@ subtest 'sub-resource confirmation endpoints' => sub {
 
     $transfer->discard_changes;
     ok( $transfer->datesent, 'Transfer set in transit' );
+
+    # -- transfer_confirmation without a transfer (AutomaticItemReturn disabled)
+    my $item5    = $builder->build_sample_item( { library => $checkin_library->branchcode } );
+    my $checkin5 = Koha::Checkin->new(
+        {
+            item_id    => $item5->itemnumber,
+            user_id    => $librarian->borrowernumber,
+            library_id => $checkin_library->branchcode,
+        }
+    )->store;
+    my $checkin5_url = "//$userid:$password\@/api/v1/checkins/" . $checkin5->id . "/transfer_confirmation";
+
+    $t->post_ok($checkin5_url)->status_is( 400, 'No transfer and no destination' );
+
+    $t->post_ok( $checkin5_url => json => { to_library_id => 'NOT_A_LIBRARY' } )
+        ->status_is( 400, 'Destination library does not exist' );
+
+    $t->post_ok( $checkin5_url => json => { to_library_id => $to_branch->branchcode, reason => 'ReturnToHome' } )
+        ->status_is( 201, 'Transfer requested to the passed library' );
+
+    $checkin5->discard_changes;
+    is( $checkin5->transfer->tobranch, $to_branch->branchcode, 'Transfer goes to the passed library' );
+    ok( $checkin5->transfer->datesent, 'Requested transfer set in transit' );
 
     # -- transfer_cancellation
     my $item4     = $builder->build_sample_item( { library => $checkin_library->branchcode } );
