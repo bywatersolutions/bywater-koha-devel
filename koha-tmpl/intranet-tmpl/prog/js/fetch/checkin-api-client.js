@@ -17,7 +17,7 @@ export class CheckinAPIClient {
                     body,
                     headers: {
                         "x-koha-embed":
-                            "item,item.biblio,checkout,checkout.patron,checkout.patron.checkouts+count,hold,hold.patron,hold.patron.notification_summary,transfer,recall,recall.patron,recall.patron.notification_summary",
+                            "item+strings,item.biblio,checkout,checkout.patron,checkout.patron.checkouts+count,hold,hold.patron+strings,hold.patron.notification_summary,transfer,recall,recall.patron+strings,recall.patron.notification_summary",
                         "x-koha-override": "not_issued",
                     },
                     return_response: true,
