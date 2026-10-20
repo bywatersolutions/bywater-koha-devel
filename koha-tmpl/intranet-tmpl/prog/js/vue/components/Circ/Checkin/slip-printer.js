@@ -10,6 +10,10 @@ export function holdSlipUrl(reserveId) {
     return `/cgi-bin/koha/circ/hold-transfer-slip.pl?reserve_id=${reserveId}`;
 }
 
+export function printHoldSlip(reserveId) {
+    window.open(holdSlipUrl(reserveId), "slip_window", SLIP_WINDOW_OPTIONS);
+}
+
 /**
  * Open an empty slip window. Must be called synchronously from a user gesture
  * so the browser does not block it; load the slip into it later (bug 42505).
@@ -28,7 +32,7 @@ export function printTransferSlip(itemId, branchcode) {
 
 export function printCheckinSlip(borrowernumber) {
     window.open(
-        `/cgi-bin/koha/circ/circulation.pl?borrowernumber=${borrowernumber}&print=qslip`,
+        `/cgi-bin/koha/members/printslip.pl?borrowernumber=${borrowernumber}&print=checkinslip`,
         "slip_window",
         SLIP_WINDOW_OPTIONS
     );

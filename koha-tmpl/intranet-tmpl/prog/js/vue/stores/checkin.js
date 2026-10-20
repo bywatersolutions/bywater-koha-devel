@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, reactive, ref } from "vue";
 import { APIClient } from "../fetch/api-client.js";
+import { $__ } from "@koha-vue/i18n";
 
 export const useCheckinStore = defineStore("checkin", () => {
     const policy = reactive(window.__MODULE_POLICY__ || {});
@@ -21,6 +22,25 @@ export const useCheckinStore = defineStore("checkin", () => {
             libraries.value = map;
         })
         .catch(() => {});
+
+    // Fetch authorised value descriptions used to display item status
+    // changes (UpdateNotForLoanStatusOnCheckin, UpdateItemLocationOnCheckin)
+    const authorisedValues = ref({ NOT_LOAN: {}, LOC: {} });
+    for (const category of Object.keys(authorisedValues.value)) {
+        APIClient.authorised_values.values
+            .get(category)
+            .then(values => {
+                const map = {};
+                for (const av of values || []) {
+                    map[av.value] = av.description;
+                }
+                authorisedValues.value = {
+                    ...authorisedValues.value,
+                    [category]: map,
+                };
+            })
+            .catch(() => {});
+    }
     const lastError = ref(null);
     const _inflight = new Set();
 
@@ -120,7 +140,10 @@ export const useCheckinStore = defineStore("checkin", () => {
             }
 
             if (response.status === 404) {
-                lastError.value = "Item not found";
+                lastError.value = $__("No item with barcode: %s").replace(
+                    "%s",
+                    barcode
+                );
                 return { status: "not_found", data };
             }
 
@@ -227,6 +250,20 @@ export const useCheckinStore = defineStore("checkin", () => {
     }
 
     /**
+     * Ignore a post-checkin action (hold, recall, claim). The item was
+     * checked in, so the row is marked as a successful checkin.
+     */
+    function ignoreAction(entry) {
+        const idx = checkins.value.indexOf(entry);
+        if (idx === -1) return;
+        checkins.value[idx] = {
+            ...entry,
+            _status: "success",
+            _action_type: null,
+        };
+    }
+
+    /**
      * Resolve a post-checkin action (hold, transfer, recall).
      */
     async function resolveAction(entry, action, params = {}) {
@@ -243,10 +280,10 @@ export const useCheckinStore = defineStore("checkin", () => {
                     data = await client.checkins.confirmHold(checkinId);
                     break;
                 case "cancel_hold":
-                    data = await client.checkins.cancelHold(
-                        checkinId,
-                        params.reason
-                    );
+                    data = await client.checkins.cancelHold(checkinId, {
+                        reason: params.reason,
+                        forgive_hold_fees: params.forgive_hold_fees,
+                    });
                     break;
                 case "confirm_transfer":
                     if (entry.transfer_id) {
@@ -267,11 +304,24 @@ export const useCheckinStore = defineStore("checkin", () => {
             // Preserve item/checkout data from the original response
             // since sub-resource endpoints may not embed them fully
             const existing = checkins.value[idx];
-            checkins.value[idx] = {
+            const resolved = {
                 ...existing,
                 _status: "success",
                 _action_type: null,
             };
+            // The transfer was cancelled: stop showing it on the row
+            if (action === "cancel_transfer") {
+                resolved.transfer_id = null;
+                resolved.messages = (existing.messages || []).filter(
+                    m =>
+                        ![
+                            "needs_transfer",
+                            "transferred",
+                            "wrong_transfer",
+                        ].includes(m.message)
+                );
+            }
+            checkins.value[idx] = resolved;
 
             return { status: "ok", data };
         } catch (error) {
@@ -284,7 +334,11 @@ export const useCheckinStore = defineStore("checkin", () => {
      */
     function _detectActionType(data) {
         const messages = data.messages || [];
-        if (data.hold_id && messages.some(m => m.message === "hold_found")) {
+        if (
+            data.hold_id &&
+            messages.some(m => m.message === "hold_found") &&
+            !messages.some(m => m.message === "hold_auto_filled")
+        ) {
             return "hold";
         }
         if (messages.some(m => m.message === "wrong_transfer")) {
@@ -345,6 +399,7 @@ export const useCheckinStore = defineStore("checkin", () => {
     return {
         policy,
         libraries,
+        authorisedValues,
         tableSettings,
         checkins,
         processing,
@@ -354,6 +409,7 @@ export const useCheckinStore = defineStore("checkin", () => {
         checkin,
         confirmPending,
         dismissPending,
+        ignoreAction,
         resolveAction,
     };
 });
