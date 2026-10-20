@@ -45,7 +45,7 @@
                 class="badge text-bg-warning me-1"
             >
                 <i class="fa fa-check"></i> {{ $__("Return date:") }}
-                {{ checkinOptions.return_date }}
+                {{ formatDate(checkinOptions.return_date) }}
             </span>
         </div>
 
@@ -292,14 +292,6 @@ export default {
                     text: $__("Item was lost, now found."),
                     alertClass: "alert-info",
                 },
-                debarred: {
-                    text: $__("Patron is now restricted."),
-                    alertClass: "alert-warning",
-                },
-                previously_debarred: {
-                    text: $__("Reminder: Patron was earlier restricted."),
-                    alertClass: "alert-warning",
-                },
                 indefinitely_debarred: {
                     text: $__(
                         "Reminder: Patron has an indefinite restriction."
@@ -329,7 +321,32 @@ export default {
                     alertClass: "alert-info issue-note",
                 });
             }
+            // Restriction end dates, formatted like the legacy page
+            const restrictionMessages = {
+                debarred: [
+                    $__("Patron is now restricted until %s."),
+                    $__("Patron is now restricted."),
+                ],
+                previously_debarred: [
+                    $__("Reminder: Patron was earlier restricted until %s."),
+                    $__("Reminder: Patron was earlier restricted."),
+                ],
+            };
             for (const msg of messages) {
+                if (restrictionMessages[msg.message]) {
+                    const [withDate, withoutDate] =
+                        restrictionMessages[msg.message];
+                    const until = msg.payload?.until;
+                    detailed.push({
+                        text: until
+                            ? withDate.replace(
+                                  "%s",
+                                  escapeHtml(formatDate(until))
+                              )
+                            : withoutDate,
+                        alertClass: "alert-warning",
+                    });
+                }
                 if (
                     feeMessages[msg.message] &&
                     (!lostFeeOutcomes.includes(msg.message) ||
@@ -768,6 +785,7 @@ export default {
             isInputBlocked,
             hasActiveSettings,
             dropboxDate,
+            formatDate,
             lastCheckinMessages,
             showOptions,
             showClaimModal,
