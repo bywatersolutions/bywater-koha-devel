@@ -116,12 +116,15 @@
             - desk
             - hold
             - hold.patron
+            - hold.patron+strings
             - hold.patron.notification_summary
             - item
+            - item+strings
             - item.biblio
             - library
             - recall
             - recall.patron
+            - recall.patron+strings
             - recall.patron.notification_summary
             - restriction
             - transfer
