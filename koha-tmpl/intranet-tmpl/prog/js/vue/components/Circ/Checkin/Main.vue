@@ -217,10 +217,19 @@ export default {
             Object.assign(checkinOptions, options);
         }
 
-        // Async mode: input is never blocked. Staff can keep scanning
-        // while modals are showing. Items needing attention queue as
-        // yellow rows and modals show one at a time.
-        const isInputBlocked = computed(() => false);
+        // Async mode: staff can keep scanning while modals are showing.
+        // Items needing attention queue as yellow rows and modals show
+        // one at a time. The exception is a transfer modal when
+        // TransfersBlockCirc is set: it must be acted on first.
+        const isInputBlocked = computed(
+            () =>
+                activeModalItem.value?._action_type === "transfer" &&
+                !!policy.value.transfers_block
+        );
+
+        watch(isInputBlocked, blocked => {
+            if (!blocked) nextTick(() => refocusInput());
+        });
 
         const hasActiveSettings = computed(
             () =>

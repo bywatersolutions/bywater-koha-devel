@@ -97,13 +97,24 @@
                                     >
                                         {{ item.hold.patron.surname }},
                                         {{ item.hold.patron.firstname }}
+                                        <template
+                                            v-if="item.hold.patron.cardnumber"
+                                            >({{
+                                                item.hold.patron.cardnumber
+                                            }})</template
+                                        >
                                     </a>
                                 </strong>
                                 <span
                                     v-if="item.hold.patron.category_id"
                                     class="patron-category"
                                 >
-                                    — {{ item.hold.patron.category_id }}
+                                    —
+                                    {{
+                                        item.hold.patron._strings?.category_id
+                                            ?.str ||
+                                        item.hold.patron.category_id
+                                    }}
                                 </span>
                             </li>
                             <li
@@ -226,17 +237,12 @@
 
                         <!-- Check in messages -->
                         <div
-                            v-if="item.messages && item.messages.length"
+                            v-if="transferCheckinMessages.length"
                             class="alert alert-warning"
                         >
                             <h5>{{ $__("Check in message") }}</h5>
                             <p
-                                v-for="msg in item.messages.filter(
-                                    m =>
-                                        m.message !== 'wrong_transfer' &&
-                                        m.message !== 'needs_transfer' &&
-                                        m.message !== 'transferred'
-                                )"
+                                v-for="msg in transferCheckinMessages"
                                 :key="msg.message"
                                 class="text-danger"
                             >
@@ -256,13 +262,24 @@
                                     >
                                         {{ item.recall.patron.surname }},
                                         {{ item.recall.patron.firstname }}
+                                        <template
+                                            v-if="item.recall.patron.cardnumber"
+                                            >({{
+                                                item.recall.patron.cardnumber
+                                            }})</template
+                                        >
                                     </a>
                                 </strong>
                                 <span
                                     v-if="item.recall.patron.category_id"
                                     class="patron-category"
                                 >
-                                    — {{ item.recall.patron.category_id }}
+                                    —
+                                    {{
+                                        item.recall.patron._strings?.category_id
+                                            ?.str ||
+                                        item.recall.patron.category_id
+                                    }}
                                 </span>
                             </li>
                             <li
@@ -433,7 +450,13 @@
                             @click="printAndResolveHold"
                         >
                             <i class="fa fa-print"></i>
-                            {{ $__("Print slip and confirm (P)") }}
+                            {{
+                                needsTransfer
+                                    ? $__(
+                                          "Print slip, transfer, and confirm (P)"
+                                      )
+                                    : $__("Print slip and confirm (P)")
+                            }}
                         </button>
                         <button
                             type="button"
@@ -445,7 +468,9 @@
                             <i class="fa fa-times"></i>
                             {{ $__("Ignore (I)") }}
                         </button>
+                        <!-- Only a waiting hold can be cancelled from here, as on the legacy page -->
                         <button
+                            v-if="holdInfo?.status === 'waiting'"
                             type="button"
                             class="btn btn-danger"
                             :disabled="confirming"
@@ -764,6 +789,20 @@ export default {
             );
         });
 
+        // Check-in messages shown in the transfer modal: the transfer ones
+        // have their own section, and was_returned is set on every return
+        const transferCheckinMessages = computed(() =>
+            (props.item?.messages || []).filter(
+                m =>
+                    ![
+                        "wrong_transfer",
+                        "needs_transfer",
+                        "transferred",
+                        "was_returned",
+                    ].includes(m.message)
+            )
+        );
+
         const transferInfo = computed(() => {
             if (!props.item) return null;
             const msg = (props.item.messages || []).find(
@@ -821,7 +860,6 @@ export default {
                 local_use: $__("Local use recorded"),
                 was_lost: $__("Was lost, now found"),
                 withdrawn: $__("Item is withdrawn"),
-                was_returned: $__("Already returned"),
             };
             return labels[msg.message] || msg.message.replace(/_/g, " ");
         }
@@ -910,6 +948,7 @@ export default {
             itemId,
             modalTitle,
             holdInfo,
+            transferCheckinMessages,
             holdPatronDescription,
             holdLibrary,
             checkinLibrary,
