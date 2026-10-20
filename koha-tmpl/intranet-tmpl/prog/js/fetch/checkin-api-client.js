@@ -17,7 +17,7 @@ export class CheckinAPIClient {
                     body,
                     headers: {
                         "x-koha-embed":
-                            "item,item.biblio,checkout,checkout.patron,hold,hold.patron,hold.patron.notification_summary,transfer,recall,recall.patron,recall.patron.notification_summary",
+                            "item,item.biblio,checkout,checkout.patron,checkout.patron.checkouts+count,hold,hold.patron,hold.patron.notification_summary,transfer,recall,recall.patron,recall.patron.notification_summary",
                         "x-koha-override": "not_issued",
                     },
                     return_response: true,
@@ -30,10 +30,15 @@ export class CheckinAPIClient {
                         "x-koha-embed": "item,hold,hold.patron,transfer",
                     },
                 }),
-            cancelHold: (checkin_id, reason) =>
+            cancelHold: (checkin_id, { reason, forgive_hold_fees } = {}) =>
                 this.httpClient.post({
                     endpoint: `checkins/${checkin_id}/hold_cancellation`,
-                    body: reason ? { reason } : undefined,
+                    body: {
+                        ...(reason ? { reason } : {}),
+                        ...(forgive_hold_fees
+                            ? { forgive_hold_fees: true }
+                            : {}),
+                    },
                     headers: {
                         "x-koha-embed": "item,hold",
                     },

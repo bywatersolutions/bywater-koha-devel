@@ -440,7 +440,7 @@
                             class="btn btn-default deny"
                             :disabled="confirming"
                             accesskey="i"
-                            @click="$emit('dismiss', item)"
+                            @click="$emit('ignore', item)"
                         >
                             <i class="fa fa-times"></i>
                             {{ $__("Ignore (I)") }}
@@ -519,7 +519,7 @@
                             class="btn btn-default deny"
                             :disabled="confirming"
                             accesskey="i"
-                            @click="$emit('dismiss', item)"
+                            @click="$emit('ignore', item)"
                         >
                             <i class="fa fa-times"></i>
                             {{ $__("Ignore (I)") }}
@@ -541,7 +541,7 @@
                             type="button"
                             class="btn btn-default deny"
                             accesskey="i"
-                            @click="$emit('dismiss', item)"
+                            @click="$emit('ignore', item)"
                         >
                             <i class="fa fa-times"></i>
                             {{ $__("Ignore (I)") }}
@@ -555,7 +555,7 @@
 </template>
 
 <script>
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useCheckinStore } from "../../../stores/checkin.js";
 import { $__ } from "@koha-vue/i18n";
@@ -580,6 +580,7 @@ export default {
     emits: [
         "confirm",
         "dismiss",
+        "ignore",
         "resolve",
         "resolve-claim",
         "open-cancel-hold",
@@ -631,8 +632,6 @@ export default {
             return _contactMethodLabels[method] || method;
         }
 
-        const autoConfirmTimer = ref(null);
-
         // Non-blocking transfer: muted style when transfers_block is false
         const isNonBlockingTransfer = computed(
             () =>
@@ -640,35 +639,6 @@ export default {
                 props.item._action_type === "transfer" &&
                 !policy.value.transfers_block
         );
-
-        // Auto-confirm transfers when policy.auto_confirm_transfer is true
-        watch(
-            () => props.item,
-            newItem => {
-                _clearAutoConfirm();
-                if (
-                    newItem &&
-                    newItem._action_type === "transfer" &&
-                    policy.value.auto_confirm_transfer
-                ) {
-                    autoConfirmTimer.value = setTimeout(() => {
-                        emit("resolve", newItem, "confirm_transfer");
-                    }, 1000);
-                }
-            },
-            { immediate: true }
-        );
-
-        onBeforeUnmount(() => {
-            _clearAutoConfirm();
-        });
-
-        function _clearAutoConfirm() {
-            if (autoConfirmTimer.value) {
-                clearTimeout(autoConfirmTimer.value);
-                autoConfirmTimer.value = null;
-            }
-        }
 
         const isPreCheckin = computed(
             () => props.item && props.item._status === "pending_confirmation"
@@ -715,7 +685,11 @@ export default {
             if (!props.item) return "";
             if (isBlocked.value) return $__("Cannot check in");
             if (isPreCheckin.value) return $__("Please confirm check in");
-            if (props.item._action_type === "hold") return $__("Hold found");
+            if (props.item._action_type === "hold") {
+                return holdInfo.value?.status === "waiting"
+                    ? $__("Hold found (item is already waiting)")
+                    : $__("Hold found");
+            }
             if (props.item._action_type === "transfer") {
                 const msgs = props.item.messages || [];
                 const wrongTransfer = msgs.find(
@@ -775,17 +749,18 @@ export default {
         // Patron note recorded on the checkout (issues.note), surfaced via the
         // embedded `checkout` object on the checkin response.
         const patronNote = computed(() => props.item?.checkout?.note || "");
-        const patronNoteDate = computed(
-            () => props.item?.checkout?.note_date || ""
-        );
+        const patronNoteDate = computed(() => {
+            const date = props.item?.checkout?.note_date;
+            if (!date) return "";
+            return typeof $date === "function" ? $date(date) : date;
+        });
 
+        // The hold is for another library: confirming it starts a transfer
         const needsTransfer = computed(() => {
             if (!props.item || props.item._action_type !== "hold") return false;
-            const msgs = props.item.messages || [];
-            return msgs.some(
-                m =>
-                    m.message === "needs_transfer" ||
-                    m.message === "transferred"
+            return (
+                !!holdInfo.value?.library_id &&
+                holdInfo.value.library_id !== props.item.library_id
             );
         });
 
