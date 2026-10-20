@@ -24,6 +24,8 @@ use Test::Exception;
 use t::lib::TestBuilder;
 use t::lib::Mocks;
 
+use Mojo::JSON;
+
 use Koha::Database;
 
 BEGIN {
@@ -39,7 +41,7 @@ subtest 'Koha::Module::Policy::Checkin tests' => sub {
 
     subtest 'to_hashref() tests' => sub {
 
-        plan tests => 22;
+        plan tests => 27;
 
         $schema->storage->txn_begin;
 
@@ -56,7 +58,8 @@ subtest 'Koha::Module::Policy::Checkin tests' => sub {
         t::lib::Mocks::mock_preference( 'HoldsAutoFillPrintSlip',             1 );
         t::lib::Mocks::mock_preference( 'WaitingNotifyAtCheckin',             1 );
         t::lib::Mocks::mock_preference( 'DisplayAddHoldGroups',               1 );
-        t::lib::Mocks::mock_preference( 'UseRecalls',                         1 );
+        t::lib::Mocks::mock_preference( 'UseRecalls',                         'opac_and_staff' );
+        t::lib::Mocks::mock_preference( 'AnonymousPatron',                    $patron->borrowernumber );
         t::lib::Mocks::mock_preference( 'TransfersBlockCirc',                 1 );
         t::lib::Mocks::mock_preference( 'AutomaticConfirmTransfer',           1 );
         t::lib::Mocks::mock_preference( 'ShowAllCheckins',                    1 );
@@ -83,7 +86,7 @@ subtest 'Koha::Module::Policy::Checkin tests' => sub {
 
         my $hashref = $policy_hashref->{checkin};
 
-        my @flags = grep { $_ ne 'max_returned_items' } keys %{$hashref};
+        my @flags = grep { $_ !~ /^(dropbox_date|max_returned_items|anonymous_patron_id)$/ } keys %{$hashref};
         is(
             scalar( grep { ref( $hashref->{$_} ) ne 'JSON::PP::Boolean' } @flags ), 0,
             'All flags are JSON booleans'
@@ -111,6 +114,21 @@ subtest 'Koha::Module::Policy::Checkin tests' => sub {
         is( $policy_hashref->{global}{catalog_concerns}, 1,  'catalog_concerns reflects pref' );
         is( $hashref->{block_return_withdrawn},          1,  'block_return_withdrawn reflects pref' );
         is( $hashref->{block_return_lost},               1,  'block_return_lost reflects pref' );
+        is( $hashref->{anonymous_patron_id},             $patron->borrowernumber, 'anonymous_patron_id reflects pref' );
+        like( $hashref->{dropbox_date}, qr/^\d{4}-\d{2}-\d{2}$/, 'dropbox_date is a date' );
+        is(
+            Mojo::JSON::encode_json( { id => $hashref->{anonymous_patron_id} } ),
+            '{"id":' . $patron->borrowernumber . '}',
+            'anonymous_patron_id is a number'
+        );
+
+        t::lib::Mocks::mock_preference( 'UseRecalls',      'off' );
+        t::lib::Mocks::mock_preference( 'AnonymousPatron', '' );
+        $hashref =
+            Koha::Module::Policy::Checkin->new( { user => $patron, library => $library->branchcode } )
+            ->to_hashref->{checkin};
+        is( $hashref->{recalls_enabled},     0,     q{recalls_enabled is 0 when UseRecalls is 'off'} );
+        is( $hashref->{anonymous_patron_id}, undef, 'anonymous_patron_id is undef when AnonymousPatron is not set' );
 
         $schema->storage->txn_rollback;
     };

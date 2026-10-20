@@ -32,6 +32,8 @@ use Koha::Patrons;
 use Koha::Recalls;
 use Koha::Checkouts::ReturnClaims;
 
+use C4::Accounts;
+use C4::Context;
 use C4::Reserves qw( ModReserveAffect );
 
 use base qw(Koha::Object);
@@ -267,9 +269,11 @@ sub confirm_hold {
 =head3 cancel_hold
 
     $checkin->cancel_hold;
-    $checkin->cancel_hold( { reason => 'PATRON_REQUEST' } );
+    $checkin->cancel_hold( { reason => 'PATRON_REQUEST', forgive_hold_fees => 1 } );
 
 Cancels the hold associated with this checkin and clears the hold_id.
+The cancellation fee (I<ExpireReservesMaxPickUpDelayCharge>) is charged
+unless I<forgive_hold_fees> is passed.
 
 Throws C<Koha::Exceptions::MissingParameter> if there is no hold associated
 with this checkin.
@@ -286,7 +290,12 @@ sub cancel_hold {
 
     my $hold = $self->hold;
 
-    $hold->cancel( { cancellation_reason => $params->{reason} } );
+    $hold->cancel(
+        {
+            cancellation_reason => $params->{reason},
+            charge_cancel_fee   => $params->{forgive_hold_fees} ? 0 : 1,
+        }
+    );
 
     $self->set( { hold_id => undef } )->store;
 
@@ -352,13 +361,51 @@ sub cancel_transfer {
     # (checkin, transfers-to-receive, etc.). It lives here for now because
     # Koha::Item::Transfer->cancel is shared by callers that must not trigger
     # this behaviour; moving it down should be done carefully in a follow-up.
-    if ( C4::Context->preference('UseRecalls') ) {
+    if ( C4::Context->preference('UseRecalls') ne 'off' ) {
         my $item   = $self->item;
         my $recall = Koha::Recalls->find( { item_id => $item->itemnumber, status => 'in_transit' } );
         $recall->revert_transfer if $recall;
     }
 
     $self->set( { transfer_id => undef } )->store;
+
+    return $self;
+}
+
+=head3 replace_wrong_transfer
+
+    $checkin->replace_wrong_transfer;
+
+Called when the item was checked in at a library that is not the
+destination of its current transfer. Replaces that transfer with a new
+one, from the checkin library to the original destination, so the
+transfer reflects where the item actually is, and links it to this checkin.
+
+Transfer limits are ignored: the item may not be allowed to be sent from
+this library, but it is (wrongly) here and that fact must be recorded.
+
+Returns the C<Koha::Checkin> object for chaining.
+
+=cut
+
+sub replace_wrong_transfer {
+    my ($self) = @_;
+
+    my $item         = $self->item;
+    my $old_transfer = $item->get_transfer;
+
+    return $self unless $old_transfer;
+
+    my $new_transfer = $item->request_transfer(
+        {
+            to            => $old_transfer->to_library,
+            reason        => $old_transfer->reason,
+            replace       => 'WrongTransfer',
+            ignore_limits => 1,
+        }
+    );
+
+    $self->set( { transfer_id => $new_transfer->id } )->store;
 
     return $self;
 }
@@ -406,12 +453,23 @@ sub confirm_recall {
 
 =head3 verify_bundle
 
-    $checkin->verify_bundle( { verified_barcodes => \@barcodes } );
+    my $result = $checkin->verify_bundle(
+        {
+            verified_barcodes => \@barcodes,
+            patron_id         => $patron_id,
+        }
+    );
 
 Processes bundle verification after checkin. Verified items get their
 lost status cleared. Missing items (expected but not verified) are
 marked as lost using C<BundleLostValue>. Unexpected items (verified
 but not in the bundle) are removed from the bundle.
+
+When the checkin returned a checkout, I<patron_id> is the patron the
+bundle was checked out to (taken before the return, as the stored
+checkout may already be anonymized). A return claim is recorded for
+each missing item and, if I<WhenLostChargeReplacementFee> is enabled,
+the replacement fee is charged to that patron.
 
 Returns a hashref with keys: verified, missing, unexpected.
 
@@ -421,11 +479,9 @@ sub verify_bundle {
     my ( $self, $params ) = @_;
 
     my $verified_barcodes = $params->{verified_barcodes} || [];
+    my $patron_id         = $params->{patron_id};
     my $item              = $self->item;
-
-    require Koha::Items;
-    require Koha::ItemTypes;
-    require C4::Context;
+    my $checkout          = $self->checkout;
 
     my $BundleLostValue = C4::Context->preference('BundleLostValue') || 1;
 
@@ -444,6 +500,7 @@ sub verify_bundle {
             # Clear lost status
             $vi->itemlost(0);
             $vi->datelastseen( dt_from_string() );
+            $vi->datelastborrowed( dt_from_string()->ymd() ) if $checkout;
 
             if ( delete $expected->{ $vi->barcode } ) {
                 push @verified, $vi;
@@ -458,12 +515,42 @@ sub verify_bundle {
     }
 
     # Mark remaining expected items as lost
-    for my $barcode ( keys %$expected ) {
+    for my $barcode ( sort keys %$expected ) {
         my $missing_item = $expected->{$barcode};
-        unless ( $missing_item->itemlost ) {
-            $missing_item->itemlost($BundleLostValue)->store;
-            push @missing, $missing_item;
+
+        next if $missing_item->itemlost;
+
+        $missing_item->itemlost($BundleLostValue)->store;
+
+        if ( $checkout && $patron_id ) {
+            Koha::Checkouts::ReturnClaim->new(
+                {
+                    issue_id       => $checkout->issue_id,
+                    itemnumber     => $missing_item->itemnumber,
+                    borrowernumber => $patron_id,
+                    created_by     => $self->user_id // ( C4::Context->userenv // {} )->{number},
+                }
+            )->store;
+
+            # C4::LostItem is not used here: the bundled item has no checkout
+            # of its own (it was checked out as part of the bundle), so it
+            # would not get charged.
+            if ( C4::Context->preference('WhenLostChargeReplacementFee') ) {
+                C4::Accounts::chargelostitem(
+                    $patron_id,
+                    $missing_item->itemnumber,
+                    $missing_item->replacementprice,
+                    sprintf(
+                        "%s %s %s",
+                        $missing_item->biblio->title  || q{},
+                        $missing_item->barcode        || q{},
+                        $missing_item->itemcallnumber || q{},
+                    ),
+                );
+            }
         }
+
+        push @missing, $missing_item;
     }
 
     return {

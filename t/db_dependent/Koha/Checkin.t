@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 19;
+use Test::More tests => 21;
 use Test::Exception;
 use Test::NoWarnings;
 use Test::Warn;
@@ -603,7 +603,7 @@ subtest 'confirm_hold() tests' => sub {
 
 subtest 'cancel_hold() tests' => sub {
 
-    plan tests => 8;
+    plan tests => 10;
 
     $schema->storage->txn_begin;
 
@@ -684,6 +684,36 @@ subtest 'cancel_hold() tests' => sub {
     throws_ok { $checkin_no_hold->cancel_hold }
     'Koha::Exceptions::MissingParameter',
         'cancel_hold throws MissingParameter when no hold';
+
+    # Cancellation fee (ExpireReservesMaxPickUpDelayCharge) is charged unless forgiven
+    t::lib::Mocks::mock_preference( 'ExpireReservesMaxPickUpDelayCharge', 5 );
+
+    my $fee_patron            = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $new_checkin_with_hold = sub {
+        my $hold_id = AddReserve(
+            {
+                branchcode     => $library->branchcode,
+                borrowernumber => $fee_patron->borrowernumber,
+                biblionumber   => $item->biblionumber,
+                itemnumber     => $item->itemnumber,
+                priority       => 1,
+            }
+        );
+        return Koha::Checkin->new(
+            {
+                item_id    => $item->itemnumber,
+                user_id    => $user->borrowernumber,
+                library_id => $library->branchcode,
+                hold_id    => $hold_id,
+            }
+        )->store;
+    };
+
+    $new_checkin_with_hold->()->cancel_hold( { forgive_hold_fees => 1 } );
+    is( $fee_patron->account->balance, 0, 'No cancellation fee charged when forgive_hold_fees is passed' );
+
+    $new_checkin_with_hold->()->cancel_hold;
+    is( $fee_patron->account->balance + 0, 5, 'Cancellation fee charged when forgive_hold_fees is not passed' );
 
     $schema->storage->txn_rollback;
 };
@@ -905,6 +935,150 @@ subtest 'confirm_recall() tests' => sub {
     throws_ok { $checkin_no_recall->confirm_recall }
     'Koha::Exceptions::MissingParameter',
         'confirm_recall throws MissingParameter when no recall';
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'replace_wrong_transfer() tests' => sub {
+
+    plan tests => 7;
+
+    $schema->storage->txn_begin;
+
+    my $from_library  = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $to_library    = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $wrong_library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $user          = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $item          = $builder->build_sample_item( { library => $from_library->branchcode } );
+
+    t::lib::Mocks::mock_userenv(
+        { branchcode => $wrong_library->branchcode, borrowernumber => $user->borrowernumber } );
+
+    my $checkin = Koha::Checkin->new(
+        {
+            item_id    => $item->itemnumber,
+            user_id    => $user->borrowernumber,
+            library_id => $wrong_library->branchcode,
+        }
+    )->store;
+
+    # No transfer, nothing to do
+    $checkin->replace_wrong_transfer;
+    $checkin->discard_changes;
+    is( $checkin->transfer_id, undef, 'No transfer_id set when the item has no transfer' );
+
+    my $old_transfer = $item->request_transfer( { to => $to_library, reason => 'Manual' } );
+    $old_transfer->transit;
+
+    # The item shows up at the wrong library
+    $item->holdingbranch( $wrong_library->branchcode )->store;
+
+    $checkin->replace_wrong_transfer;
+    $checkin->discard_changes;
+
+    $old_transfer->discard_changes;
+    ok( $old_transfer->datecancelled, 'Original transfer cancelled' );
+    is( $old_transfer->cancellation_reason, 'WrongTransfer', 'Original transfer cancelled as WrongTransfer' );
+
+    my $new_transfer = $checkin->transfer;
+    isnt( $new_transfer->id, $old_transfer->id, 'A new transfer is linked to the checkin' );
+    is( $new_transfer->frombranch, $wrong_library->branchcode, 'New transfer starts at the checkin library' );
+    is( $new_transfer->tobranch,   $to_library->branchcode,    'New transfer keeps the original destination' );
+    is( $new_transfer->reason,     'Manual',                   'New transfer keeps the original reason' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'verify_bundle() tests' => sub {
+
+    plan tests => 13;
+
+    $schema->storage->txn_begin;
+
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $user    = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $patron  = $builder->build_object( { class => 'Koha::Patrons' } );
+
+    t::lib::Mocks::mock_userenv( { branchcode => $library->branchcode, borrowernumber => $user->borrowernumber } );
+    t::lib::Mocks::mock_preference( 'BundleLostValue',              2 );
+    t::lib::Mocks::mock_preference( 'WhenLostChargeReplacementFee', 1 );
+
+    my $host       = $builder->build_sample_item( { library => $library->branchcode } );
+    my $present    = $builder->build_sample_item( { library => $library->branchcode, itemlost         => 1 } );
+    my $missing    = $builder->build_sample_item( { library => $library->branchcode, replacementprice => 10 } );
+    my $stranger   = $builder->build_sample_item( { library => $library->branchcode } );
+    my $other_host = $builder->build_sample_item( { library => $library->branchcode } );
+
+    $host->add_to_bundle($present);
+    $host->add_to_bundle($missing);
+    $other_host->add_to_bundle($stranger);
+
+    my $old_checkout = $builder->build_object(
+        {
+            class => 'Koha::Old::Checkouts',
+            value => { itemnumber => $host->itemnumber, borrowernumber => $patron->borrowernumber },
+        }
+    );
+
+    my $checkin = Koha::Checkin->new(
+        {
+            item_id     => $host->itemnumber,
+            user_id     => $user->borrowernumber,
+            library_id  => $library->branchcode,
+            checkout_id => $old_checkout->issue_id,
+        }
+    )->store;
+
+    my $result = $checkin->verify_bundle(
+        {
+            verified_barcodes => [ $present->barcode, $stranger->barcode ],
+            patron_id         => $patron->borrowernumber,
+        }
+    );
+
+    is_deeply( [ map { $_->itemnumber } @{ $result->{verified} } ],   [ $present->itemnumber ],  'Verified items' );
+    is_deeply( [ map { $_->itemnumber } @{ $result->{missing} } ],    [ $missing->itemnumber ],  'Missing items' );
+    is_deeply( [ map { $_->itemnumber } @{ $result->{unexpected} } ], [ $stranger->itemnumber ], 'Unexpected items' );
+
+    $present->discard_changes;
+    is( $present->itemlost, 0, 'Verified item lost status cleared' );
+    ok( $present->datelastborrowed, 'Verified item datelastborrowed set on an actual checkin' );
+
+    $missing->discard_changes;
+    is( $missing->itemlost, 2, 'Missing item marked lost with BundleLostValue' );
+
+    my $claim = Koha::Checkouts::ReturnClaims->search( { itemnumber => $missing->itemnumber } )->next;
+    ok( $claim, 'Return claim recorded for the missing item' );
+    is(
+        $claim->borrowernumber, $patron->borrowernumber,
+        'Return claim is for the patron the bundle was checked out to'
+    );
+    is( $claim->created_by, $user->borrowernumber, 'Return claim created by the checkin user' );
+
+    my $charge = $patron->account->lines->search( { itemnumber => $missing->itemnumber } )->next;
+    ok( $charge, 'Replacement fee charged for the missing item' );
+    is( $charge->amount + 0, 10, 'Replacement fee is the item replacement price' );
+
+    $stranger->discard_changes;
+    ok( !$stranger->in_bundle, 'Unexpected item removed from its bundle' );
+
+    # Without a checkout (item was not checked out), no claim or charge
+    my $loose_host    = $builder->build_sample_item( { library => $library->branchcode } );
+    my $loose_missing = $builder->build_sample_item( { library => $library->branchcode } );
+    $loose_host->add_to_bundle($loose_missing);
+    my $loose_checkin = Koha::Checkin->new(
+        {
+            item_id    => $loose_host->itemnumber,
+            user_id    => $user->borrowernumber,
+            library_id => $library->branchcode,
+        }
+    )->store;
+    $loose_checkin->discard_changes;
+    $loose_checkin->verify_bundle( { verified_barcodes => [] } );
+    is(
+        Koha::Checkouts::ReturnClaims->search( { itemnumber => $loose_missing->itemnumber } )->count, 0,
+        'No return claim without a checkout'
+    );
 
     $schema->storage->txn_rollback;
 };
