@@ -720,7 +720,7 @@ subtest 'cancel_hold() tests' => sub {
 
 subtest 'confirm_transfer() tests' => sub {
 
-    plan tests => 5;
+    plan tests => 10;
 
     $schema->storage->txn_begin;
 
@@ -772,6 +772,36 @@ subtest 'confirm_transfer() tests' => sub {
     # Test that confirm_transfer returns self for chaining
     my $result = $checkin->confirm_transfer;
     is( ref($result), 'Koha::Checkin', 'confirm_transfer returns $self for chaining' );
+
+    # No transfer yet (AutomaticItemReturn disabled): request one to the passed library
+    my $item_no_transfer       = $builder->build_sample_item( { library => $from_library->branchcode } );
+    my $checkin_needs_transfer = Koha::Checkin->new(
+        {
+            item_id    => $item_no_transfer->itemnumber,
+            user_id    => $user->borrowernumber,
+            library_id => $from_library->branchcode,
+        }
+    )->store;
+
+    $checkin_needs_transfer->confirm_transfer( { to_library_id => $to_library->branchcode, reason => 'ReturnToHome' } );
+
+    my $new_transfer = $checkin_needs_transfer->transfer;
+    ok( $new_transfer, 'A transfer was requested and linked to the checkin' );
+    is( $new_transfer->tobranch, $to_library->branchcode, 'Transfer goes to the passed library' );
+    is( $new_transfer->reason,   'ReturnToHome',          'Transfer has the passed reason' );
+    ok( $new_transfer->datesent, 'Transfer set in transit' );
+
+    # The reason defaults to Manual
+    my $item_manual    = $builder->build_sample_item( { library => $from_library->branchcode } );
+    my $checkin_manual = Koha::Checkin->new(
+        {
+            item_id    => $item_manual->itemnumber,
+            user_id    => $user->borrowernumber,
+            library_id => $from_library->branchcode,
+        }
+    )->store;
+    $checkin_manual->confirm_transfer( { to_library_id => $to_library->branchcode } );
+    is( $checkin_manual->transfer->reason, 'Manual', 'Transfer reason defaults to Manual' );
 
     $schema->storage->txn_rollback;
 };

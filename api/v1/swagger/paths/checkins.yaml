@@ -319,9 +319,45 @@
     tags:
       - checkins
     summary: Confirm the transfer and set it in transit
+    description: |
+      Sets the transfer triggered by the checkin in transit. If the checkin
+      did not create a transfer (the item needs one but AutomaticItemReturn
+      is disabled), pass the destination library to request one.
     parameters:
       - $ref: "#/parameters/checkin_id_pp"
+      - name: body
+        in: body
+        required: false
+        schema:
+          type: object
+          properties:
+            to_library_id:
+              type: string
+              description: Library to transfer the item to, when the checkin has no transfer yet
+            reason:
+              type:
+                - string
+                - "null"
+              enum:
+                - Manual
+                - StockrotationAdvance
+                - StockrotationRepatriation
+                - ReturnToHome
+                - ReturnToHolding
+                - RotatingCollection
+                - Reserve
+                - LostReserve
+                - CancelReserve
+                - TransferCancellation
+                - Recall
+                - RecallCancellation
+                - LibraryFloatLimit
+                - null
+              description: What triggered the transfer (defaults to Manual)
+          additionalProperties: false
       - $ref: "#/parameters/checkin_embed_header"
+    consumes:
+      - application/json
     produces:
       - application/json
     responses:
@@ -334,7 +370,7 @@
         schema:
           $ref: "../swagger.yaml#/definitions/checkin"
       "400":
-        description: Bad request. No transfer associated with this checkin
+        description: Bad request. No transfer associated with this checkin and no valid destination library
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "401":
@@ -347,6 +383,10 @@
           $ref: "../swagger.yaml#/definitions/error"
       "404":
         description: Checkin not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "409":
+        description: Conflict. The transfer is not allowed or the item already has a pending transfer
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":

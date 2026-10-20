@@ -305,21 +305,36 @@ sub cancel_hold {
 =head3 confirm_transfer
 
     $checkin->confirm_transfer;
+    $checkin->confirm_transfer( { to_library_id => 'CPL', reason => 'ReturnToHome' } );
 
 Sets the transfer associated with this checkin in transit (populates datesent).
 
+If the checkin has no transfer yet (the item needs one but I<AutomaticItemReturn>
+is disabled) and I<to_library_id> is passed, a transfer to that library is
+requested with the passed I<reason> (I<Manual> by default) and set in transit.
+
 Throws C<Koha::Exceptions::MissingParameter> if there is no transfer associated
-with this checkin.
+with this checkin and no I<to_library_id> is passed.
 
 Returns the C<Koha::Checkin> object for chaining.
 
 =cut
 
 sub confirm_transfer {
-    my ($self) = @_;
+    my ( $self, $params ) = @_;
 
-    Koha::Exceptions::MissingParameter->throw("No transfer associated with this checkin")
-        unless $self->transfer_id;
+    unless ( $self->transfer_id ) {
+        Koha::Exceptions::MissingParameter->throw("No transfer associated with this checkin")
+            unless $params->{to_library_id};
+
+        my $transfer = $self->item->request_transfer(
+            {
+                to     => Koha::Libraries->find( $params->{to_library_id} ),
+                reason => $params->{reason} // 'Manual',
+            }
+        );
+        $self->set( { transfer_id => $transfer->id } )->store;
+    }
 
     my $transfer = $self->transfer;
 
