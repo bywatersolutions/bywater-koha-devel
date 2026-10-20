@@ -63,7 +63,7 @@ my $t = Test::Mojo->new;
 
 subtest 'module_policy() tests' => sub {
 
-    plan tests => 13;
+    plan tests => 14;
 
     $schema->storage->txn_begin;
 
@@ -83,7 +83,8 @@ subtest 'module_policy() tests' => sub {
         ->json_is( '/policy/module'                      => 'checkin' )
         ->json_is( '/policy/global/audio_alerts'         => Mojo::JSON->true )
         ->json_is( '/policy/checkin/recalls_enabled'     => Mojo::JSON->true )
-        ->json_is( '/policy/checkin/specify_return_date' => Mojo::JSON->false );
+        ->json_is( '/policy/checkin/specify_return_date' => Mojo::JSON->false )
+        ->json_has('/policy/checkin/dropbox_date');
 
     $t->get_ok( '/checkin_policy?library_id=' . $other_library->branchcode )
         ->status_is(403)

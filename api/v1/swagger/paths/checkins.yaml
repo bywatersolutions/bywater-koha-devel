@@ -109,6 +109,7 @@
           enum:
             - checkout
             - checkout.patron
+            - checkout.patron.checkouts+count
             - claim
             - credits
             - debits
