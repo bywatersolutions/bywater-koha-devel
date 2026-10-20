@@ -107,7 +107,7 @@
                         @click="
                             $emit('confirm', {
                                 verify: true,
-                                scanned: Array.from(verifiedBarcodes),
+                                scanned: scannedList(),
                             })
                         "
                     >
@@ -169,7 +169,8 @@ export default {
                 if (visible && props.itemId) {
                     try {
                         const response = await fetch(
-                            `/api/v1/items/${props.itemId}/bundled_items?_per_page=-1`
+                            `/api/v1/items/${props.itemId}/bundled_items?_per_page=-1`,
+                            { headers: { "x-koha-embed": "biblio" } }
                         );
                         const items = await response.json();
                         bundleItems.value = items.map(i => ({
@@ -177,8 +178,8 @@ export default {
                             external_id: i.external_id,
                             item_type_id: i.item_type_id,
                             lost_status: i.lost_status,
-                            biblio_title: i.biblio_title || "",
-                            biblio_author: i.biblio_author || "",
+                            biblio_title: i.biblio?.title || "",
+                            biblio_author: i.biblio?.author || "",
                         }));
                     } catch (e) {
                         bundleItems.value = [];
@@ -192,11 +193,18 @@ export default {
             }
         );
 
+        // All scanned barcodes, including unexpected ones: the server removes
+        // items that are not part of this bundle from their bundle
+        function scannedList() {
+            return [
+                ...new Set(
+                    scannedBarcodes.value.split(/[\n\r\t\s]+/).filter(Boolean)
+                ),
+            ];
+        }
+
         function onBarcodeInput() {
-            // Parse barcodes from textarea (newline or whitespace separated)
-            const barcodes = scannedBarcodes.value
-                .split(/[\n\r\t\s]+/)
-                .filter(Boolean);
+            const barcodes = scannedList();
             const expectedBarcodes = new Set(
                 bundleItems.value.map(i => i.external_id)
             );
@@ -215,6 +223,7 @@ export default {
             verifiedBarcodes,
             barcodeTextarea,
             onBarcodeInput,
+            scannedList,
             $__,
         };
     },

@@ -31,6 +31,14 @@
         <div class="circ-setting">
             <input id="dropboxcheck" v-model="dropboxMode" type="checkbox" />
             <label for="dropboxcheck">{{ $__("Book drop mode") }}</label>
+            <span v-if="dropboxMode && dropboxDate" class="hint ms-1">
+                ({{
+                    $__("Effective checkin date is %s").replace(
+                        "%s",
+                        dropboxDate
+                    )
+                }})
+            </span>
         </div>
 
         <div v-if="policy.forgive_hold_fees" class="circ-setting">
@@ -67,6 +75,13 @@ export default {
         const rememberDate = ref(false);
 
         const today = computed(() => new Date().toISOString().split("T")[0]);
+
+        // Effective return date used in book drop mode
+        const dropboxDate = computed(() => {
+            const date = policy.value?.dropbox_date;
+            if (!date) return "";
+            return typeof $date === "function" ? $date(date) : date;
+        });
 
         // Emit consolidated options whenever any value changes
         function emitOptions() {
@@ -119,6 +134,7 @@ export default {
         return {
             policy,
             dropboxMode,
+            dropboxDate,
             exemptFine,
             forgiveHoldFees,
             returnDate,

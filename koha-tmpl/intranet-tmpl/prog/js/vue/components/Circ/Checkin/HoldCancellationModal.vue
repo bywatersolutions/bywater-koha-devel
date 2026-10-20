@@ -1,10 +1,5 @@
 <template>
-    <div
-        v-if="visible"
-        class="modal show d-block"
-        tabindex="-1"
-        role="dialog"
-    >
+    <div v-if="visible" class="modal show d-block" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
                 <div class="modal-header">
@@ -14,7 +9,10 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="hold-cancellation-reason" class="form-label">
+                        <label
+                            for="hold-cancellation-reason"
+                            class="form-label"
+                        >
                             {{ $__("Cancellation reason:") }}
                         </label>
                         <select
@@ -27,8 +25,8 @@
                             </option>
                             <option
                                 v-for="r in reasons"
-                                :key="r.authorised_value"
-                                :value="r.authorised_value"
+                                :key="r.value"
+                                :value="r.value"
                             >
                                 {{ r.description }}
                             </option>
