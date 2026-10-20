@@ -322,6 +322,23 @@ export const useCheckinStore = defineStore("checkin", () => {
                 _status: "success",
                 _action_type: null,
             };
+            // Confirming the hold started a transfer to the pickup library:
+            // show it on the row
+            if (action === "confirm_hold" && data?.transfer) {
+                resolved.transfer_id = data.transfer.transfer_id;
+                resolved.messages = [
+                    ...(existing.messages || []),
+                    {
+                        message: "transferred",
+                        type: "info",
+                        payload: {
+                            transfer_id: data.transfer.transfer_id,
+                            to_library: data.transfer.to_library_id,
+                            trigger: data.transfer.reason,
+                        },
+                    },
+                ];
+            }
             // The transfer was cancelled: stop showing it on the row
             if (action === "cancel_transfer") {
                 resolved.transfer_id = null;

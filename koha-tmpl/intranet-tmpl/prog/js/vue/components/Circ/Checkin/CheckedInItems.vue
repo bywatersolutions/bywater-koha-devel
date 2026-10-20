@@ -123,7 +123,7 @@
 
                 <!-- Shelving location -->
                 <td v-if="isColumnVisible('location')">
-                    {{ checkin.item ? checkin.item.location || "" : "" }}
+                    {{ itemString(checkin, "location") }}
                 </td>
 
                 <!-- Call number -->
@@ -151,12 +151,12 @@
 
                 <!-- Item type -->
                 <td v-if="isColumnVisible('itype')">
-                    {{ checkin.item ? checkin.item.item_type_id || "" : "" }}
+                    {{ itemString(checkin, "item_type_id") }}
                 </td>
 
                 <!-- Collection -->
                 <td v-if="isColumnVisible('ccode')">
-                    {{ checkin.item ? checkin.item.collection_code || "" : "" }}
+                    {{ itemString(checkin, "collection_code") }}
                 </td>
 
                 <!-- Patron -->
@@ -358,10 +358,20 @@ export default {
             return store.libraries[branchcode] || branchcode;
         }
 
+        // Description of a coded item field (from the +strings embed),
+        // falling back to the code
+        function itemString(checkin, field) {
+            const item = checkin.item;
+            if (!item) return "";
+            return item._strings?.[field]?.str || item[field] || "";
+        }
+
         function formatDueDate(checkin) {
             if (!checkin.checkout || !checkin.checkout.due_date) return "—";
             const dueDate = new Date(checkin.checkout.due_date);
-            const formatted = dueDate.toLocaleDateString();
+            const formatted = $date(checkin.checkout.due_date, {
+                as_due_date: true,
+            });
             const now = new Date();
             if (dueDate < now) {
                 return `<span class="overdue">${formatted} (${$__("overdue")})</span>`;
@@ -371,8 +381,7 @@ export default {
 
         function formatDate(dateStr) {
             if (!dateStr) return "";
-            const d = new Date(dateStr);
-            return d.toLocaleDateString();
+            return $date(dateStr);
         }
 
         function isOverdue(checkin) {
@@ -429,7 +438,9 @@ export default {
             // If patron data is embedded
             if (checkin.checkout?.patron) {
                 const p = checkin.checkout.patron;
-                return `${p.surname}, ${p.firstname}`;
+                return p.cardnumber
+                    ? `${p.surname}, ${p.firstname} (${p.cardnumber})`
+                    : `${p.surname}, ${p.firstname}`;
             }
             return "";
         }
@@ -568,6 +579,7 @@ export default {
                 in_bundle: $__("Belongs to a bundle"),
                 bundle_missing_items: $__("Bundle had missing items"),
                 bundle_unexpected_items: $__("Bundle had unexpected items"),
+                item_type_checkinmsg: $__("Item type message"),
             };
             return labels[msg.message] || msg.message.replace(/_/g, " ");
         }
@@ -576,6 +588,7 @@ export default {
             isColumnVisible,
             formatDueDate,
             formatDate,
+            itemString,
             isOverdue,
             audioAlertClass,
             libraryName,
