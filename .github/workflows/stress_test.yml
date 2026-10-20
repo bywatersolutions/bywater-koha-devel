@@ -119,8 +119,8 @@ jobs:
               env:
                   OPAC_URL: "http://${{ steps.koha_ip.outputs.KOHA_IP }}:8080"
                   OPAC_HOST_HEADER: ""
-                  MAX_VUS: "5"
-                  VU_STEP: "5"
+                  MAX_VUS: "10"
+                  VU_STEP: "10"
                   RAMP_TIME: "10s"
                   HOLD_TIME: "60s"
                   KOHA_OPAC_ABORT_MS: "8000"
