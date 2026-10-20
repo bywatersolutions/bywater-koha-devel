@@ -8107,7 +8107,7 @@ subtest 'Tests for Wrongbranch blocker (AllowReturnToBranch)' => sub {
 };
 subtest '_attach_messages_to_checkin() tests' => sub {
 
-    plan tests => 34;
+    plan tests => 36;
 
     $schema->storage->txn_begin;
 
@@ -8134,7 +8134,9 @@ subtest '_attach_messages_to_checkin() tests' => sub {
     my $mock_auto_claim = Test::MockObject->new();
     $mock_auto_claim->mock( 'id', sub { 333 } );
     my $mock_host_item = Test::MockObject->new();
-    $mock_host_item->mock( 'itemnumber', sub { 444 } );
+    $mock_host_item->mock( 'itemnumber',   sub { 444 } );
+    $mock_host_item->mock( 'biblionumber', sub { 555 } );
+    $mock_host_item->mock( 'barcode',      sub { 'HOST_BC' } );
 
     # Exercise every message key _attach_messages_to_checkin recognises in
     # a single pass. Some combinations (e.g. Debarred + PrevDebarred +
@@ -8226,7 +8228,9 @@ subtest '_attach_messages_to_checkin() tests' => sub {
     ok( $by_code{recall_placed_at_holding_branch}, 'recall_placed_at_holding_branch attached' );
 
     ok( $by_code{in_bundle}, 'in_bundle attached' );
-    is( $by_code{in_bundle}->payload->{host_item_id}, 444, 'in_bundle payload host_item_id' );
+    is( $by_code{in_bundle}->payload->{host_item_id},     444,       'in_bundle payload host_item_id' );
+    is( $by_code{in_bundle}->payload->{host_biblio_id},   555,       'in_bundle payload host_biblio_id' );
+    is( $by_code{in_bundle}->payload->{host_external_id}, 'HOST_BC', 'in_bundle payload host_external_id' );
 
     $schema->storage->txn_rollback;
 };

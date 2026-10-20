@@ -21,6 +21,7 @@ use Modern::Perl;
 use base 'Koha::Module::Policy';
 
 use C4::Context;
+use Koha::Checkouts;
 
 =head1 NAME
 
@@ -65,6 +66,11 @@ for the full list of global keys.
 =item B<specify_return_date> - Return date override field available
 
 =item B<dropbox_mode> - Book drop mode available
+
+=item B<dropbox_date> - Effective return date used in book drop mode (YYYY-MM-DD)
+
+=item B<anonymous_patron_id> - The I<AnonymousPatron> patron id, used to recognise
+anonymized checkouts
 
 =item B<forgive_hold_fees> - Can forgive manual hold expiration charges
 
@@ -126,6 +132,10 @@ sub _build_hashref {
         # Return date
         specify_return_date => C4::Context->preference('SpecifyReturnDate') ? 1 : 0,
         dropbox_mode        => 1,                                                      # always available as a UI option
+        dropbox_date        => Koha::Checkouts->calculate_dropbox_date()->ymd,
+
+        # Privacy
+        anonymous_patron_id => C4::Context->preference('AnonymousPatron') || undef,
 
         # Confirmations
         confirm_item_parts => C4::Context->preference('CircConfirmItemParts') ? 1 : 0,
@@ -137,7 +147,7 @@ sub _build_hashref {
         display_hold_groups        => C4::Context->preference('DisplayAddHoldGroups')   ? 1 : 0,
 
         # Recalls
-        recalls_enabled => C4::Context->preference('UseRecalls') ? 1 : 0,
+        recalls_enabled => ( C4::Context->preference('UseRecalls') // 'off' ) ne 'off' ? 1 : 0,
 
         # Transfers
         transfers_block       => C4::Context->preference('TransfersBlockCirc')       ? 1 : 0,

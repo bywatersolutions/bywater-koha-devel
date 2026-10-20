@@ -234,6 +234,68 @@ sub add {
             $effective_return_date,
         );
 
+        # TODO: Move the post-return processing below into Koha::Circulation->checkin
+        # when it exists, as with the date calculation above.
+
+        # Wrong transfer: replace the transfer so it starts from where the item really is
+        if ( $messages->{WrongTransfer} && !$messages->{WasTransfered} ) {
+            $checkin->replace_wrong_transfer;
+        }
+
+        # HoldsAutoFill: fill the hold that was found instead of asking for confirmation
+        my $hold_found = $messages->{ResFound};
+        if (   $hold_found
+            && $hold_found->{ResFound} ne 'Waiting'
+            && C4::Context->preference('HoldsAutoFill') )
+        {
+            $checkin->confirm_hold;
+            $checkin->add_message(
+                {
+                    message => 'hold_auto_filled',
+                    type    => 'info',
+                    payload => {
+                        reserve_id => $hold_found->{reserve_id},
+                        library_id => $hold_found->{branchcode},
+                    },
+                }
+            );
+        }
+
+        # Bundle verification: mark missing items as lost, remove unexpected ones
+        if ( $item->is_bundle && defined $body->{verified_bundle_barcodes} ) {
+            my $result = $checkin->verify_bundle(
+                {
+                    verified_barcodes => $body->{verified_bundle_barcodes},
+                    patron_id         => $borrower ? $borrower->{borrowernumber} : undef,
+                }
+            );
+            my %bundle_messages = (
+                bundle_missing_items    => $result->{missing},
+                bundle_unexpected_items => $result->{unexpected},
+            );
+            for my $message ( sort keys %bundle_messages ) {
+                my @items = @{ $bundle_messages{$message} };
+                next unless @items;
+                $checkin->add_message(
+                    {
+                        message => $message,
+                        type    => 'warning',
+                        payload => {
+                            items => [
+                                map {
+                                    {
+                                        item_id     => $_->itemnumber,
+                                        external_id => $_->barcode,
+                                        title       => $_->biblio->title,
+                                    }
+                                } @items
+                            ],
+                        },
+                    }
+                );
+            }
+        }
+
         # Serialize outcome messages from the checkin object so API consumers
         # see the full result, not just the subset with a dedicated FK column
         my @messages = map {

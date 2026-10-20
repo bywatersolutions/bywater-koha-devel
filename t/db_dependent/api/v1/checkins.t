@@ -3,7 +3,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 8;
+use Test::More tests => 9;
 use Test::Mojo;
 use Test::Warn;
 use Mojo::JSON;
@@ -403,6 +403,122 @@ subtest 'add - post-checkin messages' => sub {
             library_id => $library->branchcode,
         }
     )->status_is( 200, 'not_issued confirmation overridden -> checked in directly' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'add - post-return processing' => sub {
+
+    plan tests => 27;
+
+    $schema->storage->txn_begin;
+
+    # The checkin library defaults to the librarian's library
+    my $library   = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $librarian = $builder->build_object(
+        { class => 'Koha::Patrons', value => { flags => 2, branchcode => $library->branchcode } } );
+    my $password = 'thePassword123';
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    my $patron        = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 0 } } );
+    my $other_library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $to_library    = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    t::lib::Mocks::mock_userenv( { branchcode => $library->branchcode, borrowernumber => $librarian->borrowernumber } );
+    t::lib::Mocks::mock_preference( 'UseRecalls', 'off' );
+
+    my $new_held_item = sub {
+        my $item = $builder->build_sample_item( { library => $library->branchcode } );
+        AddIssue( $patron, $item->barcode );
+        my $hold_id = AddReserve(
+            {
+                branchcode     => $library->branchcode,
+                borrowernumber => $librarian->borrowernumber,
+                biblionumber   => $item->biblionumber,
+                priority       => 1,
+            }
+        );
+        return ( $item, Koha::Holds->find($hold_id) );
+    };
+
+    # The patron's checkouts count can be embedded
+    my $counted_item = $builder->build_sample_item( { library => $library->branchcode } );
+    AddIssue( $patron, $counted_item->barcode );
+    my $current_count = $patron->checkouts->count - 1;
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins" =>
+            { 'x-koha-embed' => 'checkout,checkout.patron,checkout.patron.checkouts+count' } => json =>
+            { item_id        => $counted_item->id } )
+        ->status_is(200)
+        ->json_is( '/checkout/patron/checkouts_count' => $current_count );
+
+    # HoldsAutoFill disabled: the hold is left for the librarian to confirm
+    t::lib::Mocks::mock_preference( 'HoldsAutoFill', 0 );
+    my ( $item, $hold ) = $new_held_item->();
+
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins" => json => { item_id => $item->id } )->status_is(200);
+    my $messages = $t->tx->res->json('/messages');
+    ok( ( grep { $_->{message} eq 'hold_found' } @$messages ),        'hold_found message present' );
+    ok( !( grep { $_->{message} eq 'hold_auto_filled' } @$messages ), 'No hold_auto_filled message' );
+    $hold->discard_changes;
+    ok( !$hold->is_waiting, 'Hold not set waiting without HoldsAutoFill' );
+
+    # HoldsAutoFill enabled: the hold is filled on checkin
+    t::lib::Mocks::mock_preference( 'HoldsAutoFill', 1 );
+    ( $item, $hold ) = $new_held_item->();
+
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins" => json => { item_id => $item->id } )->status_is(200);
+    $messages = $t->tx->res->json('/messages');
+    my ($auto_filled) = grep { $_->{message} eq 'hold_auto_filled' } @$messages;
+    ok( $auto_filled, 'hold_auto_filled message present' );
+    is( $auto_filled->{payload}->{reserve_id}, $hold->id, 'hold_auto_filled payload carries the hold id' );
+    $hold->discard_changes;
+    ok( $hold->is_waiting, 'Hold set waiting with HoldsAutoFill' );
+
+    # Wrong transfer: the transfer is replaced, starting from the checkin library
+    my $transfer_item = $builder->build_sample_item( { library => $other_library->branchcode } );
+    my $old_transfer  = $transfer_item->request_transfer( { to => $to_library, reason => 'Manual' } );
+    $old_transfer->transit;
+
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins" => { 'x-koha-override' => 'not_issued' } => json =>
+            { item_id => $transfer_item->id } )->status_is(200);
+    $messages = $t->tx->res->json('/messages');
+    ok( ( grep { $_->{message} eq 'wrong_transfer' } @$messages ), 'wrong_transfer message present' );
+    my $transfer_id = $t->tx->res->json('/transfer_id');
+    ok( $transfer_id, 'Checkin linked to a transfer' );
+    my $new_transfer = Koha::Item::Transfers->find($transfer_id);
+    is( $new_transfer->frombranch, $library->branchcode,    'New transfer starts at the checkin library' );
+    is( $new_transfer->tobranch,   $to_library->branchcode, 'New transfer keeps the original destination' );
+    $old_transfer->discard_changes;
+    is( $old_transfer->cancellation_reason, 'WrongTransfer', 'Original transfer cancelled as WrongTransfer' );
+
+    # Bundle verification: missing items are marked lost and reported
+    t::lib::Mocks::mock_preference( 'BundleLostValue', 2 );
+    my $host    = $builder->build_sample_item( { library => $library->branchcode } );
+    my $present = $builder->build_sample_item( { library => $library->branchcode } );
+    my $missing = $builder->build_sample_item( { library => $library->branchcode } );
+    $host->add_to_bundle($present);
+    $host->add_to_bundle($missing);
+    AddIssue( $patron, $host->barcode );
+
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins" => json => { item_id => $host->id } )->status_is(412);
+    my $token = $t->tx->res->json('/confirmation_token');
+
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins?confirmation=$token" => json => {
+            item_id                  => $host->id,
+            verified_bundle_barcodes => [ $present->barcode ],
+        }
+    )->status_is(200);
+    $messages = $t->tx->res->json('/messages');
+    my ($missing_msg) = grep { $_->{message} eq 'bundle_missing_items' } @$messages;
+    ok( $missing_msg, 'bundle_missing_items message present' );
+    is_deeply(
+        [ map { $_->{item_id} } @{ $missing_msg->{payload}->{items} } ], [ $missing->itemnumber ],
+        'Missing item reported'
+    );
+    $missing->discard_changes;
+    is( $missing->itemlost, 2, 'Missing item marked lost' );
 
     $schema->storage->txn_rollback;
 };
