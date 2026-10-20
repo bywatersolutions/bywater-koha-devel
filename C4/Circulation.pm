@@ -5612,7 +5612,11 @@ sub _attach_messages_to_checkin {
             {
                 message => 'in_bundle',
                 type    => 'info',
-                payload => { host_item_id => $messages->{InBundle}->itemnumber },
+                payload => {
+                    host_item_id     => $messages->{InBundle}->itemnumber,
+                    host_biblio_id   => $messages->{InBundle}->biblionumber,
+                    host_external_id => $messages->{InBundle}->barcode,
+                },
             }
         );
     }

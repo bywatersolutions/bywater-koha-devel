@@ -21,6 +21,7 @@ use Modern::Perl;
 use base 'Koha::Module::Policy';
 
 use C4::Context;
+use Koha::Checkouts;
 
 =head1 NAME
 
@@ -66,6 +67,11 @@ Flags are JSON booleans.
 =item B<specify_return_date> - Return date override field available
 
 =item B<dropbox_mode> - Book drop mode available
+
+=item B<dropbox_date> - Effective return date used in book drop mode (YYYY-MM-DD)
+
+=item B<anonymous_patron_id> - The I<AnonymousPatron> patron id, used to recognise
+anonymized checkouts
 
 =item B<forgive_hold_fees> - Can forgive manual hold expiration charges
 
@@ -126,6 +132,8 @@ sub _build_hashref {
     my $fines_active = ( C4::Context->preference('finesMode') // q{} ) eq 'production';
     my $can_writeoff = $user->has_permission( { updatecharges => 'writeoff' } );
 
+    my $anonymous_patron_id = C4::Context->preference('AnonymousPatron');
+
     my $pref = sub { return $self->_boolean( C4::Context->preference(shift) ) };
 
     return {
@@ -138,6 +146,10 @@ sub _build_hashref {
         # Return date
         specify_return_date => $pref->('SpecifyReturnDate'),
         dropbox_mode        => $self->_boolean(1),                               # always available as a UI option
+        dropbox_date        => Koha::Checkouts->calculate_dropbox_date()->ymd,
+
+        # Privacy
+        anonymous_patron_id => $anonymous_patron_id ? 0 + $anonymous_patron_id : undef,
 
         # Confirmations
         confirm_item_parts => $pref->('CircConfirmItemParts'),
@@ -149,7 +161,7 @@ sub _build_hashref {
         display_hold_groups        => $pref->('DisplayAddHoldGroups'),
 
         # Recalls
-        recalls_enabled => $pref->('UseRecalls'),
+        recalls_enabled => $self->_boolean( ( C4::Context->preference('UseRecalls') // 'off' ) ne 'off' ),
 
         # Transfers
         transfers_block       => $pref->('TransfersBlockCirc'),

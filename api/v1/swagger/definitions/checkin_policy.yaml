@@ -17,6 +17,15 @@ properties:
   dropbox_mode:
     type: boolean
     description: Book drop mode is available
+  dropbox_date:
+    type: string
+    format: date
+    description: Effective return date used in book drop mode
+  anonymous_patron_id:
+    type:
+      - integer
+      - "null"
+    description: Internal identifier of the anonymous patron, used to recognise anonymized checkouts
   confirm_item_parts:
     type: boolean
     description: Items with accompanying materials require a confirmation
@@ -59,6 +68,8 @@ required:
   - forgive_hold_fees
   - specify_return_date
   - dropbox_mode
+  - dropbox_date
+  - anonymous_patron_id
   - confirm_item_parts
   - holds_auto_fill
   - holds_auto_fill_print_slip

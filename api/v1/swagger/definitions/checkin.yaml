@@ -140,6 +140,7 @@ properties:
       * `wrong_transfer` - Item arrived at wrong branch (payload: to_library, item_id, trigger)
       * `transfer_arrived` - A pending transfer arrived (payload: from_library)
       * `hold_found` - A hold was found for this item (payload: status, reserve_id, patron_id, library_id)
+      * `hold_auto_filled` - The hold found was filled automatically, as HoldsAutoFill is enabled (payload: reserve_id, library_id)
       * `recall_found` - A recall was found (payload: recall_id, needs_transfer)
       * `lost_item_fee_refunded` - Lost item fee was refunded to patron
       * `lost_item_fee_charged` - Lost item fee was charged to patron
@@ -160,7 +161,9 @@ properties:
       * `claim_auto_resolved` - A return claim was auto-resolved (payload: claim_id)
       * `wrong_branch` - Item cannot be returned at this branch (payload: wrong_branch, right_branch)
       * `recall_placed_at_holding_branch` - Recall placed at the holding branch
-      * `in_bundle` - Item belongs to a bundle (payload: host_item_id)
+      * `in_bundle` - Item belongs to a bundle (payload: host_item_id, host_biblio_id, host_external_id)
+      * `bundle_missing_items` - Bundle items not verified, now marked lost (payload: items)
+      * `bundle_unexpected_items` - Verified items not in the bundle, now removed from it (payload: items)
     items:
       type: object
       properties:
