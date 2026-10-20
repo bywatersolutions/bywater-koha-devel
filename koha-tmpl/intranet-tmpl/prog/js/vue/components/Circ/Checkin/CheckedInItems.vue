@@ -161,17 +161,27 @@
 
                 <!-- Patron -->
                 <td v-if="isColumnVisible('borrower')">
-                    {{ patronDisplay(checkin) }}
-                    <span
-                        v-if="
-                            checkin.checkout &&
-                            checkin.checkout.patron &&
-                            checkin.checkout.patron.checkouts_count
-                        "
-                        class="badge bg-info-subtle"
-                    >
-                        {{ checkin.checkout.patron.checkouts_count }}
-                    </span>
+                    <template v-if="!isAnonymized(checkin)">
+                        <a
+                            v-if="patronDisplay(checkin)"
+                            :href="`/cgi-bin/koha/members/moremember.pl?borrowernumber=${checkin.checkout.patron_id}`"
+                            >{{ patronDisplay(checkin) }}</a
+                        >
+                        <span
+                            v-if="checkin.checkout?.patron?.checkouts_count"
+                            class="results_summary nowrap"
+                        >
+                            <span class="label">{{ $__("Checkouts:") }}</span>
+                            <span class="badge bg-info-subtle">
+                                <a
+                                    :href="`/cgi-bin/koha/circ/circulation.pl?borrowernumber=${checkin.checkout.patron_id}`"
+                                    >{{
+                                        checkin.checkout.patron.checkouts_count
+                                    }}</a
+                                >
+                            </span>
+                        </span>
+                    </template>
                     <button
                         v-if="showPrintSlipButton(checkin)"
                         class="btn btn-xs btn-outline-secondary ms-1"
@@ -185,28 +195,26 @@
 
                 <!-- Note -->
                 <td v-if="isColumnVisible('itemnote')">
-                    <span
+                    <p
                         v-if="
-                            checkin.checkout &&
-                            checkin.checkout.patron &&
-                            checkin.checkout.patron.borrowernotes
+                            !isAnonymized(checkin) &&
+                            checkin.checkout?.patron?.staff_notes
                         "
-                        class="circ-hlt patron-note"
                     >
-                        {{ checkin.checkout.patron.borrowernotes }}
-                    </span>
-                    <span
-                        v-if="checkin.item && checkin.item.itemnotes"
-                        class="circ-hlt item-note-public"
-                    >
-                        {{ checkin.item.itemnotes }}
-                    </span>
-                    <span
-                        v-if="checkin.item && checkin.item.itemnotes_nonpublic"
-                        class="circ-hlt item-note-nonpublic"
-                    >
-                        {{ checkin.item.itemnotes_nonpublic }}
-                    </span>
+                        <span class="circ-hlt patron-note">
+                            {{ checkin.checkout.patron.staff_notes }}
+                        </span>
+                    </p>
+                    <p v-if="checkin.item?.public_notes">
+                        <span class="circ-hlt item-note-public">
+                            {{ checkin.item.public_notes }}
+                        </span>
+                    </p>
+                    <p v-if="checkin.item?.internal_notes">
+                        <span class="circ-hlt item-note-nonpublic">
+                            {{ checkin.item.internal_notes }}
+                        </span>
+                    </p>
                 </td>
 
                 <!-- Status / Messages (always visible) -->
@@ -405,6 +413,17 @@ export default {
             }
         }
 
+        // With privacy "Never" the returned checkout is anonymized: it now
+        // belongs to the AnonymousPatron, which must not be shown as the
+        // patron who returned the item.
+        function isAnonymized(checkin) {
+            const anonymous = store.policy.anonymous_patron_id;
+            return (
+                !!anonymous &&
+                String(checkin.checkout?.patron_id) === String(anonymous)
+            );
+        }
+
         function patronDisplay(checkin) {
             if (!checkin.checkout?.patron_id) return "";
             // If patron data is embedded
@@ -423,6 +442,7 @@ export default {
          */
         function showPrintSlipButton(checkin) {
             if (checkin._status !== "success") return false;
+            if (isAnonymized(checkin)) return false;
             if (
                 !checkin.checkout ||
                 !checkin.checkout.patron_id ||
@@ -506,11 +526,13 @@ export default {
 
         function displayMessages(checkin) {
             // Filter out messages that are already shown via action_type
+            // was_returned is set on every return, the legacy page never showed it
             const actionMsgs = [
                 "hold_found",
                 "needs_transfer",
                 "wrong_transfer",
                 "recall_found",
+                "was_returned",
             ];
             return (checkin.messages || []).filter(
                 m => !actionMsgs.includes(m.message)
@@ -531,7 +553,6 @@ export default {
                 withdrawn: $__("Withdrawn"),
                 transferred: $__("Transferred"),
                 transfer_arrived: $__("Transfer arrived"),
-                was_returned: $__("Already returned"),
                 debarred: $__("Patron restricted"),
                 previously_debarred: $__("Patron was restricted"),
                 indefinitely_debarred: $__("Patron restricted indefinitely"),
@@ -541,6 +562,12 @@ export default {
                 processing_fee_refunded: $__("Processing fee refunded"),
                 return_claim: $__("Claimed returned"),
                 claim_auto_resolved: $__("Claim resolved"),
+                hold_auto_filled: $__("Hold filled"),
+                not_for_loan_status_updated: $__("Not for loan status updated"),
+                item_location_updated: $__("Shelving location updated"),
+                in_bundle: $__("Belongs to a bundle"),
+                bundle_missing_items: $__("Bundle had missing items"),
+                bundle_unexpected_items: $__("Bundle had unexpected items"),
             };
             return labels[msg.message] || msg.message.replace(/_/g, " ");
         }
@@ -554,6 +581,7 @@ export default {
             libraryName,
             rowClass,
             patronDisplay,
+            isAnonymized,
             showPrintSlipButton,
             actionLabel,
             transferDestination,

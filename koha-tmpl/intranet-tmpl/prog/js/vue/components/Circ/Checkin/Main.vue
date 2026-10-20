@@ -31,6 +31,14 @@
                 class="badge text-bg-warning me-1"
             >
                 <i class="fa fa-check"></i> {{ $__("Book drop mode") }}
+                <span v-if="dropboxDate">
+                    ({{
+                        $__("Effective checkin date is %s").replace(
+                            "%s",
+                            dropboxDate
+                        )
+                    }})
+                </span>
             </span>
             <span
                 v-if="checkinOptions.return_date"
@@ -92,6 +100,7 @@
             :confirming="processing"
             @confirm="onConfirm"
             @dismiss="onDismiss"
+            @ignore="onIgnore"
             @resolve="onResolve"
             @resolve-claim="onResolveClaimFromModal"
             @open-cancel-hold="onOpenCancelHold"
@@ -141,6 +150,22 @@ import HoldCancellationModal from "./HoldCancellationModal.vue";
 import ResolveClaimModal from "./ResolveClaimModal.vue";
 import BundleVerificationModal from "./BundleVerificationModal.vue";
 import { $__ } from "@koha-vue/i18n";
+import { printHoldSlip } from "./slip-printer.js";
+
+// Values interpolated into the v-html alert boxes must be escaped
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function formatDate(value) {
+    if (!value) return "";
+    return typeof $date === "function" ? $date(value) : value;
+}
 
 export default {
     components: {
@@ -173,6 +198,13 @@ export default {
         const bundleBarcode = ref("");
         const showHoldCancellationModal = ref(false);
         const holdCancellationItem = ref(null);
+        // Items removed from their bundle from the "in bundle" alert
+        const removedFromBundle = ref(new Set());
+
+        // Effective return date used in book drop mode
+        const dropboxDate = computed(() =>
+            formatDate(policy.value.dropbox_date)
+        );
 
         const checkinOptions = reactive({
             dropbox_mode: false,
@@ -213,13 +245,13 @@ export default {
                 },
                 lost_item_fee_charged: {
                     text: $__(
-                        "A refund for the lost item charge has been applied, and a new overdue charge has been calculated."
+                        "A refund for the lost item charge has been applied to the borrowing patron's account, and new overdue charge has been calculated and applied."
                     ),
                     alertClass: "alert-info",
                 },
                 lost_item_fee_restored: {
                     text: $__(
-                        "A refund for the lost item charge has been applied and any forgiven overdue fines have been reverted."
+                        "A refund for the lost item charge has been applied to the borrowing patron's account and if an overdue fine was forgiven when the item was marked as lost, it has been reverted."
                     ),
                     alertClass: "alert-info",
                 },
@@ -266,17 +298,130 @@ export default {
                     alertClass: "alert-warning",
                 },
             };
+            // Only one lost item fee outcome is shown, like the legacy page
+            const lostFeeOutcomes = [
+                "lost_item_fee_refunded",
+                "lost_item_fee_charged",
+                "lost_item_fee_restored",
+                "lost_item_payment_not_refunded",
+            ];
+            const lostFeeOutcome = lostFeeOutcomes.find(code =>
+                messages.some(m => m.message === code)
+            );
+            // Patron note recorded on the checkout (issues.note)
+            if (latest.checkout?.note) {
+                detailed.push({
+                    text:
+                        `<h4>${escapeHtml($__("Patron note"))}</h4>` +
+                        (latest.checkout.note_date
+                            ? `<p>${escapeHtml(formatDate(latest.checkout.note_date))}</p>`
+                            : "") +
+                        `<p>${escapeHtml(latest.checkout.note)}</p>`,
+                    alertClass: "alert-info issue-note",
+                });
+            }
             for (const msg of messages) {
-                if (feeMessages[msg.message]) {
+                if (
+                    feeMessages[msg.message] &&
+                    (!lostFeeOutcomes.includes(msg.message) ||
+                        msg.message === lostFeeOutcome)
+                ) {
                     detailed.push(feeMessages[msg.message]);
                 }
-                if (msg.message === "in_bundle" && msg.payload) {
+                if (
+                    msg.message === "in_bundle" &&
+                    msg.payload &&
+                    !removedFromBundle.value.has(latest.checkin_id)
+                ) {
                     detailed.push({
                         text: $__(
-                            'This item belongs to a bundle. <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=%s">View host item</a> — <button class="btn btn-xs btn-warning remove-from-bundle" data-item-id="%s">Remove from bundle</button>'
+                            'This item belongs to a bundle: <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=%s">%s</a> <button type="button" class="btn btn-default btn-xs remove-from-bundle" data-checkin-id="%s" data-item-id="%s" data-host-item-id="%s"><i class="fa fa-minus"></i> Remove from bundle</button>'
                         )
-                            .replace("%s", latest.item?.biblio?.biblio_id || "")
-                            .replace("%s", msg.payload.host_item_id || ""),
+                            .replace(
+                                "%s",
+                                escapeHtml(msg.payload.host_biblio_id)
+                            )
+                            .replace(
+                                "%s",
+                                escapeHtml(msg.payload.host_external_id)
+                            )
+                            .replace("%s", escapeHtml(latest.checkin_id))
+                            .replace("%s", escapeHtml(latest.item?.item_id))
+                            .replace(
+                                "%s",
+                                escapeHtml(msg.payload.host_item_id)
+                            ),
+                        alertClass: "alert-warning",
+                    });
+                }
+                if (
+                    (msg.message === "bundle_missing_items" ||
+                        msg.message === "bundle_unexpected_items") &&
+                    msg.payload
+                ) {
+                    const heading =
+                        msg.message === "bundle_missing_items"
+                            ? $__(
+                                  "Bundle had missing items, they have been marked as lost:"
+                              )
+                            : $__(
+                                  "Bundle had unexpected items, they have been removed from the bundle. Please place them to one side:"
+                              );
+                    const items = (msg.payload.items || [])
+                        .map(
+                            i =>
+                                `<li>${escapeHtml(i.title)} - ${escapeHtml(i.external_id)}</li>`
+                        )
+                        .join("");
+                    detailed.push({
+                        text: `<strong>${escapeHtml(heading)}</strong><ul>${items}</ul>`,
+                        alertClass: "alert-warning",
+                    });
+                }
+                if (msg.message === "hold_auto_filled" && msg.payload) {
+                    const p = latest.hold?.patron;
+                    const holdPatron = p
+                        ? p.firstname
+                            ? `${p.surname}, ${p.firstname}`
+                            : p.surname
+                        : "";
+                    const destination =
+                        store.libraries[msg.payload.library_id] ||
+                        msg.payload.library_id;
+                    const transfer =
+                        msg.payload.library_id !== latest.library_id;
+                    detailed.push({
+                        text:
+                            `<strong>${escapeHtml($__("Hold filled for:"))}</strong> ${escapeHtml(holdPatron)}<br>` +
+                            `<strong>${escapeHtml(transfer ? $__("Transfer to:") : $__("Hold at"))}</strong> ${escapeHtml(destination)} ` +
+                            `<button type="button" class="btn btn-default btn-xs print-hold-slip" data-reserve-id="${escapeHtml(msg.payload.reserve_id)}"><i class="fa fa-print"></i> ${escapeHtml($__("Print"))}</button>`,
+                        alertClass: "alert-info hold-auto-filled",
+                    });
+                }
+                if (
+                    msg.message === "not_for_loan_status_updated" &&
+                    msg.payload
+                ) {
+                    detailed.push({
+                        text: escapeHtml(notForLoanUpdateText(msg.payload)),
+                        alertClass: "alert-warning",
+                    });
+                }
+                if (msg.message === "item_location_updated" && msg.payload) {
+                    detailed.push({
+                        text: escapeHtml(
+                            $__(
+                                "Item shelving location updated. Old value: %s. New value: %s."
+                            )
+                                .replace(
+                                    "%s",
+                                    avDescription("LOC", msg.payload.from)
+                                )
+                                .replace(
+                                    "%s",
+                                    avDescription("LOC", msg.payload.to)
+                                )
+                        ),
                         alertClass: "alert-warning",
                     });
                 }
@@ -294,25 +439,30 @@ export default {
                         text: $__(
                             'Patron has outstanding fines of %s. <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=%s">Make payment</a>'
                         )
-                            .replace("%s", msg.payload.balance)
-                            .replace("%s", msg.payload.patron_id),
+                            .replace("%s", escapeHtml(msg.payload.balance))
+                            .replace("%s", escapeHtml(msg.payload.patron_id)),
                         alertClass: "alert-warning",
                     });
                 }
                 if (msg.message === "patron_has_waiting_holds" && msg.payload) {
                     const p = latest.checkout && latest.checkout.patron;
-                    const patronName = p
-                        ? p.firstname
-                            ? `${p.surname}, ${p.firstname}`
-                            : p.surname
-                        : $__("Patron");
+                    const patronName = escapeHtml(
+                        p
+                            ? p.firstname
+                                ? `${p.surname}, ${p.firstname}`
+                                : p.surname
+                            : $__("Patron")
+                    );
                     detailed.push({
                         text: $__(
                             '%s has %s hold(s) waiting for pickup. <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=%s">Check out to this patron</a>'
                         )
                             .replace("%s", patronName)
-                            .replace("%s", msg.payload.waiting_count)
-                            .replace("%s", msg.payload.patron_id),
+                            .replace(
+                                "%s",
+                                escapeHtml(msg.payload.waiting_count)
+                            )
+                            .replace("%s", escapeHtml(msg.payload.patron_id)),
                         alertClass: "alert-info",
                         priority: 10,
                     });
@@ -339,6 +489,25 @@ export default {
                 )
                 .map(entry => entry.box);
         });
+
+        function avDescription(category, value) {
+            if (value === undefined || value === null || value === "") {
+                return $__("Available for loan");
+            }
+            return store.authorisedValues[category]?.[value] || value;
+        }
+
+        // Mirrors the legacy UpdateNotForLoanStatusOnCheckin message
+        function notForLoanUpdateText(payload) {
+            if (payload.to === "ONLYMESSAGE") {
+                return avDescription("NOT_LOAN", payload.from);
+            }
+            return $__(
+                "Not for loan status updated. Old value: %s. New value: %s."
+            )
+                .replace("%s", avDescription("NOT_LOAN", payload.from))
+                .replace("%s", avDescription("NOT_LOAN", payload.to));
+        }
 
         // Refocus barcode input when focus leaves to non-interactive elements
         // (e.g., sidebar toggle button, page chrome clicks)
@@ -379,8 +548,32 @@ export default {
         });
 
         function onBarcodeScan(barcode) {
+            // Moving on from a non-blocking transfer confirms it when
+            // AutomaticConfirmTransfer is set (legacy: on closing the modal)
+            const active = activeModalItem.value;
+            if (
+                active &&
+                active._action_type === "transfer" &&
+                policy.value.auto_confirm_transfer &&
+                !policy.value.transfers_block
+            ) {
+                onResolve(active, "confirm_transfer");
+            }
+
             // Fire and forget — don't block the input
-            store.checkin(barcode, { ...checkinOptions });
+            store.checkin(barcode, { ...checkinOptions }).then(result => {
+                // HoldsAutoFillPrintSlip: print the slip for an auto-filled hold
+                const autoFilled = (result?.data?.messages || []).find(
+                    m => m.message === "hold_auto_filled"
+                );
+                if (
+                    autoFilled &&
+                    result.status === "success" &&
+                    policy.value.holds_auto_fill_print_slip
+                ) {
+                    printHoldSlip(autoFilled.payload.reserve_id);
+                }
+            });
             // Clear return date if "remember" is not checked
             if (checkinOptionsRef.value) {
                 checkinOptionsRef.value.afterCheckin();
@@ -397,6 +590,32 @@ export default {
             if (btn) {
                 activeClaimId.value = parseInt(btn.dataset.claimId);
                 showClaimModal.value = true;
+            }
+            const slipBtn = e.target.closest(".print-hold-slip");
+            if (slipBtn) {
+                printHoldSlip(slipBtn.dataset.reserveId);
+            }
+            const bundleBtn = e.target.closest(".remove-from-bundle");
+            if (bundleBtn) {
+                removeFromBundle(bundleBtn.dataset);
+            }
+        }
+
+        async function removeFromBundle({ checkinId, itemId, hostItemId }) {
+            try {
+                const response = await fetch(
+                    `/api/v1/items/${hostItemId}/bundled_items/${itemId}`,
+                    { method: "DELETE" }
+                );
+                if (!response.ok) throw new Error(response.statusText);
+                removedFromBundle.value = new Set([
+                    ...removedFromBundle.value,
+                    parseInt(checkinId),
+                ]);
+            } catch (e) {
+                lastError.value = $__(
+                    "Could not remove the item from the bundle"
+                );
             }
         }
 
@@ -476,6 +695,11 @@ export default {
             _advanceModal();
         }
 
+        function onIgnore(item) {
+            store.ignoreAction(item);
+            _advanceModal();
+        }
+
         async function onResolve(item, action, params = {}) {
             const result = await store.resolveAction(item, action, params);
             const slip = params.slip;
@@ -502,7 +726,10 @@ export default {
             showHoldCancellationModal.value = false;
             holdCancellationItem.value = null;
             if (!item) return;
-            await store.resolveAction(item, "cancel_hold", params);
+            await store.resolveAction(item, "cancel_hold", {
+                ...params,
+                forgive_hold_fees: checkinOptions.forgive_hold_fees,
+            });
             _advanceModal();
         }
 
@@ -531,6 +758,7 @@ export default {
             activeModalItem,
             isInputBlocked,
             hasActiveSettings,
+            dropboxDate,
             lastCheckinMessages,
             showOptions,
             showClaimModal,
@@ -554,6 +782,7 @@ export default {
             onBundleConfirm,
             onConfirm,
             onDismiss,
+            onIgnore,
             onResolve,
             $__,
         };
