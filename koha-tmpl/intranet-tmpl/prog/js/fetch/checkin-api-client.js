@@ -43,9 +43,13 @@ export class CheckinAPIClient {
                         "x-koha-embed": "item,hold",
                     },
                 }),
-            confirmTransfer: checkin_id =>
+            confirmTransfer: (checkin_id, { to_library_id, reason } = {}) =>
                 this.httpClient.post({
                     endpoint: `checkins/${checkin_id}/transfer_confirmation`,
+                    body: {
+                        ...(to_library_id ? { to_library_id } : {}),
+                        ...(reason ? { reason } : {}),
+                    },
                     headers: {
                         "x-koha-embed": "item,transfer,transfer.to_library",
                     },

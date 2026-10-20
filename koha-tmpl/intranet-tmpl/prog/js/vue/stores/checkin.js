@@ -298,11 +298,23 @@ export const useCheckinStore = defineStore("checkin", () => {
                         forgive_hold_fees: params.forgive_hold_fees,
                     });
                     break;
-                case "confirm_transfer":
+                case "confirm_transfer": {
+                    // Without AutomaticItemReturn no transfer was created:
+                    // request it to the library the checkin pointed at
+                    const needs = _needsTransferMessage(entry);
                     if (entry.transfer_id) {
                         data = await client.checkins.confirmTransfer(checkinId);
+                    } else if (needs) {
+                        data = await client.checkins.confirmTransfer(
+                            checkinId,
+                            {
+                                to_library_id: needs.payload?.to_library,
+                                reason: needs.payload?.trigger,
+                            }
+                        );
                     }
                     break;
+                }
                 case "cancel_transfer":
                     if (entry.transfer_id) {
                         data = await client.checkins.cancelTransfer(checkinId);
@@ -339,6 +351,26 @@ export const useCheckinStore = defineStore("checkin", () => {
                     },
                 ];
             }
+            // The transfer was requested on confirmation: show it as sent
+            if (
+                action === "confirm_transfer" &&
+                !existing.transfer_id &&
+                data?.transfer
+            ) {
+                resolved.transfer_id = data.transfer.transfer_id;
+                resolved.messages = (existing.messages || []).map(m =>
+                    m.message === "needs_transfer"
+                        ? {
+                              ...m,
+                              message: "transferred",
+                              payload: {
+                                  ...m.payload,
+                                  transfer_id: data.transfer.transfer_id,
+                              },
+                          }
+                        : m
+                );
+            }
             // The transfer was cancelled: stop showing it on the row
             if (action === "cancel_transfer") {
                 resolved.transfer_id = null;
@@ -362,6 +394,10 @@ export const useCheckinStore = defineStore("checkin", () => {
     /**
      * Detect if a successful checkin requires post-action (hold/transfer/recall).
      */
+    function _needsTransferMessage(data) {
+        return (data.messages || []).find(m => m.message === "needs_transfer");
+    }
+
     function _detectActionType(data) {
         const messages = data.messages || [];
         if (
@@ -382,6 +418,11 @@ export const useCheckinStore = defineStore("checkin", () => {
                     m.message === "transferred"
             )
         ) {
+            return "transfer";
+        }
+        // The item needs a transfer that was not created (AutomaticItemReturn
+        // disabled): ask whether to transfer it now
+        if (_needsTransferMessage(data)) {
             return "transfer";
         }
         if (
