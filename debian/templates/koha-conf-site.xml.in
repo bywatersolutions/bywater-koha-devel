@@ -513,6 +513,28 @@ __END_SRU_PUBLICSERVER__
    <parallel_loops_count>1</parallel_loops_count>
  </auto_renew_cronjob>
 
+ <!-- OPAC bot guard ( Plack only ). Challenges cookie-less clients on the heavy OPAC pages and
+      caps anonymous load per instance. Off unless enabled is 1. See Koha::Middleware::BotGuard.
+      Feeds and cookie issuing are counted per client address, so behind a proxy set
+      koha_trusted_proxies or reverse_proxy_ip_header, or every client shares one budget.
+ <opac_bot_guard>
+   <enabled>1</enabled>
+   <mode>enforce</mode>                   observe logs every decision but refuses nothing
+   <secret></secret>                      optional, defaults to api_secret_passphrase
+   <cookie_ttl>2592000</cookie_ttl>       seconds a trust cookie stays valid, 30 days
+   <rate_limit>60</rate_limit>            heavy requests per cookie ( or feed requests per client address ) per window, 0 disables
+   <authenticated_rate_limit>600</authenticated_rate_limit>  heavy requests per logged in patron's cookie per window, 0 disables
+   <rate_window>60</rate_window>          seconds
+   <max_concurrent>4</max_concurrent>     anonymous heavy requests in flight, 0 disables, keep below plack_workers
+   <issue_limit>30</issue_limit>          cookies issued per client address per minute, 0 disables
+   <pow_difficulty>18</pow_difficulty>    bits of proof of work the challenge page does for a cookie, 0 disables
+   <exempt_ips>127.0.0.1 10.0.0.0/8</exempt_ips>  space separated addresses or CIDRs never challenged or limited
+   <heavy_scripts></heavy_scripts>        optional space separated list replacing the default heavy scripts
+   <crawler_user_agents>Googlebot|bingbot|Applebot|DuckDuckBot</crawler_user_agents>  never challenged from their published ranges, 0 disables
+   <crawler_ranges_file></crawler_ranges_file>  optional, defaults to Koha/BotGuard/verified_crawlers.json
+ </opac_bot_guard>
+ -->
+
  <!--
    Content-Security-Policy (CSP) configuration
    ============================================

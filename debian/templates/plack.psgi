@@ -98,6 +98,7 @@ builder {
             enable 'Log4perl', category => 'plack-opac';
             enable 'LogWarn';
         }
+        enable "+Koha::Middleware::BotGuard";
         enable "+Koha::Middleware::CSRF";
         enable '+Koha::Middleware::ContentSecurityPolicy';
         $opac;
