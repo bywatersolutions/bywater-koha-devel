@@ -138,6 +138,7 @@ sub authenticate_api_request {
     my ( $c, $params ) = @_;
 
     my $user;
+    my $auth_method;
 
     $c->stash( 'is_public' => 1 )
         if $params->{is_public};
@@ -171,8 +172,10 @@ sub authenticate_api_request {
         );
 
         if ($valid_token) {
-            my $patron_id = Koha::ApiKeys->find( $valid_token->{client_id} )->patron_id;
-            $user = Koha::Patrons->find($patron_id);
+            my $api_key = Koha::ApiKeys->find( $valid_token->{client_id} );
+            $user        = Koha::Patrons->find( $api_key->patron_id );
+            $auth_method = 'oauth';
+            $c->stash( 'koha.api_key' => $api_key );
         } else {
 
             # If we have "Authorization: Bearer" header and oauth authentication
@@ -190,6 +193,7 @@ sub authenticate_api_request {
             # failed, do not try other authentication means
             Koha::Exceptions::Authentication::Required->throw( error => 'Authentication failure.' );
         }
+        $auth_method = 'basic';
     } else {
 
         my $cookie = $c->cookie('CGISESSID');
@@ -246,7 +250,10 @@ sub authenticate_api_request {
         Koha::Exceptions::Authentication->throw( error => 'Cannot request this route.' );
     }
 
-    $c->stash( 'koha.user' => $user );
+    $auth_method = 'cookie' if $cookie_auth;
+
+    $c->stash( 'koha.user'        => $user );
+    $c->stash( 'koha.auth_method' => $auth_method );
     C4::Context->interface('api');
 
     if ( $user and !$cookie_auth ) {    # cookie-auth sets this and more, don't mess with that
