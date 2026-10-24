@@ -61,6 +61,7 @@ use C4::Auth_with_shibboleth qw( shib_ok get_login_shib login_shib_url logout_sh
 use Net::CIDR;
 use C4::Log qw( logaction );
 use Koha::CookieManager;
+use Koha::BotGuard::TrustCookie;
 use Koha::Auth::Permissions;
 use Koha::Token;
 use Koha::Exceptions::Token;
@@ -1035,6 +1036,12 @@ sub checkauth {
         C4::Context::unset_userenv();
         $cookie = $cookie_mgr->clear_unless( $query->cookie, @$cookie );
 
+        # Downgrade the trust cookie so a shared PC doesn't keep the logged-in bypass after logout
+        if ( $type eq 'opac' && Koha::BotGuard::TrustCookie->enabled ) {
+            $cookie =
+                $cookie_mgr->replace_in_list( $cookie, Koha::BotGuard::TrustCookie->cgi_cookie( $query, 'anonymous' ) );
+        }
+
         if ( $cas and $caslogout ) {
             logout_cas( $query, $type );
         }
@@ -1417,6 +1424,15 @@ sub checkauth {
 
         my $patron = $userid ? Koha::Patrons->find( { userid => $userid } ) : undef;
         $patron->update_lastseen('login') if $patron;
+
+        # Logged-in OPAC users get a trust cookie so the bot guard never challenges or limits them
+        if ( $patron && $type eq 'opac' && Koha::BotGuard::TrustCookie->enabled ) {
+            my $trust = Koha::BotGuard::TrustCookie->verify( scalar $query->cookie('KOHA_TRUST') );
+            $cookie = $cookie_mgr->replace_in_list(
+                $cookie,
+                Koha::BotGuard::TrustCookie->cgi_cookie( $query, 'authenticated' )
+            ) unless $trust && $trust->{kind} eq 'authenticated';
+        }
 
         # FIXME This is only needed for scripts not using plack
         my $op = $query->param('op');
