@@ -529,6 +529,22 @@ __END_SRU_PUBLICSERVER__
  </opac_bot_guard>
  -->
 
+ <!-- REST API rate limiter. Counts requests per identity ( OAuth client, patron, session or
+      client address ) in memcached and answers 429 past the limit. Off unless enabled is 1.
+      See Koha::REST::Plugin::RateLimit.
+ <api_rate_limit>
+   <enabled>1</enabled>
+   <mode>enforce</mode>                   observe logs every decision but refuses nothing
+   <window>60</window>                    seconds, also sent as Retry-After
+   <oauth_limit>600</oauth_limit>         requests per OAuth client_id per window, 0 disables
+   <session_limit>600</session_limit>     requests per logged-in CGISESSID session ( staff client, OPAC )
+   <basic_limit>300</basic_limit>         requests per patron using HTTP Basic auth
+   <anonymous_limit>60</anonymous_limit>  anonymous sessions per session, or per client address without one
+   <token_limit>30</token_limit>          POST /api/v1/oauth/token per client address
+   <exempt_ips>127.0.0.1 10.0.0.0/8</exempt_ips>  space separated addresses or CIDRs never limited
+ </api_rate_limit>
+ -->
+
  <!--
    Content-Security-Policy (CSP) configuration
    ============================================
