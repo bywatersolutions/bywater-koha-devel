@@ -219,6 +219,7 @@ sub startup {
     $self->plugin('Koha::REST::Plugin::Responses');
     $self->plugin('Koha::REST::Plugin::Auth::IdP');
     $self->plugin('Koha::REST::Plugin::Auth::PublicRoutes');
+    $self->plugin('Koha::REST::Plugin::RateLimit');
     $self->plugin( 'Mojolicious::Plugin::OAuth2' => $oauth_configuration );
 }
 
