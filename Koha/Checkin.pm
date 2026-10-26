@@ -22,6 +22,7 @@ use Koha::Account::Credits;
 use Koha::Account::Debits;
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Desks;
+use Koha::Exceptions::Checkin;
 use Koha::Holds;
 use Koha::Items;
 use Koha::Item::Transfers;
@@ -236,6 +237,10 @@ checkin library, creates a transfer and sets it in transit.
 Throws C<Koha::Exceptions::MissingParameter> if there is no hold associated
 with this checkin.
 
+Throws C<Koha::Exceptions::Checkin::ItemCheckedOut> if the item has been
+checked out again since the checkin (e.g. from another workstation). The hold
+is left pending and no transfer is created.
+
 Returns the C<Koha::Checkin> object for chaining.
 
 =cut
@@ -254,7 +259,10 @@ sub confirm_hold {
     # If pickup branch differs, a transfer is needed
     my $diff_branch = ( $checkin_library ne $pickup_library ) ? $pickup_library : undef;
 
-    ModReserveAffect( $item->itemnumber, $hold->borrowernumber, $diff_branch, $hold->id );
+    # ModReserveAffect refuses to set aside a hold for an item that is on loan
+    Koha::Exceptions::Checkin::ItemCheckedOut->throw(
+        "The item has been checked out in the meantime, the hold remains pending")
+        unless ModReserveAffect( $item->itemnumber, $hold->borrowernumber, $diff_branch, $hold->id );
 
     # Create transfer if needed
     if ($diff_branch) {

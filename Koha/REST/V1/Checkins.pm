@@ -337,6 +337,16 @@ sub hold_confirmation {
         $checkin->confirm_hold;
         return $c->_render_checkin_response($checkin);
     } catch {
+        if ( blessed $_ && $_->isa('Koha::Exceptions::Checkin::ItemCheckedOut') ) {
+            return $c->render(
+                status  => 409,
+                openapi => {
+                    error =>
+                        'The item has been checked out in the meantime: the hold has not been set aside and remains pending',
+                    error_code => 'item_checked_out',
+                }
+            );
+        }
         $c->unhandled_exception($_);
     };
 }
