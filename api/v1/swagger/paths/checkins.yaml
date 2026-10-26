@@ -247,6 +247,12 @@
         description: Checkin not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
+      "409":
+        description: |
+          Conflict. The item has been checked out since the checkin, the
+          hold has not been set aside and remains pending
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
       "500":
         description: Internal server error
         schema:

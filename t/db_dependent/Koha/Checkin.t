@@ -500,7 +500,7 @@ subtest 'debits() and credits() tests' => sub {
 
 subtest 'confirm_hold() tests' => sub {
 
-    plan tests => 7;
+    plan tests => 11;
 
     $schema->storage->txn_begin;
 
@@ -597,6 +597,44 @@ subtest 'confirm_hold() tests' => sub {
     throws_ok { $checkin_no_hold->confirm_hold }
     'Koha::Exceptions::MissingParameter',
         'confirm_hold throws MissingParameter when no hold';
+
+    # Test confirm_hold when the item was checked out again in the meantime
+    my $other_item = $builder->build_sample_item( { library => $checkin_library->branchcode } );
+    $reserve_id = AddReserve(
+        {
+            branchcode     => $pickup_library->branchcode,
+            borrowernumber => $patron->borrowernumber,
+            biblionumber   => $other_item->biblionumber,
+            itemnumber     => $other_item->itemnumber,
+            priority       => 1,
+        }
+    );
+
+    $checkin = Koha::Checkin->new(
+        {
+            item_id    => $other_item->itemnumber,
+            user_id    => $user->borrowernumber,
+            library_id => $checkin_library->branchcode,
+            hold_id    => $reserve_id,
+        }
+    )->store;
+
+    $builder->build_object(
+        {
+            class => 'Koha::Checkouts',
+            value => { itemnumber => $other_item->itemnumber, branchcode => $checkin_library->branchcode }
+        }
+    );
+
+    throws_ok { $checkin->confirm_hold }
+    'Koha::Exceptions::Checkin::ItemCheckedOut',
+        'confirm_hold throws ItemCheckedOut when the item is on loan';
+
+    $checkin->discard_changes;
+    $hold = Koha::Holds->find($reserve_id);
+    is( $hold->found,              undef, 'Hold left pending' );
+    is( $checkin->transfer_id,     undef, 'No transfer created' );
+    is( $other_item->get_transfer, undef, 'Item has no transfer' );
 
     $schema->storage->txn_rollback;
 };

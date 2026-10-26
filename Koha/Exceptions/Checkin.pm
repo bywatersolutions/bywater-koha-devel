@@ -27,6 +27,10 @@ use Exception::Class (
         isa         => 'Koha::Exceptions::Checkin',
         description => "Checkin failed"
     },
+    'Koha::Exceptions::Checkin::ItemCheckedOut' => {
+        isa         => 'Koha::Exceptions::Checkin',
+        description => "The item has been checked out since it was checked in"
+    },
 );
 
 1;

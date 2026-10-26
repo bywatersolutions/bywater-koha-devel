@@ -14,6 +14,7 @@ use C4::Circulation qw( AddIssue );
 use C4::Reserves    qw( AddReserve );
 use Koha::Database;
 use Koha::Account;
+use Koha::Checkins;
 use Koha::Holds;
 use Koha::DateUtils qw( dt_from_string );
 
@@ -525,7 +526,7 @@ subtest 'add - post-return processing' => sub {
 
 subtest 'sub-resource confirmation endpoints' => sub {
 
-    plan tests => 32;
+    plan tests => 39;
 
     $schema->storage->txn_begin;
 
@@ -580,6 +581,35 @@ subtest 'sub-resource confirmation endpoints' => sub {
 
     my $hold = Koha::Holds->find($reserve_id);
     is( $hold->found, 'W', 'Hold set to waiting after hold_confirmation' );
+
+    # -- hold_confirmation: item checked out again in the meantime (409)
+    t::lib::Mocks::mock_preference( 'HoldsAutoFill', 0 );
+    my $item_on_loan = $builder->build_sample_item( { library => $checkin_library->branchcode } );
+    AddIssue( $patron, $item_on_loan->barcode );
+
+    my $reserve_id_on_loan = AddReserve(
+        {
+            branchcode     => $pickup_library->branchcode,
+            borrowernumber => $patron->borrowernumber,
+            biblionumber   => $item_on_loan->biblionumber,
+            itemnumber     => $item_on_loan->itemnumber,
+            priority       => 1,
+        }
+    );
+
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins" => json =>
+            { item_id => $item_on_loan->id, library_id => $checkin_library->branchcode } )->status_is(200);
+    my $checkin_on_loan_id = $t->tx->res->json('/checkin_id');
+
+    my $other_patron = $builder->build_object( { class => 'Koha::Patrons' } );
+    AddIssue( $other_patron, $item_on_loan->barcode );
+
+    $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_on_loan_id/hold_confirmation")
+        ->status_is(409)
+        ->json_is( '/error_code' => 'item_checked_out' );
+
+    is( Koha::Holds->find($reserve_id_on_loan)->found,          undef, 'Hold left pending' );
+    is( Koha::Checkins->find($checkin_on_loan_id)->transfer_id, undef, 'No transfer created' );
 
     # -- hold_cancellation
     my $item2 = $builder->build_sample_item( { library => $checkin_library->branchcode } );
