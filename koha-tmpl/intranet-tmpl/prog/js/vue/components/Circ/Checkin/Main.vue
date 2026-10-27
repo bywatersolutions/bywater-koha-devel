@@ -442,11 +442,11 @@ export default {
                             )
                                 .replace(
                                     "%s",
-                                    avDescription("LOC", msg.payload.from)
+                                    locationDescription(msg.payload.from)
                                 )
                                 .replace(
                                     "%s",
-                                    avDescription("LOC", msg.payload.to)
+                                    locationDescription(msg.payload.to)
                                 )
                         ),
                         alertClass: "alert-warning",
@@ -518,10 +518,23 @@ export default {
         });
 
         function avDescription(category, value) {
-            if (value === undefined || value === null || value === "") {
+            return store.authorisedValues[category]?.[value] || value;
+        }
+
+        // Legacy returns.tt treated any false value (undef, '' or 0) as
+        // the item being available for loan
+        function notForLoanDescription(value) {
+            if (value === undefined || value === null || !Number(value)) {
                 return $__("Available for loan");
             }
-            return store.authorisedValues[category]?.[value] || value;
+            return avDescription("NOT_LOAN", value);
+        }
+
+        function locationDescription(value) {
+            if (value === undefined || value === null || value === "") {
+                return $__("Blank");
+            }
+            return avDescription("LOC", value);
         }
 
         // Mirrors the legacy UpdateNotForLoanStatusOnCheckin message
@@ -532,8 +545,8 @@ export default {
             return $__(
                 "Not for loan status updated. Old value: %s. New value: %s."
             )
-                .replace("%s", avDescription("NOT_LOAN", payload.from))
-                .replace("%s", avDescription("NOT_LOAN", payload.to));
+                .replace("%s", notForLoanDescription(payload.from))
+                .replace("%s", notForLoanDescription(payload.to));
         }
 
         // Refocus barcode input when focus leaves to non-interactive elements
