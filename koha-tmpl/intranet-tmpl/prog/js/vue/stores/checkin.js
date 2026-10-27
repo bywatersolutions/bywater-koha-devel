@@ -292,12 +292,24 @@ export const useCheckinStore = defineStore("checkin", () => {
                 case "confirm_hold":
                     data = await client.checkins.confirmHold(checkinId);
                     break;
-                case "cancel_hold":
-                    data = await client.checkins.cancelHold(checkinId, {
-                        reason: params.reason,
-                        forgive_hold_fees: params.forgive_hold_fees,
-                    });
+                case "cancel_hold": {
+                    const response = await client.checkins.cancelHold(
+                        checkinId,
+                        {
+                            reason: params.reason,
+                            forgive_hold_fees: params.forgive_hold_fees,
+                        }
+                    );
+                    data = await response.json();
+                    if (!response.ok) {
+                        if (data.policy) {
+                            applyPolicy(data.policy);
+                            throw new Error(_policyErrorMessage(data));
+                        }
+                        throw new Error(data.error || "An error occurred");
+                    }
                     break;
+                }
                 case "confirm_transfer": {
                     // Without AutomaticItemReturn no transfer was created:
                     // request it to the library the checkin pointed at
@@ -387,6 +399,8 @@ export const useCheckinStore = defineStore("checkin", () => {
 
             return { status: "ok", data };
         } catch (error) {
+            // The action stays pending: tell the user why it did not go through
+            lastError.value = error.message;
             return { status: "error", message: error.message };
         }
     }
