@@ -98,6 +98,7 @@
         <ConfirmationModal
             :item="activeModalItem"
             :confirming="processing"
+            @close="onClose"
             @confirm="onConfirm"
             @dismiss="onDismiss"
             @ignore="onIgnore"
@@ -726,6 +727,19 @@ export default {
             _advanceModal();
         }
 
+        // A non-blocking transfer modal was closed without picking an
+        // action. Legacy confirmed an existing transfer on closing when
+        // AutomaticConfirmTransfer was set, and left it alone otherwise.
+        function onClose(item) {
+            // Another modal was opened by the same click
+            if (activeModalItem.value !== item) return;
+            if (item.transfer_id && policy.value.auto_confirm_transfer) {
+                onResolve(item, "confirm_transfer");
+            } else {
+                onIgnore(item);
+            }
+        }
+
         async function onResolve(item, action, params = {}) {
             const result = await store.resolveAction(item, action, params);
             const slip = params.slip;
@@ -808,6 +822,7 @@ export default {
             onClaimResolved,
             onBundleConfirm,
             onConfirm,
+            onClose,
             onDismiss,
             onIgnore,
             onResolve,
