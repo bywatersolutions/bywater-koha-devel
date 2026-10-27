@@ -42,6 +42,9 @@ export class CheckinAPIClient {
                     headers: {
                         "x-koha-embed": "item,hold",
                     },
+                    // The caller handles errors: a refusal carries the
+                    // current module policy
+                    return_response: true,
                 }),
             confirmTransfer: (checkin_id, { to_library_id, reason } = {}) =>
                 this.httpClient.post({
