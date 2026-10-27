@@ -6,7 +6,7 @@
         role="dialog"
         aria-modal="false"
     >
-        <div class="modal-dialog">
+        <div ref="dialogRef" class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">{{ modalTitle }}</h1>
@@ -584,7 +584,7 @@
 </template>
 
 <script>
-import { computed } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useCheckinStore } from "../../../stores/checkin.js";
 import { $__ } from "@koha-vue/i18n";
@@ -607,6 +607,7 @@ export default {
         },
     },
     emits: [
+        "close",
         "confirm",
         "dismiss",
         "ignore",
@@ -668,6 +669,32 @@ export default {
                 props.item._action_type === "transfer" &&
                 !policy.value.transfers_block
         );
+
+        // A non-blocking transfer modal can be closed by clicking outside
+        // of it or pressing Escape (legacy: noblock modals had no static
+        // backdrop). The parent decides what closing means.
+        const dialogRef = ref(null);
+
+        function onDocumentClick(e) {
+            if (!isNonBlockingTransfer.value) return;
+            if (dialogRef.value && dialogRef.value.contains(e.target)) return;
+            emit("close", props.item);
+        }
+
+        function onDocumentKeydown(e) {
+            if (e.key !== "Escape" || !isNonBlockingTransfer.value) return;
+            emit("close", props.item);
+        }
+
+        onMounted(() => {
+            document.addEventListener("click", onDocumentClick);
+            document.addEventListener("keydown", onDocumentKeydown);
+        });
+
+        onBeforeUnmount(() => {
+            document.removeEventListener("click", onDocumentClick);
+            document.removeEventListener("keydown", onDocumentKeydown);
+        });
 
         // The item needs a transfer that was not created (AutomaticItemReturn
         // disabled): staff decide whether to transfer it now
@@ -955,6 +982,7 @@ export default {
 
         return {
             isNonBlockingTransfer,
+            dialogRef,
             isTransferQuestion,
             isPreCheckin,
             isBlocked,
