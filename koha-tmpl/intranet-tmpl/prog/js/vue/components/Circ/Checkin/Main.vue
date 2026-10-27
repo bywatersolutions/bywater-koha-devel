@@ -300,11 +300,13 @@ export default {
                     alertClass: "alert-warning",
                 },
             };
-            // Only one lost item fee outcome is shown, like the legacy page
+            // Only one lost item fee outcome is shown, like the legacy page.
+            // A refund can come along with a new overdue charge or a restored
+            // fine, whose texts already mention the refund, so they go first.
             const lostFeeOutcomes = [
-                "lost_item_fee_refunded",
                 "lost_item_fee_charged",
                 "lost_item_fee_restored",
+                "lost_item_fee_refunded",
                 "lost_item_payment_not_refunded",
             ];
             const lostFeeOutcome = lostFeeOutcomes.find(code =>
