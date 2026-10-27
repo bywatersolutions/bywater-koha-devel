@@ -280,6 +280,9 @@
                 - string
                 - "null"
               description: Cancellation reason (authorised value from HOLD_CANCELLATION)
+            forgive_hold_fees:
+              type: boolean
+              description: Do not charge the expired hold fee (requires the updatecharges.writeoff permission)
           additionalProperties: false
       - $ref: "#/parameters/checkin_embed_header"
     consumes:
@@ -304,7 +307,12 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "403":
-        description: Access forbidden
+        description: |
+          Access forbidden. Possible `error_code` attribute values:
+
+          * `no_permission_for_forgive_hold_fees` - updatecharges.writeoff permission
+            required to forgive the hold fees. The error includes the current
+            check-in module policy in the `policy` attribute.
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
