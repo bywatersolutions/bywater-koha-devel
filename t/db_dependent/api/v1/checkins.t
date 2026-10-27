@@ -3,7 +3,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 9;
+use Test::More tests => 10;
 use Test::Mojo;
 use Test::Warn;
 use Mojo::JSON;
@@ -697,6 +697,96 @@ subtest 'sub-resource confirmation endpoints' => sub {
 
     $transfer4->discard_changes;
     ok( $transfer4->datecancelled, 'Transfer cancelled' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'hold_cancellation - forgive_hold_fees' => sub {
+
+    plan tests => 14;
+
+    $schema->storage->txn_begin;
+
+    my $password = 'thePassword123';
+
+    my $plain_librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 2**1 } } );
+    $plain_librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $plain_userid = $plain_librarian->userid;
+
+    my $writeoff_librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 2**1 } } );
+    $writeoff_librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $writeoff_userid = $writeoff_librarian->userid;
+    $builder->build(
+        {
+            source => 'UserPermission',
+            value  => {
+                borrowernumber => $writeoff_librarian->borrowernumber,
+                module_bit     => 10,                                    # updatecharges
+                code           => 'writeoff',
+            }
+        }
+    );
+
+    my $patron  = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    t::lib::Mocks::mock_userenv( { branchcode => $library->branchcode, borrowernumber => $writeoff_librarian->id } );
+    t::lib::Mocks::mock_preference( 'ExpireReservesMaxPickUpDelayCharge', 5 );
+    Koha::CirculationRules->search( { rule_name => 'expire_reserves_charge' } )->delete;
+
+    # A checkin that found a waiting hold
+    my $build_checkin = sub {
+        my $item = $builder->build_sample_item( { library => $library->branchcode } );
+        my $hold = $builder->build_object(
+            {
+                class => 'Koha::Holds',
+                value => {
+                    borrowernumber => $patron->borrowernumber,
+                    biblionumber   => $item->biblionumber,
+                    itemnumber     => $item->itemnumber,
+                    branchcode     => $library->branchcode,
+                    found          => 'W',
+                    priority       => 0,
+                }
+            }
+        );
+        my $checkin = Koha::Checkin->new(
+            {
+                item_id    => $item->itemnumber,
+                user_id    => $writeoff_librarian->borrowernumber,
+                library_id => $library->branchcode,
+                hold_id    => $hold->id,
+            }
+        )->store;
+        return ( $checkin, $hold );
+    };
+    my $expired_hold_fees = sub {
+        return $patron->account->lines->search( { debit_type_code => 'RESERVE_EXPIRED' } )->count;
+    };
+
+    my ( $checkin, $hold ) = $build_checkin->();
+
+    $t->post_ok( "//$plain_userid:$password\@/api/v1/checkins/"
+            . $checkin->id
+            . "/hold_cancellation" => json => { forgive_hold_fees => Mojo::JSON->true } )
+        ->status_is(403)
+        ->json_is( '/error_code'                       => 'no_permission_for_forgive_hold_fees' )
+        ->json_is( '/policy/module'                    => 'checkin' )
+        ->json_is( '/policy/checkin/forgive_hold_fees' => Mojo::JSON->false );
+    ok( Koha::Holds->find( $hold->id ), 'Hold not cancelled without the writeoff permission' );
+
+    $t->post_ok( "//$writeoff_userid:$password\@/api/v1/checkins/"
+            . $checkin->id
+            . "/hold_cancellation" => json => { forgive_hold_fees => Mojo::JSON->true } )->status_is(201);
+    is( Koha::Holds->find( $hold->id ), undef, 'Hold cancelled' );
+    is( $expired_hold_fees->(),         0,     'No expired hold fee charged when forgiven' );
+
+    ( $checkin, $hold ) = $build_checkin->();
+
+    $t->post_ok( "//$writeoff_userid:$password\@/api/v1/checkins/" . $checkin->id . "/hold_cancellation" )
+        ->status_is(201);
+    is( Koha::Holds->find( $hold->id ), undef, 'Hold cancelled' );
+    is( $expired_hold_fees->(),         1,     'Expired hold fee charged when not forgiven' );
 
     $schema->storage->txn_rollback;
 };
