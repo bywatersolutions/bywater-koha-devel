@@ -575,6 +575,7 @@ export default {
                 claim_auto_resolved: $__("Claim resolved"),
                 hold_auto_filled: $__("Hold filled"),
                 not_for_loan_status_updated: $__("Not for loan status updated"),
+                not_for_loan_status_notice: $__("Not for loan status"),
                 item_location_updated: $__("Shelving location updated"),
                 in_bundle: $__("Belongs to a bundle"),
                 bundle_missing_items: $__("Bundle had missing items"),

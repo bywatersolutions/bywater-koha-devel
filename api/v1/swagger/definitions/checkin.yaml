@@ -155,7 +155,8 @@ properties:
       * `debarred` - Patron was restricted (payload: until)
       * `previously_debarred` - Patron was already restricted (payload: until)
       * `indefinitely_debarred` - Patron has indefinite restriction
-      * `not_for_loan_status_updated` - Item not-for-loan status was changed
+      * `not_for_loan_status_updated` - Item not-for-loan status was changed (payload: from, to)
+      * `not_for_loan_status_notice` - Item not-for-loan status to display, it was not changed (payload: status)
       * `item_location_updated` - Item location was updated
       * `return_claim` - A return claim was resolved (payload: claim_id)
       * `claim_auto_resolved` - A return claim was auto-resolved (payload: claim_id)

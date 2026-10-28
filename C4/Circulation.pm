@@ -5549,13 +5549,27 @@ sub _attach_messages_to_checkin {
 
     # Item update messages
     if ( defined $messages->{NotForLoanStatusUpdated} ) {
-        $checkin->add_message(
-            {
-                message => 'not_for_loan_status_updated',
-                type    => 'info',
-                payload => $messages->{NotForLoanStatusUpdated},
-            }
-        );
+        my $update = $messages->{NotForLoanStatusUpdated};
+
+        # ONLYMESSAGE is an UpdateNotForLoanStatusOnCheckin keyword: the status
+        # is only displayed, not changed. Keep it out of the API contract.
+        if ( $update->{to} eq 'ONLYMESSAGE' ) {
+            $checkin->add_message(
+                {
+                    message => 'not_for_loan_status_notice',
+                    type    => 'info',
+                    payload => { status => $update->{from} },
+                }
+            );
+        } else {
+            $checkin->add_message(
+                {
+                    message => 'not_for_loan_status_updated',
+                    type    => 'info',
+                    payload => { from => $update->{from}, to => $update->{to} },
+                }
+            );
+        }
     }
     if ( defined $messages->{ItemLocationUpdated} ) {
         $checkin->add_message(
