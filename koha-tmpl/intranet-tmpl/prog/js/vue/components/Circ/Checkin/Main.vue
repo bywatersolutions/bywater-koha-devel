@@ -756,10 +756,14 @@ export default {
         // A non-blocking transfer modal was closed without picking an
         // action. Legacy confirmed an existing transfer on closing when
         // AutomaticConfirmTransfer was set, and left it alone otherwise.
+        // Without a transfer (AutomaticItemReturn disabled) none is created,
+        // so the row stops showing the suggested one, like "No, don't transfer".
         function onClose(item) {
             // Another modal was opened by the same click
             if (activeModalItem.value !== item) return;
-            if (item.transfer_id && policy.value.auto_confirm_transfer) {
+            if (!item.transfer_id) {
+                onResolve(item, "cancel_transfer");
+            } else if (policy.value.auto_confirm_transfer) {
                 onResolve(item, "confirm_transfer");
             } else {
                 onIgnore(item);
