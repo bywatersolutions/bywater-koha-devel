@@ -432,7 +432,30 @@ export default {
                     msg.payload
                 ) {
                     detailed.push({
-                        text: escapeHtml(notForLoanUpdateText(msg.payload)),
+                        text: escapeHtml(
+                            $__(
+                                "Not for loan status updated. Old value: %s. New value: %s."
+                            )
+                                .replace(
+                                    "%s",
+                                    notForLoanDescription(msg.payload.from)
+                                )
+                                .replace(
+                                    "%s",
+                                    notForLoanDescription(msg.payload.to)
+                                )
+                        ),
+                        alertClass: "alert-warning",
+                    });
+                }
+                if (
+                    msg.message === "not_for_loan_status_notice" &&
+                    msg.payload
+                ) {
+                    detailed.push({
+                        text: escapeHtml(
+                            avDescription("NOT_LOAN", msg.payload.status)
+                        ),
                         alertClass: "alert-warning",
                     });
                 }
@@ -537,18 +560,6 @@ export default {
                 return $__("Blank");
             }
             return avDescription("LOC", value);
-        }
-
-        // Mirrors the legacy UpdateNotForLoanStatusOnCheckin message
-        function notForLoanUpdateText(payload) {
-            if (payload.to === "ONLYMESSAGE") {
-                return avDescription("NOT_LOAN", payload.from);
-            }
-            return $__(
-                "Not for loan status updated. Old value: %s. New value: %s."
-            )
-                .replace("%s", notForLoanDescription(payload.from))
-                .replace("%s", notForLoanDescription(payload.to));
         }
 
         // Refocus barcode input when focus leaves to non-interactive elements
