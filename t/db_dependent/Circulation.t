@@ -8207,7 +8207,7 @@ subtest 'Tests for Wrongbranch blocker (AllowReturnToBranch)' => sub {
 };
 subtest '_attach_messages_to_checkin() tests' => sub {
 
-    plan tests => 36;
+    plan tests => 40;
 
     $schema->storage->txn_begin;
 
@@ -8317,7 +8317,11 @@ subtest '_attach_messages_to_checkin() tests' => sub {
     ok( $by_code{indefinitely_debarred}, 'indefinitely_debarred attached' );
 
     ok( $by_code{not_for_loan_status_updated}, 'not_for_loan_status_updated attached' );
-    ok( $by_code{item_location_updated},       'item_location_updated attached' );
+    is_deeply(
+        $by_code{not_for_loan_status_updated}->payload, { from => 0, to => 1 },
+        'not_for_loan_status_updated payload'
+    );
+    ok( $by_code{item_location_updated}, 'item_location_updated attached' );
 
     ok( $by_code{return_claim},        'return_claim attached' );
     ok( $by_code{claim_auto_resolved}, 'claim_auto_resolved attached' );
@@ -8331,6 +8335,23 @@ subtest '_attach_messages_to_checkin() tests' => sub {
     is( $by_code{in_bundle}->payload->{host_item_id},     444,       'in_bundle payload host_item_id' );
     is( $by_code{in_bundle}->payload->{host_biblio_id},   555,       'in_bundle payload host_biblio_id' );
     is( $by_code{in_bundle}->payload->{host_external_id}, 'HOST_BC', 'in_bundle payload host_external_id' );
+
+    # UpdateNotForLoanStatusOnCheckin with ONLYMESSAGE: the keyword is not exposed
+    my $notice_checkin = Koha::Checkin->new(
+        {
+            item_id    => $item->itemnumber,
+            library_id => $library->branchcode,
+            interface  => 'commandline',
+        }
+    )->store;
+    C4::Circulation::_attach_messages_to_checkin(
+        $notice_checkin,
+        { NotForLoanStatusUpdated => { from => -1, to => 'ONLYMESSAGE' } }
+    );
+    my @notice = @{ $notice_checkin->object_messages };
+    is( scalar(@notice),     1,                            'One message attached for ONLYMESSAGE' );
+    is( $notice[0]->message, 'not_for_loan_status_notice', 'not_for_loan_status_notice attached' );
+    is_deeply( $notice[0]->payload, { status => -1 }, 'not_for_loan_status_notice payload has the status only' );
 
     $schema->storage->txn_rollback;
 };
