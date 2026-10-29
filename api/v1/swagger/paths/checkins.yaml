@@ -249,8 +249,11 @@
           $ref: "../swagger.yaml#/definitions/error"
       "409":
         description: |
-          Conflict. The item has been checked out since the checkin, the
-          hold has not been set aside and remains pending
+          Conflict. Possible `error_code` attribute values:
+
+          * `item_checked_out` - The item has been checked out since the
+            checkin, the hold has not been set aside and remains pending
+          * `hold_not_found` - The hold no longer exists
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":

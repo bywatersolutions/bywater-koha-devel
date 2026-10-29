@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Test::More tests => 21;
 use Test::Exception;
+use Test::MockModule;
 use Test::NoWarnings;
 use Test::Warn;
 
@@ -500,7 +501,7 @@ subtest 'debits() and credits() tests' => sub {
 
 subtest 'confirm_hold() tests' => sub {
 
-    plan tests => 12;
+    plan tests => 16;
 
     $schema->storage->txn_begin;
 
@@ -640,6 +641,50 @@ subtest 'confirm_hold() tests' => sub {
     is( $hold->found,              undef, 'Hold left pending' );
     is( $checkin->transfer_id,     undef, 'No transfer created' );
     is( $other_item->get_transfer, undef, 'Item has no transfer' );
+
+    # Test confirm_hold when ModReserveAffect cannot find the hold
+    my $no_loan_item = $builder->build_sample_item( { library => $checkin_library->branchcode } );
+    $reserve_id = AddReserve(
+        {
+            branchcode     => $checkin_library->branchcode,
+            borrowernumber => $patron->borrowernumber,
+            biblionumber   => $no_loan_item->biblionumber,
+            itemnumber     => $no_loan_item->itemnumber,
+            priority       => 1,
+        }
+    );
+
+    $checkin = Koha::Checkin->new(
+        {
+            item_id    => $no_loan_item->itemnumber,
+            user_id    => $user->borrowernumber,
+            library_id => $checkin_library->branchcode,
+            hold_id    => $reserve_id,
+        }
+    )->store;
+
+    my $checkin_mock = Test::MockModule->new('Koha::Checkin');
+    $checkin_mock->mock( 'ModReserveAffect', sub { return; } );
+
+    throws_ok { $checkin->confirm_hold }
+    'Koha::Exceptions::Checkin::HoldNotFound',
+        'confirm_hold throws HoldNotFound when ModReserveAffect does not find the hold';
+
+    $checkin_mock->mock( 'ModReserveAffect', sub { return 0; } );
+
+    throws_ok { $checkin->confirm_hold }
+    'Koha::Exceptions::Checkin::ItemCheckedOut',
+        'confirm_hold throws ItemCheckedOut when ModReserveAffect returns 0';
+
+    $checkin_mock->unmock('ModReserveAffect');
+
+    # Test confirm_hold when the hold was deleted in the meantime
+    Koha::Holds->find($reserve_id)->delete;
+
+    throws_ok { $checkin->confirm_hold }
+    'Koha::Exceptions::Checkin::HoldNotFound',
+        'confirm_hold throws HoldNotFound when the hold no longer exists';
+    is( Koha::Holds->search( { itemnumber => $no_loan_item->itemnumber } )->count, 0, 'No hold set aside' );
 
     $schema->storage->txn_rollback;
 };

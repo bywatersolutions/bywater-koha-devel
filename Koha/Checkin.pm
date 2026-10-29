@@ -238,6 +238,9 @@ transit.
 Throws C<Koha::Exceptions::MissingParameter> if there is no hold associated
 with this checkin.
 
+Throws C<Koha::Exceptions::Checkin::HoldNotFound> if the hold no longer
+exists (e.g. it was cancelled or filled in the meantime).
+
 Throws C<Koha::Exceptions::Checkin::ItemCheckedOut> if the item has been
 checked out again since the checkin (e.g. from another workstation). The hold
 is left pending and no transfer is created.
@@ -252,7 +255,11 @@ sub confirm_hold {
     Koha::Exceptions::MissingParameter->throw("No hold associated with this checkin")
         unless $self->hold_id;
 
-    my $hold            = $self->hold;
+    my $hold = $self->hold;
+
+    Koha::Exceptions::Checkin::HoldNotFound->throw("The hold no longer exists")
+        unless $hold;
+
     my $item            = $self->item;
     my $checkin_library = $self->library_id;
     my $pickup_library  = $hold->branchcode;
@@ -260,10 +267,17 @@ sub confirm_hold {
     # If pickup branch differs, a transfer is needed
     my $diff_branch = ( $checkin_library ne $pickup_library ) ? $pickup_library : undef;
 
-    # ModReserveAffect refuses to set aside a hold for an item that is on loan
+    # ModReserveAffect returns undef if the hold is not found, 0 if it
+    # refuses to set aside a hold for an item that is on loan, 1 on success
+    my $affected =
+        ModReserveAffect( $item->itemnumber, $hold->borrowernumber, $diff_branch, $hold->id, $self->desk_id );
+
+    Koha::Exceptions::Checkin::HoldNotFound->throw("The hold no longer exists")
+        unless defined $affected;
+
     Koha::Exceptions::Checkin::ItemCheckedOut->throw(
         "The item has been checked out in the meantime, the hold remains pending")
-        unless ModReserveAffect( $item->itemnumber, $hold->borrowernumber, $diff_branch, $hold->id, $self->desk_id );
+        unless $affected;
 
     # Create transfer if needed
     if ($diff_branch) {
