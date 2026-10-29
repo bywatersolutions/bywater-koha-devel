@@ -2508,7 +2508,7 @@ sub AddReturn {
             $checkin_record->local_use(1)->store;
         }
 
-        _attach_messages_to_checkin( $checkin_record, $messages );
+        _attach_messages_to_checkin( $checkin_record, $messages, { patron => $patron } );
 
         return ( 0, $messages, $issue, ( $patron ? $patron->unblessed : {} ), $checkin_record );
     }
@@ -2586,7 +2586,7 @@ sub AddReturn {
             $doreturn = 0;
             my $indexer = Koha::SearchEngine::Indexer->new( { index => $Koha::SearchEngine::BIBLIOS_INDEX } );
             $indexer->index_records( $item->biblionumber, "specialUpdate", "biblioserver" );
-            _attach_messages_to_checkin( $checkin_record, $messages );
+            _attach_messages_to_checkin( $checkin_record, $messages, { patron => $patron } );
             return ( $doreturn, $messages, $issue, $patron_unblessed, $checkin_record );
         }
         if ( $blockers->{blocked_lost} ) {
@@ -2640,7 +2640,7 @@ sub AddReturn {
                 $indexer->index_records( $item->biblionumber, "specialUpdate", "biblioserver" );
 
                 my $error_messages = { WasReturned => 0, DataCorrupted => $error };
-                _attach_messages_to_checkin( $checkin_record, $error_messages );
+                _attach_messages_to_checkin( $checkin_record, $error_messages, { patron => $patron } );
 
                 return (
                     0, $error_messages, $issue,
@@ -3023,7 +3023,7 @@ sub AddReturn {
     }
 
     # Attach messages to the checkin object for API consumers
-    _attach_messages_to_checkin( $checkin_record, $messages );
+    _attach_messages_to_checkin( $checkin_record, $messages, { patron => $patron } );
 
     return ( $doreturn, $messages, $issue, ( $patron ? $patron->unblessed : {} ), $checkin_record );
 }
@@ -5379,16 +5379,21 @@ sub _CanBookBeAutoRenewed {
 
 =head2 _attach_messages_to_checkin
 
-    _attach_messages_to_checkin( $checkin, $messages );
+    _attach_messages_to_checkin( $checkin, $messages, { patron => $patron } );
 
 Translates the legacy C<$messages> hashref from C<AddReturn> into
 structured C<Koha::Object::Message> instances on the given
 C<Koha::Checkin> object using lower_snake_case coded values.
 
+The optional I<patron> parameter is the L<Koha::Patron> the item was
+checked out to. It needs to be captured by the caller before the checkout
+is marked as returned, as the returned checkout may point to the
+anonymous patron after that.
+
 =cut
 
 sub _attach_messages_to_checkin {
-    my ( $checkin, $messages ) = @_;
+    my ( $checkin, $messages, $params ) = @_;
 
     return unless $checkin && $messages && ref $messages eq 'HASH';
 
@@ -5651,7 +5656,7 @@ sub _attach_messages_to_checkin {
 
     # Patron fines notification (FineNotifyAtCheckin)
     if ( C4::Context->preference('FineNotifyAtCheckin') && $checkin->checkout_id ) {
-        my $patron = $checkin->checkout ? $checkin->checkout->patron : undef;
+        my $patron = $params->{patron};
         if ($patron) {
             my $balance = $patron->account->balance;
             if ( $balance > 0 ) {
@@ -5671,7 +5676,7 @@ sub _attach_messages_to_checkin {
 
     # Patron waiting holds notification (WaitingNotifyAtCheckin)
     if ( C4::Context->preference('WaitingNotifyAtCheckin') && $checkin->checkout_id ) {
-        my $patron = $checkin->checkout ? $checkin->checkout->patron : undef;
+        my $patron = $params->{patron};
         if ($patron) {
             my $waiting =
                 $patron->holds->search( { found => 'W', branchcode => C4::Context->userenv->{branch} } )->count;
