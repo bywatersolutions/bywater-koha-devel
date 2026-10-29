@@ -478,8 +478,13 @@ export default {
                     });
                 }
                 if (msg.message === "item_type_checkinmsg" && msg.payload) {
+                    // Free text from the item type configuration: escape it
+                    // and keep its line breaks, like the legacy page did
                     detailed.push({
-                        text: msg.payload.text,
+                        text: escapeHtml(msg.payload.text).replace(
+                            /\r?\n/g,
+                            "<br>"
+                        ),
                         alertClass:
                             msg.type === "alert"
                                 ? "alert-warning"
