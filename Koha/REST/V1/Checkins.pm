@@ -23,6 +23,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use C4::Circulation qw( AddReturn barcodedecode );
 use C4::Context;
+use Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue;
 use Koha::Checkouts;
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Items;
@@ -265,6 +266,14 @@ sub add {
                 }
             );
         }
+
+        # AddReturn skips the holds queue update: refresh it as the legacy
+        # returns page did. When a hold was found, the staff may dismiss it
+        # client-side without calling the API, so update the queue in that
+        # case too (the legacy page did it on 'Ignore').
+        Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue->new->enqueue( { biblio_ids => [ $item->biblionumber ] } )
+            if ( $doreturn || $hold_found )
+            && C4::Context->preference('RealTimeHoldsQueue');
 
         # Bundle verification: mark missing items as lost, remove unexpected ones
         if ( $item->is_bundle && defined $body->{verified_bundle_barcodes} ) {

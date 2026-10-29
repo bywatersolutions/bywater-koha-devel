@@ -3,7 +3,8 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 11;
+use Test::More tests => 12;
+use Test::MockModule;
 use Test::Mojo;
 use Test::Warn;
 use Mojo::JSON;
@@ -239,6 +240,96 @@ subtest 'add - barcode filtering' => sub {
             library_id  => $library->branchcode,
         }
     )->status_is( 200, 'Barcode is filtered with itemBarcodeInputFilter' )->json_is( '/item_id' => $item->id );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'add - holds queue update' => sub {
+
+    plan tests => 16;
+
+    $schema->storage->txn_begin;
+
+    my $librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 1 } } );
+    my $password  = 'thePassword123';
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    my $patron       = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $other_patron = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $library      = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    t::lib::Mocks::mock_userenv( { branchcode => $library->branchcode } );
+
+    my @enqueued;
+    my $jobs_mock = Test::MockModule->new('Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue');
+    $jobs_mock->mock( 'enqueue', sub { push @enqueued, $_[1]->{biblio_ids}; return 1; } );
+
+    my $item = $builder->build_sample_item( { library => $library->branchcode } );
+
+    # RealTimeHoldsQueue disabled
+    t::lib::Mocks::mock_preference( 'RealTimeHoldsQueue', 0 );
+    AddIssue( $patron, $item->barcode );
+    @enqueued = ();
+
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => json => {
+            item_id    => $item->id,
+            library_id => $library->branchcode,
+        }
+    )->status_is(200);
+    is( scalar @enqueued, 0, 'Holds queue not updated when RealTimeHoldsQueue is disabled' );
+
+    # RealTimeHoldsQueue enabled, the item is returned
+    t::lib::Mocks::mock_preference( 'RealTimeHoldsQueue', 1 );
+    AddIssue( $patron, $item->barcode );
+    @enqueued = ();
+
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => json => {
+            item_id    => $item->id,
+            library_id => $library->branchcode,
+        }
+    )->status_is(200);
+    is_deeply( \@enqueued, [ [ $item->biblionumber ] ], 'Holds queue updated for the returned item' );
+
+    # RealTimeHoldsQueue enabled, not checked out and no hold: nothing returned
+    @enqueued = ();
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => { 'x-koha-override' => 'not_issued' } => json => {
+            item_id    => $item->id,
+            library_id => $library->branchcode,
+        }
+    )->status_is(200);
+    is( scalar @enqueued, 0, 'Holds queue not updated when nothing was returned' );
+
+    # RealTimeHoldsQueue enabled, not checked out but a hold is found
+    AddReserve(
+        {
+            branchcode     => $library->branchcode,
+            borrowernumber => $other_patron->borrowernumber,
+            biblionumber   => $item->biblionumber,
+            itemnumber     => $item->itemnumber,
+            priority       => 1,
+        }
+    );
+    @enqueued = ();
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => { 'x-koha-override' => 'not_issued' } => json => {
+            item_id    => $item->id,
+            library_id => $library->branchcode,
+        }
+    )->status_is(200)->json_has('/hold_id');
+    is_deeply(
+        \@enqueued, [ [ $item->biblionumber ] ],
+        'Holds queue updated when a hold is found, as it may be dismissed'
+    );
+
+    # Cancelling the hold found updates the holds queue (Koha::Hold->cancel)
+    my $checkin_id = $t->tx->res->json('/checkin_id');
+    @enqueued = ();
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins/$checkin_id/hold_cancellation" => json => {} )->status_is(201);
+    is_deeply( \@enqueued, [ [ $item->biblionumber ] ], 'Holds queue updated when the hold is cancelled' );
 
     $schema->storage->txn_rollback;
 };
