@@ -251,6 +251,7 @@
         description: |
           Conflict. Possible `error_code` attribute values:
 
+          * `stale_checkin` - The item has been checked in again since
           * `item_checked_out` - The item has been checked out since the
             checkin, the hold has not been set aside and remains pending
           * `hold_not_found` - The hold no longer exists
@@ -320,6 +321,13 @@
           $ref: "../swagger.yaml#/definitions/error"
       "404":
         description: Checkin not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "409":
+        description: |
+          Conflict. Possible `error_code` attribute values:
+
+          * `stale_checkin` - The item has been checked in again since
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":
@@ -403,7 +411,12 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "409":
-        description: Conflict. The transfer is not allowed or the item already has a pending transfer
+        description: |
+          Conflict. Possible `error_code` attribute values:
+
+          * `stale_checkin` - The item has been checked in again since
+          * `transfer_limit` - The transfer is not allowed by the branch transfer limits
+          * `transfer_in_queue` - The item already has a pending transfer
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":
@@ -450,6 +463,13 @@
         description: Checkin not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
+      "409":
+        description: |
+          Conflict. Possible `error_code` attribute values:
+
+          * `stale_checkin` - The item has been checked in again since
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
       "500":
         description: Internal server error
         schema:
@@ -492,6 +512,13 @@
           $ref: "../swagger.yaml#/definitions/error"
       "404":
         description: Checkin not found
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "409":
+        description: |
+          Conflict. Possible `error_code` attribute values:
+
+          * `stale_checkin` - The item has been checked in again since
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":

@@ -3,7 +3,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 13;
+use Test::More tests => 14;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warn;
@@ -925,6 +925,61 @@ subtest 'recall_confirmation' => sub {
         $recall2->item->get_transfer->tobranch, $pickup_library->branchcode,
         'The transfer goes to the pickup library'
     );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'sub-resource endpoints reject stale checkins' => sub {
+
+    plan tests => 16;
+
+    $schema->storage->txn_begin;
+
+    my $librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 1 } } );
+    my $password  = 'thePassword123';
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    my $patron  = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $item    = $builder->build_sample_item( { library => $library->branchcode } );
+
+    t::lib::Mocks::mock_userenv( { branchcode => $library->branchcode, borrowernumber => $librarian->borrowernumber } );
+
+    my $reserve_id = AddReserve(
+        {
+            branchcode     => $library->branchcode,
+            borrowernumber => $patron->borrowernumber,
+            biblionumber   => $item->biblionumber,
+            itemnumber     => $item->itemnumber,
+            priority       => 1,
+        }
+    );
+    my $transfer = $item->request_transfer( { to => $library, reason => 'Manual' } );
+    my $recall   = $builder->build_object( { class => 'Koha::Recalls' } );
+
+    my $stale_checkin = Koha::Checkin->new(
+        {
+            item_id     => $item->itemnumber,
+            library_id  => $library->branchcode,
+            hold_id     => $reserve_id,
+            transfer_id => $transfer->id,
+            recall_id   => $recall->id,
+        }
+    )->store;
+
+    # The item is checked in again
+    Koha::Checkin->new( { item_id => $item->itemnumber, library_id => $library->branchcode } )->store;
+
+    for my $action (
+        qw( hold_confirmation hold_cancellation transfer_confirmation transfer_cancellation recall_confirmation))
+    {
+        $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $stale_checkin->id . "/$action" )
+            ->status_is( 409, "$action rejected for a stale checkin" )
+            ->json_is( '/error_code' => 'stale_checkin' );
+    }
+
+    is( Koha::Holds->find($reserve_id)->found, undef, 'The hold has not been touched' );
 
     $schema->storage->txn_rollback;
 };
