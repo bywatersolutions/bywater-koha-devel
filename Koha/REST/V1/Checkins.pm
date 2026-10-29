@@ -21,7 +21,7 @@ use Modern::Perl;
 
 use Mojo::Base 'Mojolicious::Controller';
 
-use C4::Circulation qw( AddReturn );
+use C4::Circulation qw( AddReturn barcodedecode );
 use C4::Context;
 use Koha::Checkouts;
 use Koha::DateUtils qw( dt_from_string );
@@ -149,7 +149,10 @@ sub add {
         if ($item_id) {
             $item = Koha::Items->find($item_id);
         } else {
-            $item = Koha::Items->find( { barcode => $barcode } );
+
+            # Apply itemBarcodeInputFilter and the item_barcode_transform plugin hook
+            $barcode = barcodedecode($barcode);
+            $item    = Koha::Items->find( { barcode => $barcode } );
         }
 
         return $c->render_resource_not_found("Item")
