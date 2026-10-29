@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 22;
+use Test::More tests => 23;
 use Test::Exception;
 use Test::MockModule;
 use Test::NoWarnings;
@@ -522,6 +522,96 @@ subtest 'is_latest() tests' => sub {
     my $new_checkin = $build_checkin->($item);
     ok( !$checkin->is_latest,    'Not the latest after the item is checked in again' );
     ok( $new_checkin->is_latest, 'The new checkin is the latest' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'pending_actions(), action_tokens() and check_action_token() tests' => sub {
+
+    plan tests => 14;
+
+    $schema->storage->txn_begin;
+
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $user    = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $other   = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $item    = $builder->build_sample_item;
+
+    my $checkin = Koha::Checkin->new( { item_id => $item->itemnumber, library_id => $library->branchcode } )->store;
+
+    is_deeply( $checkin->pending_actions,                    [], 'No pending actions' );
+    is_deeply( $checkin->action_tokens( { user => $user } ), {}, 'No action tokens' );
+
+    $checkin->add_message( { message => 'needs_transfer', type => 'info' } );
+    is_deeply( $checkin->pending_actions, ['transfer_confirmation'], 'A transfer can be requested' );
+
+    my $hold     = $builder->build_object( { class => 'Koha::Holds' } );
+    my $transfer = $builder->build_object( { class => 'Koha::Item::Transfers' } );
+    my $recall   = $builder->build_object( { class => 'Koha::Recalls' } );
+    $checkin->set( { hold_id => $hold->id, transfer_id => $transfer->id, recall_id => $recall->id } )->store;
+
+    my @all_actions =
+        qw( hold_confirmation hold_cancellation transfer_confirmation transfer_cancellation recall_confirmation );
+    is_deeply( $checkin->pending_actions, \@all_actions, 'All the actions are pending' );
+
+    throws_ok { $checkin->action_tokens }
+    'Koha::Exceptions::MissingParameter',
+        'action_tokens requires a user';
+
+    my $tokens = $checkin->action_tokens( { user => $user } );
+    is_deeply( [ sort keys %{$tokens} ], [ sort @all_actions ], 'A token for each pending action' );
+
+    ok(
+        $checkin->check_action_token(
+            { action => 'hold_confirmation', user => $user, token => $tokens->{hold_confirmation} }
+        ),
+        'Valid token'
+    );
+    ok(
+        !$checkin->check_action_token(
+            { action => 'hold_confirmation', user => $user, token => $tokens->{hold_cancellation} }
+        ),
+        'Token for another action is not valid'
+    );
+    ok(
+        !$checkin->check_action_token(
+            { action => 'hold_confirmation', user => $other, token => $tokens->{hold_confirmation} }
+        ),
+        'Token for another user is not valid'
+    );
+    ok(
+        !$checkin->check_action_token( { action => 'hold_confirmation', user => $user } ),
+        'Missing token is not valid'
+    );
+    ok(
+        !$checkin->check_action_token( { action => 'hold_confirmation', user => $user, token => 'invalid' } ),
+        'Garbage token is not valid'
+    );
+
+    my $other_checkin =
+        Koha::Checkin->new( { item_id => $item->itemnumber, library_id => $library->branchcode } )->store;
+    ok(
+        !$other_checkin->check_action_token(
+            { action => 'hold_confirmation', user => $user, token => $tokens->{hold_confirmation} }
+        ),
+        'Token for another checkin is not valid'
+    );
+
+    my $jwt_mock = Test::MockModule->new('Mojo::JWT');
+    $jwt_mock->mock( 'now', sub { time + Koha::Checkin::ACTION_TOKEN_EXPIRY_SECONDS + 60 } );
+    ok(
+        !$checkin->check_action_token(
+            { action => 'hold_confirmation', user => $user, token => $tokens->{hold_confirmation} }
+        ),
+        'Expired token is not valid'
+    );
+    $jwt_mock->unmock('now');
+    ok(
+        $checkin->check_action_token(
+            { action => 'hold_confirmation', user => $user, token => $tokens->{hold_confirmation} }
+        ),
+        'Token valid again once time is restored'
+    );
 
     $schema->storage->txn_rollback;
 };

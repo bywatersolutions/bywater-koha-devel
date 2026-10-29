@@ -286,11 +286,15 @@ export const useCheckinStore = defineStore("checkin", () => {
         try {
             const client = APIClient.checkin;
             const checkinId = entry.checkin_id;
+            // Tokens for the follow-up actions, returned on checkin
+            const tokens = entry.action_tokens || {};
             let data;
 
             switch (action) {
                 case "confirm_hold":
-                    data = await client.checkins.confirmHold(checkinId);
+                    data = await client.checkins.confirmHold(checkinId, {
+                        action_token: tokens.hold_confirmation,
+                    });
                     break;
                 case "cancel_hold": {
                     const response = await client.checkins.cancelHold(
@@ -298,6 +302,7 @@ export const useCheckinStore = defineStore("checkin", () => {
                         {
                             reason: params.reason,
                             forgive_hold_fees: params.forgive_hold_fees,
+                            action_token: tokens.hold_cancellation,
                         }
                     );
                     data = await response.json();
@@ -315,13 +320,17 @@ export const useCheckinStore = defineStore("checkin", () => {
                     // request it to the library the checkin pointed at
                     const needs = _needsTransferMessage(entry);
                     if (entry.transfer_id) {
-                        data = await client.checkins.confirmTransfer(checkinId);
+                        data = await client.checkins.confirmTransfer(
+                            checkinId,
+                            { action_token: tokens.transfer_confirmation }
+                        );
                     } else if (needs) {
                         data = await client.checkins.confirmTransfer(
                             checkinId,
                             {
                                 to_library_id: needs.payload?.to_library,
                                 reason: needs.payload?.trigger,
+                                action_token: tokens.transfer_confirmation,
                             }
                         );
                     }
@@ -329,11 +338,15 @@ export const useCheckinStore = defineStore("checkin", () => {
                 }
                 case "cancel_transfer":
                     if (entry.transfer_id) {
-                        data = await client.checkins.cancelTransfer(checkinId);
+                        data = await client.checkins.cancelTransfer(checkinId, {
+                            action_token: tokens.transfer_cancellation,
+                        });
                     }
                     break;
                 case "confirm_recall":
-                    data = await client.checkins.confirmRecall(checkinId);
+                    data = await client.checkins.confirmRecall(checkinId, {
+                        action_token: tokens.recall_confirmation,
+                    });
                     break;
             }
 

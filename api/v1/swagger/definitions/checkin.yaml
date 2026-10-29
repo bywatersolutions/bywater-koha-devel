@@ -124,6 +124,19 @@ properties:
       - array
       - "null"
     description: Credit account lines (embeddable)
+  action_tokens:
+    type:
+      - object
+      - "null"
+    additionalProperties:
+      type: string
+    description: |
+      Signed, short-lived tokens for the follow-up actions offered for this
+      checkin, keyed by action name (`hold_confirmation`, `hold_cancellation`,
+      `transfer_confirmation`, `transfer_cancellation`, `recall_confirmation`).
+      The matching token must be passed as the `action_token` query parameter
+      to the `/checkins/{checkin_id}/<action>` endpoint. Only returned when
+      checking in.
   messages:
     type:
       - array

@@ -1,3 +1,8 @@
+// Follow-up actions require the token returned for them in the checkin's
+// action_tokens attribute
+const withActionToken = (endpoint, action_token) =>
+    `${endpoint}?action_token=${encodeURIComponent(action_token || "")}`;
+
 export class CheckinAPIClient {
     constructor(HttpClient) {
         this.httpClient = new HttpClient({
@@ -23,16 +28,25 @@ export class CheckinAPIClient {
                     return_response: true,
                     mark_submitting: false,
                 }),
-            confirmHold: checkin_id =>
+            confirmHold: (checkin_id, { action_token } = {}) =>
                 this.httpClient.post({
-                    endpoint: `checkins/${checkin_id}/hold_confirmation`,
+                    endpoint: withActionToken(
+                        `checkins/${checkin_id}/hold_confirmation`,
+                        action_token
+                    ),
                     headers: {
                         "x-koha-embed": "item,hold,hold.patron,transfer",
                     },
                 }),
-            cancelHold: (checkin_id, { reason, forgive_hold_fees } = {}) =>
+            cancelHold: (
+                checkin_id,
+                { reason, forgive_hold_fees, action_token } = {}
+            ) =>
                 this.httpClient.post({
-                    endpoint: `checkins/${checkin_id}/hold_cancellation`,
+                    endpoint: withActionToken(
+                        `checkins/${checkin_id}/hold_cancellation`,
+                        action_token
+                    ),
                     body: {
                         ...(reason ? { reason } : {}),
                         ...(forgive_hold_fees
@@ -46,9 +60,15 @@ export class CheckinAPIClient {
                     // current module policy
                     return_response: true,
                 }),
-            confirmTransfer: (checkin_id, { to_library_id, reason } = {}) =>
+            confirmTransfer: (
+                checkin_id,
+                { to_library_id, reason, action_token } = {}
+            ) =>
                 this.httpClient.post({
-                    endpoint: `checkins/${checkin_id}/transfer_confirmation`,
+                    endpoint: withActionToken(
+                        `checkins/${checkin_id}/transfer_confirmation`,
+                        action_token
+                    ),
                     body: {
                         ...(to_library_id ? { to_library_id } : {}),
                         ...(reason ? { reason } : {}),
@@ -57,16 +77,22 @@ export class CheckinAPIClient {
                         "x-koha-embed": "item,transfer,transfer.to_library",
                     },
                 }),
-            cancelTransfer: checkin_id =>
+            cancelTransfer: (checkin_id, { action_token } = {}) =>
                 this.httpClient.post({
-                    endpoint: `checkins/${checkin_id}/transfer_cancellation`,
+                    endpoint: withActionToken(
+                        `checkins/${checkin_id}/transfer_cancellation`,
+                        action_token
+                    ),
                     headers: {
                         "x-koha-embed": "item",
                     },
                 }),
-            confirmRecall: checkin_id =>
+            confirmRecall: (checkin_id, { action_token } = {}) =>
                 this.httpClient.post({
-                    endpoint: `checkins/${checkin_id}/recall_confirmation`,
+                    endpoint: withActionToken(
+                        `checkins/${checkin_id}/recall_confirmation`,
+                        action_token
+                    ),
                     headers: {
                         "x-koha-embed": "item,recall,recall.patron",
                     },
