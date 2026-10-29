@@ -2,7 +2,11 @@
     <div id="checkin-app">
         <h1>{{ $__("Check in") }}</h1>
 
-        <div v-if="lastError" class="alert alert-danger" role="alert">
+        <div
+            v-if="lastError"
+            class="alert alert-danger audio-alert-warning"
+            role="alert"
+        >
             {{ lastError }}
         </div>
 
@@ -623,6 +627,9 @@ export default {
 
             // Fire and forget — don't block the input
             store.checkin(barcode, { ...checkinOptions }).then(result => {
+                if (result?.status !== "duplicate") {
+                    nextTick(() => playAudioAlert());
+                }
                 // HoldsAutoFillPrintSlip: print the slip for an auto-filled hold
                 const autoFilled = (result?.data?.messages || []).find(
                     m => m.message === "hold_auto_filled"
@@ -816,10 +823,34 @@ export default {
             setTimeout(() => {
                 if (nextModalItem.value) {
                     activeModalItem.value = nextModalItem.value;
+                    nextTick(() => playAudioAlert());
                 } else {
                     refocusInput();
                 }
             }, 100);
+        }
+
+        // AudioAlerts: the page is not reloaded after each checkin, so the
+        // check js_includes.inc runs on page load needs to be repeated once
+        // the result of a checkin (or the next modal) has been rendered.
+        // Plays the sound of the first configured selector that matches.
+        function playAudioAlert() {
+            const alerts = window.AUDIO_ALERTS;
+            if (!alerts || typeof window.playSound !== "function") return;
+            for (const alert of Object.values(alerts)) {
+                let found = false;
+                try {
+                    found = window.$
+                        ? window.$(alert.selector).length > 0
+                        : !!document.querySelector(alert.selector);
+                } catch (e) {
+                    // Invalid selector configured, skip it
+                }
+                if (found) {
+                    window.playSound(alert.sound);
+                    break;
+                }
+            }
         }
 
         function refocusInput() {
