@@ -14,6 +14,10 @@ export function printHoldSlip(reserveId) {
     window.open(holdSlipUrl(reserveId), "slip_window", SLIP_WINDOW_OPTIONS);
 }
 
+export function recallSlipUrl(recallId) {
+    return `/cgi-bin/koha/recalls/recall_pickup_slip.pl?recall_id=${recallId}`;
+}
+
 /**
  * Open an empty slip window. Must be called synchronously from a user gesture
  * so the browser does not block it; load the slip into it later (bug 42505).
