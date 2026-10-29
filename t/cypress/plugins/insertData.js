@@ -446,6 +446,7 @@ const insertSamplePatron = async ({
         login_attempts,
         sms_provider_id,
         self_renewal_available,
+        notification_summary,
         ...patron
     } = generatedPatron;
     delete patron.library;
