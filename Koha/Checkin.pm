@@ -231,8 +231,9 @@ sub credits {
 
     $checkin->confirm_hold;
 
-Sets the trapped hold to waiting. If the pickup library differs from the
-checkin library, creates a transfer and sets it in transit.
+Sets the trapped hold to waiting, at the checkin's desk if any. If the pickup
+library differs from the checkin library, creates a transfer and sets it in
+transit.
 
 Throws C<Koha::Exceptions::MissingParameter> if there is no hold associated
 with this checkin.
@@ -262,7 +263,7 @@ sub confirm_hold {
     # ModReserveAffect refuses to set aside a hold for an item that is on loan
     Koha::Exceptions::Checkin::ItemCheckedOut->throw(
         "The item has been checked out in the meantime, the hold remains pending")
-        unless ModReserveAffect( $item->itemnumber, $hold->borrowernumber, $diff_branch, $hold->id );
+        unless ModReserveAffect( $item->itemnumber, $hold->borrowernumber, $diff_branch, $hold->id, $self->desk_id );
 
     # Create transfer if needed
     if ($diff_branch) {
