@@ -592,6 +592,7 @@ import {
     holdSlipUrl,
     openSlipWindow,
     printTransferSlip,
+    recallSlipUrl,
 } from "./slip-printer.js";
 import { APIClient } from "../../../fetch/api-client.js";
 
@@ -964,11 +965,12 @@ export default {
         }
 
         function printAndResolveRecall() {
-            const reserveId =
-                recallInfo.value?.reserve_id || props.item?.hold_id;
+            const recallId = recallInfo.value?.recall_id;
             emit("resolve", props.item, "confirm_recall", {
                 print: true,
-                slip: _pendingHoldSlip(reserveId),
+                slip: recallId
+                    ? { window: openSlipWindow(), url: recallSlipUrl(recallId) }
+                    : null,
             });
         }
 
