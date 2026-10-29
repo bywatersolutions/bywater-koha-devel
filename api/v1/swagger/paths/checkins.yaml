@@ -219,6 +219,7 @@
       branch if different from checkin library).
     parameters:
       - $ref: "#/parameters/checkin_id_pp"
+      - $ref: "#/parameters/checkin_action_token_qp"
       - $ref: "#/parameters/checkin_embed_header"
     produces:
       - application/json
@@ -240,7 +241,10 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "403":
-        description: Access forbidden
+        description: |
+          Access forbidden. Possible `error_code` attribute values:
+
+          * `invalid_action_token` - The action token is invalid or expired
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
@@ -273,6 +277,7 @@
     summary: Cancel the hold found during checkin
     parameters:
       - $ref: "#/parameters/checkin_id_pp"
+      - $ref: "#/parameters/checkin_action_token_qp"
       - name: body
         in: body
         required: false
@@ -314,6 +319,7 @@
         description: |
           Access forbidden. Possible `error_code` attribute values:
 
+          * `invalid_action_token` - The action token is invalid or expired
           * `no_permission_for_forgive_hold_fees` - updatecharges.writeoff permission
             required to forgive the hold fees. The error includes the current
             check-in module policy in the `policy` attribute.
@@ -350,6 +356,7 @@
       is disabled), pass the destination library to request one.
     parameters:
       - $ref: "#/parameters/checkin_id_pp"
+      - $ref: "#/parameters/checkin_action_token_qp"
       - name: body
         in: body
         required: false
@@ -403,7 +410,10 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "403":
-        description: Access forbidden
+        description: |
+          Access forbidden. Possible `error_code` attribute values:
+
+          * `invalid_action_token` - The action token is invalid or expired
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
@@ -435,6 +445,7 @@
     summary: Cancel the pending transfer
     parameters:
       - $ref: "#/parameters/checkin_id_pp"
+      - $ref: "#/parameters/checkin_action_token_qp"
       - $ref: "#/parameters/checkin_embed_header"
     produces:
       - application/json
@@ -456,7 +467,10 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "403":
-        description: Access forbidden
+        description: |
+          Access forbidden. Possible `error_code` attribute values:
+
+          * `invalid_action_token` - The action token is invalid or expired
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
@@ -486,6 +500,7 @@
     summary: Confirm the recall (set waiting or start transfer)
     parameters:
       - $ref: "#/parameters/checkin_id_pp"
+      - $ref: "#/parameters/checkin_action_token_qp"
       - $ref: "#/parameters/checkin_embed_header"
     produces:
       - application/json
@@ -507,7 +522,10 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "403":
-        description: Access forbidden
+        description: |
+          Access forbidden. Possible `error_code` attribute values:
+
+          * `invalid_action_token` - The action token is invalid or expired
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "404":
@@ -529,6 +547,14 @@
       permissions:
         circulate: circulate_remaining_permissions
 parameters:
+  checkin_action_token_qp:
+    name: action_token
+    in: query
+    description: |
+      Token for the action, as returned in the `action_tokens` attribute of
+      the checkin response
+    required: true
+    type: string
   checkin_id_pp:
     name: checkin_id
     in: path

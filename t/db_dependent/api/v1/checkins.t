@@ -3,7 +3,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 14;
+use Test::More tests => 15;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warn;
@@ -18,6 +18,7 @@ use Koha::Account;
 use Koha::Checkins;
 use Koha::Holds;
 use Koha::Recalls;
+use Koha::Token;
 use Koha::DateUtils qw( dt_from_string );
 
 my $schema  = Koha::Database->schema;
@@ -25,6 +26,14 @@ my $builder = t::lib::TestBuilder->new;
 
 t::lib::Mocks::mock_preference( 'RESTBasicAuth', 1 );
 my $t = Test::Mojo->new('Koha::REST::V1');
+
+# Builds a valid action token for a checkin follow-up action, regardless of
+# the actions offered for the checkin, to reach the endpoint's own checks
+sub action_token {
+    my ( $checkin, $action, $user ) = @_;
+    return Koha::Token->new->generate_jwt(
+        { id => $checkin->_action_token_id( $action, $user ), expires => time + 60 } );
+}
 
 subtest 'get_availability' => sub {
 
@@ -328,8 +337,11 @@ subtest 'add - holds queue update' => sub {
 
     # Cancelling the hold found updates the holds queue (Koha::Hold->cancel)
     my $checkin_id = $t->tx->res->json('/checkin_id');
+    my $token      = $t->tx->res->json('/action_tokens/hold_cancellation');
     @enqueued = ();
-    $t->post_ok( "//$userid:$password\@/api/v1/checkins/$checkin_id/hold_cancellation" => json => {} )->status_is(201);
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins/$checkin_id/hold_cancellation?action_token=$token" => json => {} )
+        ->status_is(201);
     is_deeply( \@enqueued, [ [ $item->biblionumber ] ], 'Holds queue updated when the hold is cancelled' );
 
     $schema->storage->txn_rollback;
@@ -677,7 +689,7 @@ subtest 'sub-resource confirmation endpoints' => sub {
     t::lib::Mocks::mock_preference( 'UseRecalls', 0 );
 
     # -- hold_confirmation: not found
-    $t->post_ok("//$userid:$password\@/api/v1/checkins/999999999/hold_confirmation")->status_is(404);
+    $t->post_ok("//$userid:$password\@/api/v1/checkins/999999999/hold_confirmation?action_token=x")->status_is(404);
 
     # -- hold_confirmation: no hold (400)
     my $item_no_hold = $builder->build_sample_item( { library => $checkin_library->branchcode } );
@@ -686,7 +698,9 @@ subtest 'sub-resource confirmation endpoints' => sub {
             { item_id => $item_no_hold->id, library_id => $checkin_library->branchcode } )->status_is(200);
     my $checkin_no_hold_id = $t->tx->res->json('/checkin_id');
 
-    $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_no_hold_id/hold_confirmation")->status_is(400);
+    my $token = action_token( Koha::Checkins->find($checkin_no_hold_id), 'hold_confirmation', $librarian );
+    $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_no_hold_id/hold_confirmation?action_token=$token")
+        ->status_is(400);
 
     # -- hold_confirmation: same library (set to waiting)
     my $item = $builder->build_sample_item( { library => $checkin_library->branchcode } );
@@ -705,8 +719,9 @@ subtest 'sub-resource confirmation endpoints' => sub {
     $t->post_ok( "//$userid:$password\@/api/v1/checkins" => json =>
             { item_id => $item->id, library_id => $checkin_library->branchcode } )->status_is(200);
     my $checkin_id = $t->tx->res->json('/checkin_id');
+    $token = $t->tx->res->json('/action_tokens/hold_confirmation');
 
-    $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_id/hold_confirmation")
+    $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_id/hold_confirmation?action_token=$token")
         ->status_is(201)
         ->header_like( 'Location' => qr{/api/v1/checkins/\d+} );
 
@@ -731,11 +746,12 @@ subtest 'sub-resource confirmation endpoints' => sub {
     $t->post_ok( "//$userid:$password\@/api/v1/checkins" => json =>
             { item_id => $item_on_loan->id, library_id => $checkin_library->branchcode } )->status_is(200);
     my $checkin_on_loan_id = $t->tx->res->json('/checkin_id');
+    $token = $t->tx->res->json('/action_tokens/hold_confirmation');
 
     my $other_patron = $builder->build_object( { class => 'Koha::Patrons' } );
     AddIssue( $other_patron, $item_on_loan->barcode );
 
-    $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_on_loan_id/hold_confirmation")
+    $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_on_loan_id/hold_confirmation?action_token=$token")
         ->status_is(409)
         ->json_is( '/error_code' => 'item_checked_out' );
 
@@ -743,7 +759,7 @@ subtest 'sub-resource confirmation endpoints' => sub {
     {
         my $checkin_mock = Test::MockModule->new('Koha::Checkin');
         $checkin_mock->mock( 'ModReserveAffect', sub { return; } );
-        $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_on_loan_id/hold_confirmation")
+        $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_on_loan_id/hold_confirmation?action_token=$token")
             ->status_is(409)
             ->json_is( '/error_code' => 'hold_not_found' );
     }
@@ -768,9 +784,11 @@ subtest 'sub-resource confirmation endpoints' => sub {
     $t->post_ok( "//$userid:$password\@/api/v1/checkins" => json =>
             { item_id => $item2->id, library_id => $checkin_library->branchcode } )->status_is(200);
     my $checkin_id2 = $t->tx->res->json('/checkin_id');
+    $token = $t->tx->res->json('/action_tokens/hold_cancellation');
 
     warning_like {
-        $t->post_ok( "//$userid:$password\@/api/v1/checkins/$checkin_id2/hold_cancellation" => json =>
+        $t->post_ok(
+            "//$userid:$password\@/api/v1/checkins/$checkin_id2/hold_cancellation?action_token=$token" => json =>
                 { reason => 'PATRON_REQUEST' } )->status_is(201);
     }
     qr/HOLD_CANCELLATION/, 'Warning about missing letter template expected';
@@ -791,7 +809,10 @@ subtest 'sub-resource confirmation endpoints' => sub {
         }
     )->store;
 
-    $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin3->id . "/transfer_confirmation" )->status_is(201);
+    $token = $checkin3->action_tokens( { user => $librarian } )->{transfer_confirmation};
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins/" . $checkin3->id . "/transfer_confirmation?action_token=$token" )
+        ->status_is(201);
 
     $transfer->discard_changes;
     ok( $transfer->datesent, 'Transfer set in transit' );
@@ -805,7 +826,9 @@ subtest 'sub-resource confirmation endpoints' => sub {
             library_id => $checkin_library->branchcode,
         }
     )->store;
-    my $checkin5_url = "//$userid:$password\@/api/v1/checkins/" . $checkin5->id . "/transfer_confirmation";
+    $token = action_token( $checkin5, 'transfer_confirmation', $librarian );
+    my $checkin5_url =
+        "//$userid:$password\@/api/v1/checkins/" . $checkin5->id . "/transfer_confirmation?action_token=$token";
 
     $t->post_ok($checkin5_url)->status_is( 400, 'No transfer and no destination' );
 
@@ -833,7 +856,10 @@ subtest 'sub-resource confirmation endpoints' => sub {
         }
     )->store;
 
-    $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin4->id . "/transfer_cancellation" )->status_is(201);
+    $token = $checkin4->action_tokens( { user => $librarian } )->{transfer_cancellation};
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins/" . $checkin4->id . "/transfer_cancellation?action_token=$token" )
+        ->status_is(201);
 
     $transfer4->discard_changes;
     ok( $transfer4->datecancelled, 'Transfer cancelled' );
@@ -888,13 +914,17 @@ subtest 'recall_confirmation' => sub {
     };
 
     # Checkin not found
-    $t->post_ok("//$userid:$password\@/api/v1/checkins/999999999/recall_confirmation")->status_is(404);
+    $t->post_ok("//$userid:$password\@/api/v1/checkins/999999999/recall_confirmation?action_token=x")->status_is(404);
 
     my ( $checkin, $recall ) = $build_recall_checkin->($checkin_library);
 
     # No permission
-    $t->post_ok( "//" . $patron->userid . ":pass000\@/api/v1/checkins/" . $checkin->id . "/recall_confirmation" )
-        ->status_is(403);
+    my $token = action_token( $checkin, 'recall_confirmation', $patron );
+    $t->post_ok( "//"
+            . $patron->userid
+            . ":pass000\@/api/v1/checkins/"
+            . $checkin->id
+            . "/recall_confirmation?action_token=$token" )->status_is(403);
     $recall->discard_changes;
     ok( $recall->requested, 'Recall untouched without permission' );
 
@@ -906,11 +936,14 @@ subtest 'recall_confirmation' => sub {
             library_id => $checkin_library->branchcode,
         }
     )->store;
-    $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin_no_recall->id . "/recall_confirmation" )
+    $token = action_token( $checkin_no_recall, 'recall_confirmation', $librarian );
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins/" . $checkin_no_recall->id . "/recall_confirmation?action_token=$token" )
         ->status_is(400);
 
     # Same library: the recall is set waiting
-    $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin->id . "/recall_confirmation" )
+    $token = $checkin->action_tokens( { user => $librarian } )->{recall_confirmation};
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin->id . "/recall_confirmation?action_token=$token" )
         ->status_is(201)
         ->json_is( '/recall_id' => $recall->id );
     $recall->discard_changes;
@@ -918,7 +951,9 @@ subtest 'recall_confirmation' => sub {
 
     # Different pickup library: the recall is set in transit
     my ( $checkin2, $recall2 ) = $build_recall_checkin->($pickup_library);
-    $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin2->id . "/recall_confirmation" )->status_is(201);
+    $token = $checkin2->action_tokens( { user => $librarian } )->{recall_confirmation};
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin2->id . "/recall_confirmation?action_token=$token" )
+        ->status_is(201);
     $recall2->discard_changes;
     ok( $recall2->in_transit, 'Recall set in transit to the pickup library' );
     is(
@@ -974,12 +1009,96 @@ subtest 'sub-resource endpoints reject stale checkins' => sub {
     for my $action (
         qw( hold_confirmation hold_cancellation transfer_confirmation transfer_cancellation recall_confirmation))
     {
-        $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $stale_checkin->id . "/$action" )
+        my $token = $stale_checkin->action_tokens( { user => $librarian } )->{$action};
+        $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $stale_checkin->id . "/$action?action_token=$token" )
             ->status_is( 409, "$action rejected for a stale checkin" )
             ->json_is( '/error_code' => 'stale_checkin' );
     }
 
     is( Koha::Holds->find($reserve_id)->found, undef, 'The hold has not been touched' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'sub-resource endpoints require a valid action token' => sub {
+
+    plan tests => 26;
+
+    $schema->storage->txn_begin;
+
+    my $password = 'thePassword123';
+
+    my $librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 1 } } );
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    my $other_librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 1 } } );
+
+    my $patron  = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $item    = $builder->build_sample_item( { library => $library->branchcode } );
+
+    t::lib::Mocks::mock_userenv( { branchcode => $library->branchcode, borrowernumber => $librarian->borrowernumber } );
+    t::lib::Mocks::mock_preference( 'HoldsAutoFill', 0 );
+
+    # A checkin without follow-up actions gets no tokens
+    AddIssue( $patron, $item->barcode );
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => json => { item_id => $item->id, library_id => $library->branchcode }
+    )->status_is(200)->json_is( '/action_tokens' => {} );
+
+    # A checkin that finds a hold gets tokens for the hold actions
+    my $reserve_id = AddReserve(
+        {
+            branchcode     => $library->branchcode,
+            borrowernumber => $patron->borrowernumber,
+            biblionumber   => $item->biblionumber,
+            itemnumber     => $item->itemnumber,
+            priority       => 1,
+        }
+    );
+    AddIssue( $builder->build_object( { class => 'Koha::Patrons' } ), $item->barcode );
+
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => json => { item_id => $item->id, library_id => $library->branchcode }
+        )
+        ->status_is(200)
+        ->json_has('/action_tokens/hold_confirmation')
+        ->json_has('/action_tokens/hold_cancellation')
+        ->json_hasnt('/action_tokens/recall_confirmation');
+
+    my $checkin_id   = $t->tx->res->json('/checkin_id');
+    my $tokens       = $t->tx->res->json('/action_tokens');
+    my $endpoint_url = "//$userid:$password\@/api/v1/checkins/$checkin_id/hold_confirmation";
+
+    $t->post_ok($endpoint_url)->status_is( 400, 'Missing action token' );
+
+    $t->post_ok("$endpoint_url?action_token=invalid.token.value")
+        ->status_is( 403, 'Invalid action token' )
+        ->json_is( '/error_code' => 'invalid_action_token' );
+
+    $t->post_ok("$endpoint_url?action_token=$tokens->{hold_cancellation}")
+        ->status_is( 403, 'Token for another action' )
+        ->json_is( '/error_code' => 'invalid_action_token' );
+
+    my $other_user_token =
+        Koha::Checkins->find($checkin_id)->action_tokens( { user => $other_librarian } )->{hold_confirmation};
+    $t->post_ok("$endpoint_url?action_token=$other_user_token")
+        ->status_is( 403, 'Token for another user' )
+        ->json_is( '/error_code' => 'invalid_action_token' );
+
+    {
+        my $jwt_mock = Test::MockModule->new('Mojo::JWT');
+        $jwt_mock->mock( 'now', sub { time + Koha::Checkin::ACTION_TOKEN_EXPIRY_SECONDS + 60 } );
+        $t->post_ok("$endpoint_url?action_token=$tokens->{hold_confirmation}")
+            ->status_is( 403, 'Expired action token' )
+            ->json_is( '/error_code' => 'invalid_action_token' );
+    }
+
+    is( Koha::Holds->find($reserve_id)->found, undef, 'The hold has not been touched' );
+
+    $t->post_ok("$endpoint_url?action_token=$tokens->{hold_confirmation}")->status_is( 201, 'Valid action token' );
+    is( Koha::Holds->find($reserve_id)->found, 'W', 'The hold is waiting' );
 
     $schema->storage->txn_rollback;
 };
@@ -1049,24 +1168,29 @@ subtest 'hold_cancellation - forgive_hold_fees' => sub {
 
     my ( $checkin, $hold ) = $build_checkin->();
 
+    my $token = $checkin->action_tokens( { user => $plain_librarian } )->{hold_cancellation};
     $t->post_ok( "//$plain_userid:$password\@/api/v1/checkins/"
             . $checkin->id
-            . "/hold_cancellation" => json => { forgive_hold_fees => Mojo::JSON->true } )
+            . "/hold_cancellation?action_token=$token" => json => { forgive_hold_fees => Mojo::JSON->true } )
         ->status_is(403)
         ->json_is( '/error_code'                       => 'no_permission_for_forgive_hold_fees' )
         ->json_is( '/policy/module'                    => 'checkin' )
         ->json_is( '/policy/checkin/forgive_hold_fees' => Mojo::JSON->false );
     ok( Koha::Holds->find( $hold->id ), 'Hold not cancelled without the writeoff permission' );
 
+    $token = $checkin->action_tokens( { user => $writeoff_librarian } )->{hold_cancellation};
     $t->post_ok( "//$writeoff_userid:$password\@/api/v1/checkins/"
             . $checkin->id
-            . "/hold_cancellation" => json => { forgive_hold_fees => Mojo::JSON->true } )->status_is(201);
+            . "/hold_cancellation?action_token=$token" => json => { forgive_hold_fees => Mojo::JSON->true } )
+        ->status_is(201);
     is( Koha::Holds->find( $hold->id ), undef, 'Hold cancelled' );
     is( $expired_hold_fees->(),         0,     'No expired hold fee charged when forgiven' );
 
     ( $checkin, $hold ) = $build_checkin->();
 
-    $t->post_ok( "//$writeoff_userid:$password\@/api/v1/checkins/" . $checkin->id . "/hold_cancellation" )
+    $token = $checkin->action_tokens( { user => $writeoff_librarian } )->{hold_cancellation};
+    $t->post_ok(
+        "//$writeoff_userid:$password\@/api/v1/checkins/" . $checkin->id . "/hold_cancellation?action_token=$token" )
         ->status_is(201);
     is( Koha::Holds->find( $hold->id ), undef, 'Hold cancelled' );
     is( $expired_hold_fees->(),         1,     'Expired hold fee charged when not forgiven' );
