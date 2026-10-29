@@ -115,7 +115,6 @@ export default {
             reason,
             reasons,
             confirm,
-            $__,
         };
     },
 };

@@ -224,7 +224,6 @@ export default {
             barcodeTextarea,
             onBarcodeInput,
             scannedList,
-            $__,
         };
     },
 };

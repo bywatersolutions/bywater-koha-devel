@@ -160,7 +160,6 @@ export default {
             resolving,
             error,
             resolve,
-            $__,
         };
     },
 };

@@ -98,7 +98,6 @@ export default {
             onSubmit,
             focus,
             setBarcode,
-            $__,
         };
     },
 };
