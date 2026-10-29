@@ -606,7 +606,6 @@ export default {
             badgeClass,
             formatMessage,
             printCheckinSlip,
-            $__,
         };
     },
 };

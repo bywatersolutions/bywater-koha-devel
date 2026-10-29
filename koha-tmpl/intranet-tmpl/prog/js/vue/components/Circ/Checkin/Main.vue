@@ -900,7 +900,6 @@ export default {
             onDismiss,
             onIgnore,
             onResolve,
-            $__,
         };
     },
 };

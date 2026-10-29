@@ -157,7 +157,6 @@ export default {
             today,
             clearDate,
             afterCheckin,
-            $__,
         };
     },
 };

@@ -1062,7 +1062,6 @@ export default {
             patronNotified,
             notificationTransports,
             mainContactMethod,
-            $__,
         };
     },
 };
