@@ -578,13 +578,16 @@ export default {
 
         // Handle deep-link query params carried over from the legacy
         // returns.pl page so existing links keep working:
-        //   ?barcode=XXXX   -> auto-submit a checkin
+        //   ?barcode=XXXX   -> prefill the barcode input and focus it
+        // A GET request must never change state, so the checkin is not
+        // submitted: staff need to confirm it explicitly.
         function handleUrlParams() {
             const params = new URLSearchParams(window.location.search);
 
             const barcode = params.get("barcode");
-            if (barcode && barcode.trim()) {
-                onBarcodeScan(barcode.trim());
+            if (barcode && barcode.trim() && barcodeInputRef.value) {
+                barcodeInputRef.value.setBarcode(barcode.trim());
+                refocusInput();
             }
         }
 

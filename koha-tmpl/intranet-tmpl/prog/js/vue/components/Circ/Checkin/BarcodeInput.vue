@@ -72,6 +72,11 @@ export default {
             barcode.value = "";
         }
 
+        // Prefill the input without submitting it
+        function setBarcode(value) {
+            barcode.value = value ?? "";
+        }
+
         function focus() {
             nextTick(() => {
                 if (barcodeInput.value) {
@@ -92,6 +97,7 @@ export default {
             highlightInput,
             onSubmit,
             focus,
+            setBarcode,
             $__,
         };
     },
