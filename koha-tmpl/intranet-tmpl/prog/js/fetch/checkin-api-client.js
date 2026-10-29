@@ -26,6 +26,7 @@ export class CheckinAPIClient {
                         "x-koha-override": "not_issued",
                     },
                     return_response: true,
+                    return_error_response: true,
                     mark_submitting: false,
                 }),
             confirmHold: (checkin_id, { action_token } = {}) =>
@@ -59,6 +60,7 @@ export class CheckinAPIClient {
                     // The caller handles errors: a refusal carries the
                     // current module policy
                     return_response: true,
+                    return_error_response: true,
                 }),
             confirmTransfer: (
                 checkin_id,
