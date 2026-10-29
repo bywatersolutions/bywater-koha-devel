@@ -20,6 +20,7 @@ use Modern::Perl;
 use Koha::Database;
 use Koha::Account::Credits;
 use Koha::Account::Debits;
+use Koha::Checkins;
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Desks;
 use Koha::Exceptions::Checkin;
@@ -223,6 +224,30 @@ sub credits {
     my ($self) = @_;
     my $rs = $self->_result->credits;
     return Koha::Account::Credits->_new_from_dbic($rs);
+}
+
+=head2 Accessors
+
+=head3 is_latest
+
+    if ( $checkin->is_latest ) { ... }
+
+Returns true if this is the latest checkin recorded for its item. Follow-up
+actions (setting a hold aside, confirming a transfer, etc.) only make sense
+for the latest checkin of an item: a later checkin means the item has
+circulated since.
+
+=cut
+
+sub is_latest {
+    my ($self) = @_;
+
+    return !Koha::Checkins->search(
+        {
+            item_id    => $self->item_id,
+            checkin_id => { '>' => $self->id },
+        }
+    )->count;
 }
 
 =head2 Actions

@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 21;
+use Test::More tests => 22;
 use Test::Exception;
 use Test::MockModule;
 use Test::NoWarnings;
@@ -495,6 +495,33 @@ subtest 'debits() and credits() tests' => sub {
 
     # Verify the right lines are in each set
     is( $debits->total_outstanding, 15.00, 'Debits total is correct' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'is_latest() tests' => sub {
+
+    plan tests => 4;
+
+    $schema->storage->txn_begin;
+
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $item    = $builder->build_sample_item;
+    my $other   = $builder->build_sample_item;
+
+    my $build_checkin = sub {
+        return Koha::Checkin->new( { item_id => $_[0]->itemnumber, library_id => $library->branchcode } )->store;
+    };
+
+    my $checkin = $build_checkin->($item);
+    ok( $checkin->is_latest, 'The only checkin of the item is the latest' );
+
+    $build_checkin->($other);
+    ok( $checkin->is_latest, 'A checkin of another item does not matter' );
+
+    my $new_checkin = $build_checkin->($item);
+    ok( !$checkin->is_latest,    'Not the latest after the item is checked in again' );
+    ok( $new_checkin->is_latest, 'The new checkin is the latest' );
 
     $schema->storage->txn_rollback;
 };

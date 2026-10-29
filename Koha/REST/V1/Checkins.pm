@@ -24,6 +24,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use C4::Circulation qw( AddReturn barcodedecode );
 use C4::Context;
 use Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue;
+use Koha::Checkins;
 use Koha::Checkouts;
 use Koha::DateUtils qw( dt_from_string );
 use Koha::Items;
@@ -339,8 +340,7 @@ POST /checkins/{checkin_id}/hold_confirmation
 sub hold_confirmation {
     my $c = shift->openapi->valid_input or return;
 
-    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
-    return $c->render_resource_not_found("Checkin") unless $checkin;
+    my $checkin = $c->_get_actionable_checkin or return;
 
     return $c->render( status => 400, openapi => { error => "No hold associated with this checkin" } )
         unless $checkin->hold_id;
@@ -381,8 +381,7 @@ POST /checkins/{checkin_id}/hold_cancellation
 sub hold_cancellation {
     my $c = shift->openapi->valid_input or return;
 
-    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
-    return $c->render_resource_not_found("Checkin") unless $checkin;
+    my $checkin = $c->_get_actionable_checkin or return;
 
     return $c->render( status => 400, openapi => { error => "No hold associated with this checkin" } )
         unless $checkin->hold_id;
@@ -426,8 +425,7 @@ POST /checkins/{checkin_id}/transfer_confirmation
 sub transfer_confirmation {
     my $c = shift->openapi->valid_input or return;
 
-    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
-    return $c->render_resource_not_found("Checkin") unless $checkin;
+    my $checkin = $c->_get_actionable_checkin or return;
 
     my $body = $c->req->json // {};
 
@@ -482,8 +480,7 @@ POST /checkins/{checkin_id}/transfer_cancellation
 sub transfer_cancellation {
     my $c = shift->openapi->valid_input or return;
 
-    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
-    return $c->render_resource_not_found("Checkin") unless $checkin;
+    my $checkin = $c->_get_actionable_checkin or return;
 
     return $c->render( status => 400, openapi => { error => "No transfer associated with this checkin" } )
         unless $checkin->transfer_id;
@@ -505,8 +502,7 @@ POST /checkins/{checkin_id}/recall_confirmation
 sub recall_confirmation {
     my $c = shift->openapi->valid_input or return;
 
-    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
-    return $c->render_resource_not_found("Checkin") unless $checkin;
+    my $checkin = $c->_get_actionable_checkin or return;
 
     return $c->render( status => 400, openapi => { error => "No recall associated with this checkin" } )
         unless $checkin->recall_id;
@@ -520,6 +516,48 @@ sub recall_confirmation {
 }
 
 =head2 Internal methods
+
+=head3 _get_actionable_checkin
+
+    my $checkin = $c->_get_actionable_checkin or return;
+
+Returns the checkin from the I<checkin_id> path parameter if follow-up
+actions can be performed on it. Otherwise it renders the error response
+and returns undef:
+
+=over 4
+
+=item * 404 if the checkin does not exist
+
+=item * 409 (I<stale_checkin>) if the item has been checked in again since
+
+=back
+
+=cut
+
+sub _get_actionable_checkin {
+    my ($c) = @_;
+
+    my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
+
+    unless ($checkin) {
+        $c->render_resource_not_found("Checkin");
+        return;
+    }
+
+    unless ( $checkin->is_latest ) {
+        $c->render(
+            status  => 409,
+            openapi => {
+                error      => 'The item has been checked in again since this checkin',
+                error_code => 'stale_checkin',
+            }
+        );
+        return;
+    }
+
+    return $checkin;
+}
 
 =head3 _render_checkin_response
 
