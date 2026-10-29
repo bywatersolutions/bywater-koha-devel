@@ -38,7 +38,7 @@
 
 [% MACRO jsinclude BLOCK %]
     [% INCLUDE 'calendar.inc' %]
-    <script nonce="[% Koha.CSPNonce | $raw %]">
+    <script nonce="[% Koha.CSPNonce | $raw %]" data-tt-allowed="true">
         window.__MODULE_POLICY__ = [% To.json(module_policy.to_hashref) | $raw %];
         window.__LIBRARY_ID__ = "[% Branches.GetLoggedInBranchcode | html %]";
         window.__TABLE_SETTINGS__ = [% TablesSettings.GetTableSettings( 'circ', 'returns', 'checkedintable', 'json' ) | $raw %];
