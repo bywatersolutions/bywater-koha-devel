@@ -4,10 +4,21 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">
-                        {{ $__("Cancel hold") }}
+                        {{
+                            holdGroup
+                                ? $__("Cancel all holds in hold group")
+                                : $__("Cancel hold")
+                        }}
                     </h1>
                 </div>
                 <div class="modal-body">
+                    <p v-if="holdGroup">
+                        {{
+                            $__(
+                                "Are you sure you want to cancel all holds in this hold's group?"
+                            )
+                        }}
+                    </p>
                     <div class="mb-3">
                         <label
                             for="hold-cancellation-reason"
@@ -41,7 +52,9 @@
                         @click="confirm"
                     >
                         <i class="fa fa-trash-can"></i>
-                        {{ $__("Cancel hold") }}
+                        {{
+                            holdGroup ? $__("Cancel holds") : $__("Cancel hold")
+                        }}
                     </button>
                     <button
                         type="button"
@@ -49,7 +62,7 @@
                         :disabled="cancelling"
                         @click="$emit('close')"
                     >
-                        {{ $__("Keep hold") }}
+                        {{ holdGroup ? $__("Keep holds") : $__("Keep hold") }}
                     </button>
                 </div>
             </div>
@@ -70,6 +83,11 @@ export default {
             default: false,
         },
         cancelling: {
+            type: Boolean,
+            default: false,
+        },
+        // Cancel all the holds of the hold group instead of a single hold
+        holdGroup: {
             type: Boolean,
             default: false,
         },
