@@ -113,6 +113,7 @@
 
         <HoldCancellationModal
             :visible="showHoldCancellationModal"
+            :hold-group="holdCancellationGroup"
             :cancelling="processing"
             @confirm="onConfirmHoldCancellation"
             @close="showHoldCancellationModal = false"
@@ -203,6 +204,7 @@ export default {
         const bundleBarcode = ref("");
         const showHoldCancellationModal = ref(false);
         const holdCancellationItem = ref(null);
+        const holdCancellationGroup = ref(false);
         // Items removed from their bundle from the "in bundle" alert
         const removedFromBundle = ref(new Set());
 
@@ -792,9 +794,11 @@ export default {
             _advanceModal();
         }
 
-        // Open the secondary hold-cancellation pop-up for the active item
-        function onOpenCancelHold(item) {
+        // Open the secondary hold-cancellation pop-up for the active item.
+        // With hold_group, all the holds of the hold's group are cancelled.
+        function onOpenCancelHold(item, { hold_group = false } = {}) {
             holdCancellationItem.value = item;
+            holdCancellationGroup.value = hold_group;
             showHoldCancellationModal.value = true;
         }
 
@@ -802,13 +806,19 @@ export default {
         // resolve the main modal
         async function onConfirmHoldCancellation(params = {}) {
             const item = holdCancellationItem.value;
+            const holdGroup = holdCancellationGroup.value;
             showHoldCancellationModal.value = false;
             holdCancellationItem.value = null;
+            holdCancellationGroup.value = false;
             if (!item) return;
-            await store.resolveAction(item, "cancel_hold", {
-                ...params,
-                forgive_hold_fees: checkinOptions.forgive_hold_fees,
-            });
+            if (holdGroup) {
+                await store.cancelHoldGroup(item, params);
+            } else {
+                await store.resolveAction(item, "cancel_hold", {
+                    ...params,
+                    forgive_hold_fees: checkinOptions.forgive_hold_fees,
+                });
+            }
             _advanceModal();
         }
 
@@ -871,6 +881,7 @@ export default {
             bundleItemId,
             bundleBarcode,
             showHoldCancellationModal,
+            holdCancellationGroup,
             onOpenCancelHold,
             onConfirmHoldCancellation,
             barcodeInputRef,
