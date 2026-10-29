@@ -94,16 +94,12 @@
                                 <strong>
                                     <a
                                         :href="`/cgi-bin/koha/circ/circulation.pl?borrowernumber=${item.hold.patron.patron_id}`"
-                                    >
-                                        {{ item.hold.patron.surname }},
-                                        {{ item.hold.patron.firstname }}
-                                        <template
-                                            v-if="item.hold.patron.cardnumber"
-                                            >({{
-                                                item.hold.patron.cardnumber
-                                            }})</template
-                                        >
-                                    </a>
+                                        v-html="
+                                            patronName(item.hold.patron, {
+                                                cardnumber: true,
+                                            })
+                                        "
+                                    ></a>
                                 </strong>
                                 <span
                                     v-if="item.hold.patron.category_id"
@@ -192,7 +188,7 @@
                         </ul>
                         <p v-else-if="holdInfo">
                             <strong>{{ $__("Hold for:") }}</strong>
-                            {{ holdPatronDescription }}
+                            <span v-html="holdPatronDescription"></span>
                         </p>
 
                         <h4 v-if="holdLibrary">
@@ -263,16 +259,12 @@
                                 <strong>
                                     <a
                                         :href="`/cgi-bin/koha/circ/circulation.pl?borrowernumber=${item.recall.patron.patron_id}`"
-                                    >
-                                        {{ item.recall.patron.surname }},
-                                        {{ item.recall.patron.firstname }}
-                                        <template
-                                            v-if="item.recall.patron.cardnumber"
-                                            >({{
-                                                item.recall.patron.cardnumber
-                                            }})</template
-                                        >
-                                    </a>
+                                        v-html="
+                                            patronName(item.recall.patron, {
+                                                cardnumber: true,
+                                            })
+                                        "
+                                    ></a>
                                 </strong>
                                 <span
                                     v-if="item.recall.patron.category_id"
@@ -789,15 +781,26 @@ export default {
             return msg?.payload || null;
         });
 
+        // Patron name as HTML (escaped), formatted like everywhere else
+        function patronName(patron, { cardnumber = false } = {}) {
+            return $patron_to_html(patron, {
+                invert_name: true,
+                display_cardnumber: cardnumber,
+            });
+        }
+
+        // HTML: rendered with v-html
         const holdPatronDescription = computed(() => {
             if (!holdInfo.value) return "";
             // If hold is embedded with patron info
             if (props.item.hold?.patron) {
-                const p = props.item.hold.patron;
-                return `${p.surname}, ${p.firstname}`;
+                return patronName(props.item.hold.patron);
             }
             return holdInfo.value.patron_id
-                ? `Patron #${holdInfo.value.patron_id}`
+                ? $__("Patron #%s").replace(
+                      "%s",
+                      parseInt(holdInfo.value.patron_id, 10)
+                  )
                 : "";
         });
 
@@ -997,6 +1000,7 @@ export default {
             holdInfo,
             transferCheckinMessages,
             holdPatronDescription,
+            patronName,
             holdLibrary,
             checkinLibrary,
             recallLibrary,

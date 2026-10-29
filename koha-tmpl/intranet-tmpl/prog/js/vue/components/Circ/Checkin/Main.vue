@@ -412,12 +412,10 @@ export default {
                     });
                 }
                 if (msg.message === "hold_auto_filled" && msg.payload) {
-                    const p = latest.hold?.patron;
-                    const holdPatron = p
-                        ? p.firstname
-                            ? `${p.surname}, ${p.firstname}`
-                            : p.surname
-                        : "";
+                    // Already escaped by $patron_to_html
+                    const holdPatron = $patron_to_html(latest.hold?.patron, {
+                        invert_name: true,
+                    });
                     const destination =
                         store.libraries[msg.payload.library_id] ||
                         msg.payload.library_id;
@@ -425,7 +423,7 @@ export default {
                         msg.payload.library_id !== latest.library_id;
                     detailed.push({
                         text:
-                            `<strong>${escapeHtml($__("Hold filled for:"))}</strong> ${escapeHtml(holdPatron)}<br>` +
+                            `<strong>${escapeHtml($__("Hold filled for:"))}</strong> ${holdPatron}<br>` +
                             `<strong>${escapeHtml(transfer ? $__("Transfer to:") : $__("Hold at"))}</strong> ${escapeHtml(destination)} ` +
                             `<button type="button" class="btn btn-default btn-xs print-hold-slip" data-reserve-id="${escapeHtml(msg.payload.reserve_id)}"><i class="fa fa-print"></i> ${escapeHtml($__("Print"))}</button>`,
                         alertClass: "alert-info hold-auto-filled",
@@ -507,13 +505,9 @@ export default {
                 }
                 if (msg.message === "patron_has_waiting_holds" && msg.payload) {
                     const p = latest.checkout && latest.checkout.patron;
-                    const patronName = escapeHtml(
-                        p
-                            ? p.firstname
-                                ? `${p.surname}, ${p.firstname}`
-                                : p.surname
-                            : $__("Patron")
-                    );
+                    const patronName = p
+                        ? $patron_to_html(p, { invert_name: true })
+                        : escapeHtml($__("Patron"));
                     detailed.push({
                         text: $__(
                             '%s has %s hold(s) waiting for pickup. <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=%s">Check out to this patron</a>'
