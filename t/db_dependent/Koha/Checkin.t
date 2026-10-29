@@ -500,7 +500,7 @@ subtest 'debits() and credits() tests' => sub {
 
 subtest 'confirm_hold() tests' => sub {
 
-    plan tests => 11;
+    plan tests => 12;
 
     $schema->storage->txn_begin;
 
@@ -524,11 +524,15 @@ subtest 'confirm_hold() tests' => sub {
         }
     );
 
+    my $desk =
+        $builder->build_object( { class => 'Koha::Desks', value => { branchcode => $checkin_library->branchcode } } );
+
     my $checkin = Koha::Checkin->new(
         {
             item_id    => $item->itemnumber,
             user_id    => $user->borrowernumber,
             library_id => $checkin_library->branchcode,
+            desk_id    => $desk->id,
             hold_id    => $reserve_id,
         }
     )->store;
@@ -538,8 +542,9 @@ subtest 'confirm_hold() tests' => sub {
     $checkin->discard_changes;
 
     my $hold = Koha::Holds->find($reserve_id);
-    is( $hold->found,          'W',   'Hold set to waiting after confirm_hold' );
-    is( $checkin->transfer_id, undef, 'No transfer created when same library' );
+    is( $hold->found,          'W',       'Hold set to waiting after confirm_hold' );
+    is( $hold->desk_id,        $desk->id, 'Hold set to waiting at the checkin desk' );
+    is( $checkin->transfer_id, undef,     'No transfer created when same library' );
 
     $schema->storage->txn_rollback;
 
