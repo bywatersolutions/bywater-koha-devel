@@ -6,7 +6,14 @@
             id="return_date_override_fields"
         >
             <div class="hint">
-                {{ $__("Specify return date (MM/DD/YYYY):") }}
+                {{
+                    dateFormatHint
+                        ? $__("Specify return date (%s):").replace(
+                              "%s",
+                              dateFormatHint
+                          )
+                        : $__("Specify return date:")
+                }}
             </div>
             <FlatPickrWrapper id="return-date-override" v-model="returnDate" />
             <div class="circ-setting">
@@ -76,6 +83,13 @@ export default {
 
         const today = computed(() => new Date().toISOString().split("T")[0]);
 
+        // Configured date format (dateformat syspref), as set by
+        // calendar.inc for flatpickr. E.g. "d/m/Y" -> "DD/MM/YYYY"
+        const dateFormatHint = (window.flatpickr_dateformat_string || "")
+            .replace("d", "DD")
+            .replace("m", "MM")
+            .replace("Y", "YYYY");
+
         // Effective return date used in book drop mode
         const dropboxDate = computed(() => {
             const date = policy.value?.dropbox_date;
@@ -133,6 +147,7 @@ export default {
 
         return {
             policy,
+            dateFormatHint,
             dropboxMode,
             dropboxDate,
             exemptFine,
