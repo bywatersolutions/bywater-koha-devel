@@ -13,6 +13,9 @@
                     </h1>
                 </div>
                 <div class="modal-body">
+                    <div v-if="error" class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
                     <div class="mb-3">
                         <label for="claim-resolution" class="form-label">
                             {{ $__("Resolution:") }}
@@ -80,7 +83,7 @@
 </template>
 
 <script>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { APIClient } from "../../../fetch/api-client.js";
 import { $__ } from "@koha-vue/i18n";
 
@@ -102,6 +105,15 @@ export default {
         const resolutions = ref([]);
         const lostStatuses = ref([]);
         const resolving = ref(false);
+        const error = ref(null);
+
+        // Do not keep the error of a previous attempt when reopening
+        watch(
+            () => props.visible,
+            visible => {
+                if (visible) error.value = null;
+            }
+        );
 
         onMounted(() => {
             // Fetch RETURN_CLAIM_RESOLUTION authorised values
@@ -124,21 +136,17 @@ export default {
         async function resolve() {
             if (!props.claimId || !resolution.value) return;
             resolving.value = true;
+            error.value = null;
             try {
-                await fetch(`/api/v1/return_claims/${props.claimId}/resolve`, {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-requested-with": "XMLHttpRequest",
-                    },
-                    body: JSON.stringify({
-                        resolution: resolution.value,
-                        new_lost_status: newLostStatus.value || undefined,
-                    }),
+                await APIClient.claim.return_claims.resolve(props.claimId, {
+                    resolution: resolution.value,
+                    new_lost_status: newLostStatus.value,
                 });
                 emit("resolved");
             } catch (e) {
-                // Error handling
+                error.value = $__(
+                    "Unable to resolve the return claim: %s"
+                ).replace("%s", e.message.replace(/^Error: /, ""));
             } finally {
                 resolving.value = false;
             }
@@ -150,6 +158,7 @@ export default {
             resolutions,
             lostStatuses,
             resolving,
+            error,
             resolve,
             $__,
         };
