@@ -14,11 +14,11 @@ export const useCheckinStore = defineStore("checkin", () => {
     const processing = ref(false);
 
     // Fetch libraries for name resolution
-    fetch("/api/v1/libraries?_per_page=-1")
-        .then(r => r.json())
+    APIClient.library.libraries
+        .getAll()
         .then(libs => {
             const map = {};
-            for (const lib of libs) {
+            for (const lib of libs || []) {
                 map[lib.library_id] = lib.name;
             }
             libraries.value = map;
@@ -156,7 +156,7 @@ export const useCheckinStore = defineStore("checkin", () => {
             }
 
             if (!response.ok) {
-                lastError.value = data.error || "An error occurred";
+                lastError.value = data.error || $__("An error occurred");
                 return { status: "error", data };
             }
 
@@ -177,7 +177,7 @@ export const useCheckinStore = defineStore("checkin", () => {
 
             return { status, data };
         } catch (error) {
-            lastError.value = "Network error. Please try again.";
+            lastError.value = $__("Network error. Please try again.");
             return { status: "error", data: null };
         } finally {
             _inflight.delete(barcode);
@@ -191,7 +191,8 @@ export const useCheckinStore = defineStore("checkin", () => {
      */
     async function confirmPending(entry) {
         const idx = checkins.value.indexOf(entry);
-        if (idx === -1) return { status: "error", message: "Entry not found" };
+        if (idx === -1)
+            return { status: "error", message: $__("Entry not found") };
 
         processing.value = true;
 
@@ -220,7 +221,7 @@ export const useCheckinStore = defineStore("checkin", () => {
                     lastError.value = _policyErrorMessage(data);
                     return { status: "error", data };
                 }
-                lastError.value = data.error || "Confirmation failed";
+                lastError.value = data.error || $__("Confirmation failed");
                 return { status: "error", data };
             }
 
@@ -241,7 +242,7 @@ export const useCheckinStore = defineStore("checkin", () => {
 
             return { status, data };
         } catch (error) {
-            lastError.value = "Network error during confirmation.";
+            lastError.value = $__("Network error during confirmation.");
             return { status: "error", data: null };
         } finally {
             processing.value = false;
@@ -281,7 +282,8 @@ export const useCheckinStore = defineStore("checkin", () => {
      */
     async function resolveAction(entry, action, params = {}) {
         const idx = checkins.value.indexOf(entry);
-        if (idx === -1) return { status: "error", message: "Entry not found" };
+        if (idx === -1)
+            return { status: "error", message: $__("Entry not found") };
 
         try {
             const client = APIClient.checkin;
@@ -311,7 +313,7 @@ export const useCheckinStore = defineStore("checkin", () => {
                             applyPolicy(data.policy);
                             throw new Error(_policyErrorMessage(data));
                         }
-                        throw new Error(data.error || "An error occurred");
+                        throw new Error(data.error || $__("An error occurred"));
                     }
                     break;
                 }
@@ -483,14 +485,19 @@ export const useCheckinStore = defineStore("checkin", () => {
      */
     function _policyErrorMessage(data) {
         const messages = {
-            no_permission_for_exempt_fine:
-                "You are not allowed to forgive overdue charges. The item was not checked in.",
-            no_permission_for_forgive_hold_fees:
-                "You are not allowed to forgive hold fees. The hold was not cancelled.",
-            return_date_not_allowed:
-                "Specifying a return date is not allowed. The item was not checked in.",
+            no_permission_for_exempt_fine: $__(
+                "You are not allowed to forgive overdue charges. The item was not checked in."
+            ),
+            no_permission_for_forgive_hold_fees: $__(
+                "You are not allowed to forgive hold fees. The hold was not cancelled."
+            ),
+            return_date_not_allowed: $__(
+                "Specifying a return date is not allowed. The item was not checked in."
+            ),
         };
-        return messages[data.error_code] || data.error || "An error occurred";
+        return (
+            messages[data.error_code] || data.error || $__("An error occurred")
+        );
     }
 
     /**
