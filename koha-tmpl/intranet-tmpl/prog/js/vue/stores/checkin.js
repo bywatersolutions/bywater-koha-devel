@@ -278,6 +278,39 @@ export const useCheckinStore = defineStore("checkin", () => {
     }
 
     /**
+     * Cancel all the holds of the hold group the found hold belongs to
+     * (DisplayAddHoldGroups). The checked in item's hold is part of it, so
+     * the action is resolved.
+     */
+    async function cancelHoldGroup(entry, params = {}) {
+        const idx = checkins.value.indexOf(entry);
+        const hold = entry.hold;
+        if (idx === -1 || !hold?.hold_group_id) {
+            return { status: "error", message: $__("Entry not found") };
+        }
+
+        try {
+            await APIClient.patron.hold_groups.cancel(
+                hold.patron_id,
+                hold.hold_group_id,
+                { cancellation_reason: params.reason }
+            );
+            checkins.value[idx] = {
+                ...checkins.value[idx],
+                _status: "success",
+                _action_type: null,
+            };
+            return { status: "ok" };
+        } catch (error) {
+            // The action stays pending: tell the user why it did not go through
+            lastError.value = $__(
+                "An error occurred while cancelling the hold group."
+            );
+            return { status: "error", message: error.message };
+        }
+    }
+
+    /**
      * Resolve a post-checkin action (hold, transfer, recall).
      */
     async function resolveAction(entry, action, params = {}) {
@@ -525,6 +558,7 @@ export const useCheckinStore = defineStore("checkin", () => {
         dismissPending,
         ignoreAction,
         resolveAction,
+        cancelHoldGroup,
         applyPolicy,
     };
 });

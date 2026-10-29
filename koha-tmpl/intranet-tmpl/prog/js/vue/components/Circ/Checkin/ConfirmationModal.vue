@@ -191,6 +191,21 @@
                             <span v-html="holdPatronDescription"></span>
                         </p>
 
+                        <template v-if="holdGroupId">
+                            <h4>
+                                <strong
+                                    >{{ $__("Part of a hold group") }}:</strong
+                                >
+                            </h4>
+                            <a
+                                target="_blank"
+                                :href="`/cgi-bin/koha/circ/circulation.pl?borrowernumber=${item.hold.patron_id}#holds_panel`"
+                            >
+                                <i class="fa fa-fw fa-external-link-alt"></i>
+                                {{ $__("View patron's holds") }}
+                            </a>
+                        </template>
+
                         <h4 v-if="holdLibrary">
                             <strong>{{
                                 needsTransfer
@@ -422,7 +437,6 @@
                     </template>
 
                     <!-- Hold action buttons -->
-                    <!-- TODO: Add hold group cancel button (DisplayAddHoldGroups) -->
                     <template v-if="item._action_type === 'hold'">
                         <button
                             type="button"
@@ -465,17 +479,37 @@
                             {{ $__("Ignore (I)") }}
                         </button>
                         <!-- Only a waiting hold can be cancelled from here, as on the legacy page -->
-                        <button
-                            v-if="holdInfo?.status === 'waiting'"
-                            type="button"
-                            class="btn btn-danger"
-                            :disabled="confirming"
-                            accesskey="x"
-                            @click="$emit('open-cancel-hold', item)"
-                        >
-                            <i class="fa fa-trash-can"></i>
-                            {{ $__("Cancel hold (X)") }}
-                        </button>
+                        <template v-if="holdInfo?.status === 'waiting'">
+                            <button
+                                v-if="holdGroupId"
+                                type="button"
+                                class="btn btn-danger"
+                                :disabled="confirming"
+                                accesskey="x"
+                                @click="
+                                    $emit('open-cancel-hold', item, {
+                                        hold_group: true,
+                                    })
+                                "
+                            >
+                                <i class="fa fa-trash-can"></i>
+                                {{ $__("Cancel all holds in hold group (X)") }}
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-danger"
+                                :disabled="confirming"
+                                accesskey="x"
+                                @click="$emit('open-cancel-hold', item)"
+                            >
+                                <i class="fa fa-trash-can"></i>
+                                {{
+                                    holdGroupId
+                                        ? $__("Cancel this hold (X)")
+                                        : $__("Cancel hold (X)")
+                                }}
+                            </button>
+                        </template>
                     </template>
 
                     <!-- Transfer action buttons -->
@@ -781,6 +815,14 @@ export default {
             return msg?.payload || null;
         });
 
+        // Hold group the found hold belongs to (DisplayAddHoldGroups)
+        const holdGroupId = computed(() => {
+            if (!holdInfo.value || !policy.value.display_hold_groups) {
+                return null;
+            }
+            return props.item?.hold?.hold_group_id || null;
+        });
+
         // Patron name as HTML (escaped), formatted like everywhere else
         function patronName(patron, { cardnumber = false } = {}) {
             return $patron_to_html(patron, {
@@ -1000,6 +1042,7 @@ export default {
             holdInfo,
             transferCheckinMessages,
             holdPatronDescription,
+            holdGroupId,
             patronName,
             holdLibrary,
             checkinLibrary,
