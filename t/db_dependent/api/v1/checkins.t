@@ -3,7 +3,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 10;
+use Test::More tests => 11;
 use Test::Mojo;
 use Test::Warn;
 use Mojo::JSON;
@@ -200,6 +200,45 @@ subtest 'add' => sub {
             library_id => $library->branchcode,
         }
     )->status_is(403)->json_is( '/error_code' => 'checkin_blocked' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'add - barcode filtering' => sub {
+
+    plan tests => 5;
+
+    $schema->storage->txn_begin;
+
+    my $librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 2 } } );
+    my $password  = 'thePassword123';
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    my $patron  = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $item    = $builder->build_sample_item( { library => $library->branchcode, barcode => 'BC42383FILTER' } );
+
+    t::lib::Mocks::mock_userenv( { branchcode => $library->branchcode } );
+    AddIssue( $patron, $item->barcode );
+
+    t::lib::Mocks::mock_preference( 'itemBarcodeInputFilter', '' );
+
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => json => {
+            external_id => 'BC42383 FILTER',
+            library_id  => $library->branchcode,
+        }
+    )->status_is( 404, 'Barcode not found without itemBarcodeInputFilter' );
+
+    t::lib::Mocks::mock_preference( 'itemBarcodeInputFilter', 'whitespace' );
+
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => json => {
+            external_id => ' BC42383 FILTER ',
+            library_id  => $library->branchcode,
+        }
+    )->status_is( 200, 'Barcode is filtered with itemBarcodeInputFilter' )->json_is( '/item_id' => $item->id );
 
     $schema->storage->txn_rollback;
 };
