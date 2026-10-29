@@ -3,7 +3,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 12;
+use Test::More tests => 13;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warn;
@@ -17,6 +17,7 @@ use Koha::Database;
 use Koha::Account;
 use Koha::Checkins;
 use Koha::Holds;
+use Koha::Recalls;
 use Koha::DateUtils qw( dt_from_string );
 
 my $schema  = Koha::Database->schema;
@@ -836,6 +837,94 @@ subtest 'sub-resource confirmation endpoints' => sub {
 
     $transfer4->discard_changes;
     ok( $transfer4->datecancelled, 'Transfer cancelled' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'recall_confirmation' => sub {
+
+    plan tests => 15;
+
+    $schema->storage->txn_begin;
+
+    my $librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 2 } } );
+    my $password  = 'thePassword123';
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    my $patron = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 0 } } );
+    $patron->set_password( { password => 'pass000', skip_validation => 1 } );
+
+    my $checkin_library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $pickup_library  = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    t::lib::Mocks::mock_userenv(
+        { branchcode => $checkin_library->branchcode, borrowernumber => $librarian->borrowernumber } );
+    t::lib::Mocks::mock_preference( 'UseRecalls', 1 );
+
+    my $build_recall_checkin = sub {
+        my ($pickup) = @_;
+        my $item     = $builder->build_sample_item( { library => $checkin_library->branchcode } );
+        my $recall   = Koha::Recall->new(
+            {
+                patron_id         => $patron->borrowernumber,
+                created_date      => \'NOW()',
+                biblio_id         => $item->biblionumber,
+                pickup_library_id => $pickup->branchcode,
+                status            => 'requested',
+                item_id           => $item->itemnumber,
+                item_level        => 1,
+            }
+        )->store;
+        my $checkin = Koha::Checkin->new(
+            {
+                item_id    => $item->itemnumber,
+                user_id    => $librarian->borrowernumber,
+                library_id => $checkin_library->branchcode,
+                recall_id  => $recall->id,
+            }
+        )->store;
+        return ( $checkin, $recall );
+    };
+
+    # Checkin not found
+    $t->post_ok("//$userid:$password\@/api/v1/checkins/999999999/recall_confirmation")->status_is(404);
+
+    my ( $checkin, $recall ) = $build_recall_checkin->($checkin_library);
+
+    # No permission
+    $t->post_ok( "//" . $patron->userid . ":pass000\@/api/v1/checkins/" . $checkin->id . "/recall_confirmation" )
+        ->status_is(403);
+    $recall->discard_changes;
+    ok( $recall->requested, 'Recall untouched without permission' );
+
+    # No recall associated with the checkin
+    my $checkin_no_recall = Koha::Checkin->new(
+        {
+            item_id    => $builder->build_sample_item->itemnumber,
+            user_id    => $librarian->borrowernumber,
+            library_id => $checkin_library->branchcode,
+        }
+    )->store;
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin_no_recall->id . "/recall_confirmation" )
+        ->status_is(400);
+
+    # Same library: the recall is set waiting
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin->id . "/recall_confirmation" )
+        ->status_is(201)
+        ->json_is( '/recall_id' => $recall->id );
+    $recall->discard_changes;
+    ok( $recall->waiting, 'Recall set to waiting at the checkin library' );
+
+    # Different pickup library: the recall is set in transit
+    my ( $checkin2, $recall2 ) = $build_recall_checkin->($pickup_library);
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin2->id . "/recall_confirmation" )->status_is(201);
+    $recall2->discard_changes;
+    ok( $recall2->in_transit, 'Recall set in transit to the pickup library' );
+    is(
+        $recall2->item->get_transfer->tobranch, $pickup_library->branchcode,
+        'The transfer goes to the pickup library'
+    );
 
     $schema->storage->txn_rollback;
 };
