@@ -31,7 +31,8 @@ class HttpClient {
         headers = {},
         options = {},
         return_response = false,
-        mark_submitting = false
+        mark_submitting = false,
+        return_error_response = false
     ) {
         let res, error;
         if (mark_submitting) submitting();
@@ -41,7 +42,8 @@ class HttpClient {
         })
             .then(response => {
                 if (!response.ok) {
-                    if (return_response) return response;
+                    // Let the caller handle error responses itself
+                    if (return_error_response) return response;
                     return response.text().then(text => {
                         let message;
                         if (text) {
@@ -125,7 +127,8 @@ class HttpClient {
                 method: "POST",
             },
             params.return_response ?? false,
-            params.mark_submitting ?? true
+            params.mark_submitting ?? true,
+            params.return_error_response ?? false
         );
     }
 
