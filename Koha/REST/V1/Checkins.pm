@@ -349,6 +349,15 @@ sub hold_confirmation {
         $checkin->confirm_hold;
         return $c->_render_checkin_response($checkin);
     } catch {
+        if ( blessed $_ && $_->isa('Koha::Exceptions::Checkin::HoldNotFound') ) {
+            return $c->render(
+                status  => 409,
+                openapi => {
+                    error      => 'The hold no longer exists',
+                    error_code => 'hold_not_found',
+                }
+            );
+        }
         if ( blessed $_ && $_->isa('Koha::Exceptions::Checkin::ItemCheckedOut') ) {
             return $c->render(
                 status  => 409,

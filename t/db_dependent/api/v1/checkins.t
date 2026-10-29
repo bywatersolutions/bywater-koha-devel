@@ -656,7 +656,7 @@ subtest 'add - post-return processing' => sub {
 
 subtest 'sub-resource confirmation endpoints' => sub {
 
-    plan tests => 39;
+    plan tests => 42;
 
     $schema->storage->txn_begin;
 
@@ -737,6 +737,15 @@ subtest 'sub-resource confirmation endpoints' => sub {
     $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_on_loan_id/hold_confirmation")
         ->status_is(409)
         ->json_is( '/error_code' => 'item_checked_out' );
+
+    # -- hold_confirmation: the hold vanished in the meantime (409)
+    {
+        my $checkin_mock = Test::MockModule->new('Koha::Checkin');
+        $checkin_mock->mock( 'ModReserveAffect', sub { return; } );
+        $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_on_loan_id/hold_confirmation")
+            ->status_is(409)
+            ->json_is( '/error_code' => 'hold_not_found' );
+    }
 
     is( Koha::Holds->find($reserve_id_on_loan)->found,          undef, 'Hold left pending' );
     is( Koha::Checkins->find($checkin_on_loan_id)->transfer_id, undef, 'No transfer created' );
