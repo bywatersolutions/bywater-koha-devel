@@ -162,11 +162,10 @@
                 <!-- Patron -->
                 <td v-if="isColumnVisible('borrower')">
                     <template v-if="!isAnonymized(checkin)">
-                        <a
+                        <span
                             v-if="patronDisplay(checkin)"
-                            :href="`/cgi-bin/koha/members/moremember.pl?borrowernumber=${checkin.checkout.patron_id}`"
-                            >{{ patronDisplay(checkin) }}</a
-                        >
+                            v-html="patronDisplay(checkin)"
+                        ></span>
                         <span
                             v-if="checkin.checkout?.patron?.checkouts_count"
                             class="results_summary nowrap"
@@ -433,14 +432,16 @@ export default {
             );
         }
 
+        // Patron link as HTML (escaped by $patron_to_html)
         function patronDisplay(checkin) {
             if (!checkin.checkout?.patron_id) return "";
             // If patron data is embedded
             if (checkin.checkout?.patron) {
-                const p = checkin.checkout.patron;
-                return p.cardnumber
-                    ? `${p.surname}, ${p.firstname} (${p.cardnumber})`
-                    : `${p.surname}, ${p.firstname}`;
+                return $patron_to_html(checkin.checkout.patron, {
+                    invert_name: true,
+                    display_cardnumber: true,
+                    url: true,
+                });
             }
             return "";
         }
