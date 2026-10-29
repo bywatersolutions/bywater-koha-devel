@@ -32,6 +32,7 @@ use Koha::Old::Checkouts;
 use Koha::Patron::Restrictions;
 use Koha::Patrons;
 use Koha::Recalls;
+use Koha::Token;
 use Koha::Checkouts::ReturnClaims;
 
 use C4::Accounts;
@@ -39,6 +40,8 @@ use C4::Context;
 use C4::Reserves qw( ModReserveAffect );
 
 use base qw(Koha::Object);
+
+use constant ACTION_TOKEN_EXPIRY_SECONDS => 900;    # 15 minutes
 
 =head1 NAME
 
@@ -248,6 +251,108 @@ sub is_latest {
             checkin_id => { '>' => $self->id },
         }
     )->count;
+}
+
+=head3 pending_actions
+
+    my $actions = $checkin->pending_actions;
+
+Returns an arrayref with the names of the follow-up actions that can be
+offered for this checkin, matching the C</checkins/{checkin_id}/*> API
+endpoints:
+
+=over 4
+
+=item * I<hold_confirmation>, I<hold_cancellation> - A hold was found
+
+=item * I<transfer_confirmation>, I<transfer_cancellation> - A transfer was
+triggered. Only I<transfer_confirmation> is offered when the item needs a
+transfer that was not created (I<needs_transfer> message, see
+I<AutomaticItemReturn>)
+
+=item * I<recall_confirmation> - A recall was found
+
+=back
+
+=cut
+
+sub pending_actions {
+    my ($self) = @_;
+
+    my @actions;
+
+    push @actions, qw( hold_confirmation hold_cancellation )
+        if $self->hold_id;
+
+    if ( $self->transfer_id ) {
+        push @actions, qw( transfer_confirmation transfer_cancellation );
+    } elsif ( grep { $_->message eq 'needs_transfer' } @{ $self->object_messages } ) {
+        push @actions, 'transfer_confirmation';
+    }
+
+    push @actions, 'recall_confirmation'
+        if $self->recall_id;
+
+    return \@actions;
+}
+
+=head3 action_tokens
+
+    my $tokens = $checkin->action_tokens( { user => $patron } );
+
+Returns a hashref with a signed token for each of the I<pending_actions>,
+keyed by action name. Each token is tied to this checkin, the passed I<user>
+(a L<Koha::Patron>, the staff member) and the action, and expires after
+C<ACTION_TOKEN_EXPIRY_SECONDS>.
+
+=cut
+
+sub action_tokens {
+    my ( $self, $params ) = @_;
+
+    Koha::Exceptions::MissingParameter->throw("'user' is required")
+        unless $params->{user};
+
+    my $tokenizer = Koha::Token->new;
+
+    return {
+        map {
+            $_ => $tokenizer->generate_jwt(
+                {
+                    id      => $self->_action_token_id( $_, $params->{user} ),
+                    expires => time + ACTION_TOKEN_EXPIRY_SECONDS,
+                }
+            )
+        } @{ $self->pending_actions }
+    };
+}
+
+=head3 check_action_token
+
+    my $valid = $checkin->check_action_token(
+        {
+            action => 'hold_confirmation',
+            user   => $patron,
+            token  => $token,
+        }
+    );
+
+Returns true if I<token> was issued by I<action_tokens> for this checkin,
+I<user> and I<action>, and has not expired.
+
+=cut
+
+sub check_action_token {
+    my ( $self, $params ) = @_;
+
+    return 0 unless $params->{action} && $params->{user} && $params->{token};
+
+    return Koha::Token->new->check_jwt(
+        {
+            id    => $self->_action_token_id( $params->{action}, $params->{user} ),
+            token => $params->{token},
+        }
+    ) ? 1 : 0;
 }
 
 =head2 Actions
@@ -621,6 +726,19 @@ sub verify_bundle {
         missing    => \@missing,
         unexpected => \@unexpected,
     };
+}
+
+=head3 _action_token_id
+
+    my $id = $checkin->_action_token_id( $action, $user );
+
+Returns the identifier signed in the action tokens.
+
+=cut
+
+sub _action_token_id {
+    my ( $self, $action, $user ) = @_;
+    return join( ':', 'checkin_action', $self->id, $user->id, $action );
 }
 
 =head3 to_api_mapping

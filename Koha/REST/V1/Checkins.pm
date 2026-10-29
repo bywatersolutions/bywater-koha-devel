@@ -322,6 +322,9 @@ sub add {
         my $response = $c->objects->find( Koha::Checkins->new, $checkin->id );
         $response->{messages} = \@messages if @messages;
 
+        # Tokens the follow-up actions offered for this checkin require
+        $response->{action_tokens} = $checkin->action_tokens( { user => $user } );
+
         return $c->render(
             status  => 200,
             openapi => $response,
@@ -340,7 +343,7 @@ POST /checkins/{checkin_id}/hold_confirmation
 sub hold_confirmation {
     my $c = shift->openapi->valid_input or return;
 
-    my $checkin = $c->_get_actionable_checkin or return;
+    my $checkin = $c->_get_actionable_checkin('hold_confirmation') or return;
 
     return $c->render( status => 400, openapi => { error => "No hold associated with this checkin" } )
         unless $checkin->hold_id;
@@ -381,7 +384,7 @@ POST /checkins/{checkin_id}/hold_cancellation
 sub hold_cancellation {
     my $c = shift->openapi->valid_input or return;
 
-    my $checkin = $c->_get_actionable_checkin or return;
+    my $checkin = $c->_get_actionable_checkin('hold_cancellation') or return;
 
     return $c->render( status => 400, openapi => { error => "No hold associated with this checkin" } )
         unless $checkin->hold_id;
@@ -425,7 +428,7 @@ POST /checkins/{checkin_id}/transfer_confirmation
 sub transfer_confirmation {
     my $c = shift->openapi->valid_input or return;
 
-    my $checkin = $c->_get_actionable_checkin or return;
+    my $checkin = $c->_get_actionable_checkin('transfer_confirmation') or return;
 
     my $body = $c->req->json // {};
 
@@ -480,7 +483,7 @@ POST /checkins/{checkin_id}/transfer_cancellation
 sub transfer_cancellation {
     my $c = shift->openapi->valid_input or return;
 
-    my $checkin = $c->_get_actionable_checkin or return;
+    my $checkin = $c->_get_actionable_checkin('transfer_cancellation') or return;
 
     return $c->render( status => 400, openapi => { error => "No transfer associated with this checkin" } )
         unless $checkin->transfer_id;
@@ -502,7 +505,7 @@ POST /checkins/{checkin_id}/recall_confirmation
 sub recall_confirmation {
     my $c = shift->openapi->valid_input or return;
 
-    my $checkin = $c->_get_actionable_checkin or return;
+    my $checkin = $c->_get_actionable_checkin('recall_confirmation') or return;
 
     return $c->render( status => 400, openapi => { error => "No recall associated with this checkin" } )
         unless $checkin->recall_id;
@@ -519,15 +522,19 @@ sub recall_confirmation {
 
 =head3 _get_actionable_checkin
 
-    my $checkin = $c->_get_actionable_checkin or return;
+    my $checkin = $c->_get_actionable_checkin($action) or return;
 
-Returns the checkin from the I<checkin_id> path parameter if follow-up
-actions can be performed on it. Otherwise it renders the error response
+Returns the checkin from the I<checkin_id> path parameter if the follow-up
+I<$action> can be performed on it. Otherwise it renders the error response
 and returns undef:
 
 =over 4
 
 =item * 404 if the checkin does not exist
+
+=item * 403 (I<invalid_action_token>) if the I<action_token> query parameter
+is not a valid token for this checkin, user and action (see
+L<Koha::Checkin/action_tokens>), or has expired
 
 =item * 409 (I<stale_checkin>) if the item has been checked in again since
 
@@ -536,12 +543,32 @@ and returns undef:
 =cut
 
 sub _get_actionable_checkin {
-    my ($c) = @_;
+    my ( $c, $action ) = @_;
 
     my $checkin = Koha::Checkins->find( $c->param('checkin_id') );
 
     unless ($checkin) {
         $c->render_resource_not_found("Checkin");
+        return;
+    }
+
+    unless (
+        $checkin->check_action_token(
+            {
+                action => $action,
+                user   => $c->stash('koha.user'),
+                token  => $c->param('action_token'),
+            }
+        )
+        )
+    {
+        $c->render(
+            status  => 403,
+            openapi => {
+                error      => 'Invalid or expired action token',
+                error_code => 'invalid_action_token',
+            }
+        );
         return;
     }
 
