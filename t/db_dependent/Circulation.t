@@ -19,7 +19,7 @@ use Modern::Perl;
 use utf8;
 
 use Test::NoWarnings;
-use Test::More tests => 83;
+use Test::More tests => 84;
 use Test::Exception;
 use Test::MockModule;
 use Test::MockObject;
@@ -9338,6 +9338,60 @@ subtest 'AddReturn populates checkin_id on accountlines' => sub {
 
     ok( $lost_found, 'Scenario 3: LOST_FOUND credit was created' );
     is( $lost_found->checkin_id, $checkin->id, 'Scenario 3: LOST_FOUND credit has checkin_id' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'AddReturn checkin messages use the returning patron when anonymised' => sub {
+
+    plan tests => 4;
+
+    $schema->storage->txn_begin;
+
+    my $library   = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $anonymous = $builder->build_object( { class => 'Koha::Patrons' } );
+    my $patron    = $builder->build_object(
+        { class => 'Koha::Patrons', value => { privacy => 2, branchcode => $library->branchcode } } );
+
+    t::lib::Mocks::mock_userenv( { branchcode => $library->branchcode } );
+    t::lib::Mocks::mock_preference( 'AnonymousPatron',        $anonymous->borrowernumber );
+    t::lib::Mocks::mock_preference( 'FineNotifyAtCheckin',    1 );
+    t::lib::Mocks::mock_preference( 'WaitingNotifyAtCheckin', 1 );
+
+    # The patron owes money and has a hold waiting at the library
+    $patron->account->add_debit( { amount => 5, interface => 'commandline', type => 'MANUAL' } );
+    $builder->build_object(
+        {
+            class => 'Koha::Holds',
+            value => {
+                borrowernumber => $patron->borrowernumber,
+                branchcode     => $library->branchcode,
+                found          => 'W',
+            }
+        }
+    );
+
+    my $item = $builder->build_sample_item( { library => $library->branchcode } );
+    AddIssue( $patron, $item->barcode );
+
+    my ( undef, undef, undef, undef, $checkin ) = AddReturn( $item->barcode, $library->branchcode );
+
+    is(
+        $checkin->checkout->borrowernumber, $anonymous->borrowernumber,
+        'The returned checkout has been anonymised'
+    );
+
+    my %messages = map { $_->message => $_ } @{ $checkin->object_messages };
+
+    ok( $messages{patron_has_fines}, 'patron_has_fines message attached' );
+    is(
+        $messages{patron_has_fines} && $messages{patron_has_fines}->payload->{patron_id},
+        $patron->borrowernumber, 'patron_has_fines refers to the patron who returned the item'
+    );
+    is(
+        $messages{patron_has_waiting_holds} && $messages{patron_has_waiting_holds}->payload->{patron_id},
+        $patron->borrowernumber, 'patron_has_waiting_holds refers to the patron who returned the item'
+    );
 
     $schema->storage->txn_rollback;
 };
