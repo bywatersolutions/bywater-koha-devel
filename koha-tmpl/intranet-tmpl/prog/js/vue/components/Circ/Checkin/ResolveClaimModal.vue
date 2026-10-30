@@ -142,7 +142,7 @@ export default {
                     resolution: resolution.value,
                     new_lost_status: newLostStatus.value,
                 });
-                emit("resolved");
+                emit("resolved", props.claimId);
             } catch (e) {
                 error.value = $__(
                     "Unable to resolve the return claim: %s"

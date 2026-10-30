@@ -719,11 +719,18 @@ export default {
             }
         }
 
-        function onClaimResolved() {
+        function onClaimResolved(claimId) {
             showClaimModal.value = false;
-            // Mark the claim row as resolved
+            // Mark the row of the resolved claim as resolved
             const idx = checkins.value.findIndex(
-                c => c._action_type === "claim" && c._status === "needs_action"
+                c =>
+                    c._action_type === "claim" &&
+                    c._status === "needs_action" &&
+                    (c.messages || []).some(
+                        m =>
+                            m.message === "return_claim" &&
+                            Number(m.payload?.claim_id) === Number(claimId)
+                    )
             );
             if (idx !== -1) {
                 checkins.value[idx] = {
