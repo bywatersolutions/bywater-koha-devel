@@ -154,6 +154,7 @@ properties:
       * `transfer_arrived` - A pending transfer arrived (payload: from_library)
       * `hold_found` - A hold was found for this item (payload: status, reserve_id, patron_id, library_id)
       * `hold_auto_filled` - The hold found was filled automatically, as HoldsAutoFill is enabled (payload: reserve_id, library_id)
+      * `hold_auto_fill_failed` - The hold found could not be filled automatically, the item has been checked in (payload: reserve_id, error_code: hold_not_found or item_checked_out)
       * `recall_found` - A recall was found (payload: recall_id, needs_transfer)
       * `lost_item_fee_refunded` - Lost item fee was refunded to patron
       * `lost_item_fee_charged` - Lost item fee was charged to patron

@@ -255,17 +255,40 @@ sub add {
             && $hold_found->{ResFound} ne 'Waiting'
             && C4::Context->preference('HoldsAutoFill') )
         {
-            $checkin->confirm_hold;
-            $checkin->add_message(
-                {
-                    message => 'hold_auto_filled',
-                    type    => 'info',
-                    payload => {
-                        reserve_id => $hold_found->{reserve_id},
-                        library_id => $hold_found->{branchcode},
-                    },
+            # The item has already been returned: if the hold cannot be
+            # filled, report it on the checkin instead of failing the request
+            try {
+                $checkin->confirm_hold;
+                $checkin->add_message(
+                    {
+                        message => 'hold_auto_filled',
+                        type    => 'info',
+                        payload => {
+                            reserve_id => $hold_found->{reserve_id},
+                            library_id => $hold_found->{branchcode},
+                        },
+                    }
+                );
+            } catch {
+                my $error_code;
+                if ( blessed $_ && $_->isa('Koha::Exceptions::Checkin::HoldNotFound') ) {
+                    $error_code = 'hold_not_found';
+                } elsif ( blessed $_ && $_->isa('Koha::Exceptions::Checkin::ItemCheckedOut') ) {
+                    $error_code = 'item_checked_out';
+                } else {
+                    die $_;
                 }
-            );
+                $checkin->add_message(
+                    {
+                        message => 'hold_auto_fill_failed',
+                        type    => 'warning',
+                        payload => {
+                            reserve_id => $hold_found->{reserve_id},
+                            error_code => $error_code,
+                        },
+                    }
+                );
+            };
         }
 
         # AddReturn skips the holds queue update: refresh it as the legacy

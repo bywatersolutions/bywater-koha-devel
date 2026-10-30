@@ -3,7 +3,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 15;
+use Test::More tests => 16;
 use Test::MockModule;
 use Test::Mojo;
 use Test::Warn;
@@ -16,6 +16,7 @@ use C4::Reserves    qw( AddReserve );
 use Koha::Database;
 use Koha::Account;
 use Koha::Checkins;
+use Koha::Exceptions::Checkin;
 use Koha::Holds;
 use Koha::Recalls;
 use Koha::Token;
@@ -663,6 +664,81 @@ subtest 'add - post-return processing' => sub {
     );
     $missing->discard_changes;
     is( $missing->itemlost, 2, 'Missing item marked lost' );
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'add - HoldsAutoFill failure' => sub {
+
+    plan tests => 20;
+
+    $schema->storage->txn_begin;
+
+    my $library   = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $librarian = $builder->build_object(
+        { class => 'Koha::Patrons', value => { flags => 2, branchcode => $library->branchcode } } );
+    my $password = 'thePassword123';
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    my $patron = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 0 } } );
+
+    t::lib::Mocks::mock_userenv( { branchcode => $library->branchcode, borrowernumber => $librarian->borrowernumber } );
+    t::lib::Mocks::mock_preference( 'UseRecalls',         'off' );
+    t::lib::Mocks::mock_preference( 'HoldsAutoFill',      1 );
+    t::lib::Mocks::mock_preference( 'RealTimeHoldsQueue', 1 );
+
+    my @enqueued;
+    my $jobs_mock = Test::MockModule->new('Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue');
+    $jobs_mock->mock( 'enqueue', sub { push @enqueued, $_[1]->{biblio_ids}; return 1; } );
+
+    my $exception;
+    my $checkin_mock = Test::MockModule->new('Koha::Checkin');
+    $checkin_mock->mock( 'confirm_hold', sub { $exception->(); } );
+
+    my $new_held_item = sub {
+        my $item = $builder->build_sample_item( { library => $library->branchcode } );
+        AddIssue( $patron, $item->barcode );
+        my $hold_id = AddReserve(
+            {
+                branchcode     => $library->branchcode,
+                borrowernumber => $librarian->borrowernumber,
+                biblionumber   => $item->biblionumber,
+                priority       => 1,
+            }
+        );
+        return ( $item, Koha::Holds->find($hold_id) );
+    };
+
+    my %cases = (
+        hold_not_found   => sub { Koha::Exceptions::Checkin::HoldNotFound->throw('The hold no longer exists') },
+        item_checked_out => sub { Koha::Exceptions::Checkin::ItemCheckedOut->throw('Checked out') },
+    );
+
+    for my $error_code ( sort keys %cases ) {
+        $exception = $cases{$error_code};
+        my ( $item, $hold ) = $new_held_item->();
+        @enqueued = ();
+
+        $t->post_ok( "//$userid:$password\@/api/v1/checkins" => json => { item_id => $item->id } )
+            ->status_is( 200, "$error_code: the check-in is not failed" );
+        my $messages = $t->tx->res->json('/messages');
+        my ($failed) = grep { $_->{message} eq 'hold_auto_fill_failed' } @$messages;
+        ok( $failed, "$error_code: hold_auto_fill_failed message present" );
+        is( $failed->{type},                  'warning',   "$error_code: reported as a warning" );
+        is( $failed->{payload}->{error_code}, $error_code, "$error_code: error_code in the payload" );
+        is( $failed->{payload}->{reserve_id}, $hold->id,   "$error_code: reserve_id in the payload" );
+        ok( !( grep { $_->{message} eq 'hold_auto_filled' } @$messages ), "$error_code: no hold_auto_filled message" );
+        is_deeply( \@enqueued, [ [ $item->biblionumber ] ], "$error_code: holds queue still updated" );
+        $item->discard_changes;
+        ok( !$item->onloan, "$error_code: the item has been checked in" );
+    }
+
+    # Unexpected errors are not swallowed
+    $exception = sub { die "Something unexpected\n" };
+    my ($item) = $new_held_item->();
+    $t->post_ok( "//$userid:$password\@/api/v1/checkins" => json => { item_id => $item->id } )
+        ->status_is( 500, q{Unexpected exceptions are rethrown} );
 
     $schema->storage->txn_rollback;
 };

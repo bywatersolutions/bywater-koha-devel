@@ -431,6 +431,20 @@ export default {
                         alertClass: "alert-info hold-auto-filled",
                     });
                 }
+                if (msg.message === "hold_auto_fill_failed") {
+                    detailed.push({
+                        text: escapeHtml(
+                            msg.payload?.error_code === "item_checked_out"
+                                ? $__(
+                                      "The hold could not be filled automatically: the item has been checked out in the meantime. The hold remains pending."
+                                  )
+                                : $__(
+                                      "The hold could not be filled automatically: it no longer exists."
+                                  )
+                        ),
+                        alertClass: "alert-warning hold-auto-fill-failed",
+                    });
+                }
                 if (
                     msg.message === "not_for_loan_status_updated" &&
                     msg.payload
