@@ -618,7 +618,7 @@ subtest 'pending_actions(), action_tokens() and check_action_token() tests' => s
 
 subtest 'confirm_hold() tests' => sub {
 
-    plan tests => 16;
+    plan tests => 21;
 
     $schema->storage->txn_begin;
 
@@ -803,6 +803,40 @@ subtest 'confirm_hold() tests' => sub {
         'confirm_hold throws HoldNotFound when the hold no longer exists';
     is( Koha::Holds->search( { itemnumber => $no_loan_item->itemnumber } )->count, 0, 'No hold set aside' );
 
+    # Changes are rolled back if the transfer cannot be sent
+    my $atomic_item = $builder->build_sample_item( { library => $checkin_library->branchcode } );
+    $reserve_id = AddReserve(
+        {
+            branchcode     => $pickup_library->branchcode,
+            borrowernumber => $patron->borrowernumber,
+            biblionumber   => $atomic_item->biblionumber,
+            itemnumber     => $atomic_item->itemnumber,
+            priority       => 1,
+        }
+    );
+
+    $checkin = Koha::Checkin->new(
+        {
+            item_id    => $atomic_item->itemnumber,
+            user_id    => $user->borrowernumber,
+            library_id => $checkin_library->branchcode,
+            hold_id    => $reserve_id,
+        }
+    )->store;
+
+    my $transfer_mock = Test::MockModule->new('Koha::Item::Transfer');
+    $transfer_mock->mock( 'transit', sub { die "Transit failed\n" } );
+
+    throws_ok { $checkin->confirm_hold } qr/Transit failed/, 'confirm_hold dies when the transfer cannot be sent';
+
+    $transfer_mock->unmock('transit');
+
+    $hold = Koha::Holds->find($reserve_id);
+    is( $hold->found,                                      undef, 'Hold not set in transit nor waiting' );
+    is( $hold->priority,                                   1,     'Hold priority unchanged' );
+    is( Koha::Checkins->find( $checkin->id )->transfer_id, undef, 'No transfer linked to the checkin' );
+    is( $atomic_item->get_transfer,                        undef, 'No transfer created for the item' );
+
     $schema->storage->txn_rollback;
 };
 
@@ -925,7 +959,7 @@ subtest 'cancel_hold() tests' => sub {
 
 subtest 'confirm_transfer() tests' => sub {
 
-    plan tests => 10;
+    plan tests => 13;
 
     $schema->storage->txn_begin;
 
@@ -1007,6 +1041,27 @@ subtest 'confirm_transfer() tests' => sub {
     )->store;
     $checkin_manual->confirm_transfer( { to_library_id => $to_library->branchcode } );
     is( $checkin_manual->transfer->reason, 'Manual', 'Transfer reason defaults to Manual' );
+
+    # Changes are rolled back if the transfer cannot be sent
+    my $item_atomic    = $builder->build_sample_item( { library => $from_library->branchcode } );
+    my $checkin_atomic = Koha::Checkin->new(
+        {
+            item_id    => $item_atomic->itemnumber,
+            user_id    => $user->borrowernumber,
+            library_id => $from_library->branchcode,
+        }
+    )->store;
+
+    my $transfer_mock = Test::MockModule->new('Koha::Item::Transfer');
+    $transfer_mock->mock( 'transit', sub { die "Transit failed\n" } );
+
+    throws_ok { $checkin_atomic->confirm_transfer( { to_library_id => $to_library->branchcode } ) }
+    qr/Transit failed/, 'confirm_transfer dies when the transfer cannot be sent';
+
+    $transfer_mock->unmock('transit');
+
+    is( Koha::Checkins->find( $checkin_atomic->id )->transfer_id, undef, 'No transfer linked to the checkin' );
+    is( $item_atomic->get_transfer,                               undef, 'No transfer created for the item' );
 
     $schema->storage->txn_rollback;
 };
