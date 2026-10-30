@@ -397,24 +397,32 @@ sub confirm_hold {
     # If pickup branch differs, a transfer is needed
     my $diff_branch = ( $checkin_library ne $pickup_library ) ? $pickup_library : undef;
 
-    # ModReserveAffect returns undef if the hold is not found, 0 if it
-    # refuses to set aside a hold for an item that is on loan, 1 on success
-    my $affected =
-        ModReserveAffect( $item->itemnumber, $hold->borrowernumber, $diff_branch, $hold->id, $self->desk_id );
+    # The hold must not be left in transit without a transfer
+    Koha::Database->new->schema->txn_do(
+        sub {
+            # ModReserveAffect returns undef if the hold is not found, 0 if it
+            # refuses to set aside a hold for an item that is on loan, 1 on success
+            my $affected = ModReserveAffect(
+                $item->itemnumber, $hold->borrowernumber, $diff_branch, $hold->id,
+                $self->desk_id
+            );
 
-    Koha::Exceptions::Checkin::HoldNotFound->throw("The hold no longer exists")
-        unless defined $affected;
+            Koha::Exceptions::Checkin::HoldNotFound->throw("The hold no longer exists")
+                unless defined $affected;
 
-    Koha::Exceptions::Checkin::ItemCheckedOut->throw(
-        "The item has been checked out in the meantime, the hold remains pending")
-        unless $affected;
+            Koha::Exceptions::Checkin::ItemCheckedOut->throw(
+                "The item has been checked out in the meantime, the hold remains pending")
+                unless $affected;
 
-    # Create transfer if needed
-    if ($diff_branch) {
-        my $transfer = $item->request_transfer( { to => $hold->pickup_library, reason => 'Reserve', enqueue => 1 } );
-        $transfer->transit;
-        $self->set( { transfer_id => $transfer->id } )->store;
-    }
+            # Create transfer if needed
+            if ($diff_branch) {
+                my $transfer =
+                    $item->request_transfer( { to => $hold->pickup_library, reason => 'Reserve', enqueue => 1 } );
+                $transfer->transit;
+                $self->set( { transfer_id => $transfer->id } )->store;
+            }
+        }
+    );
 
     return $self;
 }
@@ -443,14 +451,18 @@ sub cancel_hold {
 
     my $hold = $self->hold;
 
-    $hold->cancel(
-        {
-            cancellation_reason => $params->{reason},
-            charge_cancel_fee   => $params->{forgive_hold_fees} ? 0 : 1,
+    Koha::Database->new->schema->txn_do(
+        sub {
+            $hold->cancel(
+                {
+                    cancellation_reason => $params->{reason},
+                    charge_cancel_fee   => $params->{forgive_hold_fees} ? 0 : 1,
+                }
+            );
+
+            $self->set( { hold_id => undef } )->store;
         }
     );
-
-    $self->set( { hold_id => undef } )->store;
 
     return $self;
 }
@@ -476,22 +488,26 @@ Returns the C<Koha::Checkin> object for chaining.
 sub confirm_transfer {
     my ( $self, $params ) = @_;
 
-    unless ( $self->transfer_id ) {
-        Koha::Exceptions::MissingParameter->throw("No transfer associated with this checkin")
-            unless $params->{to_library_id};
+    Koha::Exceptions::MissingParameter->throw("No transfer associated with this checkin")
+        unless $self->transfer_id || $params->{to_library_id};
 
-        my $transfer = $self->item->request_transfer(
-            {
-                to     => Koha::Libraries->find( $params->{to_library_id} ),
-                reason => $params->{reason} // 'Manual',
+    Koha::Database->new->schema->txn_do(
+        sub {
+            unless ( $self->transfer_id ) {
+                my $transfer = $self->item->request_transfer(
+                    {
+                        to     => Koha::Libraries->find( $params->{to_library_id} ),
+                        reason => $params->{reason} // 'Manual',
+                    }
+                );
+                $self->set( { transfer_id => $transfer->id } )->store;
             }
-        );
-        $self->set( { transfer_id => $transfer->id } )->store;
-    }
 
-    my $transfer = $self->transfer;
+            my $transfer = $self->transfer;
 
-    $transfer->transit unless $transfer->datesent;
+            $transfer->transit unless $transfer->datesent;
+        }
+    );
 
     return $self;
 }
@@ -519,23 +535,27 @@ sub cancel_transfer {
 
     my $transfer = $self->transfer;
 
-    $transfer->cancel( { reason => 'Manual', force => 1 } );
+    Koha::Database->new->schema->txn_do(
+        sub {
+            $transfer->cancel( { reason => 'Manual', force => 1 } );
 
-    # If there's a recall in transit for this item, revert it
-    #
-    # FIXME: This recall-revert-on-cancel trigger really belongs one level
-    # down, in Koha::Item::Transfer->cancel, so that *every* transfer
-    # cancellation reverts an in-transit recall regardless of the caller
-    # (checkin, transfers-to-receive, etc.). It lives here for now because
-    # Koha::Item::Transfer->cancel is shared by callers that must not trigger
-    # this behaviour; moving it down should be done carefully in a follow-up.
-    if ( C4::Context->preference('UseRecalls') ne 'off' ) {
-        my $item   = $self->item;
-        my $recall = Koha::Recalls->find( { item_id => $item->itemnumber, status => 'in_transit' } );
-        $recall->revert_transfer if $recall;
-    }
+            # If there's a recall in transit for this item, revert it
+            #
+            # FIXME: This recall-revert-on-cancel trigger really belongs one level
+            # down, in Koha::Item::Transfer->cancel, so that *every* transfer
+            # cancellation reverts an in-transit recall regardless of the caller
+            # (checkin, transfers-to-receive, etc.). It lives here for now because
+            # Koha::Item::Transfer->cancel is shared by callers that must not trigger
+            # this behaviour; moving it down should be done carefully in a follow-up.
+            if ( C4::Context->preference('UseRecalls') ne 'off' ) {
+                my $item   = $self->item;
+                my $recall = Koha::Recalls->find( { item_id => $item->itemnumber, status => 'in_transit' } );
+                $recall->revert_transfer if $recall;
+            }
 
-    $self->set( { transfer_id => undef } )->store;
+            $self->set( { transfer_id => undef } )->store;
+        }
+    );
 
     return $self;
 }
@@ -564,16 +584,20 @@ sub replace_wrong_transfer {
 
     return $self unless $old_transfer;
 
-    my $new_transfer = $item->request_transfer(
-        {
-            to            => $old_transfer->to_library,
-            reason        => $old_transfer->reason,
-            replace       => 'WrongTransfer',
-            ignore_limits => 1,
+    Koha::Database->new->schema->txn_do(
+        sub {
+            my $new_transfer = $item->request_transfer(
+                {
+                    to            => $old_transfer->to_library,
+                    reason        => $old_transfer->reason,
+                    replace       => 'WrongTransfer',
+                    ignore_limits => 1,
+                }
+            );
+
+            $self->set( { transfer_id => $new_transfer->id } )->store;
         }
     );
-
-    $self->set( { transfer_id => $new_transfer->id } )->store;
 
     return $self;
 }
@@ -602,17 +626,21 @@ sub confirm_recall {
     my $recall = $self->recall;
     my $item   = $self->item;
 
-    if ( $recall->pickup_library_id ne $self->library_id ) {
+    Koha::Database->new->schema->txn_do(
+        sub {
+            if ( $recall->pickup_library_id ne $self->library_id ) {
 
-        # Needs transfer to pickup library
-        $recall->start_transfer( { item => $item } ) unless $recall->in_transit;
-    } else {
+                # Needs transfer to pickup library
+                $recall->start_transfer( { item => $item } ) unless $recall->in_transit;
+            } else {
 
-        # Same library — set to waiting
-        my $expirationdate = $recall->calc_expirationdate;
-        $recall->set_waiting( { item => $item, expirationdate => $expirationdate } )
-            unless $recall->waiting;
-    }
+                # Same library — set to waiting
+                my $expirationdate = $recall->calc_expirationdate;
+                $recall->set_waiting( { item => $item, expirationdate => $expirationdate } )
+                    unless $recall->waiting;
+            }
+        }
+    );
 
     return $self;
 }
