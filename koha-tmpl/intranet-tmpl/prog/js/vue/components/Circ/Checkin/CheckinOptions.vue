@@ -15,7 +15,16 @@
                         : $__("Specify return date:")
                 }}
             </div>
-            <FlatPickrWrapper id="return-date-override" v-model="returnDate" />
+            <!-- The data attributes are read by the Koha flatpickr defaults
+                 (calendar.inc): date and time input mask, 'Today' sets the
+                 current time -->
+            <FlatPickrWrapper
+                id="return-date-override"
+                v-model="returnDate"
+                :config="returnDateConfig"
+                data-flatpickr-enable-time="true"
+                data-flatpickr-pastinclusive="true"
+            />
             <div class="circ-setting">
                 <input
                     id="return_date_override_remember"
@@ -81,7 +90,40 @@ export default {
         const returnDate = ref("");
         const rememberDate = ref(false);
 
-        const today = computed(() => new Date().toISOString().split("T")[0]);
+        // Like the legacy returns page: a time can be set, and the date
+        // cannot be in the future. The value is a date-time without
+        // offset, as expected by the API, in the Koha time zone.
+        // flatpickr_defaults is declared with let by calendar.inc: it is
+        // not a property of window
+        const fpDefaults =
+            typeof flatpickr_defaults !== "undefined" ? flatpickr_defaults : {};
+        const returnDateConfig = {
+            enableTime: true,
+            dateFormat: "Y-m-d\\TH:i:S",
+            altFormat:
+                (window.flatpickr_dateformat_string || "Y-m-d") +
+                ", " +
+                (window.flatpickr_timeformat_string || "H:i"),
+            maxDate: new Date(),
+            onReady: [
+                fpDefaults.onReady,
+                (selectedDates, dateStr, instance) => {
+                    // No 'Tomorrow' shortcut
+                    instance.calendarContainer
+                        ?.querySelectorAll(
+                            ".shortcut-buttons-flatpickr-button[data-index='2']"
+                        )
+                        .forEach(button => (button.disabled = true));
+                },
+            ].filter(Boolean),
+            onOpen: [
+                fpDefaults.onOpen,
+                (selectedDates, dateStr, instance) => {
+                    // The page may have been open for a while
+                    instance.set("maxDate", new Date());
+                },
+            ].filter(Boolean),
+        };
 
         // Configured date format (dateformat syspref), as set by
         // calendar.inc for flatpickr. E.g. "d/m/Y" -> "DD/MM/YYYY"
@@ -154,7 +196,7 @@ export default {
             forgiveHoldFees,
             returnDate,
             rememberDate,
-            today,
+            returnDateConfig,
             clearDate,
             afterCheckin,
         };

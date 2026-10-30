@@ -16,8 +16,10 @@ use C4::Reserves    qw( AddReserve );
 use Koha::Database;
 use Koha::Account;
 use Koha::Checkins;
+use Koha::DateTime::Format::RFC3339;
 use Koha::Exceptions::Checkin;
 use Koha::Holds;
+use Koha::Old::Checkouts;
 use Koha::Recalls;
 use Koha::Token;
 use Koha::DateUtils qw( dt_from_string );
@@ -441,7 +443,7 @@ subtest 'checkin blocked if exempt fine requested but permissions do not allow' 
 
 subtest 'add - return_date and dropbox_mode' => sub {
 
-    plan tests => 8;
+    plan tests => 19;
 
     $schema->storage->txn_begin;
 
@@ -466,6 +468,41 @@ subtest 'add - return_date and dropbox_mode' => sub {
             return_date => '2025-01-15T10:00:00',
         }
     )->status_is(200)->json_has('/checkin_id');
+    is(
+        Koha::Old::Checkouts->search( { itemnumber => $item->id } )->last->returndate,
+        '2025-01-15 10:00:00', 'The return date and time are recorded'
+    );
+
+    # The return date cannot be in the future
+    AddIssue( $patron, $item->barcode );
+    my $future = dt_from_string->add( hours => 1 );
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => json => {
+            item_id     => $item->id,
+            library_id  => $library->branchcode,
+            return_date => $future->strftime('%FT%T'),
+        }
+    )->status_is(400)->json_is( '/error_code' => 'return_date_in_future' );
+    ok( $item->checkout, 'The item is still checked out' );
+
+    # The offset is taken into account
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => json => {
+            item_id     => $item->id,
+            library_id  => $library->branchcode,
+            return_date => Koha::DateTime::Format::RFC3339->format_datetime($future),
+        }
+    )->status_is(400)->json_is( '/error_code' => 'return_date_in_future' );
+
+    # Not a date-time
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => json => {
+            item_id     => $item->id,
+            library_id  => $library->branchcode,
+            return_date => '2025-01-15',
+        }
+    )->status_is(400);
+    ok( $item->checkout, 'The item is still checked out' );
 
     # Check in with dropbox_mode
     my $item2 = $builder->build_sample_item( { library => $library->branchcode } );
