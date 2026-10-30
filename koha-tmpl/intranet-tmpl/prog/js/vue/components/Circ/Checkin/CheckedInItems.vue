@@ -575,6 +575,7 @@ export default {
                 return_claim: $__("Claimed returned"),
                 claim_auto_resolved: $__("Claim resolved"),
                 hold_auto_filled: $__("Hold filled"),
+                hold_auto_fill_failed: $__("Hold not filled"),
                 not_for_loan_status_updated: $__("Not for loan status updated"),
                 not_for_loan_status_notice: $__("Not for loan status"),
                 item_location_updated: $__("Shelving location updated"),

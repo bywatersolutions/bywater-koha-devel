@@ -465,7 +465,11 @@ export const useCheckinStore = defineStore("checkin", () => {
         if (
             data.hold_id &&
             messages.some(m => m.message === "hold_found") &&
-            !messages.some(m => m.message === "hold_auto_filled")
+            !messages.some(
+                m =>
+                    m.message === "hold_auto_filled" ||
+                    m.message === "hold_auto_fill_failed"
+            )
         ) {
             return "hold";
         }
