@@ -14,6 +14,8 @@ const PREFS = {
     AutomaticConfirmTransfer: "0",
     BlockReturnOfLostItems: "0",
     BlockReturnOfWithdrawnItems: "1",
+    ClaimReturnedLostValue: "",
+    AutoClaimReturnStatusOnCheckin: "",
     HoldsAutoFill: "0",
     SpecifyReturnDate: "1",
     TransfersBlockCirc: "0",
@@ -602,6 +604,74 @@ describe("Circulation - Check in", () => {
                             expect(rows[0].status).to.eq("waiting");
                             expect(rows[0].item_id).to.eq(item.item_id);
                         });
+                    });
+                });
+            });
+        });
+    });
+    describe("Return claims", () => {
+        it("marks the row of the resolved claim as resolved", () => {
+            cy.set_syspref("ClaimReturnedLostValue", "1");
+            cy.intercept("PUT", "/api/v1/return_claims/*/resolve").as(
+                "resolveClaim"
+            );
+
+            // An item claimed returned by the patron it is checked out to
+            const createClaimedCheckout = () =>
+                createCheckout().then(objects => {
+                    const item = objects.items[0];
+                    return dbQuery(
+                        "INSERT INTO return_claims (itemnumber, borrowernumber, created_on) VALUES (?, ?, NOW())",
+                        [item.item_id, objects.patron.patron_id]
+                    ).then(result => ({ item, claim_id: result.insertId }));
+                });
+
+            const row = barcode =>
+                cy
+                    .get("#checkins-table tbody tr")
+                    .filter(`:contains("${barcode}")`);
+
+            createClaimedCheckout().then(first => {
+                createClaimedCheckout().then(second => {
+                    visitCheckin();
+                    checkin(first.item.external_id);
+                    checkin(second.item.external_id);
+
+                    row(first.item.external_id)
+                        .contains("button", "Resolve claim")
+                        .should("be.visible");
+                    row(second.item.external_id)
+                        .contains("button", "Resolve claim")
+                        .should("be.visible");
+
+                    // Resolve the claim of the first item, which is not the
+                    // first row of the table
+                    row(first.item.external_id)
+                        .contains("button", "Resolve claim")
+                        .click();
+                    cy.get("#claim-resolution").select("FOUND_IN_LIB");
+                    cy.get("#claim-resolution")
+                        .closest(".modal-content")
+                        .find(".modal-footer")
+                        .contains("button", "Resolve claim")
+                        .click();
+                    cy.wait("@resolveClaim")
+                        .its("response.statusCode")
+                        .should("eq", 200);
+
+                    row(first.item.external_id)
+                        .contains("button", "Resolve claim")
+                        .should("not.exist");
+                    row(second.item.external_id)
+                        .contains("button", "Resolve claim")
+                        .should("be.visible");
+
+                    dbQuery(
+                        "SELECT id, resolution FROM return_claims WHERE id IN (?, ?) ORDER BY id",
+                        [first.claim_id, second.claim_id]
+                    ).then(rows => {
+                        expect(rows[0].resolution).to.eq("FOUND_IN_LIB");
+                        expect(rows[1].resolution).to.eq(null);
                     });
                 });
             });
