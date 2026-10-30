@@ -782,7 +782,7 @@ subtest 'add - HoldsAutoFill failure' => sub {
 
 subtest 'sub-resource confirmation endpoints' => sub {
 
-    plan tests => 42;
+    plan tests => 45;
 
     $schema->storage->txn_begin;
 
@@ -836,7 +836,7 @@ subtest 'sub-resource confirmation endpoints' => sub {
 
     $t->post_ok("//$userid:$password\@/api/v1/checkins/$checkin_id/hold_confirmation?action_token=$token")
         ->status_is(201)
-        ->header_like( 'Location' => qr{/api/v1/checkins/\d+} );
+        ->header_is( 'Location' => "/api/v1/checkins/$checkin_id/hold_confirmation" );
 
     my $hold = Koha::Holds->find($reserve_id);
     is( $hold->found, 'W', 'Hold set to waiting after hold_confirmation' );
@@ -902,7 +902,9 @@ subtest 'sub-resource confirmation endpoints' => sub {
     warning_like {
         $t->post_ok(
             "//$userid:$password\@/api/v1/checkins/$checkin_id2/hold_cancellation?action_token=$token" => json =>
-                { reason => 'PATRON_REQUEST' } )->status_is(201);
+                { reason => 'PATRON_REQUEST' } )
+            ->status_is(201)
+            ->header_is( 'Location' => "/api/v1/checkins/$checkin_id2/hold_cancellation" );
     }
     qr/HOLD_CANCELLATION/, 'Warning about missing letter template expected';
 
@@ -925,7 +927,8 @@ subtest 'sub-resource confirmation endpoints' => sub {
     $token = $checkin3->action_tokens( { user => $librarian } )->{transfer_confirmation};
     $t->post_ok(
         "//$userid:$password\@/api/v1/checkins/" . $checkin3->id . "/transfer_confirmation?action_token=$token" )
-        ->status_is(201);
+        ->status_is(201)
+        ->header_is( 'Location' => "/api/v1/checkins/" . $checkin3->id . "/transfer_confirmation" );
 
     $transfer->discard_changes;
     ok( $transfer->datesent, 'Transfer set in transit' );
@@ -972,7 +975,8 @@ subtest 'sub-resource confirmation endpoints' => sub {
     $token = $checkin4->action_tokens( { user => $librarian } )->{transfer_cancellation};
     $t->post_ok(
         "//$userid:$password\@/api/v1/checkins/" . $checkin4->id . "/transfer_cancellation?action_token=$token" )
-        ->status_is(201);
+        ->status_is(201)
+        ->header_is( 'Location' => "/api/v1/checkins/" . $checkin4->id . "/transfer_cancellation" );
 
     $transfer4->discard_changes;
     ok( $transfer4->datecancelled, 'Transfer cancelled' );
@@ -982,7 +986,7 @@ subtest 'sub-resource confirmation endpoints' => sub {
 
 subtest 'recall_confirmation' => sub {
 
-    plan tests => 15;
+    plan tests => 16;
 
     $schema->storage->txn_begin;
 
@@ -1058,6 +1062,7 @@ subtest 'recall_confirmation' => sub {
     $token = $checkin->action_tokens( { user => $librarian } )->{recall_confirmation};
     $t->post_ok( "//$userid:$password\@/api/v1/checkins/" . $checkin->id . "/recall_confirmation?action_token=$token" )
         ->status_is(201)
+        ->header_is( 'Location' => "/api/v1/checkins/" . $checkin->id . "/recall_confirmation" )
         ->json_is( '/recall_id' => $recall->id );
     $recall->discard_changes;
     ok( $recall->waiting, 'Recall set to waiting at the checkin library' );

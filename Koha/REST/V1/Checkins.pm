@@ -625,7 +625,9 @@ sub _get_actionable_checkin {
 
 =head3 _render_checkin_response
 
-Renders the standard checkin response with Location header.
+Renders the standard checkin response, with the URI of the action
+performed as the Location header. The query string is left out, as it
+carries the action token.
 
 =cut
 
@@ -636,7 +638,7 @@ sub _render_checkin_response {
 
     my $response = $c->objects->find( Koha::Checkins->new, $checkin->id );
 
-    $c->res->headers->location( $c->req->url->to_string . '/' . $checkin->id );
+    $c->res->headers->location( $c->req->url->path->to_string );
 
     return $c->render(
         status  => 201,

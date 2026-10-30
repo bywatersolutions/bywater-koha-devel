@@ -232,7 +232,7 @@
         description: Hold confirmed
         headers:
           Location:
-            description: URI of the updated checkin resource
+            description: URI of the action performed on the checkin (the request path)
             type: string
         schema:
           $ref: "../swagger.yaml#/definitions/checkin"
@@ -307,7 +307,7 @@
         description: Hold cancelled
         headers:
           Location:
-            description: URI of the updated checkin resource
+            description: URI of the action performed on the checkin (the request path)
             type: string
         schema:
           $ref: "../swagger.yaml#/definitions/checkin"
@@ -401,7 +401,7 @@
         description: Transfer confirmed
         headers:
           Location:
-            description: URI of the updated checkin resource
+            description: URI of the action performed on the checkin (the request path)
             type: string
         schema:
           $ref: "../swagger.yaml#/definitions/checkin"
@@ -458,7 +458,7 @@
         description: Transfer cancelled
         headers:
           Location:
-            description: URI of the updated checkin resource
+            description: URI of the action performed on the checkin (the request path)
             type: string
         schema:
           $ref: "../swagger.yaml#/definitions/checkin"
@@ -513,7 +513,7 @@
         description: Recall confirmed
         headers:
           Location:
-            description: URI of the updated checkin resource
+            description: URI of the action performed on the checkin (the request path)
             type: string
         schema:
           $ref: "../swagger.yaml#/definitions/checkin"
