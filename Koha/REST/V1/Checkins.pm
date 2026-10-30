@@ -23,6 +23,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use C4::Circulation qw( AddReturn barcodedecode );
 use C4::Context;
+use DateTime;
 use Koha::BackgroundJob::BatchUpdateBiblioHoldsQueue;
 use Koha::Checkins;
 use Koha::Checkouts;
@@ -122,6 +123,19 @@ sub add {
                         error      => 'Return date override is not enabled',
                         error_code => 'return_date_not_allowed',
                         policy     => $c->module_policy( 'Checkin', { library => $library_id } ),
+                    }
+                );
+            }
+
+            # Validated as date-time by the spec, the offset is optional
+            $return_date = dt_from_string( $return_date, 'iso' );
+
+            if ( DateTime->compare( $return_date, dt_from_string() ) > 0 ) {
+                return $c->render(
+                    status  => 400,
+                    openapi => {
+                        error      => 'The return date cannot be in the future',
+                        error_code => 'return_date_in_future',
                     }
                 );
             }
@@ -231,7 +245,7 @@ sub add {
         if ($dropboxmode) {
             $effective_return_date = Koha::Checkouts->calculate_dropbox_date();
         } elsif ($return_date) {
-            $effective_return_date = dt_from_string($return_date);
+            $effective_return_date = $return_date;
         }
 
         my ( $doreturn, $messages, $issue, $borrower, $checkin ) = AddReturn(

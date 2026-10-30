@@ -104,6 +104,17 @@ function checkin(barcode) {
     return cy.wait("@checkin");
 }
 
+// Set the return date override through the flatpickr instance: the
+// picker also takes a time, so its calendar does not close on a click.
+// The date is passed as a timestamp, a Date from the spec is not an
+// instance of the Date of the application window
+function setReturnDate(date) {
+    return cy
+        .get("#return-date-override")
+        .should($el => expect($el[0]).to.have.property("_flatpickr"))
+        .then($el => $el[0]._flatpickr.setDate(date.getTime(), true));
+}
+
 function checkoutCount(item) {
     return dbQuery("SELECT COUNT(*) AS count FROM issues WHERE itemnumber=?", [
         item.item_id,
@@ -315,7 +326,7 @@ describe("Circulation - Check in", () => {
 
                 const yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
-                cy.get("#return-date-override").selectFlatpickrDate(yesterday);
+                setReturnDate(yesterday);
                 cy.get("#show-circ-settings a").click();
                 cy.get("#checkin-app .checkin-active-settings").should(
                     "contain",
@@ -673,6 +684,47 @@ describe("Circulation - Check in", () => {
                         expect(rows[0].resolution).to.eq("FOUND_IN_LIB");
                         expect(rows[1].resolution).to.eq(null);
                     });
+                });
+            });
+        });
+    });
+    describe("Return date", () => {
+        it("takes a time and does not allow a future date", () => {
+            createCheckout().then(objects => {
+                const item = objects.items[0];
+
+                visitCheckin();
+                cy.get("#show-circ-settings a").click();
+                cy.get("#return_date_override_fields").should("be.visible");
+
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                cy.get("#return-date-override").flatpickrDateShouldBeDisabled(
+                    tomorrow
+                );
+                cy.get(".flatpickr-calendar.open .flatpickr-time").should(
+                    "be.visible"
+                );
+                cy.get("#return-date-override").closeFlatpickr();
+
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                yesterday.setHours(10, 30, 0, 0);
+                const pad = n => String(n).padStart(2, "0");
+                const ymd = `${yesterday.getFullYear()}-${pad(yesterday.getMonth() + 1)}-${pad(yesterday.getDate())}`;
+                setReturnDate(yesterday);
+
+                checkin(item.external_id).then(({ request, response }) => {
+                    expect(request.body.return_date).to.eq(`${ymd}T10:30:00`);
+                    expect(response.statusCode).to.eq(200);
+                });
+
+                dbQuery(
+                    "SELECT DATE_FORMAT(returndate, '%Y-%m-%d %H:%i:%s') AS returndate FROM old_issues WHERE itemnumber=?",
+                    [item.item_id]
+                ).then(rows => {
+                    expect(rows).to.have.length(1);
+                    expect(rows[0].returndate).to.eq(`${ymd} 10:30:00`);
                 });
             });
         });
