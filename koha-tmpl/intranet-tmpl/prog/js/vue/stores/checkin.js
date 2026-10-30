@@ -156,7 +156,10 @@ export const useCheckinStore = defineStore("checkin", () => {
             }
 
             if (!response.ok) {
-                lastError.value = data.error || $__("An error occurred");
+                lastError.value =
+                    _errorMessages[data.error_code] ||
+                    data.error ||
+                    $__("An error occurred");
                 return { status: "error", data };
             }
 
@@ -221,7 +224,10 @@ export const useCheckinStore = defineStore("checkin", () => {
                     lastError.value = _policyErrorMessage(data);
                     return { status: "error", data };
                 }
-                lastError.value = data.error || $__("Confirmation failed");
+                lastError.value =
+                    _errorMessages[data.error_code] ||
+                    data.error ||
+                    $__("Confirmation failed");
                 return { status: "error", data };
             }
 
@@ -516,6 +522,13 @@ export const useCheckinStore = defineStore("checkin", () => {
             global: envelope.global || {},
         });
     }
+
+    // Messages for the check-in errors not related to the module policy
+    const _errorMessages = {
+        return_date_in_future: $__(
+            "The return date cannot be in the future. The item was not checked in."
+        ),
+    };
 
     /**
      * Message for a request refused because of the module policy.

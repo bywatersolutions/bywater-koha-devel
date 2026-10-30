@@ -82,7 +82,10 @@
               description: Exempt fines on this return
             return_date:
               type: string
-              description: Override return date (ISO 8601 datetime)
+              format: date-time
+              description: |
+                Override return date. If no time zone offset is given, the
+                time is in the Koha time zone. Cannot be in the future.
             dropbox_mode:
               type: boolean
               description: Use book drop mode (calculate return date as last open day)
@@ -155,6 +158,7 @@
 
           * `missing_item_identifier` - Neither item_id nor external_id provided
           * `mutually_exclusive_parameters` - Both item_id and external_id provided
+          * `return_date_in_future` - The return date is in the future
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "401":

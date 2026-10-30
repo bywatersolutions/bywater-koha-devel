@@ -18,6 +18,11 @@ export default {
         modelValue: String,
         required: Boolean,
         date_to: String,
+        // Options added to (or overriding) the Koha flatpickr defaults
+        config: {
+            type: Object,
+            default: () => ({}),
+        },
     },
     emits: ["update:modelValue"],
     setup(props, { emit }) {
@@ -30,7 +35,7 @@ export default {
             },
         });
         return {
-            fp_config: flatpickr_defaults,
+            fp_config: { ...flatpickr_defaults, ...props.config },
             model,
         };
     },

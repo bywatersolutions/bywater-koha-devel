@@ -49,7 +49,7 @@
                 class="badge text-bg-warning me-1"
             >
                 <i class="fa fa-check"></i> {{ $__("Return date:") }}
-                {{ formatDate(checkinOptions.return_date) }}
+                {{ formatDateTime(checkinOptions.return_date) }}
             </span>
         </div>
 
@@ -171,6 +171,13 @@ function escapeHtml(value) {
 function formatDate(value) {
     if (!value) return "";
     return typeof $date === "function" ? $date(value) : value;
+}
+
+function formatDateTime(value) {
+    if (!value) return "";
+    return typeof $date === "function"
+        ? $date(value, { withtime: true })
+        : value;
 }
 
 export default {
@@ -894,6 +901,7 @@ export default {
             hasActiveSettings,
             dropboxDate,
             formatDate,
+            formatDateTime,
             lastCheckinMessages,
             showOptions,
             showClaimModal,
