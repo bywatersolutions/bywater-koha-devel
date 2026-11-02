@@ -45,6 +45,7 @@ use Koha::Exceptions::Item::Bundle;
 use Koha::Exceptions::Item::Transfer;
 use Koha::Item::Attributes;
 use Koha::Item::Availability::Checkin;
+use Koha::Item::Availability::Checkout;
 use Koha::Exceptions::Item::Bundle;
 use Koha::Item::Transfer::Limits;
 use Koha::Item::Transfers;
@@ -894,6 +895,35 @@ sub checkin_availability {
     my ( $self, $params ) = @_;
 
     return Koha::Item::Availability::Checkin->check( $self, $params );
+}
+
+=head3 checkout_availability
+
+    my $availability = $item->checkout_availability(
+        {
+            patron          => $patron,
+            user            => $logged_in_user,
+            interface       => 'intranet',
+            due_date        => $due_date,
+            onsite_checkout => 0,
+        }
+    );
+
+Returns checkout availability information for this item. Nothing is written
+to the database.
+
+This is a convenience method that calls
+Koha::Item::Availability::Checkout->check(). See that class for the
+parameters, the rules applied and the returned keys.
+
+Returns a Koha::Item::Availability::Checkout::Result object.
+
+=cut
+
+sub checkout_availability {
+    my ( $self, $params ) = @_;
+
+    return Koha::Item::Availability::Checkout->check( $self, $params );
 }
 
 =head3 request_transfer
