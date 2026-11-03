@@ -95,7 +95,7 @@
             :checkins="checkins"
             class="mt-4"
             @show-modal="showModalFor"
-            @resolve-claim="onResolveClaimFromRow"
+            @resolve-claim="onResolveClaim"
         />
 
         <!-- Confirmation panel — shows one pending item at a time -->
@@ -107,7 +107,7 @@
             @dismiss="onDismiss"
             @ignore="onIgnore"
             @resolve="onResolve"
-            @resolve-claim="onResolveClaimFromModal"
+            @resolve-claim="onResolveClaim"
             @open-cancel-hold="onOpenCancelHold"
         />
 
@@ -123,7 +123,7 @@
             :claim-id="activeClaimId"
             :visible="showClaimModal"
             @resolved="onClaimResolved"
-            @close="showClaimModal = false"
+            @close="onClaimModalClose"
         />
 
         <BundleVerificationModal
@@ -623,7 +623,7 @@ export default {
 
         // Watch for new pending items — auto-show panel for the first one
         watch(nextModalItem, newItem => {
-            if (newItem && !activeModalItem.value) {
+            if (newItem && !activeModalItem.value && !showClaimModal.value) {
                 activeModalItem.value = newItem;
                 nextTick(() => refocusInput());
             }
@@ -673,8 +673,7 @@ export default {
         function onMessagesClick(e) {
             const btn = e.target.closest(".resolve-claim-btn");
             if (btn) {
-                activeClaimId.value = parseInt(btn.dataset.claimId);
-                showClaimModal.value = true;
+                openClaimModal(parseInt(btn.dataset.claimId));
             }
             const slipBtn = e.target.closest(".print-hold-slip");
             if (slipBtn) {
@@ -704,30 +703,31 @@ export default {
             }
         }
 
-        function onResolveClaimFromRow(checkin) {
+        // From the checkins table or the confirmation modal
+        function onResolveClaim(checkin) {
             const claimMsg = (checkin.messages || []).find(
                 m => m.message === "return_claim"
             );
             if (claimMsg && claimMsg.payload) {
-                activeClaimId.value = claimMsg.payload.claim_id;
-                showClaimModal.value = true;
+                openClaimModal(claimMsg.payload.claim_id);
             }
         }
 
-        function onResolveClaimFromModal(item) {
-            // Close the confirmation modal and open the resolve claim modal
+        // Only one modal at a time: the confirmation modal is hidden while
+        // the resolve claim modal is open, and comes back when it is closed
+        function openClaimModal(claimId) {
             activeModalItem.value = null;
-            const claimMsg = (item.messages || []).find(
-                m => m.message === "return_claim"
-            );
-            if (claimMsg && claimMsg.payload) {
-                activeClaimId.value = claimMsg.payload.claim_id;
-                showClaimModal.value = true;
-            }
+            activeClaimId.value = claimId;
+            showClaimModal.value = true;
+        }
+
+        function onClaimModalClose() {
+            showClaimModal.value = false;
+            activeClaimId.value = null;
+            _advanceModal();
         }
 
         function onClaimResolved(claimId) {
-            showClaimModal.value = false;
             // Mark the row of the resolved claim as resolved
             const idx = checkins.value.findIndex(
                 c =>
@@ -746,7 +746,7 @@ export default {
                     _action_type: null,
                 };
             }
-            activeClaimId.value = null;
+            onClaimModalClose();
         }
 
         async function onConfirm(item) {
@@ -920,8 +920,8 @@ export default {
             onBarcodeScan,
             showModalFor,
             onMessagesClick,
-            onResolveClaimFromRow,
-            onResolveClaimFromModal,
+            onResolveClaim,
+            onClaimModalClose,
             onClaimResolved,
             onBundleConfirm,
             onConfirm,

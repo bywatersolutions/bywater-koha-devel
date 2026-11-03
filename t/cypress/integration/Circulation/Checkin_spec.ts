@@ -657,9 +657,15 @@ describe("Circulation - Check in", () => {
 
                     // Resolve the claim of the first item, which is not the
                     // first row of the table
+                    checkinModal().should(
+                        "contain",
+                        "Item was claimed returned"
+                    );
                     row(first.item.external_id)
                         .contains("button", "Resolve claim")
                         .click();
+                    // The confirmation modal is hidden while resolving
+                    checkinModal().should("not.exist");
                     cy.get("#claim-resolution").select("FOUND_IN_LIB");
                     cy.get("#claim-resolution")
                         .closest(".modal-content")
@@ -676,6 +682,10 @@ describe("Circulation - Check in", () => {
                     row(second.item.external_id)
                         .contains("button", "Resolve claim")
                         .should("be.visible");
+                    // and comes back for the claim still pending
+                    checkinModal()
+                        .should("contain", "Item was claimed returned")
+                        .and("contain", second.item.external_id);
 
                     dbQuery(
                         "SELECT id, resolution FROM return_claims WHERE id IN (?, ?) ORDER BY id",
