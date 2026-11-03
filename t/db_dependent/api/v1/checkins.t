@@ -443,7 +443,7 @@ subtest 'checkin blocked if exempt fine requested but permissions do not allow' 
 
 subtest 'add - return_date and dropbox_mode' => sub {
 
-    plan tests => 19;
+    plan tests => 24;
 
     $schema->storage->txn_begin;
 
@@ -502,6 +502,19 @@ subtest 'add - return_date and dropbox_mode' => sub {
             return_date => '2025-01-15',
         }
     )->status_is(400);
+    ok( $item->checkout, 'The item is still checked out' );
+
+    # A valid date-time that cannot be parsed
+    $t->post_ok(
+        "//$userid:$password\@/api/v1/checkins" => json => {
+            item_id     => $item->id,
+            library_id  => $library->branchcode,
+            return_date => '2025-01-15T10:00:00.123Z',
+        }
+        )
+        ->status_is(400)
+        ->json_is( '/error_code' => 'invalid_parameter_value' )
+        ->json_is( '/path'       => '/body/return_date' );
     ok( $item->checkout, 'The item is still checked out' );
 
     # Check in with dropbox_mode

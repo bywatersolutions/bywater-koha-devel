@@ -127,8 +127,11 @@ sub add {
                 );
             }
 
-            # Validated as date-time by the spec, the offset is optional
-            $return_date = dt_from_string( $return_date, 'iso' );
+            # Validated as date-time by the spec, the offset is optional. Some
+            # valid date-times are not parsed (e.g. with fractions of a second)
+            $return_date = eval { dt_from_string( $return_date, 'iso' ) };
+            return $c->render_invalid_parameter_value( { path => '/body/return_date' } )
+                unless $return_date;
 
             if ( DateTime->compare( $return_date, dt_from_string() ) > 0 ) {
                 return $c->render(
