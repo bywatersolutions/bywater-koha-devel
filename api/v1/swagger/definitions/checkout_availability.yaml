@@ -1,18 +1,42 @@
 ---
 type: object
 properties:
+  error:
+    type: string
+    description: Error message
+  error_code:
+    type: string
+    description: Error code identifier
   blockers:
     type: object
-    description: blocking issues
+    description: |
+      Conditions that prevent the checkout, keyed by snake_case code. Payloads
+      carry ids (patron_id, hold_id, recall_id, booking_id, library_id) rather
+      than embedded objects. See Koha::Item::Availability::Checkout for the
+      list of keys and their payloads.
   confirms:
     type: object
-    description: issues requireing confirmation
+    description: |
+      Conditions requiring confirmation before the checkout, keyed by
+      snake_case code. They are confirmed by passing the `confirmation_token`
+      to `POST /checkouts`.
   warnings:
     type: object
-    description: informational issues
+    description: |
+      Informational conditions that do not prevent the checkout, keyed by
+      snake_case code. Overridden blockers are reported here too.
+  forced:
+    type: array
+    items:
+      type: string
+    description: |
+      Blockers that have been overridden, by the `x-koha-override` header or
+      by a policy (e.g. OnSiteCheckoutsForce). They are recorded on checkout.
   confirmation_token:
     type:
       - string
       - "null"
-    description: token for confirmation
+    description: |
+      JWT token for confirming the checkout, bound to the item, the patron,
+      the user and the confirmations. Null when no confirmation is required.
 additionalProperties: false

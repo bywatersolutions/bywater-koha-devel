@@ -335,6 +335,8 @@ const insertSampleCheckout = async ({ patron, baseUrl, authHeader }) => {
         },
     });
     delete generatedCheckout.external_id;
+    // Check out at the logged in library
+    delete generatedCheckout.library_id;
     const checkout = await insertObject({
         type: "checkout",
         object: generatedCheckout,

@@ -20,12 +20,16 @@ use Modern::Perl;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON;
 
-use C4::Auth qw( haspermission );
 use C4::Context;
 use C4::Circulation qw( AddIssue AddRenewal CanBookBeRenewed );
 use Koha::Checkouts;
+use Koha::Database;
 use Koha::DateUtils qw( dt_from_string );
+use Koha::Item::Availability::Checkout;
+use Koha::Items;
+use Koha::Libraries;
 use Koha::Old::Checkouts;
+use Koha::Patrons;
 use Koha::Token;
 
 use Scalar::Util qw( blessed );
@@ -165,6 +169,176 @@ Controller function that handles retrieval of Checkout availability
 =cut
 
 sub get_availability {
+    my $c = shift->openapi->valid_input or return;
+
+    return try {
+        my $patron = Koha::Patrons->find( $c->param('patron_id') );
+        return $c->render_resource_not_found("Patron")
+            unless $patron;
+
+        my $item = Koha::Items->find( $c->param('item_id') );
+        return $c->render_resource_not_found("Item")
+            unless $item;
+
+        my $library_id = $c->_checkout_library_id( $c->param('library_id'), '/query/library_id' )
+            or return;
+
+        my $availability = $c->_checkout_availability(
+            {
+                item    => $item,
+                patron  => $patron,
+                library => $library_id,
+            }
+        );
+
+        return $c->render(
+            status  => 200,
+            openapi => $availability->to_api,
+        );
+    } catch {
+        $c->unhandled_exception($_);
+    };
+}
+
+=head3 add
+
+Add a new checkout
+
+=cut
+
+sub add {
+    my $c = shift->openapi->valid_input or return;
+
+    my $body      = $c->req->json;
+    my $item_id   = $body->{item_id};
+    my $patron_id = $body->{patron_id};
+    my $barcode   = $body->{external_id};
+
+    return try {
+
+        unless ( $item_id or $barcode ) {
+            return $c->render(
+                status  => 400,
+                openapi => {
+                    error      => 'Missing or wrong parameters',
+                    error_code => 'MISSING_OR_WRONG_PARAMETERS',
+                }
+            );
+        }
+
+        my $library_id = $c->_checkout_library_id( $body->{library_id}, '/body/library_id' )
+            or return;
+
+        my $item;
+        if ($item_id) {
+            $item = Koha::Items->find($item_id);
+        } else {
+            $item = Koha::Items->find( { barcode => $barcode } );
+        }
+
+        return $c->render_resource_not_found("Item")
+            unless $item;
+
+        # check that item matches when barcode and item_id were given
+        if (    $item_id
+            and $barcode
+            and ( $item->barcode ne $barcode or $item->id != $item_id ) )
+        {
+            return $c->render(
+                status  => 409,
+                openapi => {
+                    error      => 'Item id and external id belong to different items',
+                    error_code => 'ITEM_ID_NOT_MATCHING_EXTERNAL_ID',
+                }
+            );
+        }
+
+        my $patron = Koha::Patrons->find($patron_id);
+        return $c->render_resource_not_found("Patron")
+            unless $patron;
+
+        my $availability = $c->_checkout_availability(
+            {
+                item    => $item,
+                patron  => $patron,
+                library => $library_id,
+            }
+        );
+
+        if ( !$availability->available ) {
+            return $c->render(
+                status  => 403,
+                openapi => {
+                    error      => 'Checkout blocked',
+                    error_code => 'checkout_blocked',
+                    blockers   => $availability->blockers,
+                }
+            );
+        }
+
+        if ( $availability->needs_confirmation ) {
+
+            my $token = $c->param('confirmation');
+
+            unless ( $token && $availability->check_token($token) ) {
+                return $c->render(
+                    status  => 412,
+                    openapi => {
+                        error      => 'Confirmation required',
+                        error_code => 'confirmation_required',
+                        %{ $availability->to_api },
+                    }
+                );
+            }
+        }
+
+        my $overrides = $availability->legacy_override_params;
+
+        # AddIssue reads the library from the user environment
+        my $userenv = C4::Context->userenv;
+        local $userenv->{branch} = $library_id;
+
+        my $checkout = Koha::Database->new->schema->txn_do(
+            sub {
+                return AddIssue(
+                    $patron,
+                    $item->barcode,
+                    undef, undef, undef, undef,
+                    {
+                        confirmations => $overrides->{confirmations},
+                        forced        => $overrides->{forced},
+                    }
+                );
+            }
+        );
+
+        unless ($checkout) {
+            return $c->render(
+                status  => 500,
+                openapi => { error => 'Unknown error during checkout' }
+            );
+        }
+
+        # The query string is left out, as it carries the confirmation token
+        $c->res->headers->location( $c->req->url->path->to_string . '/' . $checkout->id );
+
+        return $c->render(
+            status  => 201,
+            openapi => $c->objects->to_api($checkout),
+        );
+    } catch {
+        $c->unhandled_exception($_);
+    };
+}
+
+=head3 public_get_availability
+
+Controller function that handles retrieval of Checkout availability for the
+public route (I<OpacTrustedCheckout>)
+
+=cut
+
+sub public_get_availability {
     my $c    = shift->openapi->valid_input or return;
     my $user = $c->stash('koha.user');
 
@@ -199,13 +373,13 @@ sub get_availability {
     return $c->render( status => 200, openapi => $response );
 }
 
-=head3 add
+=head3 public_add
 
-Add a new checkout
+Add a new checkout, public route (I<OpacTrustedCheckout>)
 
 =cut
 
-sub add {
+sub public_add {
     my $c    = shift->openapi->valid_input or return;
     my $user = $c->stash('koha.user');
 
@@ -491,6 +665,75 @@ sub allows_renewal {
     } catch {
         $c->unhandled_exception($_);
     };
+}
+
+=head2 Internal methods
+
+=head3 _checkout_library_id
+
+    my $library_id = $c->_checkout_library_id( $library_id, $path ) or return;
+
+Returns the library the checkout takes place at: I<$library_id> if passed,
+the logged in user's library otherwise. Renders the error response and
+returns undef when I<$library_id> is not a valid library (400), or when the
+user cannot act at that library (403, I<library_not_allowed>), as decided by
+L<Koha::Patron/can_log_into> (the same check the I<x-koha-library> header
+goes through). I<$path> is the parameter path reported in the 400 response.
+
+=cut
+
+sub _checkout_library_id {
+    my ( $c, $library_id, $path ) = @_;
+
+    my $user_library_id = C4::Context->userenv->{branch};
+
+    return $user_library_id
+        unless defined $library_id;
+
+    my $library = Koha::Libraries->find($library_id);
+    unless ($library) {
+        $c->render_invalid_parameter_value( { path => $path } );
+        return;
+    }
+
+    # FIXME: Koha::Libraries has no search_limited yet. Adding one would also
+    # limit GET /libraries, as the objects helpers use it when available.
+    unless ( $c->stash('koha.user')->can_log_into($library) ) {
+        $c->render(
+            status  => 403,
+            openapi => {
+                error      => 'Checkouts are restricted to the logged in library',
+                error_code => 'library_not_allowed',
+            }
+        );
+        return;
+    }
+
+    return $library_id;
+}
+
+=head3 _checkout_availability
+
+    my $availability = $c->_checkout_availability(
+        { item => $item, patron => $patron, library => $library_id } );
+
+Returns the L<Koha::Item::Availability::Checkout::Result> for the request,
+with the overrides passed in the I<x-koha-override> header.
+
+=cut
+
+sub _checkout_availability {
+    my ( $c, $params ) = @_;
+
+    return $params->{item}->checkout_availability(
+        {
+            patron    => $params->{patron},
+            user      => $c->stash('koha.user'),
+            library   => $params->{library},
+            interface => 'intranet',
+            overrides => $c->stash('koha.overrides') // {},
+        }
+    );
 }
 
 1;

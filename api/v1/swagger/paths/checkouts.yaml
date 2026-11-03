@@ -80,6 +80,17 @@
       - checkouts
       - patrons
     summary: Add a new checkout
+    description: |
+      Check an item out to a patron, at the library passed as `library_id` in
+      the request body, or the logged in library.
+
+      The availability is checked as `GET /checkouts/availability` does.
+      Blockers make the request fail with a 403. When confirmations are
+      required, the request fails with a 412 carrying the availability and a
+      `confirmation_token`: repeat the request passing it as the
+      `confirmation` query parameter to confirm them. The token is bound to
+      the item, the patron, the user and the confirmations, and expires
+      after 5 minutes.
     parameters:
       - name: body
         in: body
@@ -92,6 +103,47 @@
         description: A JWT confirmation token
         required: false
         type: string
+      - name: x-koha-override
+        in: header
+        required: false
+        description: |
+          Blockers to override, sent as a request header. Honoured only if the
+          user has the circulate.force_checkout permission. Overridden blockers
+          are reported as warnings and listed in `forced`. `any` overrides all
+          of them. `unknown_barcode`, `no_open_days` and `statistical_patron`
+          cannot be overridden.
+        type: array
+        items:
+          type: string
+          enum:
+            - any
+            - age_restriction
+            - booked_to_another
+            - card_lost
+            - debt
+            - debt_guarantees
+            - debt_guarantors
+            - debt_linked_accounts
+            - gone_no_address
+            - item_not_same_branch
+            - item_restricted
+            - no_more_renewals
+            - no_renewal_for_onsite_checkouts
+            - not_for_loan
+            - patron_debarred
+            - patron_debarred_indefinitely
+            - patron_debarred_until
+            - patron_expired
+            - patron_has_overdues
+            - processing
+            - recalled_in_transit
+            - reserve_waiting
+            - reserved
+            - return_impossible
+            - too_many
+            - transferred
+            - withdrawn
+        collectionFormat: csv
     consumes:
       - application/json
     produces:
@@ -102,7 +154,11 @@
         schema:
           $ref: "../swagger.yaml#/definitions/checkout"
       "400":
-        description: Bad request
+        description: |
+          Bad request. Possible `error_code` attribute values:
+
+          * `MISSING_OR_WRONG_PARAMETERS`: neither `item_id` nor `external_id` was passed
+          * `invalid_parameter_value`: `library_id` is not a valid library
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "401":
@@ -110,17 +166,34 @@
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "403":
-        description: Cannot create checkout
+        description: |
+          Cannot create checkout. Possible `error_code` attribute values:
+
+          * `checkout_blocked`: the checkout is not possible, the reasons are
+            listed in the `blockers` attribute (see the `checkout_availability`
+            definition)
+          * `library_not_allowed`: IndependentBranches restricts the user to
+            the logged in library
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Item or patron not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "409":
-        description: Conflict in creating checkout
+        description: |
+          Conflict in creating checkout. Possible `error_code` attribute values:
+
+          * `ITEM_ID_NOT_MATCHING_EXTERNAL_ID`
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "412":
-        description: Precondition failed
+        description: |
+          Confirmation required. Possible `error_code` attribute values:
+
+          * `confirmation_required`
         schema:
-          $ref: "../swagger.yaml#/definitions/error"
+          $ref: "../swagger.yaml#/definitions/checkout_availability"
       "500":
         description: |
           Internal server error. Possible `error_code` attribute values:
@@ -501,9 +574,68 @@
     tags:
       - checkouts
     summary: Get checkout availability
+    description: |
+      Check if the item can be checked out to the patron by the logged in
+      user, at the library passed as `library_id` or the logged in library.
+      Nothing is changed. When confirmations are required, the response
+      carries a `confirmation_token` to pass to `POST /checkouts`.
     parameters:
-      - $ref: "../swagger.yaml#/parameters/patron_id_qp"
-      - $ref: "../swagger.yaml#/parameters/item_id_qp"
+      - name: patron_id
+        in: query
+        description: Internal patron identifier
+        required: true
+        type: integer
+      - name: item_id
+        in: query
+        description: Internal item identifier
+        required: true
+        type: integer
+      - name: library_id
+        in: query
+        description: Internal identifier of the library the checkout would take place at
+        required: false
+        type: string
+      - name: x-koha-override
+        in: header
+        required: false
+        description: |
+          Blockers to override, sent as a request header. Honoured only if the
+          user has the circulate.force_checkout permission. Overridden blockers
+          are reported as warnings and listed in `forced`. `any` overrides all
+          of them. `unknown_barcode`, `no_open_days` and `statistical_patron`
+          cannot be overridden.
+        type: array
+        items:
+          type: string
+          enum:
+            - any
+            - age_restriction
+            - booked_to_another
+            - card_lost
+            - debt
+            - debt_guarantees
+            - debt_guarantors
+            - debt_linked_accounts
+            - gone_no_address
+            - item_not_same_branch
+            - item_restricted
+            - no_more_renewals
+            - no_renewal_for_onsite_checkouts
+            - not_for_loan
+            - patron_debarred
+            - patron_debarred_indefinitely
+            - patron_debarred_until
+            - patron_expired
+            - patron_has_overdues
+            - processing
+            - recalled_in_transit
+            - reserve_waiting
+            - reserved
+            - return_impossible
+            - too_many
+            - transferred
+            - withdrawn
+        collectionFormat: csv
     produces:
       - application/json
     responses:
@@ -512,11 +644,22 @@
         schema:
           $ref: "../swagger.yaml#/definitions/checkout_availability"
       "400":
-        description: Bad request
+        description: |
+          Bad request. Possible `error_code` attribute values:
+
+          * `invalid_parameter_value`: `library_id` is not a valid library
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "403":
-        description: Access forbidden
+        description: |
+          Access forbidden. Possible `error_code` attribute values:
+
+          * `library_not_allowed`: IndependentBranches restricts the user to
+            the logged in library
+        schema:
+          $ref: "../swagger.yaml#/definitions/error"
+      "404":
+        description: Item or patron not found
         schema:
           $ref: "../swagger.yaml#/definitions/error"
       "500":
@@ -535,7 +678,7 @@
         circulate: circulate_remaining_permissions
 "/public/checkouts/availability":
   get:
-    x-mojo-to: Checkouts#get_availability
+    x-mojo-to: Checkouts#public_get_availability
     operationId: availabilityCheckoutsPublic
     tags:
       - checkouts

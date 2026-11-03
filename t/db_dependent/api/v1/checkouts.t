@@ -18,7 +18,7 @@
 use Modern::Perl;
 
 use Test::NoWarnings;
-use Test::More tests => 116;
+use Test::More tests => 117;
 use Test::MockModule;
 use Test::Mojo;
 use t::lib::Mocks;
@@ -33,7 +33,6 @@ use Koha::ActionLogs;
 use Koha::CirculationRules;
 use Koha::Database;
 use Koha::DateUtils qw( dt_from_string output_pref );
-use Koha::Token;
 
 use JSON qw( encode_json from_json );
 
@@ -279,380 +278,471 @@ $t->get_ok("//$userid:$password@/api/v1/checkouts")->status_is(200);
 
 $schema->storage->txn_rollback;
 
-subtest 'get_availability' => sub {
+subtest 'get_availability() tests' => sub {
 
-    plan tests => 29;
+    plan tests => 59;
 
     $schema->storage->txn_begin;
-    my $librarian = $builder->build_object(
-        {
-            class => 'Koha::Patrons',
-            value => { flags => 2 }
-        }
-    );
-    my $password = 'thePassword123';
+
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $other   = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    # flags => 2: all circulate permissions, force_checkout included
+    my $librarian =
+        $builder->build_object( { class => 'Koha::Patrons', value => { flags => 2, branchcode => $library->id } } );
     $librarian->set_password( { password => $password, skip_validation => 1 } );
     my $userid = $librarian->userid;
 
-    my $patron = $builder->build_object(
-        {
-            class => 'Koha::Patrons',
-            value => { flags => 0 }
-        }
-    );
-    my $unauth_password = 'thePassword000';
-    $patron->set_password( { password => $unauth_password, skip_validattion => 1 } );
-    my $unauth_userid = $patron->userid;
-    my $patron_id     = $patron->borrowernumber;
+    my $unprivileged = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 0 } } );
+    $unprivileged->set_password( { password => $password, skip_validation => 1 } );
+    my $unprivileged_userid = $unprivileged->userid;
 
-    my $branchcode = $builder->build( { source => 'Branch' } )->{branchcode};
+    my $patron    = build_patron();
+    my $patron_id = $patron->id;
+    my $item      = $builder->build_sample_item;
+    my $item_id   = $item->id;
 
-    my $item1    = $builder->build_sample_item;
-    my $item1_id = $item1->id;
-
-    my %issuingimpossible = ();
-    my %needsconfirmation = ();
-    my %alerts            = ();
-    my %messages          = ();
-    my $mocked_circ       = Test::MockModule->new('C4::Circulation');
+    my ( %impossible, %confirmation, %alerts, %messages, $userenv_library );
+    my $mocked_circ = Test::MockModule->new('C4::Circulation');
     $mocked_circ->mock(
         'CanBookBeIssued',
         sub {
-            return ( \%issuingimpossible, \%needsconfirmation, \%alerts, \%messages );
+            $userenv_library = C4::Context->userenv->{branch};
+            return ( {%impossible}, {%confirmation}, {%alerts}, {%messages} );
         }
     );
 
-    $t->get_ok(
-        "//$unauth_userid:$unauth_password@/api/v1/checkouts/availability?item_id=$item1_id&patron_id=$patron_id")
-        ->status_is(403)
-        ->json_is(
-        {
-            error                => "Authorization failure. Missing required permission(s).",
-            required_permissions => { circulate => "circulate_remaining_permissions" }
-        }
-        );
+    my $url = "//$userid:$password@/api/v1/checkouts/availability?item_id=$item_id&patron_id=$patron_id";
+
+    $t->get_ok("//$unprivileged_userid:$password@/api/v1/checkouts/availability?item_id=$item_id&patron_id=$patron_id")
+        ->status_is(403);
+
+    # Not found
+    my $deleted_item    = $builder->build_sample_item;
+    my $deleted_item_id = $deleted_item->id;
+    $deleted_item->delete;
+    $t->get_ok("//$userid:$password@/api/v1/checkouts/availability?item_id=$deleted_item_id&patron_id=$patron_id")
+        ->status_is(404)
+        ->json_is( '/error_code' => 'not_found' );
+
+    my $deleted_patron    = build_patron();
+    my $deleted_patron_id = $deleted_patron->id;
+    $deleted_patron->delete;
+    $t->get_ok("//$userid:$password@/api/v1/checkouts/availability?item_id=$item_id&patron_id=$deleted_patron_id")
+        ->status_is(404)
+        ->json_is( '/error_code' => 'not_found' );
 
     # Available
-    $t->get_ok("//$userid:$password@/api/v1/checkouts/availability?item_id=$item1_id&patron_id=$patron_id")
-        ->status_is(200)
-        ->json_is( '/blockers' => {} )
-        ->json_is( '/confirms' => {} )
-        ->json_is( '/warnings' => {} )
-        ->json_has('/confirmation_token');
+    $t->get_ok($url)->status_is(200)->json_is(
+        {
+            blockers           => {},
+            confirms           => {},
+            warnings           => {},
+            forced             => [],
+            confirmation_token => undef,
+        }
+    );
 
     # Blocked
-    %issuingimpossible = ( GNA => 1 );
-    $t->get_ok("//$userid:$password@/api/v1/checkouts/availability?item_id=$item1_id&patron_id=$patron_id")
+    %impossible = ( GNA => 1 );
+    $t->get_ok($url)
         ->status_is(200)
-        ->json_is( '/blockers' => { GNA => 1 } )
-        ->json_is( '/confirms' => {} )
-        ->json_is( '/warnings' => {} )
-        ->json_has('/confirmation_token');
-    %issuingimpossible = ();
+        ->json_is( '/blockers'           => { gone_no_address => 1 } )
+        ->json_is( '/confirms'           => {} )
+        ->json_is( '/confirmation_token' => undef );
+    %impossible = ();
 
-    # Warnings/Info
-    %alerts   = ( alert1   => "this is an alert" );
-    %messages = ( message1 => "this is a message" );
-    $t->get_ok("//$userid:$password@/api/v1/checkouts/availability?item_id=$item1_id&patron_id=$patron_id")
+    # Warnings
+    %alerts   = ( OTHER_CHARGES                    => '5.00' );
+    %messages = ( ONSITE_CHECKOUT_WILL_BE_SWITCHED => 1 );
+    $t->get_ok($url)
         ->status_is(200)
         ->json_is( '/blockers' => {} )
-        ->json_is( '/confirms' => {} )
-        ->json_is( '/warnings' => { alert1 => "this is an alert", message1 => "this is a message" } )
-        ->json_has('/confirmation_token');
+        ->json_is( '/warnings' => { other_charges => '5.00', onsite_checkout_will_be_switched => 1 } );
     %alerts   = ();
     %messages = ();
 
-    # Needs confirm
-    %needsconfirmation = ( confirm1 => 1, confirm2 => 'please' );
-    my $token = Koha::Token->new->generate_jwt( { id => $librarian->id . ":" . $item1_id . ":confirm1:confirm2" } );
-    $t->get_ok("//$userid:$password@/api/v1/checkouts/availability?item_id=$item1_id&patron_id=$patron_id")
+    # Needs confirmation
+    %confirmation = ( DEBT => '10.00' );
+    $t->get_ok($url)->status_is(200)->json_is( '/confirms' => { debt => '10.00' } )->json_has('/confirmation_token');
+    my $availability = $item->checkout_availability( { patron => $patron, user => $librarian } );
+    ok(
+        $availability->check_token( $t->tx->res->json('/confirmation_token') ),
+        'Token bound to item, patron and user'
+    );
+    %confirmation = ();
+
+    # Overrides
+    %impossible = ( GNA => 1, DEBARRED => 1 );
+    $t->get_ok( $url => { 'x-koha-override' => 'gone_no_address' } )
+        ->status_is(200)
+        ->json_is( '/blockers' => { patron_debarred => 1 } )
+        ->json_is( '/warnings' => { gone_no_address => 1 } )
+        ->json_is( '/forced'   => ['gone_no_address'] );
+
+    $t->get_ok( $url => { 'x-koha-override' => 'any' } )
         ->status_is(200)
         ->json_is( '/blockers' => {} )
-        ->json_is( '/confirms' => { confirm1 => 1, confirm2 => 'please' } )
-        ->json_is( '/warnings' => {} )
-        ->json_has('/confirmation_token');
-    my $confirmation_token = $t->tx->res->json('/confirmation_token');
-    ok(
-        Koha::Token->new->check_jwt(
-            {
-                id    => $librarian->id . ":" . $item1_id . ":confirm1:confirm2",
-                token => $confirmation_token
-            }
-        ),
-        'Correct token'
-    );
-    %needsconfirmation = ();
+        ->json_is( '/warnings' => { gone_no_address => 1, patron_debarred => 1 } )
+        ->json_is( '/forced'   => [ 'gone_no_address', 'patron_debarred' ] );
+    %impossible = ();
 
-    subtest 'public availability' => sub {
-        plan tests => 40;
+    # Unforceable blocker
+    %impossible = ( NO_OPEN_DAYS => 1 );
+    $t->get_ok( $url => { 'x-koha-override' => 'any' } )
+        ->status_is(200)
+        ->json_is( '/blockers' => { no_open_days => 1 } )
+        ->json_is( '/forced'   => [] );
+    %impossible = ();
 
-        # Authentication required
-        $t->get_ok("/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id")->status_is(401);
+    # Overrides require force_checkout
+    my $circulator        = build_circulator();
+    my $circulator_userid = $circulator->userid;
+    %impossible = ( GNA => 1 );
+    $t->get_ok(
+        "//$circulator_userid:$password@/api/v1/checkouts/availability?item_id=$item_id&patron_id=$patron_id" =>
+            { 'x-koha-override' => 'any' } )
+        ->status_is(200)
+        ->json_is( '/blockers' => { gone_no_address => 1 } )
+        ->json_is( '/forced'   => [] );
+    %impossible = ();
 
-        # Only allow availability lookup for self
-        $t->get_ok("//$userid:$password@/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id")
-            ->status_is(403);
+    # Library
+    $t->get_ok($url)->status_is(200);
+    is( $userenv_library, $library->id, 'The logged in library is used by default' );
 
-        # All ok
-        $t->get_ok(
-            "//$unauth_userid:$unauth_password@/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id"
-            )
-            ->status_is(200)
-            ->json_is( '/blockers' => {} )
-            ->json_is( '/confirms' => {} )
-            ->json_is( '/warnings' => {} )
-            ->json_has('/confirmation_token');
+    $t->get_ok( $url . '&library_id=' . $other->id )->status_is(200);
+    is( $userenv_library, $other->id, 'The library_id parameter is used' );
 
-        # Needs confirmation upgrade to blocker
-        %needsconfirmation = ( TOO_MANY => 1, ISSUED_TO_ANOTHER => 1 );
-        $t->get_ok(
-            "//$unauth_userid:$unauth_password@/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id"
-            )
-            ->status_is(200)
-            ->json_is( '/blockers' => { TOO_MANY => 1, ISSUED_TO_ANOTHER => 1 } )
-            ->json_is( '/confirms' => {} )
-            ->json_is( '/warnings' => {} )
-            ->json_has('/confirmation_token');
-        %needsconfirmation = ();
+    my $deleted_library    = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $deleted_library_id = $deleted_library->id;
+    $deleted_library->delete;
+    $t->get_ok( $url . "&library_id=$deleted_library_id" )
+        ->status_is(400)
+        ->json_is( '/error_code' => 'invalid_parameter_value' );
 
-        # Hold confirmations are gated by AllowItemsOnHoldCheckoutSCO.
-        # Because the mocked CanBookBeIssued returns the hashes by reference
-        # and _check_availability mutates them, we reset both hashes before
-        # every request.
-        my $reset_hold_hashes = sub {
-            %issuingimpossible = ();
-            %needsconfirmation = (
-                RESERVED        => 1,
-                RESERVE_WAITING => 1,
-                TRANSFERRED     => 1,
-                PROCESSING      => 1
-            );
-        };
+    t::lib::Mocks::mock_preference( 'IndependentBranches', 1 );
+    $t->get_ok( $url . '&library_id=' . $other->id )->status_is(403)->json_is( '/error_code' => 'library_not_allowed' );
+    $t->get_ok( $url . '&library_id=' . $library->id )->status_is(200);
 
-        $reset_hold_hashes->();
-        t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSCO', 0 );
-        $t->get_ok(
-            "//$unauth_userid:$unauth_password@/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id"
-        )->status_is(200)->json_is(
-            '/blockers' => {
-                RESERVED        => 1,
-                RESERVE_WAITING => 1,
-                TRANSFERRED     => 1,
-                PROCESSING      => 1
-            }
-        )->json_is( '/confirms' => {} )->json_is( '/warnings' => {} )->json_has('/confirmation_token');
-
-        $reset_hold_hashes->();
-        t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSCO', 1 );
-        $t->get_ok(
-            "//$unauth_userid:$unauth_password@/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id"
-        )->status_is(200)->json_is(
-            '/blockers' => {
-                RESERVE_WAITING => 1,
-                TRANSFERRED     => 1,
-                PROCESSING      => 1
-            }
-        )->json_is( '/confirms' => {} )->json_is( '/warnings' => {} )->json_has('/confirmation_token');
-
-        $reset_hold_hashes->();
-        t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSCO', 2 );
-        $t->get_ok(
-            "//$unauth_userid:$unauth_password@/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id"
-            )
-            ->status_is(200)
-            ->json_is( '/blockers' => {} )
-            ->json_is( '/confirms' => {} )
-            ->json_is( '/warnings' => {} )
-            ->json_has('/confirmation_token');
-
-        %issuingimpossible = ();
-        %needsconfirmation = ();
-
-        # Remove personal information from public endpoint
-        %issuingimpossible = (
-            issued_borrowernumber => 'private',
-            issued_cardnumber     => 'private',
-            issued_firstname      => 'private',
-            issued_surname        => 'private',
-            resborrowernumber     => 'private',
-            resbranchcode         => 'private',
-            rescardnumber         => 'private',
-            reserve_id            => 'private',
-            resfirstname          => 'private',
-            resreservedate        => 'private',
-            ressurname            => 'private',
-            item_notforloan       => 'private'
-        );
-        %alerts = (
-            issued_borrowernumber => 'private',
-            issued_cardnumber     => 'private',
-            issued_firstname      => 'private',
-            issued_surname        => 'private',
-            resborrowernumber     => 'private',
-            resbranchcode         => 'private',
-            rescardnumber         => 'private',
-            reserve_id            => 'private',
-            resfirstname          => 'private',
-            resreservedate        => 'private',
-            ressurname            => 'private',
-            item_notforloan       => 'private'
-        );
-
-        %needsconfirmation = (
-            issued_borrowernumber => 'private',
-            issued_cardnumber     => 'private',
-            issued_firstname      => 'private',
-            issued_surname        => 'private',
-            resborrowernumber     => 'private',
-            resbranchcode         => 'private',
-            rescardnumber         => 'private',
-            reserve_id            => 'private',
-            resfirstname          => 'private',
-            resreservedate        => 'private',
-            ressurname            => 'private',
-            item_notforloan       => 'private'
-        );
-        $t->get_ok(
-            "//$unauth_userid:$unauth_password@/api/v1/public/checkouts/availability?item_id=$item1_id&patron_id=$patron_id"
-            )
-            ->status_is(200)
-            ->json_is( '/blockers' => {} )
-            ->json_is( '/confirms' => {} )
-            ->json_is( '/warnings' => {} )
-            ->json_has('/confirmation_token');
-        %issuingimpossible = ();
-        %alerts            = ();
-        %needsconfirmation = ();
-    };
+    my $superlibrarian =
+        $builder->build_object( { class => 'Koha::Patrons', value => { flags => 1, branchcode => $library->id } } );
+    $superlibrarian->set_password( { password => $password, skip_validation => 1 } );
+    my $superlibrarian_userid = $superlibrarian->userid;
+    $t->get_ok(
+              "//$superlibrarian_userid:$password@/api/v1/checkouts/availability?item_id=$item_id&patron_id=$patron_id"
+            . '&library_id='
+            . $other->id )->status_is( 200, 'Superlibrarians can use any library' );
+    t::lib::Mocks::mock_preference( 'IndependentBranches', 0 );
 
     $schema->storage->txn_rollback;
 };
 
-subtest 'add checkout' => sub {
+subtest 'add() tests' => sub {
 
-    plan tests => 14;
+    plan tests => 73;
 
     $schema->storage->txn_begin;
-    my $librarian = $builder->build_object(
-        {
-            class => 'Koha::Patrons',
-            value => { flags => 2 }
-        }
-    );
-    my $password = 'thePassword123';
+
+    my $library = $builder->build_object( { class => 'Koha::Libraries' } );
+    my $other   = $builder->build_object( { class => 'Koha::Libraries' } );
+
+    # flags => 2: all circulate permissions, force_checkout included
+    my $librarian =
+        $builder->build_object( { class => 'Koha::Patrons', value => { flags => 2, branchcode => $library->id } } );
     $librarian->set_password( { password => $password, skip_validation => 1 } );
     my $userid = $librarian->userid;
 
-    my $patron = $builder->build_object(
-        {
-            class => 'Koha::Patrons',
-            value => { flags => 0 }
-        }
-    );
-    my $unauth_password = 'thePassword000';
-    $patron->set_password( { password => $unauth_password, skip_validattion => 1 } );
-    my $unauth_userid = $patron->userid;
-    my $patron_id     = $patron->borrowernumber;
+    my $unprivileged = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 0 } } );
+    $unprivileged->set_password( { password => $password, skip_validation => 1 } );
+    my $unprivileged_userid = $unprivileged->userid;
 
-    my $branchcode = $builder->build( { source => 'Branch' } )->{branchcode};
+    my $patron    = build_patron();
+    my $patron_id = $patron->id;
 
-    my $item1         = $builder->build_sample_item;
-    my $item1_id      = $item1->id;
-    my $item1_barcode = $item1->barcode;
-
-    my $item2         = $builder->build_sample_item;
-    my $item2_id      = $item2->id;
-    my $item2_barcode = $item2->barcode;
-
-    my %issuingimpossible = ();
-    my %needsconfirmation = ();
-    my %alerts            = ();
-    my %messages          = ();
-    my $mocked_circ       = Test::MockModule->new('C4::Circulation');
+    my ( %impossible, %confirmation );
+    my $mocked_circ = Test::MockModule->new('C4::Circulation');
     $mocked_circ->mock(
         'CanBookBeIssued',
+        sub { return ( {%impossible}, {%confirmation}, {}, {} ); }
+    );
+
+    my $add_issue_params;
+    my $mocked_controller = Test::MockModule->new('Koha::REST::V1::Checkouts');
+    $mocked_controller->mock(
+        'AddIssue',
         sub {
-            return ( \%issuingimpossible, \%needsconfirmation, \%alerts, \%messages );
+            $add_issue_params = $_[6];
+            return C4::Circulation::AddIssue(@_);
         }
     );
 
-    $t->post_ok( "//$unauth_userid:$unauth_password@/api/v1/checkouts" => json =>
-            { item_id => $item1_id, patron_id => $patron_id } )->status_is(403)->json_is(
-        {
-            error                => "Authorization failure. Missing required permission(s).",
-            required_permissions => { circulate => "circulate_remaining_permissions" }
-        }
-            );
+    my $url = "//$userid:$password@/api/v1/checkouts";
 
-    $t->post_ok( "//$userid:$password@/api/v1/checkouts" => json => { item_id => $item1_id, patron_id => $patron_id } )
-        ->status_is(201);
+    my $item = $builder->build_sample_item;
+    $t->post_ok( "//$unprivileged_userid:$password@/api/v1/checkouts" => json =>
+            { item_id => $item->id, patron_id => $patron_id } )->status_is(403);
 
+    # Bad requests
+    $t->post_ok( $url => json => { patron_id => $patron_id } )
+        ->status_is(400)
+        ->json_is( '/error_code' => 'MISSING_OR_WRONG_PARAMETERS' );
+
+    my $other_item = $builder->build_sample_item;
     $t->post_ok(
-        "//$userid:$password@/api/v1/checkouts" => json => { external_id => $item1_barcode, patron_id => $patron_id } )
-        ->status_is(201);
+        $url => json => { item_id => $item->id, external_id => $other_item->barcode, patron_id => $patron_id } )
+        ->status_is(409)
+        ->json_is( '/error_code' => 'ITEM_ID_NOT_MATCHING_EXTERNAL_ID' );
 
-    # mismatch of item_id and barcode when both given
+    # Not found
+    my $deleted_item    = $builder->build_sample_item;
+    my $deleted_item_id = $deleted_item->id;
+    $deleted_item->delete;
+    $t->post_ok( $url => json => { item_id => $deleted_item_id, patron_id => $patron_id } )
+        ->status_is(404)
+        ->json_is( '/error_code' => 'not_found' );
+
+    my $deleted_patron    = build_patron();
+    my $deleted_patron_id = $deleted_patron->id;
+    $deleted_patron->delete;
+    $t->post_ok( $url => json => { item_id => $item->id, patron_id => $deleted_patron_id } )
+        ->status_is(404)
+        ->json_is( '/error_code' => 'not_found' );
+
+    # Checkout
+    $t->post_ok( $url => json => { item_id => $item->id, patron_id => $patron_id } )
+        ->status_is(201)
+        ->json_is( '/item_id'    => $item->id )
+        ->json_is( '/patron_id'  => $patron_id )
+        ->json_is( '/library_id' => $library->id, 'Checked out at the logged in library' );
+    my $checkout_id = $t->tx->res->json('/checkout_id');
+    $t->header_is( 'Location' => "/api/v1/checkouts/$checkout_id" );
+
+    $item = $builder->build_sample_item;
+    $t->post_ok( $url => json => { external_id => $item->barcode, patron_id => $patron_id } )
+        ->status_is(201)
+        ->json_is( '/item_id' => $item->id );
+
+    # Library
+    $item = $builder->build_sample_item;
+    $t->post_ok( $url => json => { item_id => $item->id, patron_id => $patron_id, library_id => $other->id } )
+        ->status_is(201)
+        ->json_is( '/library_id' => $other->id, 'Checked out at the library_id library' );
+
+    $item = $builder->build_sample_item;
+    t::lib::Mocks::mock_preference( 'IndependentBranches', 1 );
+    $t->post_ok( $url => json => { item_id => $item->id, patron_id => $patron_id, library_id => $other->id } )
+        ->status_is(403)
+        ->json_is( '/error_code' => 'library_not_allowed' );
+    t::lib::Mocks::mock_preference( 'IndependentBranches', 0 );
+    is( $item->checkout, undef, 'Item not checked out' );
+
+    # Blocked
+    $item       = $builder->build_sample_item;
+    %impossible = ( GNA => 1 );
+    $t->post_ok( $url => json => { item_id => $item->id, patron_id => $patron_id } )
+        ->status_is(403)
+        ->json_is( '/error_code' => 'checkout_blocked' )
+        ->json_is( '/blockers'   => { gone_no_address => 1 } );
+    is( $item->checkout, undef, 'Item not checked out' );
+    %impossible = ();
+
+    # Confirmation
+    %confirmation = ( DEBT => '10.00' );
+    $t->post_ok( $url => json => { item_id => $item->id, patron_id => $patron_id } )
+        ->status_is(412)
+        ->json_is( '/error_code' => 'confirmation_required' )
+        ->json_is( '/confirms'   => { debt => '10.00' } )
+        ->json_is( '/forced'     => [] )
+        ->json_has('/confirmation_token');
+    my $token = $t->tx->res->json('/confirmation_token');
+    is( $item->checkout, undef, 'Item not checked out' );
+
+    $t->post_ok( "$url?confirmation=wrong" => json => { item_id => $item->id, patron_id => $patron_id } )
+        ->status_is(412)
+        ->json_is( '/error_code' => 'confirmation_required' );
+
+    # The token is bound to the patron
+    my $patron_b = build_patron();
+    $t->post_ok( "$url?confirmation=$token" => json => { item_id => $item->id, patron_id => $patron_b->id } )
+        ->status_is(412)
+        ->json_is( '/error_code' => 'confirmation_required' );
+    is( $item->checkout, undef, 'A token for a patron cannot be used for another one' );
+
+    $t->post_ok( "$url?confirmation=$token" => json => { item_id => $item->id, patron_id => $patron_id } )
+        ->status_is(201)
+        ->json_is( '/patron_id' => $patron_id );
+    $t->header_is( 'Location' => '/api/v1/checkouts/' . $t->tx->res->json('/checkout_id') );
+    is_deeply( $add_issue_params->{confirmations}, ['DEBT'], 'Confirmations passed to AddIssue' );
+    %confirmation = ();
+
+    # Overrides
+    $item       = $builder->build_sample_item;
+    %impossible = ( GNA => 1 );
     $t->post_ok(
-        "//$userid:$password@/api/v1/checkouts" => json => {
-            external_id => $item1_barcode,
-            item_id     => $item2_id,
-            patron_id   => $patron_id
+        $url => { 'x-koha-override' => 'gone_no_address' } => json => { item_id => $item->id, patron_id => $patron_id }
+    )->status_is(201);
+    is_deeply( $add_issue_params->{forced}, ['GNA'], 'Overridden blocker passed to AddIssue as forced' );
+
+    # Overridden blockers along with confirmations
+    $item         = $builder->build_sample_item;
+    %confirmation = ( DEBT => '10.00' );
+    $t->post_ok( $url => { 'x-koha-override' => 'any' } => json => { item_id => $item->id, patron_id => $patron_id } )
+        ->status_is(412)
+        ->json_is( '/confirms' => { debt => '10.00' } )
+        ->json_is( '/forced'   => ['gone_no_address'] );
+    $token = $t->tx->res->json('/confirmation_token');
+    $t->post_ok( "$url?confirmation=$token" => { 'x-koha-override' => 'any' } => json =>
+            { item_id => $item->id, patron_id => $patron_id } )->status_is(201);
+    is_deeply( $add_issue_params->{forced},        ['GNA'],  'Overridden blocker passed to AddIssue as forced' );
+    is_deeply( $add_issue_params->{confirmations}, ['DEBT'], 'Confirmations passed to AddIssue' );
+    %confirmation = ();
+
+    # Overrides require force_checkout
+    my $circulator        = build_circulator();
+    my $circulator_userid = $circulator->userid;
+    $item = $builder->build_sample_item;
+    $t->post_ok( "//$circulator_userid:$password@/api/v1/checkouts" => { 'x-koha-override' => 'any' } => json =>
+            { item_id => $item->id, patron_id => $patron_id } )
+        ->status_is(403)
+        ->json_is( '/error_code' => 'checkout_blocked' )
+        ->json_is( '/blockers'   => { gone_no_address => 1 } );
+    %impossible = ();
+
+    # Unforceable blocker
+    %impossible = ( NO_OPEN_DAYS => 1 );
+    $t->post_ok( $url => { 'x-koha-override' => 'any' } => json => { item_id => $item->id, patron_id => $patron_id } )
+        ->status_is(403)
+        ->json_is( '/blockers' => { no_open_days => 1 } );
+    is( $item->checkout, undef, 'Item not checked out' );
+    %impossible = ();
+
+    $schema->storage->txn_rollback;
+};
+
+subtest 'public routes tests' => sub {
+
+    plan tests => 54;
+
+    $schema->storage->txn_begin;
+
+    my $librarian = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 2 } } );
+    $librarian->set_password( { password => $password, skip_validation => 1 } );
+    my $userid = $librarian->userid;
+
+    my $patron = build_patron();
+    $patron->set_password( { password => $password, skip_validation => 1 } );
+    my $patron_id     = $patron->id;
+    my $patron_userid = $patron->userid;
+
+    my ( %impossible, %confirmation, %alerts );
+    my $mocked_circ = Test::MockModule->new('C4::Circulation');
+    $mocked_circ->mock(
+        'CanBookBeIssued',
+        sub { return ( {%impossible}, {%confirmation}, {%alerts}, {} ); }
+    );
+
+    my $item    = $builder->build_sample_item;
+    my $item_id = $item->id;
+
+    my $availability_url =
+        "//$patron_userid:$password@/api/v1/public/checkouts/availability?item_id=$item_id&patron_id=$patron_id";
+    my $checkout_url = "//$patron_userid:$password@/api/v1/public/patrons/$patron_id/checkouts";
+
+    # Availability
+    $t->get_ok("/api/v1/public/checkouts/availability?item_id=$item_id&patron_id=$patron_id")->status_is(401);
+    $t->get_ok("//$userid:$password@/api/v1/public/checkouts/availability?item_id=$item_id&patron_id=$patron_id")
+        ->status_is(403);
+
+    $t->get_ok($availability_url)
+        ->status_is(200)
+        ->json_is( '/blockers' => {} )
+        ->json_is( '/confirms' => {} )
+        ->json_is( '/warnings' => {} )
+        ->json_has('/confirmation_token')
+        ->json_hasnt('/forced');
+
+    # Confirmations are promoted to blockers, other patrons' data is removed
+    %impossible   = ( WTHDRAWN          => 1 );
+    %confirmation = ( ISSUED_TO_ANOTHER => 1, issued_borrowernumber => $librarian->id, RENEW_ISSUE => 1 );
+    %alerts       = ( OTHER_CHARGES     => '5.00' );
+    $t->get_ok($availability_url)
+        ->status_is(200)
+        ->json_is( '/blockers' => { WTHDRAWN      => 1, ISSUED_TO_ANOTHER => 1 } )
+        ->json_is( '/confirms' => { RENEW_ISSUE   => 1 } )
+        ->json_is( '/warnings' => { OTHER_CHARGES => '5.00' } );
+    %impossible   = ();
+    %confirmation = ();
+    %alerts       = ();
+
+    # Hold confirmations are gated by AllowItemsOnHoldCheckoutSCO
+    %confirmation = ( RESERVED => 1, RESERVE_WAITING => 1, TRANSFERRED => 1, PROCESSING => 1 );
+
+    t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSCO', 0 );
+    $t->get_ok($availability_url)->status_is(200)->json_is(
+        '/blockers' => {
+            RESERVED        => 1,
+            RESERVE_WAITING => 1,
+            TRANSFERRED     => 1,
+            PROCESSING      => 1
         }
-    )->status_is(409);
+    )->json_is( '/confirms' => {} );
 
-    # Needs confirm
-    %needsconfirmation = ( confirm1 => 1, confirm2 => 'please' );
-    $t->post_ok(
-        "//$userid:$password@/api/v1/checkouts" => json => {
-            item_id   => $item1_id,
-            patron_id => $patron_id,
-        }
-    )->status_is(412);
+    t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSCO', 1 );
+    $t->get_ok($availability_url)
+        ->status_is(200)
+        ->json_is( '/blockers' => { RESERVE_WAITING => 1, TRANSFERRED => 1, PROCESSING => 1 } )
+        ->json_is( '/confirms' => {} );
 
-    my $token = Koha::Token->new->generate_jwt( { id => $librarian->id . ":" . $item1_id . ":confirm1:confirm2" } );
-    $t->post_ok(
-        "//$userid:$password@/api/v1/checkouts?confirmation=$token" => json => {
-            item_id   => $item1_id,
-            patron_id => $patron_id
-        }
-    )->status_is(201)->or( sub { diag $t->tx->res->body } );
-    %needsconfirmation = ();
+    t::lib::Mocks::mock_preference( 'AllowItemsOnHoldCheckoutSCO', 2 );
+    $t->get_ok($availability_url)->status_is(200)->json_is( '/blockers' => {} )->json_is( '/confirms' => {} );
+    %confirmation = ();
 
-    subtest 'public add' => sub {
-        plan tests => 14;
+    my $deleted_item    = $builder->build_sample_item;
+    my $deleted_item_id = $deleted_item->id;
+    $deleted_item->delete;
 
-        my $useridp = $patron->userid;
-        $patron->set_password( { password => $password, skip_validation => 1 } );
+    # Checkout
+    t::lib::Mocks::mock_preference( 'OpacTrustedCheckout', 0 );
+    $t->post_ok( "/api/v1/public/patrons/$patron_id/checkouts" => json => { item_id => $item_id } )
+        ->status_is(401)
+        ->json_is( { error => "Authentication failure." } );
+    $t->post_ok( $checkout_url => json => { item_id => $item_id, patron_id => $patron_id } )
+        ->status_is(405)
+        ->json_is( { error => "Feature disabled", error_code => "FEATURE_DISABLED" } );
 
-        # Feature disabled
-        t::lib::Mocks::mock_preference( 'OpacTrustedCheckout', 0 );
+    t::lib::Mocks::mock_preference( 'OpacTrustedCheckout', 1 );
+    $t->post_ok( "//$userid:$password@/api/v1/public/patrons/$patron_id/checkouts" => json =>
+            { item_id => $item_id, patron_id => $patron_id } )
+        ->status_is(403)
+        ->json_is( { error => "Unprivileged user cannot access another user's resources" } );
 
-        $t->post_ok(
-            "/api/v1/public/patrons/$patron_id/checkouts" => json => { item_id => $item1_id, patron_id => $patron_id } )
-            ->status_is(401)
-            ->json_is( { error => "Authentication failure." } );
+    $t->post_ok( $checkout_url => json => { item_id => $deleted_item_id, patron_id => $patron_id } )
+        ->status_is(409)
+        ->json_is( '/error_code' => 'ITEM_NOT_FOUND' );
 
-        $t->post_ok( "//$useridp:$password@/api/v1/public/patrons/$patron_id/checkouts" => json =>
-                { item_id => $item1_id, patron_id => $patron_id } )
-            ->status_is(405)
-            ->json_is( { error => "Feature disabled", error_code => "FEATURE_DISABLED" } );
+    %impossible = ( WTHDRAWN => 1 );
+    $t->post_ok( $checkout_url => json => { item_id => $item_id, patron_id => $patron_id } )
+        ->status_is(403)
+        ->json_is( { error => "Checkout not authorized (WTHDRAWN)" } );
+    %impossible = ();
 
-        # Feature enabled
-        t::lib::Mocks::mock_preference( 'OpacTrustedCheckout', 1 );
+    %confirmation = ( RENEW_ISSUE => 1 );
+    $t->post_ok( $checkout_url => json => { item_id => $item_id, patron_id => $patron_id } )
+        ->status_is(412)
+        ->json_is( { error => "Confirmation error" } );
 
-        $t->post_ok(
-            "/api/v1/public/patrons/$patron_id/checkouts" => json => { item_id => $item1_id, patron_id => $patron_id } )
-            ->status_is(401)
-            ->json_is( { error => "Authentication failure." } );
+    $t->get_ok($availability_url)->status_is(200);
+    my $token = $t->tx->res->json('/confirmation_token');
+    $t->post_ok( "$checkout_url?confirmation=$token" => json => { item_id => $item_id, patron_id => $patron_id } )
+        ->status_is(201)
+        ->json_is( '/item_id' => $item_id );
+    %confirmation = ();
 
-        $t->post_ok( "//$userid:$password@/api/v1/public/patrons/$patron_id/checkouts" => json =>
-                { item_id => $item1_id, patron_id => $patron_id } )
-            ->status_is(403)
-            ->json_is( { error => "Unprivileged user cannot access another user's resources" } );
-
-        $t->post_ok( "//$useridp:$password@/api/v1/public/patrons/$patron_id/checkouts" => json =>
-                { item_id => $item1_id, patron_id => $patron_id } )->status_is(201);
-    };
+    $item = $builder->build_sample_item;
+    $t->post_ok( $checkout_url => json => { item_id => $item->id, patron_id => $patron_id } )
+        ->status_is(201)
+        ->json_is( '/patron_id' => $patron_id );
 
     $schema->storage->txn_rollback;
 };
@@ -1070,3 +1160,27 @@ subtest 'renew() with a malformed requested due_date' => sub {
 
     $schema->storage->txn_rollback;
 };
+
+sub build_patron {
+    my $category = $builder->build_object( { class => 'Koha::Patron::Categories', value => { category_type => 'A' } } );
+    return $builder->build_object(
+        { class => 'Koha::Patrons', value => { flags => 0, categorycode => $category->id } } );
+}
+
+sub build_circulator {
+
+    # circulate_remaining_permissions only, no force_checkout
+    my $circulator = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 0 } } );
+    $builder->build(
+        {
+            source => 'UserPermission',
+            value  => {
+                borrowernumber => $circulator->id,
+                module_bit     => 1,
+                code           => 'circulate_remaining_permissions',
+            },
+        }
+    );
+    $circulator->set_password( { password => $password, skip_validation => 1 } );
+    return $circulator;
+}

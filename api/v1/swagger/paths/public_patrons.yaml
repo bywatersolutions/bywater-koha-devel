@@ -62,7 +62,7 @@
           $ref: "../swagger.yaml#/definitions/error"
 "/public/patrons/{patron_id}/checkouts":
   post:
-    x-mojo-to: Checkouts#add
+    x-mojo-to: Checkouts#public_add
     operationId: addCheckoutPublic
     tags:
       - checkouts
