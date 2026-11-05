@@ -22,6 +22,7 @@ use File::Basename qw(dirname);
 use Test::More tests => 108;
 use Test::NoWarnings;
 
+use List::Util qw( sum0 );
 use Test::MockModule;
 use Test::Warn;
 use Test::Exception;
@@ -2039,7 +2040,7 @@ subtest 'Test temporary SMTP failure handling in SendQueuedMessages' => sub {
 };
 
 subtest 'Test unavailable SMTP server handling in SendQueuedMessages' => sub {
-    plan tests => 9;
+    plan tests => 12;
 
     my $dbh = C4::Context->dbh;
     $dbh->do(q|DELETE FROM message_queue|);
@@ -2086,15 +2087,18 @@ subtest 'Test unavailable SMTP server handling in SendQueuedMessages' => sub {
     is( $send_or_die_calls, 1, 'Only one connection attempt was made for the whole run' );
     is(
         Koha::Notice::Messages->search(
-            {
-                message_id    => \@message_ids,
-                status        => 'pending',
-                send_attempts => 1,
-                retry_after   => { '!=' => undef },
-            }
+            { message_id => \@message_ids, status => 'pending', retry_after => { '!=' => undef } }
         )->count,
         3,
-        'All three messages were deferred with one attempt recorded'
+        'All three messages were deferred'
+    );
+    is(
+        Koha::Notice::Messages->search( { message_id => \@message_ids, send_attempts => 1 } )->count, 1,
+        'Only the message that was actually tried used up an attempt'
+    );
+    is(
+        Koha::Notice::Messages->search( { message_id => \@message_ids, send_attempts => 0 } )->count, 2,
+        'The messages that were never tried keep their attempts'
     );
 
     # A 4xx response about one message does not take the server down for the others
@@ -2118,8 +2122,12 @@ subtest 'Test unavailable SMTP server handling in SendQueuedMessages' => sub {
     [ (qr/receiving mail too quickly/) x 3 ], 'Each 450 is logged on its own';
     is( $send_or_die_calls, 3, 'Every message was still tried after a 450' );
     is(
-        Koha::Notice::Messages->search( { message_id => \@message_ids, send_attempts => 2 } )->count, 3,
-        'Each message recorded its own second attempt'
+        Koha::Notice::Messages->search( { message_id => \@message_ids, send_attempts => [ 1, 2 ] } )->count, 3,
+        'Each message recorded its own attempt'
+    );
+    is(
+        sum0( map { $_->send_attempts } Koha::Notice::Messages->search( { message_id => \@message_ids } )->as_list ), 4,
+        'Four attempts in total: the earlier one plus one for each message'
     );
 
     # Other SMTP servers are still tried in the same run

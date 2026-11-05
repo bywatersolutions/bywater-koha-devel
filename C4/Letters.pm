@@ -1056,7 +1056,7 @@ Messages the mail server answered with a temporary failure ( such as a 421
 increasing delay, see @SMTP_RETRY_DELAYS. They are only marked failed once
 all the retries have been used up. Once a server has turned a connection
 away, the rest of the messages for it in that run are deferred without
-being tried.
+being tried, and without using up any of their retries.
 
 The optional verbose parameter can be used to generate debugging output.
 
@@ -1666,7 +1666,7 @@ sub _send_message_by_email {
 
     # Don't keep knocking on a server that already turned us away during this run
     if ( $unavailable_smtp_servers->{$smtp_server_key} ) {
-        _retry_message_later($message);
+        _defer_message($message);
         return;
     }
 
@@ -1951,6 +1951,27 @@ sub _retry_message_later {
     $dbh->do(
         'UPDATE message_queue SET send_attempts = ?, retry_after = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE message_id = ?',
         undef, $send_attempts, $delay, $message->{message_id}
+    );
+    return;
+}
+
+=head2 _defer_message
+
+  _defer_message($message);
+
+Pushes back a queued message that was not tried because its SMTP server already turned us away
+during this run. Unlike L</_retry_message_later> this is not an attempt, so send_attempts is left
+alone and a long outage does not use up the retries of messages that never reached the server.
+
+=cut
+
+sub _defer_message {
+    my ($message) = @_;
+
+    my $delay = $SMTP_RETRY_DELAYS[ $message->{send_attempts} < @SMTP_RETRY_DELAYS ? $message->{send_attempts} : -1 ];
+    C4::Context->dbh->do(
+        'UPDATE message_queue SET retry_after = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE message_id = ?',
+        undef, $delay, $message->{message_id}
     );
     return;
 }
