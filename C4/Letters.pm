@@ -1247,7 +1247,7 @@ sub GetQueuedMessages {
 
     my $dbh       = C4::Context->dbh();
     my $statement = <<'ENDSQL';
-SELECT message_id, borrowernumber, subject, content, message_transport_type, status, time_queued, updated_on, failure_code, from_address, to_address, cc_address
+SELECT message_id, borrowernumber, subject, content, message_transport_type, status, time_queued, updated_on, failure_code, send_attempts, retry_after, from_address, to_address, cc_address
 FROM message_queue
 ENDSQL
 
@@ -1302,7 +1302,7 @@ sub GetMessage {
     my $dbh = C4::Context->dbh;
     return $dbh->selectrow_hashref(
         q|
-        SELECT message_id, borrowernumber, subject, content, metadata, letter_code, message_transport_type, status, time_queued, updated_on, to_address, from_address, reply_address, content_type, failure_code
+        SELECT message_id, borrowernumber, subject, content, metadata, letter_code, message_transport_type, status, time_queued, updated_on, to_address, from_address, reply_address, content_type, failure_code, send_attempts, retry_after
         FROM message_queue
         WHERE message_id = ?
     |, {}, $message_id

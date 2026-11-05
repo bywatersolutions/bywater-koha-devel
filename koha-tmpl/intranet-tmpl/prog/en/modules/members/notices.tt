@@ -131,6 +131,12 @@
                                         <span class="clearfix">Message failed to send with the following error: [% QUEUED_MESSAGE.failure_code | html %]</span>
                                     [% END %]
                                 [% END %]
+                                [% IF ( QUEUED_MESSAGE.status == 'pending' && QUEUED_MESSAGE.retry_after ) %]
+                                    <span class="clearfix">The mail server was temporarily unavailable. Sending will be tried again after [% QUEUED_MESSAGE.retry_after | $KohaDates with_hours => 1 %].</span>
+                                [% END %]
+                                [% IF ( QUEUED_MESSAGE.send_attempts > 0 ) %]
+                                    <span class="clearfix"><span class="label">Temporary failures:</span> [% QUEUED_MESSAGE.send_attempts | html %]</span>
+                                [% END %]
                                 [% IF ( QUEUED_MESSAGE.status == 'sent' ) %]
                                     [% IF ( QUEUED_MESSAGE.from_address && QUEUED_MESSAGE.message_transport_type != 'print') %]
                                         <span class="clearfix"><span class="label">From:</span> [% QUEUED_MESSAGE.from_address | html %]</span>

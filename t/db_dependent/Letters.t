@@ -1885,7 +1885,7 @@ subtest 'Virtual method ->strftime in notices' => sub {
 };
 
 subtest 'Test temporary SMTP failure handling in SendQueuedMessages' => sub {
-    plan tests => 31;
+    plan tests => 34;
 
     my $dbh = C4::Context->dbh;
     $dbh->do(q|DELETE FROM message_queue|);
@@ -1935,6 +1935,13 @@ subtest 'Test temporary SMTP failure handling in SendQueuedMessages' => sub {
     my $notice = Koha::Notice::Messages->find($message_id);
     is( $notice->status,        'pending', 'Message is still pending after a connection failure' );
     is( $notice->send_attempts, 1,         'One attempt recorded' );
+    my $queued = C4::Letters::GetMessage($message_id);
+    is( $queued->{send_attempts}, 1, 'GetMessage returns the attempts' );
+    ok( $queued->{retry_after}, 'GetMessage returns retry_after' );
+    is(
+        C4::Letters::GetQueuedMessages( { borrowernumber => $patron->borrowernumber } )->[0]->{send_attempts}, 1,
+        'GetQueuedMessages returns the attempts'
+    );
     my ($minutes_until_retry) = $dbh->selectrow_array(
         q|SELECT TIMESTAMPDIFF(MINUTE, NOW(), retry_after) FROM message_queue WHERE message_id = ?|, undef,
         $message_id
