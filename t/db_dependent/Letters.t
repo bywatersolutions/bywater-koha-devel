@@ -19,14 +19,16 @@
 
 use Modern::Perl;
 use File::Basename qw(dirname);
-use Test::More tests => 108;
+use Test::More tests => 109;
 use Test::NoWarnings;
 
 use List::Util qw( sum0 );
 use Test::MockModule;
+use Try::Tiny;
 use Test::Warn;
 use Test::Exception;
 
+use Email::Simple;
 use Email::Sender::Failure;
 use Email::Sender::Failure::Permanent;
 use Email::Sender::Failure::Temporary;
@@ -2037,6 +2039,60 @@ subtest 'Test temporary SMTP failure handling in SendQueuedMessages' => sub {
     $notice = Koha::Notice::Messages->find($message_id);
     is( $notice->status,       'sent', 'Message is marked sent' );
     is( $notice->failure_code, '',     'Failure code is cleared once the message is sent' );
+};
+
+subtest '_is_temporary_smtp_failure' => sub {
+    plan tests => 9;
+
+    ok(
+        C4::Letters::_is_temporary_smtp_failure(
+            Email::Sender::Failure::Temporary->new( { message => '450 busy', code => 450 } )
+        ),
+        'A 4xx response is temporary'
+    );
+    ok(
+        !C4::Letters::_is_temporary_smtp_failure(
+            Email::Sender::Failure::Permanent->new( { message => '550 no', code => 550 } )
+        ),
+        'A 5xx response is not'
+    );
+    ok(
+        !C4::Letters::_is_temporary_smtp_failure( Email::Sender::Failure->new('can not make it work') ),
+        'Another failure is not'
+    );
+    ok( !C4::Letters::_is_temporary_smtp_failure('unable to establish SMTP connection'), 'A plain string is not' );
+    ok( !C4::Letters::_is_temporary_smtp_failure(undef),                                 'Neither is nothing' );
+
+    # Email::Sender gives no other way to recognise a failure to connect than its message, check it against the real transport
+    require Email::Sender::Transport::SMTP;
+    my $transport = Email::Sender::Transport::SMTP->new( { host => '127.0.0.1', port => 1, timeout => 2 } );
+    my $error;
+    try {
+        $transport->send(
+            Email::Simple->create( header => [ To => 'to@example.org', From => 'from@example.org' ], body => 'body' ),
+            { to => ['to@example.org'], from => 'from@example.org' }
+        );
+    } catch {
+        $error = $_;
+    };
+    ok(
+        C4::Letters::_is_temporary_smtp_failure($error),
+        'A refused connection is temporary, Email::Sender still words it the way we expect'
+    );
+    ok( C4::Letters::_is_smtp_server_unavailable($error), 'And the server is unavailable' );
+
+    ok(
+        C4::Letters::_is_smtp_server_unavailable(
+            Email::Sender::Failure::Temporary->new( { message => '421 go away', code => 421 } )
+        ),
+        'A 421 means the server is unavailable'
+    );
+    ok(
+        !C4::Letters::_is_smtp_server_unavailable(
+            Email::Sender::Failure::Temporary->new( { message => '450 busy', code => 450 } )
+        ),
+        'A 450 is only about the one message'
+    );
 };
 
 subtest 'Test unavailable SMTP server handling in SendQueuedMessages' => sub {

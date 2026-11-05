@@ -1687,19 +1687,13 @@ sub _send_message_by_email {
         );
         return 1;
     } catch {
-        carp "$_";
+        my $error = $_;
+        carp "$error";
 
-        # A 4xx response, or a connection refused before there is a response code ( a 421 at EHLO ), is the mail server's problem rather than the message's
-        if (
-               blessed($_)
-            && $_->isa('Email::Sender::Failure')
-            && ( $_->isa('Email::Sender::Failure::Temporary') || $_->message =~ /^unable to establish SMTP connection/ )
-            )
-        {
+        if ( _is_temporary_smtp_failure($error) ) {
             _retry_message_later($message);
 
-            # A refused connection or a 421 means the server itself is unavailable, any other 4xx response is only about this message
-            if ( !$_->code || $_->code == 421 ) {
+            if ( _is_smtp_server_unavailable($error) ) {
                 $unavailable_smtp_servers->{$smtp_server_key} = 1;
                 carp "SMTP server "
                     . $smtp_server->host
@@ -1716,6 +1710,47 @@ sub _send_message_by_email {
         }
         return;
     };
+}
+
+=head2 _is_temporary_smtp_failure
+
+  my $temporary = _is_temporary_smtp_failure($error);
+
+Returns true if an exception thrown while sending an email is the mail server's problem rather than the
+message's, so that sending is worth trying again later. That is a 4xx response (Email::Sender::Failure::Temporary),
+or a failure to connect at all.
+
+Email::Sender::Transport::SMTP reports a failure to connect, including a server that answers the connection
+with a 421 before EHLO, as a plain Email::Sender::Failure without a response code. The only thing telling it
+apart from a permanent failure is its message, 'unable to establish SMTP connection to ...', so that is matched
+here. This cannot tell a server that is down from one that is misconfigured, a wrong host is retried until the
+retries run out and then fails like any other message. t/db_dependent/Letters.t checks the message against
+the real transport, so a change in Email::Sender's wording is caught by the tests.
+
+=cut
+
+sub _is_temporary_smtp_failure {
+    my ($error) = @_;
+
+    return 0 unless blessed($error) && $error->isa('Email::Sender::Failure');
+    return 1 if $error->isa('Email::Sender::Failure::Temporary');
+    return $error->message =~ /^unable to establish SMTP connection/ ? 1 : 0;
+}
+
+=head2 _is_smtp_server_unavailable
+
+  my $unavailable = _is_smtp_server_unavailable($error);
+
+Given a temporary failure from L</_is_temporary_smtp_failure>, returns true if it means the server itself is
+unavailable, a refused connection or a 421. Any other 4xx response is only about the one message, and says nothing
+about the messages that follow it.
+
+=cut
+
+sub _is_smtp_server_unavailable {
+    my ($error) = @_;
+
+    return !$error->code || $error->code == 421 ? 1 : 0;
 }
 
 =head2 _wrap_html
