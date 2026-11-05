@@ -56,6 +56,7 @@ use Koha::Database;
 use Koha::DateUtils qw( dt_from_string output_pref );
 use Koha::Email;
 use Koha::Exceptions;
+use Koha::Logger;
 use Koha::Notice::Messages;
 use Koha::Notice::Templates;
 use Koha::Notice::Util;
@@ -1691,18 +1692,24 @@ sub _send_message_by_email {
         return 1;
     } catch {
         my $error = $_;
-        carp "$error";
 
         if ( _is_temporary_smtp_failure($error) ) {
+
+            # Expected while a mail server is busy or down and the message will be tried again, so this goes to the log rather than to every cron mail
+            my $logger = Koha::Logger->get;
+            $logger->warn(
+                "Message $message->{message_id} could not be sent, the mail server reported a temporary failure: $error"
+            );
             _retry_message_later($message);
 
             if ( _is_smtp_server_unavailable($error) ) {
                 $unavailable_smtp_servers->{$smtp_server_key} = 1;
-                carp "SMTP server "
-                    . $smtp_server->host
-                    . " is unavailable, the remaining messages for it will be tried again later";
+                $logger->warn( "SMTP server "
+                        . $smtp_server->host
+                        . " is unavailable, the remaining messages for it will be tried again later" );
             }
         } else {
+            carp "$error";
             _set_message_status(
                 {
                     message_id   => $message->{'message_id'},

@@ -1885,7 +1885,7 @@ subtest 'Virtual method ->strftime in notices' => sub {
 };
 
 subtest 'Test temporary SMTP failure handling in SendQueuedMessages' => sub {
-    plan tests => 34;
+    plan tests => 37;
 
     my $dbh = C4::Context->dbh;
     $dbh->do(q|DELETE FROM message_queue|);
@@ -1926,11 +1926,19 @@ subtest 'Test temporary SMTP failure handling in SendQueuedMessages' => sub {
         }
     );
 
+    # Temporary failures are expected, they go to the log rather than to every cron mail
+    my @logged;
+    my $mocked_logger = Test::MockModule->new('Koha::Logger');
+    $mocked_logger->mock( warn => sub { push @logged, $_[1] } );
+
     my $sent;
-    warnings_like {
+    warnings_are {
         $sent = C4::Letters::SendQueuedMessages( { message_id => $message_id } );
     }
-    [ qr/unable to establish SMTP connection/, qr/is unavailable/ ], 'The connection failure is logged';
+    [], 'A temporary failure does not warn';
+    is( scalar @logged, 2, 'The failure and the unavailable server are logged' );
+    like( $logged[0], qr/unable to establish SMTP connection/, 'The connection failure is logged' );
+    like( $logged[1], qr/smtp.*is unavailable/is,              'The unavailable server is logged' );
     is( $sent, 0, 'Nothing was sent' );
     my $notice = Koha::Notice::Messages->find($message_id);
     is( $notice->status,        'pending', 'Message is still pending after a connection failure' );
@@ -1966,10 +1974,10 @@ subtest 'Test temporary SMTP failure handling in SendQueuedMessages' => sub {
         q|UPDATE message_queue SET retry_after = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE message_id = ?|, undef,
         $message_id
     );
-    warnings_like {
+    warnings_are {
         C4::Letters::SendQueuedMessages( { message_id => $message_id } );
     }
-    [ qr/Try again later/, qr/is unavailable/ ], 'The 421 is logged';
+    [], 'A 421 does not warn';
     $notice = Koha::Notice::Messages->find($message_id);
     is( $notice->status,        'pending', 'Message is still pending after a 421' );
     is( $notice->send_attempts, 2,         'Second attempt recorded' );
@@ -1986,10 +1994,10 @@ subtest 'Test temporary SMTP failure handling in SendQueuedMessages' => sub {
             q|UPDATE message_queue SET retry_after = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE message_id = ?|, undef,
             $message_id
         );
-        warnings_like {
+        warnings_are {
             C4::Letters::SendQueuedMessages( { message_id => $message_id } );
         }
-        [ qr/Try again later/, qr/is unavailable/ ], 'The last failure is logged';
+        [], 'The last temporary failure does not warn';
     }
     $notice = Koha::Notice::Messages->find($message_id);
     is( $notice->status,        'failed',   'Message is marked failed once the retries are used up' );
@@ -2140,19 +2148,19 @@ subtest 'Notices that are no use later are not retried' => sub {
         }
     );
 
-    warnings_like {
+    warnings_are {
         C4::Letters::SendQueuedMessages( { message_id => $otp_id } );
     }
-    [qr/Too many messages/], 'The failure is logged';
+    [], 'A temporary failure does not warn';
     my $notice = Koha::Notice::Messages->find($otp_id);
     is( $notice->status,       'failed',   'A one-time code is marked failed rather than retried' );
     is( $notice->failure_code, 'SENDMAIL', '... with the usual failure code' );
     is( $notice->retry_after,  undef,      '... and nothing is scheduled' );
 
-    warnings_like {
+    warnings_are {
         C4::Letters::SendQueuedMessages( { message_id => $other_id } );
     }
-    [qr/Too many messages/], 'The failure is logged';
+    [], 'A temporary failure does not warn';
     is( Koha::Notice::Messages->find($other_id)->status, 'pending', 'Other notices are still retried' );
 
     # The same goes for one that was pushed back because its server was already down
@@ -2162,10 +2170,10 @@ subtest 'Notices that are no use later are not retried' => sub {
     );
     my $first_id = $enqueue->('TEST_MESSAGE');
     my $otp_id_2 = $enqueue->('2FA_OTP_TOKEN');
-    warnings_like {
+    warnings_are {
         C4::Letters::SendQueuedMessages( { message_id => [ $first_id, $otp_id_2 ] } );
     }
-    [ qr/unable to establish/, qr/is unavailable/ ], 'The server is marked unavailable';
+    [], 'No warning for a server that is down';
     is( Koha::Notice::Messages->find($otp_id_2)->status, 'failed', 'A one-time code is not deferred either' );
 };
 
@@ -2209,11 +2217,10 @@ subtest 'Test unavailable SMTP server handling in SendQueuedMessages' => sub {
         }
     );
 
-    warnings_like {
+    warnings_are {
         C4::Letters::SendQueuedMessages( { type => 'email' } );
     }
-    [ qr/unable to establish SMTP connection/, qr/is unavailable/ ],
-        'The connection failure and the unavailable server are each logged once';
+    [], 'The connection failure and the unavailable server are each logged once';
     is( $send_or_die_calls, 1, 'Only one connection attempt was made for the whole run' );
     is(
         Koha::Notice::Messages->search(
@@ -2246,10 +2253,10 @@ subtest 'Test unavailable SMTP server handling in SendQueuedMessages' => sub {
             );
         }
     );
-    warnings_like {
+    warnings_are {
         C4::Letters::SendQueuedMessages( { type => 'email' } );
     }
-    [ (qr/receiving mail too quickly/) x 3 ], 'Each 450 is logged on its own';
+    [], 'Each 450 is logged on its own';
     is( $send_or_die_calls, 3, 'Every message was still tried after a 450' );
     is(
         Koha::Notice::Messages->search( { message_id => \@message_ids, send_attempts => [ 1, 2 ] } )->count, 3,
@@ -2294,14 +2301,10 @@ subtest 'Test unavailable SMTP server handling in SendQueuedMessages' => sub {
             Email::Sender::Failure->throw('unable to establish SMTP connection to (smtp.example.org) port 587');
         }
     );
-    warnings_like {
+    warnings_are {
         C4::Letters::SendQueuedMessages( { type => 'email' } );
     }
-    [
-        qr/unable to establish SMTP connection/, qr/is unavailable/,
-        qr/unable to establish SMTP connection/, qr/is unavailable/
-    ],
-        'Each server is tried once and logged as unavailable';
+    [], 'Each server is tried once and logged as unavailable';
     is( $send_or_die_calls, 2, 'One connection attempt per SMTP server' );
     is(
         Koha::Notice::Messages->search( { message_id => \@new_message_ids, send_attempts => 1 } )->count, 2,
