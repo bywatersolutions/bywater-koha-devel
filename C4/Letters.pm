@@ -52,6 +52,7 @@ use C4::Members;
 use C4::SMS;
 use C4::Templates;
 use Koha::Auth::TwoFactorAuth;
+use Koha::Database;
 use Koha::DateUtils qw( dt_from_string output_pref );
 use Koha::Email;
 use Koha::Exceptions;
@@ -1090,6 +1091,7 @@ sub SendQueuedMessages {
     }
 
     my $smtp_transports = {};
+    my $schema          = Koha::Database->new->schema;
 
     my $count_messages  = 0;
     my $unsent_messages = Koha::Notice::Messages->search(
@@ -1097,7 +1099,8 @@ sub SendQueuedMessages {
             status => 'pending',
 
             # Skip messages that are still waiting out the delay from a temporary failure
-            retry_after => [ undef, { '<=' => \'NOW()' } ],
+            retry_after =>
+                [ undef, { '<=' => $schema->storage->datetime_parser->format_datetime( dt_from_string() ) } ],
             $params->{message_id}     ? ( message_id     => $params->{message_id} )     : (),
             $params->{borrowernumber} ? ( borrowernumber => $params->{borrowernumber} ) : (),
 
@@ -1324,24 +1327,19 @@ sub ResendMessage {
     return unless $message;
     my $rv = 0;
     if ( $message->{status} ne 'pending' ) {
-        $rv = C4::Letters::_set_message_status(
+        my $notice = Koha::Notice::Messages->find($message_id) or return 0;
+
+        # Start the retry schedule over, and for email clear the destination address to force an address update
+        $notice->set(
             {
-                message_id => $message_id,
-                status     => 'pending',
+                status        => 'pending',
+                failure_code  => '',
+                send_attempts => 0,
+                retry_after   => undef,
+                ( $message->{message_transport_type} eq 'email' ? ( to_address => undef ) : () ),
             }
-        );
-        $rv = $rv > 0 ? 1 : 0;
-
-        # Clear destination email address to force address update
-        _update_message_to_address( $message_id, undef )
-            if $rv
-            && $message->{message_transport_type} eq 'email';
-
-        # Start the retry schedule over for a message that gave up after temporary failures
-        C4::Context->dbh->do(
-            'UPDATE message_queue SET send_attempts = 0, retry_after = NULL WHERE message_id = ?', undef,
-            $message_id
-        ) if $rv;
+        )->store;
+        $rv = 1;
     }
     return $rv;
 }
@@ -1936,22 +1934,20 @@ taken from @SMTP_RETRY_DELAYS, or is marked failed once all the delays have been
 sub _retry_message_later {
     my ($message) = @_;
 
-    my $dbh           = C4::Context->dbh;
-    my $send_attempts = $message->{send_attempts} + 1;
+    my $notice = Koha::Notice::Messages->find( $message->{message_id} ) or return;
 
+    my $send_attempts = $message->{send_attempts} + 1;
     if ( $send_attempts > @SMTP_RETRY_DELAYS ) {
-        $dbh->do(
-            'UPDATE message_queue SET send_attempts = ?, status = ?, failure_code = ? WHERE message_id = ?',
-            undef, $send_attempts, 'failed', 'SENDMAIL', $message->{message_id}
-        );
+        $notice->set( { send_attempts => $send_attempts, status => 'failed', failure_code => 'SENDMAIL' } )->store;
         return;
     }
 
-    my $delay = $SMTP_RETRY_DELAYS[ $send_attempts - 1 ];
-    $dbh->do(
-        'UPDATE message_queue SET send_attempts = ?, retry_after = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE message_id = ?',
-        undef, $send_attempts, $delay, $message->{message_id}
-    );
+    $notice->set(
+        {
+            send_attempts => $send_attempts,
+            retry_after   => dt_from_string()->add( minutes => $SMTP_RETRY_DELAYS[ $send_attempts - 1 ] ),
+        }
+    )->store;
     return;
 }
 
@@ -1968,11 +1964,10 @@ alone and a long outage does not use up the retries of messages that never reach
 sub _defer_message {
     my ($message) = @_;
 
+    my $notice = Koha::Notice::Messages->find( $message->{message_id} ) or return;
+
     my $delay = $SMTP_RETRY_DELAYS[ $message->{send_attempts} < @SMTP_RETRY_DELAYS ? $message->{send_attempts} : -1 ];
-    C4::Context->dbh->do(
-        'UPDATE message_queue SET retry_after = DATE_ADD(NOW(), INTERVAL ? MINUTE) WHERE message_id = ?',
-        undef, $delay, $message->{message_id}
-    );
+    $notice->retry_after( dt_from_string()->add( minutes => $delay ) )->store;
     return;
 }
 
