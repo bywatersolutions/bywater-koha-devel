@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 use File::Basename qw(dirname);
-use Test::More tests => 109;
+use Test::More tests => 110;
 use Test::NoWarnings;
 
 use List::Util qw( sum0 );
@@ -2093,6 +2093,73 @@ subtest '_is_temporary_smtp_failure' => sub {
         ),
         'A 450 is only about the one message'
     );
+};
+
+subtest 'Notices that are no use later are not retried' => sub {
+    plan tests => 8;
+
+    my $dbh = C4::Context->dbh;
+    $dbh->do(q|DELETE FROM message_queue|);
+
+    my $patron = $builder->build_object(
+        { class => 'Koha::Patrons', value => { branchcode => $library->{branchcode}, email => 'patron@example.org' } }
+    );
+    my $enqueue = sub {
+        my ($code) = @_;
+        return C4::Letters::EnqueueLetter(
+            {
+                letter => {
+                    content      => 'a message',
+                    metadata     => 'metadata',
+                    code         => $code,
+                    content_type => 'text/plain',
+                    title        => 'message title',
+                },
+                borrowernumber         => $patron->borrowernumber,
+                to_address             => undef,
+                message_transport_type => 'email',
+                from_address           => 'from@example.com',
+            }
+        );
+    };
+    my $otp_id   = $enqueue->('2FA_OTP_TOKEN');
+    my $other_id = $enqueue->('TEST_MESSAGE');
+
+    my $mocked_koha_email = Test::MockModule->new('Koha::Email');
+    $mocked_koha_email->mock(
+        'send_or_die',
+        sub {
+            Email::Sender::Failure::Temporary->throw( { message => '450 4.2.1 Too many messages', code => 450 } );
+        }
+    );
+
+    warnings_like {
+        C4::Letters::SendQueuedMessages( { message_id => $otp_id } );
+    }
+    [qr/Too many messages/], 'The failure is logged';
+    my $notice = Koha::Notice::Messages->find($otp_id);
+    is( $notice->status,       'failed',   'A one-time code is marked failed rather than retried' );
+    is( $notice->failure_code, 'SENDMAIL', '... with the usual failure code' );
+    is( $notice->retry_after,  undef,      '... and nothing is scheduled' );
+
+    warnings_like {
+        C4::Letters::SendQueuedMessages( { message_id => $other_id } );
+    }
+    [qr/Too many messages/], 'The failure is logged';
+    is( Koha::Notice::Messages->find($other_id)->status, 'pending', 'Other notices are still retried' );
+
+    # The same goes for one that was pushed back because its server was already down
+    $mocked_koha_email->mock(
+        'send_or_die',
+        sub { Email::Sender::Failure->throw('unable to establish SMTP connection to (smtp.example.org) port 587') }
+    );
+    my $first_id = $enqueue->('TEST_MESSAGE');
+    my $otp_id_2 = $enqueue->('2FA_OTP_TOKEN');
+    warnings_like {
+        C4::Letters::SendQueuedMessages( { message_id => [ $first_id, $otp_id_2 ] } );
+    }
+    [ qr/unable to establish/, qr/is unavailable/ ], 'The server is marked unavailable';
+    is( Koha::Notice::Messages->find($otp_id_2)->status, 'failed', 'A one-time code is not deferred either' );
 };
 
 subtest 'Test unavailable SMTP server handling in SendQueuedMessages' => sub {

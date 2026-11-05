@@ -72,6 +72,9 @@ our $domain_limits = {};
 # Minutes to wait before trying again after each temporary failure from the mail server, once these run out the message is marked failed
 our @SMTP_RETRY_DELAYS = ( 10, 30, 60, 120 );
 
+# Notices that are no use once they have waited out the first delay, a one-time code is only valid for a minute. These are marked failed right away rather than being retried
+our @NO_RETRY_LETTER_CODES = ('2FA_OTP_TOKEN');
+
 # SMTP servers that turned a connection away during the current run, keyed like the transport cache in SendQueuedMessages
 our $unavailable_smtp_servers = {};
 
@@ -1962,7 +1965,8 @@ sub _set_message_status {
   _retry_message_later($message);
 
 Records a temporary failure for a queued message. The message stays pending with a retry_after time
-taken from @SMTP_RETRY_DELAYS, or is marked failed once all the delays have been used up.
+taken from @SMTP_RETRY_DELAYS, or is marked failed once all the delays have been used up, or at once if
+it is one that cannot be retried, see L</_can_be_retried>.
 
 =cut
 
@@ -1972,7 +1976,7 @@ sub _retry_message_later {
     my $notice = Koha::Notice::Messages->find( $message->{message_id} ) or return;
 
     my $send_attempts = $message->{send_attempts} + 1;
-    if ( $send_attempts > @SMTP_RETRY_DELAYS ) {
+    if ( $send_attempts > @SMTP_RETRY_DELAYS || !_can_be_retried($message) ) {
         $notice->set( { send_attempts => $send_attempts, status => 'failed', failure_code => 'SENDMAIL' } )->store;
         return;
     }
@@ -1984,6 +1988,21 @@ sub _retry_message_later {
         }
     )->store;
     return;
+}
+
+=head2 _can_be_retried
+
+  my $can_be_retried = _can_be_retried($message);
+
+Returns false for a notice that is no use by the time a retry would reach the patron, see @NO_RETRY_LETTER_CODES.
+
+=cut
+
+sub _can_be_retried {
+    my ($message) = @_;
+
+    my $letter_code = $message->{letter_code} // '';
+    return !grep { $_ eq $letter_code } @NO_RETRY_LETTER_CODES;
 }
 
 =head2 _defer_message
@@ -1998,6 +2017,11 @@ alone and a long outage does not use up the retries of messages that never reach
 
 sub _defer_message {
     my ($message) = @_;
+
+    unless ( _can_be_retried($message) ) {
+        _set_message_status( { message_id => $message->{message_id}, status => 'failed', failure_code => 'SENDMAIL' } );
+        return;
+    }
 
     my $notice = Koha::Notice::Messages->find( $message->{message_id} ) or return;
 
