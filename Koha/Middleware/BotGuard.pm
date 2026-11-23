@@ -21,9 +21,13 @@ use Modern::Perl;
 
 use parent qw(Plack::Middleware);
 
+use File::Basename qw( dirname );
+use File::Slurp    qw( read_file );
+use File::Spec;
+use JSON qw( decode_json );
 use Net::Netmask;
 use Plack::Util::Accessor
-    qw( enabled mode rate_limit authenticated_rate_limit rate_window max_concurrent issue_limit pow_difficulty exempt_nets heavy );
+    qw( enabled mode rate_limit authenticated_rate_limit rate_window max_concurrent issue_limit pow_difficulty exempt_nets heavy crawler_user_agents crawler_nets );
 
 use Koha::BotGuard::ProofOfWork;
 use Koha::BotGuard::TrustCookie;
@@ -83,7 +87,14 @@ The feature is off unless enabled in koha-conf.xml:
     <pow_difficulty>18</pow_difficulty>
     <exempt_ips>127.0.0.1 10.0.0.0/8</exempt_ips>
     <heavy_scripts></heavy_scripts>
+    <crawler_user_agents>Googlebot|bingbot|Applebot|DuckDuckBot</crawler_user_agents>
+    <crawler_ranges_file></crawler_ranges_file>
   </opac_bot_guard>
+
+Search engine crawlers don't keep cookies either, so a request whose user agent contains one
+of crawler_user_agents and whose address is inside the ranges that search engine publishes
+( Koha/BotGuard/verified_crawlers.json, rebuilt by misc/maintenance/update_verified_crawler_ranges.pl )
+is never challenged or rate limited. It still counts toward max_concurrent.
 
 In observe mode every decision is logged but nothing is refused. Search feeds ( opac-search.pl
 with format=rss, atom or opensearchdescription ) and public list feeds ( opac-shelves.pl with
@@ -110,11 +121,15 @@ our @DEFAULT_HEAVY_SCRIPTS = qw(
     svc/shelfbrowser.pl
 );
 
-use constant ISSUE_PATH          => '/svc/opac_trust';
-use constant INFLIGHT_KEY        => 'botguard:inflight';
-use constant INFLIGHT_TTL        => 120;
-use constant ISSUE_WINDOW        => 60;
-use constant CAPPED_LOG_INTERVAL => 10;
+our $DEFAULT_CRAWLER_RANGES_FILE =
+    File::Spec->catfile( dirname( dirname(__FILE__) ), 'BotGuard', 'verified_crawlers.json' );
+
+use constant DEFAULT_CRAWLER_USER_AGENTS => 'Googlebot|bingbot|Applebot|DuckDuckBot';
+use constant ISSUE_PATH                  => '/svc/opac_trust';
+use constant INFLIGHT_KEY                => 'botguard:inflight';
+use constant INFLIGHT_TTL                => 120;
+use constant ISSUE_WINDOW                => 60;
+use constant CAPPED_LOG_INTERVAL         => 10;
 
 use constant REFUSED_HTML => <<'HTML';
 <!DOCTYPE html>
@@ -297,6 +312,22 @@ sub prepare_app {
         }
     }
     $self->exempt_nets( \@exempt_nets );
+
+    my $crawler_user_agents = $config->{crawler_user_agents} // DEFAULT_CRAWLER_USER_AGENTS;
+    my @crawler_user_agents = $crawler_user_agents ? grep { length } split /\|/, $crawler_user_agents : ();
+    my @crawler_nets;
+    if ( $enabled && @crawler_user_agents ) {
+        my $file   = $config->{crawler_ranges_file} // $DEFAULT_CRAWLER_RANGES_FILE;
+        my $ranges = eval { decode_json( read_file($file) )->{ranges} };
+        if ( ref $ranges eq 'HASH' ) {
+            @crawler_nets = map { Net::Netmask->new2($_) || () } map { @$_ } values %$ranges;
+        } else {
+            $self->logger->warn("opac_bot_guard could not read crawler ranges from $file, crawlers will be challenged");
+        }
+    }
+    my $crawler_pattern = join '|', map { quotemeta } @crawler_user_agents;
+    $self->crawler_user_agents( @crawler_nets ? qr/$crawler_pattern/ : undef );
+    $self->crawler_nets( \@crawler_nets );
 }
 
 =head2 call
@@ -326,10 +357,11 @@ sub call {
     return $self->app->($env) unless $script && $self->heavy->{$script};
     return $self->app->($env) if $self->is_exempt_ip( $env->{REMOTE_ADDR} );
 
-    my $trust = Koha::BotGuard::TrustCookie->verify( $self->cookie_value($env) );
-    my $feed  = !$trust && $self->is_feed( $env, $script );
+    my $trust   = Koha::BotGuard::TrustCookie->verify( $self->cookie_value($env) );
+    my $feed    = !$trust && $self->is_feed( $env, $script );
+    my $crawler = !$trust && !$feed && $self->is_verified_crawler($env);
 
-    if ( !$trust && !$feed ) {
+    if ( !$trust && !$feed && !$crawler ) {
         my $refusal = $self->refuse( $env, 'challenge', $trust, $self->challenge_response );
         return $refusal if $refusal;
     }
@@ -463,12 +495,40 @@ True when the client address is inside one of the configured exempt networks.
 
 sub is_exempt_ip {
     my ( $self, $ip ) = @_;
+    return $self->ip_in_nets( $ip, $self->exempt_nets );
+}
+
+=head2 is_verified_crawler
+
+True when the user agent claims to be a search engine crawler and the client address is inside
+the ranges that search engine publishes, so a spoofed user agent gets the challenge like anyone else.
+
+=cut
+
+sub is_verified_crawler {
+    my ( $self, $env ) = @_;
+
+    my $user_agents = $self->crawler_user_agents or return 0;
+    return 0 unless ( $env->{HTTP_USER_AGENT} // q{} ) =~ $user_agents;
+    return $self->ip_in_nets( $env->{REMOTE_ADDR}, $self->crawler_nets );
+}
+
+=head2 ip_in_nets
+
+    my $inside = $self->ip_in_nets( $ip, $nets );
+
+True when the address is inside one of the Net::Netmask blocks.
+
+=cut
+
+sub ip_in_nets {
+    my ( $self, $ip, $nets ) = @_;
 
     return 0 unless $ip;
 
     # Net::Netmask warns when an IPv6 address is matched against an IPv4 block
     my $family = $ip =~ /:/ ? 'IPv6' : 'IPv4';
-    foreach my $net ( @{ $self->exempt_nets } ) {
+    foreach my $net (@$nets) {
         next     if $net->protocol ne $family;
         return 1 if $net->match($ip);
     }
