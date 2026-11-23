@@ -19,8 +19,12 @@
 
 use Modern::Perl;
 use Test::NoWarnings;
-use Test::More tests => 15;
+use Test::More tests => 16;
 use Test::MockModule;
+
+use File::Temp;
+use JSON qw( encode_json );
+
 use t::lib::Mocks;
 use t::lib::Mocks::Logger;
 use t::lib::Mocks::Memcached;
@@ -421,4 +425,47 @@ subtest 'observe mode' => sub {
         ->clear;
     is( $response->[0], 204, 'and a cookie is issued anyway' );
     like( header( $response, 'Set-Cookie' ), qr/^KOHA_TRUST=anonymous\./, 'an anonymous one' );
+};
+
+subtest 'verified crawlers' => sub {
+    plan tests => 11;
+
+    my $ranges = File::Temp->new( SUFFIX => '.json' );
+    print $ranges encode_json( { ranges => { googlebot => [ '66.249.64.0/27', '2001:4860:4801:10::/64' ] } } );
+    close $ranges;
+
+    my $googlebot = 'Mozilla/5.0 (compatible; Googlebot/2.1)';
+    my $crawler   = sub { env( HTTP_USER_AGENT => $googlebot, REMOTE_ADDR => '66.249.64.5', @_ ) };
+
+    my $mw = guard( rate_limit => 1, crawler_ranges_file => $ranges->filename );
+    $memcached = t::lib::Mocks::Memcached->new;
+    $hits      = 0;
+
+    is( $mw->call( $crawler->() )->[0], 200, 'Googlebot from a Google address is admitted' );
+    is( $mw->call( $crawler->() )->[0], 200, 'and is not rate limited' );
+    is( $mw->call( $crawler->( REMOTE_ADDR => '2001:4860:4801:10::5' ) )->[0], 200, 'IPv6 ranges match too' );
+    is( $hits,                                                                 3,   'the app ran each time' );
+    is(
+        header( $mw->call( $crawler->( REMOTE_ADDR => '203.0.113.5' ) ), 'X-Koha-BotGuard' ), 'challenge',
+        'a spoofed Googlebot user agent from anywhere else is challenged'
+    );
+    is(
+        header( $mw->call( $crawler->( HTTP_USER_AGENT => 'curl/8.0' ) ), 'X-Koha-BotGuard' ), 'challenge',
+        'another user agent from a Google address is challenged'
+    );
+
+    $memcached->{store}{'botguard:inflight'} = 4;
+    is( $mw->call( $crawler->() )->[0], 503, 'crawlers count toward max_concurrent' );
+    $logger->clear;
+
+    $mw = guard( crawler_user_agents => 0, crawler_ranges_file => $ranges->filename );
+    is( header( $mw->call( $crawler->() ), 'X-Koha-BotGuard' ), 'challenge', 'crawler_user_agents 0 turns it off' );
+
+    $mw = guard( crawler_ranges_file => '/nonexistent/verified_crawlers.json' );
+    $logger->warn_like( qr{could not read crawler ranges from /nonexistent/}, 'an unreadable file is warned about' )
+        ->clear;
+    is( header( $mw->call( $crawler->() ), 'X-Koha-BotGuard' ), 'challenge', 'and crawlers are challenged' );
+
+    $mw = guard();
+    ok( scalar @{ $mw->crawler_nets } > 100, 'the ranges shipped with Koha load' );
 };
