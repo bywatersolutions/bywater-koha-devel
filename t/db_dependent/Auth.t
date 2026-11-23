@@ -7,7 +7,7 @@ use CGI qw ( -utf8 );
 use Test::MockObject;
 use Test::MockModule;
 use List::MoreUtils qw/all any none/;
-use Test::More tests => 26;
+use Test::More tests => 27;
 use Test::NoWarnings;
 use Test::Warn;
 use t::lib::Mocks;
@@ -1895,6 +1895,76 @@ subtest 'DISABLE_SYSPREF permission tests' => sub {
     delete $ENV{"OVERRIDE_SYSPREF_IntranetUserCSS"};
     C4::Context->unset_userenv();
 
+    $schema->storage->txn_rollback;
+};
+
+subtest 'checkauth() and the OPAC bot guard trust cookie' => sub {
+    plan tests => 10;
+
+    $schema->storage->txn_begin;
+
+    t::lib::Mocks::mock_config( 'opac_bot_guard', { enabled => 1, secret => 'test-secret' } );
+    t::lib::Mocks::mock_preference( 'StaffLoginRestrictLibraryByIP', 0 );
+
+    my $patron   = $builder->build_object( { class => 'Koha::Patrons', value => { flags => 4 } } );
+    my $password = set_weak_password($patron);
+
+    my $cgi_mock = Test::MockModule->new('CGI');
+    $cgi_mock->mock( 'request_method', sub { return 'POST' } );
+    my $auth_mock = Test::MockModule->new('C4::Auth');
+    $auth_mock->mock( 'safe_exit', sub { return } );
+
+    my $trust_cookie = sub {
+        my ($cookies) = @_;
+        my ($trust)   = grep { $_->name eq 'KOHA_TRUST' } @$cookies;
+        return $trust ? $trust->value : undef;
+    };
+    my $login = sub {
+        my ($type) = @_;
+        my $cgi = CGI->new;
+        $cgi->param( 'login_userid',   $patron->userid );
+        $cgi->param( 'login_password', $password );
+        return C4::Auth::checkauth( $cgi, $type eq 'opac' ? 1 : 0, { catalogue => 1 }, $type );
+    };
+
+    local $ENV{HTTP_COOKIE};
+    my ( $userid, $cookie, $sessionID ) = $login->('opac');
+    is( $userid, $patron->userid, 'logged in to the OPAC' );
+    my $authenticated = $trust_cookie->($cookie);
+    like( $authenticated, qr/^authenticated\./, 'the login response carries an authenticated trust cookie' );
+
+    $ENV{HTTP_COOKIE} = "CGISESSID=$sessionID; KOHA_TRUST=$authenticated";
+    ( $userid, $cookie ) = C4::Auth::checkauth( CGI->new, 1, {}, 'opac' );
+    is( $userid,                  $patron->userid, 'still logged in on the next page' );
+    is( $trust_cookie->($cookie), undef,           'a patron who already has one is not sent another' );
+
+    $ENV{HTTP_COOKIE} = "CGISESSID=$sessionID";
+    ( $userid, $cookie ) = C4::Auth::checkauth( CGI->new, 1, {}, 'opac' );
+    like(
+        $trust_cookie->($cookie), qr/^authenticated\./,
+        'a session opened before the guard was turned on gets one on its next page'
+    );
+
+    $ENV{HTTP_COOKIE} = "CGISESSID=$sessionID; KOHA_TRUST=$authenticated";
+    my $cgi = CGI->new;
+    $cgi->param( 'logout.x', 1 );
+    ( $userid, $cookie ) = C4::Auth::checkauth( $cgi, 1, {}, 'opac' );
+    is( $userid, undef, 'logged out' );
+    like(
+        $trust_cookie->($cookie), qr/^anonymous\./,
+        'logging out swaps it for an anonymous cookie, so a shared PC does not keep it'
+    );
+
+    $ENV{HTTP_COOKIE} = undef;
+    ( $userid, $cookie ) = $login->('intranet');
+    is( $userid,                  $patron->userid, 'logged in to the staff interface' );
+    is( $trust_cookie->($cookie), undef,           'the staff interface never sets one' );
+
+    t::lib::Mocks::mock_config( 'opac_bot_guard', undef );
+    ( $userid, $cookie ) = $login->('opac');
+    is( $trust_cookie->($cookie), undef, 'nothing is set while the bot guard is off' );
+
+    C4::Context->unset_userenv();
     $schema->storage->txn_rollback;
 };
 
